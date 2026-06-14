@@ -50,7 +50,7 @@ These assets keep Theater preview usable even without TMDB data.
 
 ## Version
 
-Current app version: `v2.0.1`.
+Current app version: `v3.0.0`.
 
 ## Local Dev
 
