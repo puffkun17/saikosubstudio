@@ -38,7 +38,7 @@ export const useExport = () => {
       URL.revokeObjectURL(url);
 
       addLog(`导出成功: ${format.toUpperCase()} 格式`, 'success');
-    } catch (e: any) {
+    } catch (e: unknown) {
       addLog(`导出失败: ${e.message}`, 'error');
     }
   };

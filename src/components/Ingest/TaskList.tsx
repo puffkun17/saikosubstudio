@@ -4,20 +4,9 @@ import React, { useRef, useState } from 'react';
 import { useStudioStore, TaskPair, Subfile } from '@/store/useStudioStore';
 import { Play, Plus, X } from 'lucide-react';
 import { parseSrt, decodeBuffer, detectLanguageByContent, checkIsBilingual, StyleSettings } from '@/utils/subtitleCore';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
 
-const getLangBadge = (lang?: string) => {
-  switch(lang) {
-    case 'zh-CN': return <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 whitespace-nowrap shadow-[0_0_8px_rgba(59,130,246,0.3)]">简</span>;
-    case 'zh-TW': return <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20 whitespace-nowrap shadow-[0_0_8px_rgba(168,85,247,0.3)]">繁</span>;
-    case 'en': return <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20 whitespace-nowrap shadow-[0_0_8px_rgba(34,197,94,0.3)]">英</span>;
-    case 'bilingual': return <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-violet-500/10 text-violet-400 border border-violet-500/20 whitespace-nowrap shadow-[0_0_8px_rgba(168,85,247,0.3)]">双语</span>;
-    case 'commentary': return <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-rose-500/10 text-rose-450 border border-rose-500/20 whitespace-nowrap shadow-[0_0_8px_rgba(244,63,94,0.3)]">导</span>;
-    case 'zh': return <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 whitespace-nowrap shadow-[0_0_8px_rgba(59,130,246,0.3)]">中</span>;
-    default: return null;
-  }
-};
 
 const truncateMiddle = (text: string, maxLength: number = 45) => {
   if (!text || text.length <= maxLength) return text;
@@ -91,7 +80,7 @@ export const TaskList: React.FC = () => {
             isCommentary: /(commentary|comment|director|解说|导轨)/i.test(file.name),
             size: text.length
           });
-        } catch (error: any) {
+        } catch (error: unknown) {
           addLog(`读取文件 ${file.name} 失败: ${error.message}`, "error");
         }
       }
@@ -109,7 +98,7 @@ export const TaskList: React.FC = () => {
         return file.text.split('\n').filter((l: string) => l.trim().startsWith('Dialogue:')).length;
       }
       return parseSrt(file.text).length;
-    } catch (e) {
+    } catch (e: unknown) {
       return 0;
     }
   };

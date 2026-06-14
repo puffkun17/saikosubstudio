@@ -2,14 +2,14 @@
 
 Bilingual subtitle alignment, merging, and styling tool with cinema preview simulator.
 
-Clean, lossless re-extraction of the SubStudio module from the original NAS portal (SaikoBasement), following strict dependency trace and 100% feature parity rules.
+Standalone bilingual subtitle alignment and cinema preview tool. Core SubStudio experience extracted and maintained independently.
 
 ## Branches
 
 - **main**: Open-source, self-hostable / deployable version.
   - TMDB via server proxy (recommended) or client key (with guide).
   - Fixed public assets (scenes, TV bezels).
-  - Full UI/UX from NAS: Ingest (drag/zip/ASS), Workbench (timeline, styles), Theater (simulator with scenes/剧照, guides, export ASS/SRT).
+  - Full SubStudio feature set: Ingest (drag/zip/ASS), Workbench (timeline, styles), Theater (simulator with scenes/剧照, guides, export ASS/SRT).
   - Deployable to Vercel, CF Pages, self-host `next start`, etc.
   - See deployment section below.
 
@@ -21,7 +21,7 @@ Clean, lossless re-extraction of the SubStudio module from the original NAS port
 
 The same core code powers both; hosted adds the always-on proxy + secret.
 
-## Key Features (NAS Parity)
+## Key Features
 
 - **Ingest**: Drag & drop or folder/zip for SRT/ASS, auto language detect, bilingual/commentary handling, Tmdb search for metadata + 剧照 pool (random/shuffle).
 - **Workbench**: Timeline editor, style presets (Netflix, classic, anime, etc.), advanced controls, ASS style extraction.
