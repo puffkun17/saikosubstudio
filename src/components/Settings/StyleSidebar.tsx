@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
+import type { StyleSettings } from '@/utils/subtitleCore';
 import { LayoutGrid, Eye, ChevronDown, ChevronUp, Save, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -20,6 +21,36 @@ const FONT_FAMILIES_EN = [
   { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
   { value: 'system-ui, sans-serif', label: '系统默认' },
 ];
+
+type FontFamilyOption = {
+  value: string;
+  label: string;
+};
+
+const FontFamilySelect = ({ 
+  label, 
+  value, 
+  options, 
+  onChange 
+}: { 
+  label: string; 
+  value: string; 
+  options: FontFamilyOption[]; 
+  onChange: (v: string) => void 
+}) => (
+  <div className="flex items-center justify-between py-2 border-b border-white/[0.03]">
+    <span className="text-xs text-neutral-400 font-mono uppercase tracking-wider font-bold">{label}</span>
+    <select
+      className="bg-white/[0.02] border border-white/[0.08] focus:border-white/15 rounded-lg text-xs px-2 py-1 text-neutral-300 outline-none cursor-pointer transition-all w-40 text-right"
+      value={value}
+      onChange={e => onChange(e.target.value)}
+    >
+      {options.map(opt => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
+  </div>
+);
 
 const ColorPicker = ({ 
   label, 
@@ -113,15 +144,15 @@ export const StyleSidebar: React.FC = () => {
   const [showTemplateSave, setShowTemplateSave] = useState(false);
   const [templateNameInput, setTemplateNameInput] = useState('');
   const [openPicker, setOpenPicker] = useState<string | null>(null);
+  const [isLyricsExpanded, setIsLyricsExpanded] = useState(true);
 
   const hasLyrics = processedSubs?.some(sub => {
-  const isLyricsExpanded = !!hasLyrics;
     if (!sub.text) return false;
     return /[♪♫♬♩🎵🎶]/.test(sub.text);
   });
 
 
-  const handleApplyPreset = (preset: Record<string, any>) => {
+  const handleApplyPreset = (preset: { id: string; styles: Partial<StyleSettings> }) => {
     setActivePreset(preset.id);
     const updated = {
       ...customStyle,
@@ -161,7 +192,7 @@ export const StyleSidebar: React.FC = () => {
     }
   };
 
-  const handleStyleChange = (key: string, value: any) => {
+  const handleStyleChange = <K extends keyof StyleSettings>(key: K, value: StyleSettings[K]) => {
     setActivePreset('custom');
     const updated = {
       ...customStyle,
@@ -180,22 +211,6 @@ export const StyleSidebar: React.FC = () => {
     setTemplateNameInput('');
     setShowTemplateSave(false);
   };
-
-  // 字体选择器组件
-  const FontFamilySelect = ({ label, value, options, onChange }: { label: string; value: string; options: any[]; onChange: (v: string) => void }) => (
-    <div className="flex items-center justify-between py-2 border-b border-white/[0.03]">
-      <span className="text-xs text-neutral-400 font-mono uppercase tracking-wider font-bold">{label}</span>
-      <select
-        className="bg-white/[0.02] border border-white/[0.08] focus:border-white/15 rounded-lg text-xs px-2 py-1 text-neutral-300 outline-none cursor-pointer transition-all w-40 text-right"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-      >
-        {options.map(opt => (
-          <option key={opt.value} value={opt.value}>{opt.label}</option>
-        ))}
-      </select>
-    </div>
-  );
 
   return (
     <div className="flex flex-col gap-4 p-4 text-left w-full h-full bg-transparent overflow-y-auto scrollbar-thin">
@@ -447,7 +462,7 @@ export const StyleSidebar: React.FC = () => {
             <select
               className="bg-white/[0.02] border border-white/[0.08] focus:border-white/15 rounded-lg text-xs px-2 py-1 text-neutral-300 outline-none cursor-pointer transition-all w-32 text-right"
               value={customStyle.resolution || '1080p'}
-              onChange={e => handleStyleChange('resolution', e.target.value)}
+              onChange={e => handleStyleChange('resolution', e.target.value as StyleSettings['resolution'])}
             >
               <option value="SD">标清 SD</option>
               <option value="1080p">全高清 1080p</option>
@@ -510,7 +525,7 @@ export const StyleSidebar: React.FC = () => {
                         <select
                           className="bg-white/[0.02] border border-white/[0.08] focus:border-white/15 rounded-lg text-xs px-2 py-1 text-neutral-350 outline-none cursor-pointer transition-all w-32 text-right"
                           value={customStyle.lyricPosition ?? 'top'}
-                          onChange={e => handleStyleChange('lyricPosition', e.target.value)}
+                          onChange={e => handleStyleChange('lyricPosition', e.target.value as StyleSettings['lyricPosition'])}
                         >
                           <option value="top">顶部置顶</option>
                           <option value="bottom">底部置底</option>

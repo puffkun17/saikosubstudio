@@ -176,9 +176,9 @@ export interface StudioState {
   setTasks: (tasks: TaskPair[] | ((prev: TaskPair[]) => TaskPair[])) => void;
   setRefScreenshot: (url: string | null) => void;
   triggerTempGuides: () => void;
-  searchTmdb: (query: string) => Promise<void>;
+  searchTmdb: (query: string, options?: { silent?: boolean }) => Promise<void>;
   searchTmdbManual: (query: string, type: TmdbMediaType, year: string) => Promise<void>;
-  selectTmdbSuggestion: (s: TmdbSuggestion) => Promise<void>;
+  selectTmdbSuggestion: (s: TmdbSuggestion, options?: { silent?: boolean }) => Promise<void>;
   shuffleBackdrop: () => void;
   
   // Complex Workflows
@@ -335,7 +335,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     });
   },
 
-  // 支持直接修改字幕文本（从 NAS 成熟版本迁移 + 改进）
+  // 支持直接修改字幕文本
   updateSubtitleText: (index: number, text: string) => {
     const { processedSubs, previewIndex, addLog } = get();
     if (!processedSubs) {
@@ -388,18 +388,20 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }, 2000);
   },
 
-  searchTmdb: async (query) => {
+  searchTmdb: async (query, options) => {
+    const silent = options?.silent ?? false;
     const rawSearchStr = query.trim();
     if (!rawSearchStr) return;
     
+    const isEpisodeQuery = /\bS\d{1,4}E\d{1,4}\b/i.test(rawSearchStr) || /\b(?:EP|E)\d{1,4}\b/i.test(rawSearchStr);
     const searchStr = cleanFilename(rawSearchStr);
     if (!searchStr) return;
 
     set({ isSearchingTmdb: true });
-    get().addLog(`正在自动云端检索: ${searchStr}...`, 'info');
+    if (!silent) get().addLog(`正在匹配片源信息`, 'info');
     
     try {
-      const yearMatch = searchStr.match(/\b(19\d\d|20\d\d)\b/);
+      const yearMatch = isEpisodeQuery ? null : searchStr.match(/\b(19\d\d|20\d\d)\b/);
       const year = yearMatch ? yearMatch[1] : '';
       let cleanQuery = searchStr;
       if (year) {
@@ -437,6 +439,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         let score = 0;
         const relDate = item.release_date || item.first_air_date || '';
         const itemYear = relDate.substring(0, 4);
+        if (isEpisodeQuery) {
+          score += item.media_type === 'tv' ? 120 : -80;
+        }
         if (year && itemYear === year) {
           score += 100;
         }
@@ -444,7 +449,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const normOrigTitle = normalize(item.original_title || item.original_name || '');
         const normQ = normalize(cleanQuery);
         if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) {
-          score += 50;
+          score += isEpisodeQuery ? 150 : 50;
         } else if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) {
           score += 20;
         }
@@ -484,6 +489,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         let score = 0;
         const relDate = item.release_date || item.first_air_date || '';
         const itemYear = relDate.substring(0, 4);
+        if (isEpisodeQuery) {
+          score += item.media_type === 'tv' ? 120 : -80;
+        }
         if (year && itemYear === year) {
           score += 100;
         }
@@ -493,14 +501,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const normQ = normalize(cleanQuery);
         
         if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) {
-          score += 50;
+          score += isEpisodeQuery ? 150 : 50;
         } else if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) {
           score += 20;
         }
         
         const displayTitle = item.title || item.name || '';
         const displayYear = itemYear ? ` (${itemYear})` : '';
-        get().addLog(`[候选评级] ${displayTitle}${displayYear} - 评分: ${score} (分词: ${normTitle} / 原名: ${normOrigTitle} / 查询: ${normQ})`, 'info');
+        if (!silent) get().addLog(`[候选] ${displayTitle}${displayYear}`, 'info');
         
         return { item, score };
       });
@@ -511,16 +519,16 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       set({ tmdbSuggestions: sortedResults });
 
       if (sortedResults.length > 0) {
-        get().addLog(`自动云端匹配获取到 ${sortedResults.length} 个候选匹配项`, "success");
+        if (!silent) get().addLog(`已找到候选片源，正在选择最匹配项`, "success");
         const best = sortedResults[0];
-        get().selectTmdbSuggestion(best);
+        get().selectTmdbSuggestion(best, { silent });
       } else {
         set({ tmdbData: null, tmdbBackdrop: null });
-        get().addLog("未找到匹配影视候选！", "error");
+        if (!silent) get().addLog("暂未自动确认片源，可手动选择候选", "error");
       }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
-      get().addLog(`自动搜索异常: ${message}`, "error");
+      if (!silent) get().addLog(`片源匹配异常: ${message}`, "error");
     } finally {
       set({ isSearchingTmdb: false });
     }
@@ -631,10 +639,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }
   },
 
-  selectTmdbSuggestion: async (s) => {
+  selectTmdbSuggestion: async (s, options) => {
+    const silent = options?.silent ?? false;
     set({ selectedSuggestion: s });
     const { selectedTaskId, tmdbManualInput } = get();
-    get().addLog(`正在获取 ${s.title || s.name} 详情数据...`, 'info');
+    if (!silent) get().addLog(`正在补全片源资料`, 'info');
     try {
       let type = s.media_type;
       if (!type) {
@@ -688,14 +697,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         backdrops = [`https://image.tmdb.org/t/p/w1280${s.backdrop_path}`];
       }
 
-      // Randomly select one, skipping top promo images for better immersion (from NAS version)
+      // Randomly select one, skipping top promo images for better immersion.
       let chosenBackdrop = backdrops[0] || backdropUrl || null;
       if (backdrops.length > 0) {
         const skipCount = backdrops.length > 4 ? 3 : 0;
         const candidates = backdrops.slice(skipCount);
         const randIdx = Math.floor(Math.random() * candidates.length);
         chosenBackdrop = candidates[randIdx];
-        get().addLog(`[剧照随机] 已从 ${backdrops.length} 张物料中随机提取了临场感剧照`, 'info');
+        if (!silent) get().addLog(`[剧照] 已准备预览画面`, 'info');
       }
 
       const meta: TmdbMetadata = {
@@ -745,11 +754,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         }));
       }
 
-      get().addLog(`[关联] 成功绑定影视数据: ${meta.title}`, 'success');
+      if (!silent) get().addLog(`已关联片源：${meta.title}`, 'success');
       set({ tmdbManualOpen: false });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      get().addLog(`获取影视数据详情失败: ${message}`, 'error');
+      if (!silent) get().addLog(`片源资料获取失败: ${message}`, 'error');
     }
   },
 

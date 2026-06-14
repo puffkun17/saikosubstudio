@@ -7,15 +7,6 @@ import { parseSrt, decodeBuffer, detectLanguageByContent, checkIsBilingual, Styl
 import { motion } from 'framer-motion';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
 
-
-const _truncateMiddle = (text: string, maxLength: number = 45) => {
-  if (!text || text.length <= maxLength) return text;
-  const charsToShow = maxLength - 3;
-  const frontChars = Math.ceil(charsToShow * 0.5);
-  const backChars = Math.floor(charsToShow * 0.5);
-  return text.substring(0, frontChars) + '...' + text.substring(text.length - backChars);
-};
-
 export const TaskList: React.FC = () => {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const { 
@@ -99,7 +90,7 @@ export const TaskList: React.FC = () => {
         return file.text.split('\n').filter((l: string) => l.trim().startsWith('Dialogue:')).length;
       }
       return parseSrt(file.text).length;
-    } catch (e: unknown) {
+    } catch {
       return 0;
     }
   };

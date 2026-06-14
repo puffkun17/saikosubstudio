@@ -87,6 +87,7 @@ export const TmdbPanel: React.FC = () => {
             className="flex items-center h-7 px-2.5 py-1 rounded-lg bg-black/40 border border-white/5 hover:border-violet-500/30 hover:bg-violet-950/20 hover:scale-[1.03] transition-all duration-300 shadow-[0_0_15px_rgba(0,179,229,0.15)] group/logo"
             title="Powered by The Movie Database"
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/tmdb_logo_blue_square.svg" alt="TMDB Logo" className="h-full w-auto object-contain brightness-100 contrast-110 filter drop-shadow-[0_0_4px_rgba(59,130,246,0.6)]" />
           </a>
         </div>
@@ -190,6 +191,7 @@ export const TmdbPanel: React.FC = () => {
             </p>
             <div className="opacity-30 hover:opacity-75 transition-opacity duration-300 mt-4 flex flex-col items-center gap-1.5">
               <span className="text-[0.625rem] font-mono uppercase tracking-widest text-neutral-400">数据支持</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/tmdb_logo_blue_square.svg" alt="TMDB Logo" className="h-6 w-auto object-contain brightness-90 contrast-110" />
             </div>
           </div>
@@ -313,6 +315,7 @@ export const TmdbPanel: React.FC = () => {
                           >
                             <div className="flex-shrink-0 w-10 h-14 rounded-md overflow-hidden bg-black/50 border border-white/10">
                               {posterUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
                                 <img src={posterUrl} alt={s.title || s.name} className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-white/25">

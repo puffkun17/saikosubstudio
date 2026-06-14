@@ -84,9 +84,9 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
   }
 
   return (
-    <div className="v9-dial-slider-container w-full md:w-auto bg-[#121216]/50 border border-white/5 p-3 rounded-2xl flex items-center justify-between gap-4">
+    <div className="v9-dial-slider-container w-full bg-[#121216]/50 border border-white/5 p-3 rounded-2xl flex items-center justify-between gap-4">
       {/* Slider range input */}
-      <div className="v9-dial-slider-wrapper flex-1 flex items-center min-w-[200px]">
+      <div className="v9-dial-slider-wrapper flex-1 flex items-center min-w-[280px]">
         <input 
           type="range" 
           min="1" 

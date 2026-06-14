@@ -65,7 +65,7 @@ export function decodeBuffer(buffer: ArrayBuffer): DecodeResult {
       if (/\d{2}:\d{2}:\d{2}/.test(text)) {
         return { text, encoding: encoding + ' (Auto)' };
       }
-    } catch (_e) {
+    } catch {
       continue;
     }
   }
@@ -205,22 +205,34 @@ export function cleanFilename(n: string): string {
   if (!n) return '';
   let title = n.replace(/_merged_\d{8}_\d{6}/gi, '');
   title = title.replace(/\.(srt|ass|txt|zip|rar|vtt)$/i, '');
+  const hasEpisodeKey = /\bS\d{1,4}E\d{1,4}\b/i.test(title) || /\b(?:EP|E)\d{1,4}\b/i.test(title);
   
-  // Movie year match
-  const yearTagMatch = title.match(/^(.*?)(?:\b(19\d{2}|20\d{2})\b)(.*)$/i);
-  if (yearTagMatch) {
+  // Movie year match. Episode filenames often include documentary/source years
+  // before SxxExx; those should not become part of the searchable series title.
+  if (!hasEpisodeKey) {
+    const yearTagMatch = title.match(/^(.*?)(?:\b(19\d{2}|20\d{2})\b)(.*)$/i);
+    if (yearTagMatch) {
       const beforeYear = yearTagMatch[1];
       const year = yearTagMatch[2];
       const afterYear = yearTagMatch[3];
       if (/[\s.\-_(【\[]*(1080p|720p|2160p|4k|web|bluray|hevc|x265|x264|eng|chs|cht|gbk|utf8|中英)/i.test(afterYear)) {
           title = beforeYear + year;
       }
+    }
   }
 
   // TV Show episode match (S01E01, S01, EP01)
   const tvMatch = title.match(/^(.*?)(?:[\s.\-_(【\[]*(?:s\d{1,4}e\d{1,4}|s\d{1,4}|ep\d{1,4})\b)(.*)$/i);
   if (tvMatch) {
       title = tvMatch[1];
+      const colonParts = title.split(/\s*[:：]\s*/).filter(Boolean);
+      if (colonParts.length > 1) {
+        const tail = colonParts[colonParts.length - 1];
+        if (tail.split(/[\s.\-_]+/).filter(Boolean).length >= 2) {
+          title = tail;
+        }
+      }
+      title = title.replace(/\b(19\d{2}|20\d{2})\b/g, ' ');
   }
 
   const tags = [
@@ -673,7 +685,7 @@ export function alignSubtitlesIndustrial(
     for (let j = 1; j <= N; j++) {
       const scoreMatch = dp[i-1][j-1] + getPairScore(i-1, j-1);
       const scoreGapZh = dp[i-1][j] + gapPenalty;
-      const _scoreGapEn = dp[i][j-1] + gapPenalty;
+      const scoreGapEn = dp[i][j-1] + gapPenalty;
       dp[i][j] = Math.max(scoreMatch, scoreGapZh, scoreGapEn);
     }
   }
@@ -687,7 +699,7 @@ export function alignSubtitlesIndustrial(
     if (i > 0 && j > 0) {
       const scoreMatch = dp[i-1][j-1] + getPairScore(i-1, j-1);
       const scoreGapZh = dp[i-1][j] + gapPenalty;
-      const _scoreGapEn = dp[i][j-1] + gapPenalty;
+      const scoreGapEn = dp[i][j-1] + gapPenalty;
       const current = dp[i][j];
       
       if (current === scoreMatch) {
@@ -696,6 +708,9 @@ export function alignSubtitlesIndustrial(
       } else if (current === scoreGapZh) {
         path.push({ zhIdx: i - 1, enIdx: null });
         i--;
+      } else if (current === scoreGapEn) {
+        path.push({ zhIdx: null, enIdx: j - 1 });
+        j--;
       } else {
         path.push({ zhIdx: null, enIdx: j - 1 });
         j--;
@@ -1054,5 +1069,3 @@ export function splitSingleBilingualText(text: string): string {
 
   return `${zhPart}\n${enPart}`;
 }
-
-

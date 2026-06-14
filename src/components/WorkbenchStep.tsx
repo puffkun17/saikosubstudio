@@ -33,7 +33,7 @@ export const WorkbenchStep: React.FC = () => {
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#050507]">
       {/* Top Navbar */}
       <div className="flex flex-col md:flex-row justify-between items-center px-6 py-4 border-b border-white/[0.06] bg-[#030305]/40 backdrop-blur-md gap-4 z-50 flex-shrink-0">
-        <div className="flex items-center gap-4 text-left">
+        <div className="flex items-center gap-4 text-left shrink-0">
           <div className="relative">
             {/* Bounce back button */}
             <motion.button 
@@ -78,17 +78,19 @@ export const WorkbenchStep: React.FC = () => {
             </AnimatePresence>
           </div>
           
-          <div>
+          <div className="min-w-0">
             <h2 className="text-xs font-mono font-bold text-neutral-450 tracking-wider uppercase pl-0.5">workspace // workbench</h2>
-            <p className="text-[10px] text-violet-400 font-mono mt-0.5 max-w-[250px] truncate pl-0.5" title={customFilename}>
+            <p className="text-[10px] text-violet-400 font-mono mt-0.5 max-w-[560px] whitespace-normal break-words leading-relaxed pl-0.5" title={customFilename}>
               {processedSubs?.length || 0} lines ready | {customFilename || 'unnamed'}
             </p>
           </div>
         </div>
 
         {/* Timeline Slider and controls in header */}
-        <div className="flex items-center gap-3.5 flex-wrap">
-          <TimelineControls />
+        <div className="flex-1 w-full md:w-auto flex items-center justify-end gap-3.5 flex-wrap">
+          <div className="flex-1 min-w-[360px] max-w-4xl">
+            <TimelineControls />
+          </div>
 
           {/* Style sidebar toggle */}
           <motion.button 

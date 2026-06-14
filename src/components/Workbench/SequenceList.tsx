@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { isLyricText } from '@/utils/subtitleCore';
 import type { SubRow } from '@/utils/subtitleCore';
-import { ChevronDown, AlertTriangle, Music2 } from 'lucide-react';
+import { ChevronDown, Music2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const SequenceList: React.FC = () => {
@@ -67,44 +67,31 @@ export const SequenceList: React.FC = () => {
   return (
     <div className="flex-1 overflow-hidden bg-white/[0.01] border border-white/[0.06] rounded-xl flex flex-col backdrop-blur-md">
       {total > 0 && (
-        <div className="flex items-center justify-between px-8 py-3 border-b border-white/[0.06] bg-white/[0.005] flex-shrink-0">
-          <span className="text-[0.625rem] font-mono text-neutral-500 uppercase tracking-widest pl-0.5 font-bold">
-            {isOverlimit
-              ? (showAllSubs ? `all ${total} lines (full)` : `showing ${LIMIT} / ${total} lines (truncated)`)
-              : `sequence // ${total} lines`
-            }
-          </span>
+        <div className="flex items-center justify-between gap-4 px-8 py-3 border-b border-white/[0.06] bg-white/[0.005] flex-shrink-0">
+          <div className="min-w-0 flex items-center gap-3">
+            <span className="text-[0.625rem] font-mono text-neutral-500 uppercase tracking-widest pl-0.5 font-bold whitespace-nowrap">
+              {isOverlimit
+                ? (showAllSubs ? `all ${total} lines` : `showing ${LIMIT} / ${total} lines`)
+                : `sequence // ${total} lines`
+              }
+            </span>
+            {isOverlimit && !showAllSubs && (
+              <span className="hidden sm:inline text-[0.625rem] text-amber-200/45 font-mono truncate">
+                已启用轻量预览，展开后显示完整时间轴
+              </span>
+            )}
+          </div>
           {hasMore && (
             <button
               type="button"
               onClick={() => setShowAllSubs(true)}
-              className="flex items-center gap-1 text-[0.625rem] text-violet-400 hover:text-violet-300 transition font-mono uppercase tracking-wider cursor-pointer font-bold"
+              className="flex items-center gap-1 text-[0.625rem] text-violet-400 hover:text-violet-300 transition font-mono uppercase tracking-wider cursor-pointer font-bold shrink-0"
             >
-              <ChevronDown className="w-3 h-3 animate-bounce" />
+              <ChevronDown className="w-3 h-3" />
               展开全部
             </button>
           )}
         </div>
-      )}
-
-      {isOverlimit && !showAllSubs && (
-        <motion.div
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-8 mt-4 mb-1 p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl flex items-start gap-3 text-left"
-        >
-          <motion.div
-            animate={{ opacity: [0.4, 1, 0.4] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="text-amber-450 mt-0.5 shrink-0"
-          >
-            <AlertTriangle className="w-4 h-4" />
-          </motion.div>
-          <div className="flex-1 flex flex-col gap-0.5 text-[0.6875rem] text-neutral-400">
-            <span className="font-bold text-neutral-200">超大字幕时间轴预警 (共 {total} 行)</span>
-            <span>已自动截取前 {LIMIT} 行显示，避免性能问题。点击下方按钮展开全部。</span>
-          </div>
-        </motion.div>
       )}
 
       <div ref={listRef} className="flex-1 overflow-y-auto">

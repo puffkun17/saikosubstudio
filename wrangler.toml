@@ -8,7 +8,7 @@ pages_build_output_dir = ".vercel/output/static"
 
 # Secrets (sensitive values like API keys) must NOT be declared in this file.
 #
-# For the cf-pages-hosted (production) deployment on Cloudflare Pages:
+# For Cloudflare Pages production deployments:
 # - Add sensitive keys (e.g. TMDB_API_KEY) **only** as "机密" (Secret / encrypted variable)
 #   in the Cloudflare Pages dashboard:
 #     Settings > Environment variables (Production) > Add
@@ -24,5 +24,5 @@ pages_build_output_dir = ".vercel/output/static"
 # - Copy .env.example to .env.local and fill in TMDB_API_KEY (never commit .env.local)
 # - Or run: wrangler pages dev .vercel/output/static --env production
 #
-# For the public main branch (open-source / self-host): users set their own key
-# via .env.local or their own hosting provider's secrets. No keys are baked in.
+# For self-hosted deployments: set your own key via .env.local or your hosting
+# provider's secret store. No keys are baked in.

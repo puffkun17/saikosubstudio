@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { DragZone } from '@/components/Ingest/DragZone';
 import { TaskList } from '@/components/Ingest/TaskList';
@@ -13,20 +13,18 @@ export const IngestStep: React.FC = () => {
     tasks, 
     libraryList, 
     loadFromLibrary, 
-    deleteFromLibrary, 
-#    setWorkflowStep,
-#    processedSubs
+    deleteFromLibrary
   } = useStudioStore();
 
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
   return (
     <div className="flex-1 w-full h-full flex flex-col p-3 md:p-4 lg:p-5 2xl:p-6 lg:overflow-hidden overflow-y-auto relative bg-[#050507] z-0">
-      {/* Cinematic ambient lights - 复现 NAS 原始强度 */}
+      {/* Cinematic ambient lights */}
       <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-violet-600/[0.03] rounded-full blur-[140px] pointer-events-none -z-10" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-violet-600/[0.015] rounded-full blur-[120px] pointer-events-none -z-10" />
 
-      {/* Tech Grid System - 复现 NAS 原始参数 */}
+      {/* Tech grid system */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff02_1px,transparent_1px),linear-gradient(to_bottom,#ffffff02_1px,transparent_1px)] bg-[size:5rem_5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)] pointer-events-none -z-10" />
       
       {/* Hairline structural layout guides */}
@@ -136,7 +134,7 @@ export const IngestStep: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Library Modal - 复现 NAS 的 max-w-4xl 尺寸 */}
+      {/* Library Modal */}
       <AnimatePresence>
         {isLibraryOpen && (
           <motion.div

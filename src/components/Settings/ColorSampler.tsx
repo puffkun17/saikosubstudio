@@ -2,7 +2,11 @@
 
 import React, { useState, useRef } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
-import { Pipette, Image, ShieldAlert } from 'lucide-react';
+import { Pipette, ImageIcon, ShieldAlert } from 'lucide-react';
+
+type EyeDropperConstructor = new () => {
+  open: () => Promise<{ sRGBHex: string }>;
+};
 
 export const ColorSampler: React.FC = () => {
   const { 
@@ -40,8 +44,10 @@ export const ColorSampler: React.FC = () => {
       return;
     }
     try {
-      // @ts-ignore
-      const eyeDropper = new window.EyeDropper();
+      const EyeDropper = (window as Window & { EyeDropper?: EyeDropperConstructor }).EyeDropper;
+      if (!EyeDropper) return;
+
+      const eyeDropper = new EyeDropper();
       const result = await eyeDropper.open();
       const color = result.sRGBHex;
 
@@ -52,7 +58,7 @@ export const ColorSampler: React.FC = () => {
         ...customStyle,
         [pickColorTarget]: color
       });
-    } catch (e: unknown) {
+    } catch {
       // User cancelled
     }
   };
@@ -61,7 +67,7 @@ export const ColorSampler: React.FC = () => {
     <div className="bg-[#0c0c10] border border-white/5 p-4 rounded-2xl flex flex-col gap-4 text-left w-full">
       <div className="pb-2.5 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Image className="w-4 h-4 text-accent-gold" />
+          <ImageIcon className="w-4 h-4 text-accent-gold" />
           <span className="text-xs font-semibold text-white tracking-wider uppercase">截图字幕分析 (COLOR PICKER)</span>
         </div>
         
@@ -85,13 +91,14 @@ export const ColorSampler: React.FC = () => {
             className="h-28 border border-dashed border-white/10 hover:border-white/20 rounded-xl bg-white/[0.01] hover:bg-white/[0.02] transition cursor-pointer flex flex-col items-center justify-center gap-2"
             onClick={() => fileInputRef.current?.click()}
           >
-            <Image className="w-6 h-6 text-white/30" />
+            <ImageIcon className="w-6 h-6 text-white/30" />
             <span className="text-[0.625rem] text-text-secondary">上传剧照或截图参考</span>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
             {/* Display small preview */}
             <div className="relative h-20 rounded-lg overflow-hidden border border-white/5 bg-black">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
                 src={refScreenshot} 
                 alt="参考剧照预览（用于吸色器对比）" 

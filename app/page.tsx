@@ -28,9 +28,9 @@ export default function Home() {
         {workflowStep === 3 && <TheaterStep />}
       </div>
 
-      {/* Global Toast Logs System (Sonner Style Top-Center) - exact match to final NAS archived version for middle-top fade in/out */}
+      {/* Global Toast Logs System */}
       <div className="fixed top-[72px] left-1/2 -translate-x-1/2 z-[2200] flex flex-col items-center justify-start gap-2.5 pointer-events-none w-full max-w-sm px-4">
-        {logs.map((l, idx) => (
+        {logs.map((l) => (
           <div 
             key={l.id} 
             className={`px-4 py-2.5 rounded-xl border backdrop-blur-xl text-sm font-semibold tracking-wide shadow-[0_8px_30px_rgb(0,0,0,0.5)] transition-all duration-400 pointer-events-auto flex items-center w-full break-words

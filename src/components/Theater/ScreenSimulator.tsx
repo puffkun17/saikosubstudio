@@ -191,7 +191,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
     }
   };
 
-  // === 家庭观影环境 TV 遮罩（来自 NAS 成熟版本） ===
+  // === 家庭观影环境 TV 遮罩 ===
   const isCrt = theaterAspect === '4:3';
   const maskAspect = isCrt ? '1536/1288' : '1725/1058';
   const maskImg = isCrt ? '/tv-crt_v2.png' : '/tv-modern_v2.png';
@@ -248,6 +248,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
         }}
       >
         {/* TV Frame Mask Layer（电视机外壳 PNG，最上层 z-20） */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img 
           src={maskImg} 
           className="absolute inset-0 w-full h-full object-fill pointer-events-none z-20 drop-shadow-2xl" 

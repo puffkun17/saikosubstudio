@@ -155,7 +155,7 @@ export const SystemTray = () => {
           title="调节网页整体缩放"
         >
           <span className="text-[10px] opacity-50 uppercase font-bold tracking-wider">A±</span>
-          <span className="font-bold text-violet-400">{Math.round(scale * 100)}%</span>
+          <span className="font-bold text-violet-400" suppressHydrationWarning>{Math.round(scale * 100)}%</span>
         </button>
         <span
           className="text-[11px] font-mono text-white/30 tabular-nums tracking-wider"
