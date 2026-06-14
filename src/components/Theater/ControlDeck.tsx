@@ -24,7 +24,14 @@ const PRESETS = [
     desc: '深描边',
     styles: { zhFontSize: 24, enFontSize: 14, zhColor: '#FFFFFF', enColor: '#FFFFFF', zhOutline: '#6D4438', marginV: 30 }
   }
+;
+
+const SCENES = [
+  { id: "cinema", name: "影院", desc: "经典电影院" },
+  { id: "nature", name: "自然", desc: "户外光影" },
+  { id: "night", name: "夜景", desc: "低光环境" }
 ];
+
 
 export const ControlDeck: React.FC = () => {
   const { 
