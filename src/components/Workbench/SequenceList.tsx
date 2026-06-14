@@ -7,7 +7,7 @@ import { ChevronDown, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const SequenceList: React.FC = () => {
-  const { processedSubs, previewIndex, setPreviewIndex, setJumpLineVal, showAllSubs, setShowAllSubs, updateSubtitleText } = useStudioStore();
+  const { processedSubs, previewIndex, setPreviewIndex, setJumpLineVal, showAllSubs, setShowAllSubs } = useStudioStore();
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const prevIndexRef = useRef<number>(-1);

@@ -91,6 +91,9 @@ export interface StudioState {
   showAssHint: boolean;
   foundAssStyle: Partial<StyleSettings> | null;
   refScreenshot: string | null;
+  tmdbBackdropList: string[];
+  shuffleBackdrop: () => void;
+  updateSubtitleText: (index: number, text: string) => void;
   alignmentMode: 'standard' | 'industrial';
 
   // Actions
@@ -222,7 +225,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       get().addLog("当前影视没有其他备用剧照可选", "info");
       return;
     }
-    let available = tmdbBackdropList.filter(url => url !== tmdbBackdrop);
+    let available = tmdbBackdropList.filter((url: string) => url !== tmdbBackdrop);
     if (available.length === 0) available = tmdbBackdropList;
     
     const randIdx = Math.floor(Math.random() * available.length);

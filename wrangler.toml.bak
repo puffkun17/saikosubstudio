@@ -1,7 +1,0 @@
-name = "saikosubstudio"
-compatibility_date = "2025-06-01"
-compatibility_flags = [ "nodejs_compat" ]
-pages_build_output_dir = ".vercel/output/static"
-
-# nodejs_compat is required for @cloudflare/next-on-pages
-# because the adapter and some dependencies (jszip, etc.) use Node.js APIs.
