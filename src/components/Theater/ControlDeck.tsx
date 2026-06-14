@@ -24,7 +24,7 @@ const PRESETS = [
     desc: '深描边',
     styles: { zhFontSize: 24, enFontSize: 14, zhColor: '#FFFFFF', enColor: '#FFFFFF', zhOutline: '#6D4438', marginV: 30 }
   }
-;
+
 
 const SCENES = [
   { id: "cinema", name: "影院", desc: "经典电影院" },
