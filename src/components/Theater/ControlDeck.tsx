@@ -77,11 +77,11 @@ export const ControlDeck: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-row flex-wrap items-center gap-6 lg:gap-10 justify-between w-full font-mono py-1">
+    <div className="flex flex-row flex-wrap items-center gap-3 2xl:gap-6 justify-start xl:justify-end w-full font-mono py-1">
       {/* Aspect Ratio Cards */}
-      <div className="flex items-center gap-3">
-        <span className="text-xs text-neutral-400 uppercase tracking-widest font-bold whitespace-nowrap">画幅比例</span>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
+        <span className="hidden 2xl:inline text-xs text-neutral-400 uppercase tracking-widest font-bold whitespace-nowrap">画幅比例</span>
+        <div className="flex items-center gap-1.5">
           {aspectRatios.map(ar => {
             const isActive = theaterAspect === ar.id;
             let boxW = 18;
@@ -95,7 +95,7 @@ export const ControlDeck: React.FC = () => {
               <button
                 key={ar.id}
                 type="button"
-                className={`py-2 px-3.5 flex items-center gap-2 text-sm font-bold cursor-pointer transition-all duration-205 rounded-lg border
+                className={`py-1.5 px-2.5 2xl:py-2 2xl:px-3.5 flex items-center gap-1.5 text-xs 2xl:text-sm font-bold cursor-pointer transition-all duration-205 rounded-lg border
                   ${isActive 
                     ? 'glass-btn-ar-active' 
                     : 'glass-btn-ar text-neutral-400 hover:text-neutral-250 border-white/[0.04]'}`}
@@ -112,12 +112,12 @@ export const ControlDeck: React.FC = () => {
         </div>
       </div>
 
-      <div className="hidden xl:block w-[1px] h-6 bg-white/[0.06]" />
+      <div className="hidden 2xl:block w-[1px] h-6 bg-white/[0.06]" />
 
       {/* Background Cards */}
-      <div className="flex items-center gap-3">
-        <span className="text-xs text-neutral-400 uppercase tracking-widest font-bold whitespace-nowrap">模拟场景</span>
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2">
+        <span className="hidden 2xl:inline text-xs text-neutral-400 uppercase tracking-widest font-bold whitespace-nowrap">模拟场景</span>
+        <div className="flex items-center gap-1.5 flex-wrap">
           {SCENES.map(scene => {
             const isActive = sceneBackground === scene.id;
             const isCinemaWithBackdrop = scene.id === 'cinema' && Boolean(tmdbBackdrop);
@@ -126,7 +126,7 @@ export const ControlDeck: React.FC = () => {
               <button
                 key={scene.id}
                 type="button"
-                className={`py-2 px-3.5 flex items-center gap-2 text-sm font-bold cursor-pointer transition-all duration-205 rounded-lg border
+                className={`py-1.5 px-2.5 2xl:py-2 2xl:px-3.5 flex items-center gap-1.5 text-xs 2xl:text-sm font-bold cursor-pointer transition-all duration-205 rounded-lg border
                   ${isActive
                     ? 'glass-btn-ar-active'
                     : 'glass-btn-ar text-neutral-400 hover:text-neutral-250 border-white/[0.04]'}`}
@@ -144,7 +144,7 @@ export const ControlDeck: React.FC = () => {
               whileHover={{ scale: 1.02, y: -0.5 }}
               whileTap={{ scale: 0.98 }}
               type="button"
-              className="py-2 px-3.5 flex items-center gap-1.5 text-xs font-bold cursor-pointer text-violet-400 hover:text-violet-300 border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 rounded-lg transition-all duration-205 ml-1 flex-shrink-0"
+              className="py-1.5 px-2.5 2xl:py-2 2xl:px-3.5 flex items-center gap-1.5 text-xs font-bold cursor-pointer text-violet-400 hover:text-violet-300 border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 rounded-lg transition-all duration-205 ml-1 flex-shrink-0"
               onClick={shuffleBackdrop}
               title="从备选剧照池中随机换一张背景剧照"
             >
@@ -155,19 +155,19 @@ export const ControlDeck: React.FC = () => {
         </div>
       </div>
 
-      <div className="hidden xl:block w-[1px] h-6 bg-white/[0.06]" />
+      <div className="hidden 2xl:block w-[1px] h-6 bg-white/[0.06]" />
 
       {/* Preset Pills */}
-      <div className="flex items-center gap-3">
-        <span className="text-xs text-neutral-400 uppercase tracking-widest font-bold whitespace-nowrap">字幕预设</span>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
+        <span className="hidden 2xl:inline text-xs text-neutral-400 uppercase tracking-widest font-bold whitespace-nowrap">字幕预设</span>
+        <div className="flex items-center gap-1.5">
           {PRESETS.map(p => {
             const isActive = activePreset === p.id;
             return (
               <button
                 key={p.id}
                 type="button"
-                className={`py-2 px-3.5 flex items-center gap-2 text-sm font-bold cursor-pointer transition-all duration-205 rounded-lg border
+                className={`py-1.5 px-2.5 2xl:py-2 2xl:px-3.5 flex items-center gap-1.5 text-xs 2xl:text-sm font-bold cursor-pointer transition-all duration-205 rounded-lg border
                   ${isActive 
                     ? 'glass-btn-ar-active' 
                     : 'glass-btn-ar text-neutral-400 hover:text-neutral-250 border-white/[0.04]'}`}

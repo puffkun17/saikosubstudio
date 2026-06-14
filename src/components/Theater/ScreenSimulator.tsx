@@ -62,6 +62,8 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
   let bottomElement: React.ReactNode = null;
 
   if (activeSub) {
+    const normalizedText = (activeSub.text || '').replace(/\\N/gi, '\n');
+
     if (activeSub.type === 'note' || activeSub.type === 'commentary') {
       topElement = (
         <div 
@@ -75,11 +77,11 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
             whiteSpace: 'pre-wrap'
           }}
         >
-          {activeSub.text || ''}
+          {normalizedText}
         </div>
       );
     } else if (activeSub.type === 'lyrics') {
-      const parts = (activeSub.text || '').split('\n');
+      const parts = normalizedText.split('\n');
       const lyricZh = parts[0] || '';
       const lyricEn = parts[1] || '';
       const lyricEl = (
@@ -125,7 +127,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
         bottomElement = lyricEl;
       }
     } else {
-      const parts = (activeSub.text || '').split('\n');
+      const parts = normalizedText.split('\n');
       const zh = parts[0] || '';
       const en = parts[1] || '';
       bottomElement = (
@@ -241,7 +243,8 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
           aspectRatio: maskAspect,
           maxWidth: '100%',
           maxHeight: '100%',
-          height: '100%'
+          height: '100%',
+          minHeight: 0
         }}
       >
         {/* TV Frame Mask Layer（电视机外壳 PNG，最上层 z-20） */}
@@ -259,6 +262,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
             top: screenPos.top,
             width: screenPos.width,
             height: screenPos.height,
+            containerType: 'size',
           }}
         >
           {/* Inner Movie Canvas（使用大宽度强制扩展，配合 maxWidth 限制） */}

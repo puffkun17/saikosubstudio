@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { ScreenSimulator } from '@/components/Theater/ScreenSimulator';
 import { SimulatorBoundary } from '@/components/Theater/SimulatorBoundary';
 import { ControlDeck } from '@/components/Theater/ControlDeck';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
-import { Save, ChevronLeft, Sliders } from 'lucide-react';
+import { ChevronLeft, Sliders } from 'lucide-react';
 import { SubtitleDataSlot, BackdropSlot } from '@/types/subtitleTypes';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -15,13 +15,11 @@ export const TheaterStep: React.FC = () => {
   const {
     processedSubs,
     previewIndex,
-    setPreviewIndex,
     isTemplateLab,
     restartSystem,
     setWorkflowStep,
     isSettingsOpen,
     setIsSettingsOpen,
-    saveToLibrary,
     customStyle,
     sceneBackground,
     setSceneBackground,
@@ -32,9 +30,9 @@ export const TheaterStep: React.FC = () => {
     triggerTempGuides,
   } = useStudioStore();
 
-  const percentVal = processedSubs && processedSubs.length > 1
-    ? ((previewIndex / (processedSubs.length - 1)) * 100).toFixed(1)
-    : '0.0';
+  const safePreviewIndex = processedSubs && processedSubs.length > 0
+    ? Math.min(Math.max(previewIndex, 0), processedSubs.length - 1)
+    : 0;
 
   const handleBack = () => {
     if (isTemplateLab) {
@@ -69,7 +67,7 @@ export const TheaterStep: React.FC = () => {
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden relative bg-[#050507]">
       
       {/* 顶部导航栏 */}
-      <div className="flex justify-between items-center px-6 h-[52px] bg-[#030305]/40 backdrop-blur-md border-b border-white/[0.06] z-50 flex-shrink-0">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center px-4 md:px-6 py-2 min-h-[52px] bg-[#030305]/40 backdrop-blur-md border-b border-white/[0.06] z-50 flex-shrink-0 gap-3">
         <div className="flex items-center gap-4">
           <motion.button 
             whileHover={{ scale: 1.03, y: -0.5 }}
@@ -88,7 +86,7 @@ export const TheaterStep: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-start xl:justify-end gap-2.5 flex-wrap w-full xl:w-auto">
           <ControlDeck />
           
           <button 
@@ -107,13 +105,13 @@ export const TheaterStep: React.FC = () => {
       {/* 主体内容 */}
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* Theater 预览区域 */}
-        <div className="flex-1 flex items-center justify-center p-8 relative">
+        <div className="flex-1 flex items-center justify-center p-3 md:p-6 xl:p-8 relative min-w-0">
           <SimulatorBoundary>
             <ScreenSimulator
               subtitle={subtitleSlot}
               backdrop={backdropSlot}
               style={customStyle}
-              previewIndex={previewIndex}
+              previewIndex={safePreviewIndex}
               theaterAspect={theaterAspect}
               guides={{ show: showGuides, temp: tempShowGuides }}
               triggerTempGuides={triggerTempGuides}
