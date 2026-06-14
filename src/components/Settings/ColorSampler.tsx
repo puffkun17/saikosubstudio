@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
-import { Pipette, Image, EyeOff, ShieldAlert } from 'lucide-react';
+import { Pipette, Image, ShieldAlert } from 'lucide-react';
 
 export const ColorSampler: React.FC = () => {
   const { 
@@ -11,20 +11,14 @@ export const ColorSampler: React.FC = () => {
     refScreenshot, 
     setRefScreenshot, 
     addLog,
-    lang
   } = useStudioStore();
 
   const [overlayOpacity, setOverlayOpacity] = useState(0.5);
   const [pickColorTarget, setPickColorTarget] = useState<'zhColor' | 'zhOutline' | 'enColor'>('zhColor');
-  const [eyeDropperSupported, setEyeDropperSupported] = useState(false);
+  const [eyeDropperSupported] = useState(() => typeof window !== "undefined" && "EyeDropper" in window);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'EyeDropper' in window) {
-      setEyeDropperSupported(true);
-    }
-  }, []);
 
   const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -58,7 +52,7 @@ export const ColorSampler: React.FC = () => {
         ...customStyle,
         [pickColorTarget]: color
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       // User cancelled
     }
   };

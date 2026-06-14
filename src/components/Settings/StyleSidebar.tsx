@@ -124,7 +124,7 @@ export const StyleSidebar: React.FC = () => {
     setIsLyricsExpanded(!!hasLyrics);
   }, [hasLyrics]);
 
-  const handleApplyPreset = (preset: any) => {
+  const handleApplyPreset = (preset: Record<string, any>) => {
     setActivePreset(preset.id);
     const updated = {
       ...customStyle,
