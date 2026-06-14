@@ -94,7 +94,7 @@ export const ColorSampler: React.FC = () => {
             <div className="relative h-20 rounded-lg overflow-hidden border border-white/5 bg-black">
               <img 
                 src={refScreenshot} 
-                alt="Reference Screenshot" 
+                alt="参考剧照预览（用于吸色器对比）" 
                 className="w-full h-full object-cover opacity-75"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-2">

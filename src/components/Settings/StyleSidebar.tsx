@@ -112,17 +112,14 @@ export const StyleSidebar: React.FC = () => {
 
   const [showTemplateSave, setShowTemplateSave] = useState(false);
   const [templateNameInput, setTemplateNameInput] = useState('');
-  const [isLyricsExpanded, setIsLyricsExpanded] = useState(false);
   const [openPicker, setOpenPicker] = useState<string | null>(null);
 
   const hasLyrics = processedSubs?.some(sub => {
+  const isLyricsExpanded = !!hasLyrics;
     if (!sub.text) return false;
     return /[♪♫♬♩🎵🎶]/.test(sub.text);
   });
 
-  useEffect(() => {
-    setIsLyricsExpanded(!!hasLyrics);
-  }, [hasLyrics]);
 
   const handleApplyPreset = (preset: Record<string, any>) => {
     setActivePreset(preset.id);
