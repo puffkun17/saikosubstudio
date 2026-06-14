@@ -3,15 +3,18 @@
 import React from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 
-export const TimelineControls: React.FC = () => {
+interface TimelineControlsProps {
+  variant?: 'full' | 'compact';
+}
+
+export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'full' }) => {
   const { 
     processedSubs, 
     jumpLineVal, 
     setJumpLineVal, 
     setPreviewIndex, 
     showAllSubs, 
-    setShowAllSubs,
-    addLog
+    setShowAllSubs
   } = useStudioStore();
 
   const handleJumpToLine = (e?: React.FormEvent) => {
@@ -55,6 +58,30 @@ export const TimelineControls: React.FC = () => {
     (Math.max(1, Math.min(parseInt(jumpLineVal || '1', 10), processedSubs.length)) / 
     processedSubs.length) * 100
   ).toFixed(1);
+
+  if (variant === 'compact') {
+    return (
+      <div className="w-full min-w-[220px] max-w-[420px] bg-[#121216]/55 border border-white/5 px-3 py-2 rounded-xl flex items-center gap-3">
+        <input
+          type="range"
+          min="1"
+          max={processedSubs.length}
+          value={parseInt(jumpLineVal || '1', 10)}
+          onChange={e => {
+            setJumpLineVal(e.target.value);
+            setPreviewIndex(parseInt(e.target.value, 10) - 1);
+          }}
+          onMouseUp={() => handleJumpToLine()}
+          onTouchEnd={() => handleJumpToLine()}
+          className="v9-timeline-dial-slider flex-1 min-w-0"
+          aria-label="字幕预览进度"
+        />
+        <span className="text-[10px] font-mono text-[#f2a900] w-12 text-right tabular-nums">
+          {jumpPercent}%
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="v9-dial-slider-container w-full md:w-auto bg-[#121216]/50 border border-white/5 p-3 rounded-2xl flex items-center justify-between gap-4">

@@ -5,6 +5,7 @@ import { useStudioStore } from '@/store/useStudioStore';
 import { ScreenSimulator } from '@/components/Theater/ScreenSimulator';
 import { SimulatorBoundary } from '@/components/Theater/SimulatorBoundary';
 import { ControlDeck } from '@/components/Theater/ControlDeck';
+import { TimelineControls } from '@/components/Workbench/TimelineControls';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
 import { ChevronLeft, Sliders } from 'lucide-react';
@@ -87,6 +88,7 @@ export const TheaterStep: React.FC = () => {
         </div>
 
         <div className="flex items-center justify-start xl:justify-end gap-2.5 flex-wrap w-full xl:w-auto">
+          <TimelineControls variant="compact" />
           <ControlDeck />
           
           <button 

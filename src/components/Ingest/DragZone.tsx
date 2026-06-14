@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { useStudioStore } from '@/store/useStudioStore';
+import { useStudioStore, type Subfile } from '@/store/useStudioStore';
 import { decodeBuffer, detectLanguageByContent, checkIsBilingual } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
-import { UploadCloud, Folder, FileText, CheckCircle2 } from 'lucide-react';
+import { UploadCloud, Folder, FileText, CheckCircle2, Archive, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Particle {
@@ -18,6 +18,98 @@ interface Particle {
   angle: number;
   speed: number;
 }
+
+type ParseStatus = 'reading' | 'analyzing' | 'success' | 'warning' | 'skipped';
+
+interface ParsingFileState {
+  name: string;
+  size: number;
+  status: ParseStatus;
+  note?: string;
+}
+
+type PreflightKind = 'subtitle' | 'zip' | 'archive-unsupported' | 'unsupported';
+
+interface PreflightItem {
+  file: File;
+  name: string;
+  extension: string;
+  kind: PreflightKind;
+  label: string;
+  accepted: boolean;
+  note: string;
+}
+
+interface TrackSummary {
+  name: string;
+  format: 'ASS' | 'SRT';
+  lang: string;
+  isBilingual: boolean;
+  isCommentary: boolean;
+  source: 'file' | 'zip';
+}
+
+const getExtension = (name: string) => {
+  const idx = name.lastIndexOf('.');
+  return idx >= 0 ? name.slice(idx + 1).toLowerCase() : '';
+};
+
+const isSubtitleExtension = (ext: string) => ext === 'srt' || ext === 'ass';
+
+const createPreflightItem = (file: File): PreflightItem => {
+  const extension = getExtension(file.name);
+  if (isSubtitleExtension(extension)) {
+    return {
+      file,
+      name: file.name,
+      extension,
+      kind: 'subtitle',
+      label: extension.toUpperCase(),
+      accepted: true,
+      note: extension === 'ass' ? '可读取 ASS 样式与字幕文本' : '可读取 SRT 时间轴与文本',
+    };
+  }
+  if (extension === 'zip') {
+    return {
+      file,
+      name: file.name,
+      extension,
+      kind: 'zip',
+      label: 'ZIP',
+      accepted: true,
+      note: '将预扫描压缩包内的 ASS/SRT 字幕',
+    };
+  }
+  if (extension === '7z' || extension === 'rar') {
+    return {
+      file,
+      name: file.name,
+      extension,
+      kind: 'archive-unsupported',
+      label: extension.toUpperCase(),
+      accepted: false,
+      note: '浏览器端暂不解压，请先解压或转成 ZIP',
+    };
+  }
+  return {
+    file,
+    name: file.name,
+    extension: extension || 'unknown',
+    kind: 'unsupported',
+    label: extension ? extension.toUpperCase() : '未知',
+    accepted: false,
+    note: '仅支持 ASS / SRT / ZIP',
+  };
+};
+
+const describeTrack = (file: Subfile) => {
+  if (file.isCommentary || file.lang === 'commentary') return '解说/导轨';
+  if (file.isBilingual || file.lang === 'bilingual') return '已有双语';
+  if (file.lang === 'zh-CN') return '简体中文单语';
+  if (file.lang === 'zh-TW') return '繁体中文单语';
+  if (file.lang === 'en') return '英文单语';
+  return '未知语种';
+};
 
 const ParticleCanvas: React.FC<{ mode: 'idle' | 'hover' | 'dragging' | 'parsing' }> = ({ mode }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -167,17 +259,19 @@ const ParticleCanvas: React.FC<{ mode: 'idle' | 'hover' | 'dragging' | 'parsing'
 };
 
 export const DragZone: React.FC = () => {
-  const { isDragging, setIsDragging, processFiles, addLog, searchTmdb, selectTmdbSuggestion, tmdbSuggestions } = useStudioStore();
+  const { isDragging, setIsDragging, processFiles, addLog, searchTmdb } = useStudioStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
 
   // Parsing states
   const [isParsing, setIsParsing] = useState(false);
-  const [parsingFiles, setParsingFiles] = useState<{ name: string; size: number; status: 'reading' | 'analyzing' | 'success' }[]>([]);
+  const [parsingFiles, setParsingFiles] = useState<ParsingFileState[]>([]);
   const [isZoneActive, setIsZoneActive] = useState(false);
   const [scanningLogs, setScanningLogs] = useState<string[]>([]); // for extended cool scanning log with scrolling info prompts
   const [currentHoloInfo, setCurrentHoloInfo] = useState<string>(""); // for unified Chinese info projected on the central animation
+  const [preflightItems, setPreflightItems] = useState<PreflightItem[]>([]);
+  const [trackSummaries, setTrackSummaries] = useState<TrackSummary[]>([]);
 
   const appendScanLog = (msg: string) => {
     setScanningLogs(prev => {
@@ -204,19 +298,20 @@ export const DragZone: React.FC = () => {
     });
   };
 
-  const processZipFile = async (zipFile: File, detectedFiles: any[]) => {
+  const processZipFile = async (zipFile: File, detectedFiles: Subfile[], summaries: TrackSummary[]) => {
     try {
       const zip = await JSZip.loadAsync(zipFile);
       const promises: Promise<void>[] = [];
+      let ignoredCount = 0;
 
       zip.forEach((relativePath, zipEntry) => {
-        if (!zipEntry.dir && (zipEntry.name.endsWith('.srt') || zipEntry.name.endsWith('.ass'))) {
+        const ext = getExtension(zipEntry.name);
+        if (!zipEntry.dir && isSubtitleExtension(ext)) {
           const promise = zipEntry.async('arraybuffer').then((buffer) => {
             const decoded = decodeBuffer(buffer);
             const isBilingual = checkIsBilingual(decoded.text);
             const lang = isBilingual ? 'bilingual' : detectLanguageByContent(decoded.text);
-            
-            detectedFiles.push({
+            const subfile: Subfile = {
               id: `zip_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
               name: zipEntry.name.split('/').pop() || zipEntry.name,
               text: decoded.text,
@@ -224,51 +319,92 @@ export const DragZone: React.FC = () => {
               isBilingual,
               isCommentary: /(commentary|comment|director|解说|导轨)/i.test(zipEntry.name),
               size: decoded.text.length
+            };
+            detectedFiles.push(subfile);
+            summaries.push({
+              name: subfile.name,
+              format: ext === 'ass' ? 'ASS' : 'SRT',
+              lang: describeTrack(subfile),
+              isBilingual,
+              isCommentary: subfile.isCommentary,
+              source: 'zip',
             });
           });
           promises.push(promise);
+        } else if (!zipEntry.dir) {
+          ignoredCount += 1;
         }
       });
 
       await Promise.all(promises);
-    } catch (e: any) {
-      addLog(`解压缩包 ${zipFile.name} 失败: ${e.message}`, "error");
+      if (promises.length === 0) {
+        addLog(`ZIP 内未发现 ASS/SRT 字幕: ${zipFile.name}`, 'error');
+      } else if (ignoredCount > 0) {
+        addLog(`ZIP 已读取 ${promises.length} 条字幕，忽略 ${ignoredCount} 个非字幕文件`, 'info');
+      }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      addLog(`解压 ZIP ${zipFile.name} 失败: ${message}`, "error");
     }
   };
 
   const handleFilesProcess = async (filesList: File[]) => {
-    const validFiles = filesList.filter(file => {
-      const nameLower = file.name.toLowerCase();
-      return nameLower.endsWith('.zip') || nameLower.endsWith('.srt') || nameLower.endsWith('.ass');
-    });
+    const preflight = filesList.map(createPreflightItem);
+    setPreflightItems(preflight);
+    setTrackSummaries([]);
 
-    if (validFiles.length === 0) return;
+    const validItems = preflight.filter(item => item.accepted);
+    const rejectedItems = preflight.filter(item => !item.accepted);
+
+    if (rejectedItems.length > 0) {
+      const archiveCount = rejectedItems.filter(item => item.kind === 'archive-unsupported').length;
+      const unsupportedCount = rejectedItems.length - archiveCount;
+      if (archiveCount > 0) {
+        addLog(`检测到 ${archiveCount} 个 RAR/7Z 压缩包：浏览器端暂不支持直接解压`, 'error');
+      }
+      if (unsupportedCount > 0) {
+        addLog(`已忽略 ${unsupportedCount} 个不支持格式文件`, 'error');
+      }
+    }
+
+    if (validItems.length === 0) {
+      setScanningLogs([]);
+      setCurrentHoloInfo('请上传 ASS / SRT / ZIP 字幕文件');
+      return;
+    }
 
     // Show visual ingest scanning phase
     setIsParsing(true);
-    setParsingFiles(validFiles.map(f => ({ name: f.name, size: f.size, status: 'reading' })));
+    setParsingFiles(preflight.map(item => ({
+      name: item.name,
+      size: item.file.size,
+      status: item.accepted ? 'reading' : 'skipped',
+      note: item.note,
+    })));
     setScanningLogs([]);
 
-    const detectedFiles: any[] = [];
+    const detectedFiles: Subfile[] = [];
+    const summaries: TrackSummary[] = [];
 
     // Extended scanning phases to give backend API time and create cool UX with scrolling info
-    appendScanLog('INITIALIZING SUBTITLE PROJECTOR...');
+    appendScanLog(`PRECHECK COMPLETE: ${validItems.length} accepted / ${rejectedItems.length} skipped`);
     await sleep(450);
 
     appendScanLog('DETECTING FILE STRUCTURE...');
     await sleep(550);
 
-    for (const file of validFiles) {
-      const nameLower = file.name.toLowerCase();
-      if (nameLower.endsWith('.zip')) {
-        await processZipFile(file, detectedFiles);
+    for (const item of validItems) {
+      const file = item.file;
+      if (item.kind === 'zip') {
+        appendScanLog(`UNPACKING ZIP: ${file.name}`);
+        await processZipFile(file, detectedFiles, summaries);
       } else {
         try {
           const text = await readAndDecodeFile(file);
           const isBilingual = checkIsBilingual(text);
           const lang = isBilingual ? 'bilingual' : detectLanguageByContent(text);
-          
-          detectedFiles.push({
+          const ext = getExtension(file.name);
+          const subfile: Subfile = {
             id: `file_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
             name: file.name,
             text,
@@ -276,22 +412,44 @@ export const DragZone: React.FC = () => {
             isBilingual,
             isCommentary: /(commentary|comment|director|解说|导轨)/i.test(file.name),
             size: text.length
+          };
+          detectedFiles.push(subfile);
+          summaries.push({
+            name: file.name,
+            format: ext === 'ass' ? 'ASS' : 'SRT',
+            lang: describeTrack(subfile),
+            isBilingual,
+            isCommentary: subfile.isCommentary,
+            source: 'file',
           });
-        } catch (e: any) {
-          addLog(`读取文件 ${file.name} 失败: ${e.message}`, "error");
+        } catch (e: unknown) {
+          const message = e instanceof Error ? e.message : String(e);
+          addLog(`读取文件 ${file.name} 失败: ${message}`, "error");
         }
       }
     }
 
+    setTrackSummaries(summaries);
+
     if (detectedFiles.length > 0) {
       appendScanLog('ANALYZING SUBTITLE TRACKS...');
-      setParsingFiles(validFiles.map(f => ({ name: f.name, size: f.size, status: 'analyzing' })));
+      setParsingFiles(preflight.map(item => ({
+        name: item.name,
+        size: item.file.size,
+        status: item.accepted ? 'analyzing' : 'skipped',
+        note: item.note,
+      })));
       await sleep(650);
+
+      const bilingualCount = summaries.filter(item => item.isBilingual).length;
+      const assCount = summaries.filter(item => item.format === 'ASS').length;
+      const srtCount = summaries.filter(item => item.format === 'SRT').length;
+      appendScanLog(`TRACK SUMMARY: ${assCount} ASS / ${srtCount} SRT / ${bilingualCount} bilingual`);
 
       appendScanLog('QUERYING CLOUD METADATA (TMDB)...');
       let displayTitle = '影视数据';
-      if (validFiles[0]) {
-        const guess = validFiles[0].name.replace(/\.[^.]+$/, '').replace(/[._-]+/g, ' ').trim();
+      if (validItems[0]) {
+        const guess = validItems[0].name.replace(/\.[^.]+$/, '').replace(/[._-]+/g, ' ').trim();
         if (guess.length > 2) {
           displayTitle = guess.length > 28 ? guess.slice(0, 26) + '…' : guess;
           await searchTmdb(guess).catch(() => {});
@@ -304,7 +462,12 @@ export const DragZone: React.FC = () => {
       await sleep(550);
 
       appendScanLog('RENDERING CINEMATIC PREVIEW...');
-      setParsingFiles(validFiles.map(f => ({ name: f.name, size: f.size, status: 'success' })));
+      setParsingFiles(preflight.map(item => ({
+        name: item.name,
+        size: item.file.size,
+        status: item.accepted ? 'success' : 'skipped',
+        note: item.note,
+      })));
       await sleep(450);
 
       appendScanLog('FINALIZING INGEST...');
@@ -488,11 +651,13 @@ export const DragZone: React.FC = () => {
                   className="flex justify-between items-center px-3 py-1 bg-white/[0.015] border border-white/[0.03] rounded text-white/80"
                 >
                   <span className="truncate pr-2">{pf.name}</span>
-                  <span className="font-bold tracking-wider text-[10px] text-white/60">
-                    {pf.status === 'reading' && 'READING'}
-                    {pf.status === 'analyzing' && 'ANALYZING'}
-                    {pf.status === 'success' && 'READY'}
-                  </span>
+	                  <span className="font-bold tracking-wider text-[10px] text-white/60">
+	                    {pf.status === 'reading' && 'READING'}
+	                    {pf.status === 'analyzing' && 'ANALYZING'}
+	                    {pf.status === 'success' && 'READY'}
+	                    {pf.status === 'warning' && 'CHECK'}
+	                    {pf.status === 'skipped' && 'SKIPPED'}
+	                  </span>
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -617,51 +782,113 @@ export const DragZone: React.FC = () => {
               <div className="text-xs text-neutral-400 tracking-wide mt-1">拖入文件投射到画框</div>
             </div>
 
-            <div className="flex gap-3 text-xs font-mono tracking-[1px] text-neutral-400 mt-2">
-              <span>SRT</span><span className="text-white/20">·</span><span>ASS</span><span className="text-white/20">·</span><span>ZIP</span>
-            </div>
-          </div>
-        )}
-      </motion.div>
+	            <div className="flex gap-3 text-xs font-mono tracking-[1px] text-neutral-400 mt-2">
+	              <span>SRT</span><span className="text-white/20">·</span><span>ASS</span><span className="text-white/20">·</span><span>ZIP</span>
+	            </div>
+	          </div>
+	        )}
+	      </motion.div>
 
-      {/* Refined action buttons — stronger cinematic glass, better hierarchy and breathing */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-center mt-9 w-full sm:w-auto px-4 z-20">
+	      <div className="mt-5 w-full max-w-[920px] grid grid-cols-1 md:grid-cols-3 gap-3 px-4 z-20">
+	        <div className="flex items-start gap-3 rounded-xl border border-white/[0.05] bg-white/[0.012] px-4 py-3">
+	          <FileText className="w-4 h-4 text-violet-400 mt-0.5 shrink-0" />
+	          <div className="min-w-0">
+	            <div className="text-xs font-bold text-white/80">字幕文件</div>
+	            <div className="text-[11px] text-neutral-500 leading-relaxed mt-0.5">自动判断 ASS / SRT、单语、已有双语、解说导轨。</div>
+	          </div>
+	        </div>
+	        <div className="flex items-start gap-3 rounded-xl border border-white/[0.05] bg-white/[0.012] px-4 py-3">
+	          <Archive className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+	          <div className="min-w-0">
+	            <div className="text-xs font-bold text-white/80">ZIP 预扫描</div>
+	            <div className="text-[11px] text-neutral-500 leading-relaxed mt-0.5">读取压缩包内的 ASS/SRT，忽略图片、文本和其他资源。</div>
+	          </div>
+	        </div>
+	        <div className="flex items-start gap-3 rounded-xl border border-white/[0.05] bg-white/[0.012] px-4 py-3">
+	          <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+	          <div className="min-w-0">
+	            <div className="text-xs font-bold text-white/80">RAR / 7Z</div>
+	            <div className="text-[11px] text-neutral-500 leading-relaxed mt-0.5">浏览器端不直接解压，请先解压或转成 ZIP。</div>
+	          </div>
+	        </div>
+	      </div>
+
+	      {(preflightItems.length > 0 || trackSummaries.length > 0) && (
+	        <div className="mt-4 w-full max-w-[920px] px-4 z-20">
+	          <div className="rounded-2xl border border-white/[0.055] bg-black/30 overflow-hidden">
+	            {preflightItems.length > 0 && (
+	              <div className="p-3 border-b border-white/[0.045]">
+	                <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/35 mb-2">上传预检</div>
+	                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+	                  {preflightItems.slice(0, 6).map((item) => (
+	                    <div key={`${item.name}-${item.file.size}`} className="flex items-center gap-2 text-xs min-w-0">
+	                      <span className={`px-1.5 py-0.5 rounded font-mono text-[10px] ${item.accepted ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
+	                        {item.label}
+	                      </span>
+	                      <span className="truncate text-white/70">{item.name}</span>
+	                      <span className="text-white/30 truncate hidden sm:inline">{item.note}</span>
+	                    </div>
+	                  ))}
+	                </div>
+	              </div>
+	            )}
+	            {trackSummaries.length > 0 && (
+	              <div className="p-3">
+	                <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/35 mb-2">轨道识别</div>
+	                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+	                  {trackSummaries.slice(0, 6).map((item) => (
+	                    <div key={`${item.name}-${item.source}`} className="flex items-center gap-2 text-xs min-w-0">
+	                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+	                      <span className="px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-300 font-mono text-[10px]">{item.format}</span>
+	                      <span className="text-white/70 truncate">{item.lang}</span>
+	                      <span className="text-white/30 truncate">{item.name}</span>
+	                    </div>
+	                  ))}
+	                </div>
+	              </div>
+	            )}
+	          </div>
+	        </div>
+	      )}
+
+	      {/* Refined action buttons — stronger cinematic glass, better hierarchy and breathing */}
+	      <div className="flex flex-col sm:flex-row gap-4 justify-center mt-9 w-full sm:w-auto px-4 z-20">
         <button 
           onClick={() => fileInputRef.current?.click()}
           className="group w-full sm:w-auto px-9 py-3.5 rounded-2xl text-sm font-mono uppercase tracking-[0.12em] font-semibold cursor-pointer transition-all duration-200 
             bg-white/[0.022] hover:bg-violet-500/5 border border-white/[0.055] hover:border-violet-500/30 
             text-white/90 hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.35)] hover:shadow-[0_0_18px_rgba(168,85,247,0.12)] active:scale-[0.985]"
-        >
-          浏览文件 / ZIP
-        </button>
+	        >
+	          <UploadCloud className="inline-block w-4 h-4 mr-2 align-[-2px] text-violet-400" />
+	          浏览文件 / ZIP
+	        </button>
         
         <button 
           onClick={() => folderInputRef.current?.click()}
           className="group w-full sm:w-auto px-9 py-3.5 rounded-2xl text-sm font-mono uppercase tracking-[0.12em] font-semibold cursor-pointer transition-all duration-200 
             bg-white/[0.01] hover:bg-white/[0.035] border border-white/[0.04] hover:border-white/15 
             text-neutral-400 hover:text-neutral-100 shadow-[0_2px_8px_rgba(0,0,0,0.35)] hover:shadow-[0_0_14px_rgba(255,255,255,0.06)] active:scale-[0.985]"
-        >
-          扫描文件夹
-        </button>
+	        >
+	          <Folder className="inline-block w-4 h-4 mr-2 align-[-2px] text-neutral-300" />
+	          扫描文件夹
+	        </button>
       </div>
 
       <input 
         ref={fileInputRef} 
-        type="file" 
-        multiple 
-        accept=".srt,.ass,.zip" 
+	        type="file" 
+	        multiple 
+	        accept=".srt,.ass,.zip,.rar,.7z" 
         className="hidden" 
         onChange={(e) => handleFilesProcess(Array.from(e.target.files || []))} 
       />
-      <input 
-        ref={folderInputRef} 
-        type="file" 
-        // @ts-ignore
-        webkitdirectory="true" 
-        directory="true" 
-        className="hidden" 
-        onChange={(e) => handleFilesProcess(Array.from(e.target.files || []))} 
-      />
+	      <input 
+	        ref={folderInputRef} 
+	        type="file" 
+	        {...({ webkitdirectory: 'true', directory: 'true' } as React.InputHTMLAttributes<HTMLInputElement>)}
+	        className="hidden" 
+	        onChange={(e) => handleFilesProcess(Array.from(e.target.files || []))} 
+	      />
     </div>
   );
 };
