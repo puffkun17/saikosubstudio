@@ -4,8 +4,16 @@ import React from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { Film, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
+import type { StyleSettings } from '@/utils/subtitleCore';
 
-const PRESETS = [
+type Preset = {
+  id: string;
+  name: string;
+  desc: string;
+  styles: Partial<StyleSettings>;
+};
+
+const PRESETS: Preset[] = [
   {
     id: 'netflix',
     name: 'Netflix',
@@ -48,7 +56,7 @@ export const ControlDeck: React.FC = () => {
     shuffleBackdrop
   } = useStudioStore();
 
-  const handleApplyPreset = (preset: any) => {
+  const handleApplyPreset = (preset: Preset) => {
     setActivePreset(preset.id);
     const updated = { ...customStyle, ...preset.styles };
     setCustomStyle(updated);
@@ -109,12 +117,28 @@ export const ControlDeck: React.FC = () => {
       {/* Background Cards */}
       <div className="flex items-center gap-3">
         <span className="text-xs text-neutral-400 uppercase tracking-widest font-bold whitespace-nowrap">模拟场景</span>
-        <div className="flex items-center gap-2">
-          <div className="py-2 px-3.5 flex items-center gap-2 text-sm font-bold rounded-lg border glass-btn-ar-active select-none">
-            <span className="w-2 h-2 rounded-full flex-shrink-0 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-            <Film className="w-4 h-4 text-violet-400" />
-            <span>剧照</span>
-          </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {SCENES.map(scene => {
+            const isActive = sceneBackground === scene.id;
+            const isCinemaWithBackdrop = scene.id === 'cinema' && Boolean(tmdbBackdrop);
+
+            return (
+              <button
+                key={scene.id}
+                type="button"
+                className={`py-2 px-3.5 flex items-center gap-2 text-sm font-bold cursor-pointer transition-all duration-205 rounded-lg border
+                  ${isActive
+                    ? 'glass-btn-ar-active'
+                    : 'glass-btn-ar text-neutral-400 hover:text-neutral-250 border-white/[0.04]'}`}
+                onClick={() => setSceneBackground(scene.id)}
+                title={scene.desc}
+              >
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-white/20'}`} />
+                {scene.id === 'cinema' && <Film className="w-4 h-4 text-violet-400" />}
+                <span>{isCinemaWithBackdrop ? '剧照' : scene.name}</span>
+              </button>
+            );
+          })}
           {tmdbBackdrop && tmdbBackdropList.length > 1 && (
             <motion.button
               whileHover={{ scale: 1.02, y: -0.5 }}

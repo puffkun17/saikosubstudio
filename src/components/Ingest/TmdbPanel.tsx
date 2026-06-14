@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useStudioStore, TmdbMetadata } from '@/store/useStudioStore';
+import { useStudioStore, type TmdbSuggestion } from '@/store/useStudioStore';
 import { Search, Film, Star, X, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -24,12 +24,11 @@ export const TmdbPanel: React.FC = () => {
     setTmdbManualInput,
     tmdbSuggestions,
     selectedSuggestion,
-    searchTmdb,
     selectTmdbSuggestion,
     isSearchingTmdb
   } = useStudioStore();
 
-  const [pendingSuggestion, setPendingSuggestion] = useState<any>(null);
+  const [pendingSuggestion, setPendingSuggestion] = useState<TmdbSuggestion | null>(null);
   const rtScore = tmdbData ? getRottenTomatoesScore(tmdbData.title, tmdbData.voteAverage) : null;
 
   const handleManualSearch = async () => {
@@ -244,7 +243,7 @@ export const TmdbPanel: React.FC = () => {
                     <select
                       className="bg-white/[0.02] border border-white/[0.06] focus:border-violet-500/30 focus:bg-white/[0.04] rounded-xl py-3 px-4 text-white text-sm outline-none transition-all cursor-pointer flex-1"
                       value={tmdbManualInput.type}
-                      onChange={e => setTmdbManualInput({ ...tmdbManualInput, type: e.target.value as any })}
+                      onChange={e => setTmdbManualInput({ ...tmdbManualInput, type: e.target.value as 'movie' | 'tv' })}
                     >
                       <option value="movie" className="bg-[#0b0b12] text-white">电影 (Movie)</option>
                       <option value="tv" className="bg-[#0b0b12] text-white">剧集 (TV Show)</option>
@@ -331,9 +330,9 @@ export const TmdbPanel: React.FC = () => {
                                 <span className="text-xs font-medium text-white/50 bg-white/5 px-1.5 py-0.5 rounded">
                                   {mediaType}
                                 </span>
-                                {s.vote_average > 0 && (
+                                {(s.vote_average ?? 0) > 0 && (
                                   <span className="text-xs text-violet-400 font-mono flex items-center gap-0.5">
-                                    ★ {s.vote_average.toFixed(1)}
+                                    ★ {(s.vote_average ?? 0).toFixed(1)}
                                   </span>
                                 )}
                               </div>
