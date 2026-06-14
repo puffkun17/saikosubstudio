@@ -97,7 +97,7 @@ export const SystemTray = () => {
         bg-[#030305]/40 backdrop-blur-md border-b border-white/[0.06]
         justify-between transition-colors duration-300"
     >
-      {/* ── Left: breadcrumb navigation ──────────────────────────────── */}
+      {/* ── Left: brand + nav ──────────────────────────────── */}
       <div className="flex items-center gap-2 text-[12px] font-mono tracking-tight min-w-0">
         <Link
           href="/"
