@@ -561,24 +561,24 @@ export const DragZone: React.FC = () => {
     const activeStepIndex = Math.max(0, PHASE_STEPS.findIndex(step => step.id === ingestPhase));
     return (
       <div className="w-full max-w-5xl mx-auto relative flex flex-col items-center justify-center min-h-[520px] px-4">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#a855f7_0%,transparent_72%)] opacity-[0.035] pointer-events-none -z-10" />
-        <div className="absolute inset-0 bg-gradient-to-b from-violet-950/[0.018] to-transparent pointer-events-none -z-10" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#c5a46e_0%,transparent_72%)] opacity-[0.032] pointer-events-none -z-10" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#c5a46e]/[0.012] to-transparent pointer-events-none -z-10" />
         <ParticleCanvas mode="parsing" />
 
         <div className="relative z-10 w-full max-w-[860px] rounded-[28px] border border-white/[0.065] bg-black/35 backdrop-blur-xl overflow-hidden shadow-[0_28px_80px_rgba(0,0,0,0.45)]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(168,85,247,0.12),transparent_56%)] pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(197,164,110,0.1),transparent_58%)] pointer-events-none" />
           <div className="relative h-[300px] flex flex-col items-center justify-center overflow-hidden">
             <div className="absolute inset-x-10 top-8 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
             <div className="absolute inset-x-10 bottom-8 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
             <motion.div
               animate={{ y: ['-120%', '120%'], opacity: [0, 0.8, 0] }}
               transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute left-10 right-10 h-px bg-gradient-to-r from-transparent via-violet-300 to-transparent shadow-[0_0_24px_rgba(168,85,247,0.65)]"
+              className="absolute left-10 right-10 h-px bg-gradient-to-r from-transparent via-[#d8c39a] to-transparent shadow-[0_0_20px_rgba(197,164,110,0.38)]"
             />
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
-              className="absolute w-56 h-56 rounded-full border border-violet-400/18"
+              className="absolute w-56 h-56 rounded-full border border-[#c5a46e]/16"
             />
             <motion.div
               animate={{ rotate: -360 }}
@@ -587,8 +587,8 @@ export const DragZone: React.FC = () => {
             />
 
             <div className="relative z-10 flex flex-col items-center text-center px-8">
-              <div className="w-20 h-20 rounded-full border border-violet-400/25 bg-violet-500/[0.045] flex items-center justify-center shadow-[0_0_46px_rgba(168,85,247,0.22)] mb-6">
-                <Sparkles className={`w-8 h-8 ${ingestPhase === 'ready' ? 'text-[#c5a46e]' : 'text-violet-300'}`} />
+              <div className="w-20 h-20 rounded-full border border-[#c5a46e]/25 bg-[#c5a46e]/[0.04] flex items-center justify-center shadow-[0_0_42px_rgba(197,164,110,0.14)] mb-6">
+                <Sparkles className="w-8 h-8 text-[#d8c39a]" />
               </div>
               <motion.h3
                 key={ingestMessage}
@@ -599,7 +599,7 @@ export const DragZone: React.FC = () => {
                 {ingestMessage}
               </motion.h3>
               <p className="mt-2 text-xs text-neutral-500 font-mono uppercase tracking-[0.18em]">
-                subtitle workspace intake
+                正在建立字幕工作台
               </p>
             </div>
           </div>
@@ -611,8 +611,8 @@ export const DragZone: React.FC = () => {
                 const complete = activeStepIndex >= index || ingestPhase === 'ready';
                 return (
                   <div key={step.id} className="flex flex-col gap-2 min-w-0">
-                    <div className={`h-1 rounded-full transition-all duration-500 ${complete ? 'bg-violet-400/70 shadow-[0_0_10px_rgba(168,85,247,0.35)]' : 'bg-white/[0.08]'}`} />
-                    <span className={`text-[10px] font-mono truncate text-center ${active ? 'text-white' : complete ? 'text-violet-200/70' : 'text-white/28'}`}>
+                    <div className={`h-1 rounded-full transition-all duration-500 ${complete ? 'bg-[#c5a46e]/70 shadow-[0_0_10px_rgba(197,164,110,0.2)]' : 'bg-white/[0.08]'}`} />
+                    <span className={`text-[10px] font-mono truncate text-center ${active ? 'text-white' : complete ? 'text-[#d8c39a]/70' : 'text-white/28'}`}>
                       {step.label}
                     </span>
                   </div>
@@ -641,7 +641,7 @@ export const DragZone: React.FC = () => {
 
   return (
     <div 
-      className="w-full flex flex-col items-center group/outer py-6"
+      className="w-full flex flex-col items-center group/outer py-2 md:py-4"
       onMouseEnter={() => setIsZoneActive(true)}
       onMouseLeave={() => setIsZoneActive(false)}
       onDragOver={handleDragOver}
@@ -675,11 +675,11 @@ export const DragZone: React.FC = () => {
         animate={isDragging 
           ? { scale: 0.985, boxShadow: 'inset 0 0 90px rgba(0,0,0,0.95)' } 
           : isZoneActive
-            ? { scale: 1.008, boxShadow: 'inset 0 0 70px rgba(0,0,0,0.85), 0 0 60px rgba(168,85,247,0.08)' }
-            : { scale: 1, boxShadow: 'inset 0 0 80px rgba(0,0,0,0.9)' }
+            ? { scale: 1.006, boxShadow: 'inset 0 0 38px rgba(0,0,0,0.48), 0 0 54px rgba(197,164,110,0.11)' }
+            : { scale: 1, boxShadow: 'inset 0 0 42px rgba(0,0,0,0.55), 0 18px 60px rgba(0,0,0,0.24)' }
         }
         transition={{ type: "spring", stiffness: 320, damping: 26 }}
-        className="relative w-full max-w-[920px] h-[310px] mx-auto bg-[#020203] flex flex-col items-center justify-center cursor-pointer overflow-hidden select-none z-10"
+        className="relative w-full max-w-[920px] h-[280px] mx-auto bg-white/[0.035] border border-white/[0.09] flex flex-col items-center justify-center cursor-pointer overflow-hidden select-none z-10 backdrop-blur-sm"
       >
         <ParticleCanvas mode={isDragging ? 'dragging' : (isZoneActive ? 'hover' : 'idle')} />
 
@@ -699,25 +699,25 @@ export const DragZone: React.FC = () => {
               animate={{ y: [-2, 2, -2] }}
               transition={{ repeat: Infinity, duration: 1.1, ease: "easeInOut" }}
             >
-              <svg width="52" height="52" viewBox="0 0 52 52" fill="none" className="drop-shadow-[0_0_14px_rgba(16,185,129,0.7)]">
+              <svg width="52" height="52" viewBox="0 0 52 52" fill="none" className="drop-shadow-[0_0_12px_rgba(197,164,110,0.45)]">
                 {/* Clean outer ring */}
-                <circle cx="26" cy="26" r="23" stroke="#10b981" strokeWidth="2" strokeOpacity="0.7" />
+                <circle cx="26" cy="26" r="23" stroke="#c5a46e" strokeWidth="2" strokeOpacity="0.7" />
                 {/* Inner bold film base */}
-                <rect x="12" y="22" width="28" height="8" rx="1" stroke="#10b981" strokeWidth="1.5" strokeOpacity="0.9" fill="none" />
+                <rect x="12" y="22" width="28" height="8" rx="1" stroke="#c5a46e" strokeWidth="1.5" strokeOpacity="0.9" fill="none" />
                 {/* Subtitle lines (two clean tracks) */}
-                <line x1="14" y1="19" x2="38" y2="19" stroke="#34d399" strokeWidth="1.2" strokeOpacity="0.85" />
-                <line x1="14" y1="33" x2="38" y2="33" stroke="#34d399" strokeWidth="1.2" strokeOpacity="0.85" />
+                <line x1="14" y1="19" x2="38" y2="19" stroke="#d8c39a" strokeWidth="1.2" strokeOpacity="0.85" />
+                <line x1="14" y1="33" x2="38" y2="33" stroke="#d8c39a" strokeWidth="1.2" strokeOpacity="0.85" />
                 {/* Small center marker for "lens" focus */}
-                <circle cx="26" cy="26" r="3" fill="#10b981" fillOpacity="0.4" />
+                <circle cx="26" cy="26" r="3" fill="#c5a46e" fillOpacity="0.4" />
               </svg>
             </motion.div>
-            <span className="text-xs font-mono tracking-[0.2em] text-emerald-400 font-semibold">松手投射</span>
+            <span className="text-xs font-mono tracking-[0.2em] text-[#d8c39a] font-semibold">松手导入</span>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 z-20 text-center">
             <div className="relative">
               <svg width="64" height="64" viewBox="0 0 56 56" fill="none" 
-                className={`transition-all duration-300 ${isZoneActive ? 'text-violet-400 drop-shadow-[0_0_18px_rgba(168,85,247,0.65)]' : 'text-neutral-400/70'}`}>
+                className={`transition-all duration-300 ${isZoneActive ? 'text-[#d8c39a] drop-shadow-[0_0_14px_rgba(197,164,110,0.35)]' : 'text-neutral-200/90'}`}>
                 {/* Clean outer ring */}
                 <circle cx="28" cy="28" r="25" stroke="currentColor" strokeWidth="1.8" strokeOpacity="0.6" />
                 {/* Bold film base (horizontal rectangle for reel feel) */}
@@ -731,27 +731,27 @@ export const DragZone: React.FC = () => {
             </div>
 
             <div>
-              <div className="text-lg font-mono font-semibold tracking-[2px] text-white/95">建立字幕工作台</div>
-              <div className="text-xs text-neutral-400 tracking-wide mt-1">拖入字幕包，系统将整理轨道、样式与片源信息</div>
+              <div className="text-lg font-mono font-semibold tracking-[2px] text-white">建立字幕工作台</div>
+              <div className="text-xs text-neutral-200/80 tracking-wide mt-1">拖入字幕包，系统将整理轨道、样式与片源信息</div>
             </div>
 
-	            <div className="flex gap-3 text-xs font-mono tracking-[1px] text-neutral-400 mt-2">
+	            <div className="flex gap-3 text-xs font-mono tracking-[1px] text-neutral-200/75 mt-2">
 	              <span>SRT</span><span className="text-white/20">·</span><span>ASS</span><span className="text-white/20">·</span><span>ZIP</span>
 	            </div>
 	          </div>
 	        )}
 	      </motion.div>
 
-	      <div className="mt-5 w-full max-w-[920px] grid grid-cols-1 md:grid-cols-3 gap-3 px-4 z-20">
+	      <div className="mt-4 w-full max-w-[920px] grid grid-cols-1 md:grid-cols-3 gap-3 px-4 z-20">
 	        <div className="flex items-start gap-3 rounded-xl border border-white/[0.05] bg-white/[0.012] px-4 py-3">
-	          <FileText className="w-4 h-4 text-violet-400 mt-0.5 shrink-0" />
+	          <FileText className="w-4 h-4 text-[#d8c39a] mt-0.5 shrink-0" />
 	          <div className="min-w-0">
 	            <div className="text-xs font-bold text-white/80">字幕轨</div>
 	            <div className="text-[11px] text-neutral-500 leading-relaxed mt-0.5">识别标准轨、样式轨、双语轨与导评轨。</div>
 	          </div>
 	        </div>
 	        <div className="flex items-start gap-3 rounded-xl border border-white/[0.05] bg-white/[0.012] px-4 py-3">
-	          <Archive className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+	          <Archive className="w-4 h-4 text-[#d8c39a]/80 mt-0.5 shrink-0" />
 	          <div className="min-w-0">
 	            <div className="text-xs font-bold text-white/80">字幕包</div>
 	            <div className="text-[11px] text-neutral-500 leading-relaxed mt-0.5">支持 ZIP 打包导入，并自动忽略非字幕资源。</div>
@@ -775,7 +775,7 @@ export const DragZone: React.FC = () => {
 	                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
 	                  {preflightItems.slice(0, 6).map((item) => (
 	                    <div key={`${item.name}-${item.file.size}`} className="flex items-center gap-2 text-xs min-w-0">
-	                      <span className={`px-1.5 py-0.5 rounded font-mono text-[10px] ${item.accepted ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
+	                      <span className={`px-1.5 py-0.5 rounded font-mono text-[10px] ${item.accepted ? 'bg-[#c5a46e]/10 text-[#d8c39a]' : 'bg-amber-500/10 text-amber-300'}`}>
 	                        {item.label}
 	                      </span>
 	                      <span className="truncate text-white/70">{item.name}</span>
@@ -791,8 +791,8 @@ export const DragZone: React.FC = () => {
 	                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
 	                  {trackSummaries.slice(0, 6).map((item) => (
 	                    <div key={`${item.name}-${item.source}`} className="flex items-center gap-2 text-xs min-w-0">
-	                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-	                      <span className="px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-300 font-mono text-[10px]">{item.format}</span>
+	                      <CheckCircle2 className="w-3.5 h-3.5 text-[#d8c39a] shrink-0" />
+	                      <span className="px-1.5 py-0.5 rounded bg-[#c5a46e]/10 text-[#d8c39a] font-mono text-[10px]">{item.format}</span>
 	                      <span className="text-white/70 truncate">{item.lang}</span>
 	                      <span className="text-white/30 truncate">{item.name}</span>
 	                    </div>
@@ -809,10 +809,10 @@ export const DragZone: React.FC = () => {
         <button 
           onClick={() => fileInputRef.current?.click()}
           className="group w-full sm:w-auto px-9 py-3.5 rounded-2xl text-sm font-mono uppercase tracking-[0.12em] font-semibold cursor-pointer transition-all duration-200 
-            bg-white/[0.022] hover:bg-violet-500/5 border border-white/[0.055] hover:border-violet-500/30 
-            text-white/90 hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.35)] hover:shadow-[0_0_18px_rgba(168,85,247,0.12)] active:scale-[0.985]"
+            bg-white/[0.022] hover:bg-[#c5a46e]/5 border border-white/[0.055] hover:border-[#c5a46e]/30 
+            text-white/90 hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.35)] hover:shadow-[0_0_18px_rgba(197,164,110,0.08)] active:scale-[0.985]"
 	        >
-	          <UploadCloud className="inline-block w-4 h-4 mr-2 align-[-2px] text-violet-400" />
+	          <UploadCloud className="inline-block w-4 h-4 mr-2 align-[-2px] text-[#d8c39a]" />
 	          浏览文件 / ZIP
 	        </button>
         

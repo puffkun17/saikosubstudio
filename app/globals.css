@@ -4,7 +4,8 @@
   --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Source Han Sans CN", "Noto Sans SC", sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", "PingFang SC", "Microsoft YaHei", "Source Han Sans CN", "Noto Sans SC", monospace;
   --color-accent-neon: #a855f7;
-  --color-accent-glow: rgba(168, 85, 247, 0.12);
+  --color-accent-glow: rgba(168, 85, 247, 0.08);
+  --color-accent-gold: #c5a46e;
   --color-accent-emerald: #10b981;
   --color-accent-emerald-glow: rgba(16, 185, 129, 0.12);
   --color-bg-dark: #050507;
@@ -303,9 +304,9 @@ body::before {
 }
 
 .v9-wheel-item.active {
-  color: #c084fc;
+  color: #d8c39a;
   font-weight: 700;
-  text-shadow: 0 0 10px rgba(168, 85, 247, 0.35);
+  text-shadow: 0 0 10px rgba(197, 164, 110, 0.32);
 }
 
 .v9-wheel-label {
@@ -343,7 +344,7 @@ body::before {
   width: 48px;
   background: transparent;
   border: none;
-  color: #c084fc;
+  color: #d8c39a;
   font-weight: 700;
   font-family: monospace;
   font-size: 0.8rem;
@@ -373,7 +374,7 @@ body::before {
   width: 100%;
   height: 4px;
   border-radius: 2px;
-  background: linear-gradient(90deg, rgba(168, 85, 247, 0.3) 0%, rgba(255, 255, 255, 0.05) 100%);
+  background: linear-gradient(90deg, rgba(197, 164, 110, 0.36) 0%, rgba(168, 85, 247, 0.18) 42%, rgba(255, 255, 255, 0.055) 100%);
 }
 
 .v9-timeline-dial-slider::-webkit-slider-thumb {
@@ -381,9 +382,9 @@ body::before {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #c084fc;
+  background: #d8c39a;
   border: 2px solid #08080c;
-  box-shadow: 0 0 8px rgba(168, 85, 247, 0.8);
+  box-shadow: 0 0 8px rgba(197, 164, 110, 0.5);
   margin-top: -4px;
   transition: transform 0.15s;
 }
@@ -472,21 +473,21 @@ html.ua-safari .font-mono {
 */
 
 .glass-panel-ar {
-  background: rgba(255, 255, 255, 0.008);
-  backdrop-filter: blur(36px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.012);
+  backdrop-filter: blur(28px) saturate(118%);
+  border: 1px solid rgba(255, 255, 255, 0.055);
   box-shadow: 
-    inset 0 1px 1px rgba(255, 255, 255, 0.08),
-    0 24px 60px rgba(0, 0, 0, 0.55),
-    0 0 30px rgba(168, 85, 247, 0.02);
+    inset 0 1px 1px rgba(255, 255, 255, 0.06),
+    0 22px 54px rgba(0, 0, 0, 0.48),
+    0 0 24px rgba(197, 164, 110, 0.018);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translateZ(0); /* improve backdrop-filter consistency on Windows Chrome */
 }
 
 .glass-btn-ar {
-  background: rgba(255, 255, 255, 0.012);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.014);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(10px);
   border-radius: 10px;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -495,10 +496,10 @@ html.ua-safari .font-mono {
 }
 
 .glass-btn-ar:hover {
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(255, 255, 255, 0.04);
   color: rgba(255, 255, 255, 0.95);
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.02);
+  border-color: rgba(197, 164, 110, 0.2);
+  box-shadow: 0 4px 15px rgba(197, 164, 110, 0.035);
 }
 
 .glass-btn-ar:active {
@@ -507,12 +508,12 @@ html.ua-safari .font-mono {
 }
 
 .glass-btn-ar-active {
-  background: rgba(168, 85, 247, 0.06) !important;
-  border-color: rgba(168, 85, 247, 0.35) !important;
-  color: #c084fc !important;
+  background: rgba(197, 164, 110, 0.075) !important;
+  border-color: rgba(197, 164, 110, 0.32) !important;
+  color: #d8c39a !important;
   box-shadow: 
-    inset 0 1px 1px rgba(168, 85, 247, 0.15),
-    0 0 20px rgba(168, 85, 247, 0.18) !important;
+    inset 0 1px 1px rgba(197, 164, 110, 0.14),
+    0 0 18px rgba(197, 164, 110, 0.12) !important;
 }
 
 /* Glass Range Input */
@@ -539,8 +540,8 @@ html.ua-safari .font-mono {
   height: 12px;
   border-radius: 50%;
   background: #ffffff;
-  border: 2.5px solid #a855f7;
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.8);
+  border: 2.5px solid #c5a46e;
+  box-shadow: 0 0 10px rgba(197, 164, 110, 0.5);
   margin-top: -4px;
   transition: transform 0.15s ease, background-color 0.15s ease;
 }
@@ -551,7 +552,7 @@ html.ua-safari .font-mono {
 
 .glass-slider-input::-webkit-slider-thumb:active {
   transform: scale(0.95);
-  background: #c084fc;
+  background: #d8c39a;
 }
 
 /* Glass recessed slot */
@@ -570,13 +571,13 @@ html.ua-safari .font-mono {
 }
 
 .glass-lens-active {
-  background: rgba(255, 255, 255, 0.035) !important;
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  background: rgba(255, 255, 255, 0.028) !important;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(197, 164, 110, 0.18) !important;
   box-shadow: 
-    inset 0 1px 1px rgba(255, 255, 255, 0.18),
+    inset 0 1px 1px rgba(255, 255, 255, 0.13),
     0 12px 30px rgba(0, 0, 0, 0.35),
-    0 0 15px rgba(168, 85, 247, 0.05);
+    0 0 15px rgba(197, 164, 110, 0.04);
   transform: scale(1.008);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -623,5 +624,3 @@ html.ua-safari .font-mono {
     overflow: visible !important;
   }
 }
-
-

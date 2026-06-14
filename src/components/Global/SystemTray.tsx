@@ -23,6 +23,12 @@ const CRUMB_MAP: Record<string, string> = {
   '/': 'SubStudio',
 };
 
+const STEP_LABEL: Record<number, string> = {
+  1: '上传',
+  2: '工作台',
+  3: '放映厅',
+};
+
 const getDefaultScale = () => {
   if (typeof window === 'undefined') return 1.0;
 
@@ -94,30 +100,26 @@ export const SystemTray = () => {
     <nav
       aria-label="System tray"
       className="fixed top-0 w-full z-50 h-[56px] flex items-center px-5 md:px-7
-        bg-[#030305]/40 backdrop-blur-md border-b border-white/[0.06]
+        bg-[#030305]/58 backdrop-blur-md border-b border-white/[0.055]
         justify-between transition-colors duration-300"
     >
       {/* ── Left: brand + nav ──────────────────────────────── */}
-      <div className="flex items-center gap-2 text-[12px] font-mono tracking-tight min-w-0">
+      <div className="flex items-center gap-3 text-[12px] tracking-tight min-w-0">
         <Link
           href="/"
           onClick={handleNavClick}
-          className={`flex items-center gap-1.5 transition-colors duration-150 shrink-0
+          className={`flex items-center gap-1.5 transition-colors duration-150 shrink-0 font-semibold
             ${isHome ? 'text-white/90' : 'text-white/40 hover:text-white/80'}`}
           aria-label="Go to SubStudio home"
         >
           <HomeIcon />
-          <span>substudio://local</span>
+          <span>SubStudio</span>
         </Link>
 
-        {!isHome && (
-          <>
-            <span className="text-white/15 select-none">/</span>
-            <span className="text-emerald-400 font-semibold truncate">
-              {crumb}
-            </span>
-          </>
-        )}
+        <span className="text-white/15 select-none">/</span>
+        <span className="text-[#d8c39a] font-medium truncate">
+          {isHome ? STEP_LABEL[workflowStep] : crumb}
+        </span>
       </div>
 
       {/* ── Center: app nav tabs ─────────────────────────────────────── */}
@@ -155,7 +157,7 @@ export const SystemTray = () => {
           title="调节网页整体缩放"
         >
           <span className="text-[10px] opacity-50 uppercase font-bold tracking-wider">A±</span>
-          <span className="font-bold text-violet-400" suppressHydrationWarning>{Math.round(scale * 100)}%</span>
+          <span className="font-bold text-[#d8c39a]" suppressHydrationWarning>{Math.round(scale * 100)}%</span>
         </button>
         <span
           className="text-[11px] font-mono text-white/30 tabular-nums tracking-wider"

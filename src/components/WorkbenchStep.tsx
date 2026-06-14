@@ -6,7 +6,7 @@ import { SequenceList } from '@/components/Workbench/SequenceList';
 import { TimelineControls } from '@/components/Workbench/TimelineControls';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
-import { ChevronLeft, Eye, ChevronRight, Sliders } from 'lucide-react';
+import { ChevronLeft, Eye, Sliders } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const WorkbenchStep: React.FC = () => {
@@ -32,7 +32,7 @@ export const WorkbenchStep: React.FC = () => {
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#050507]">
       {/* Top Navbar */}
-      <div className="flex flex-col md:flex-row justify-between items-center px-6 py-4 border-b border-white/[0.06] bg-[#030305]/40 backdrop-blur-md gap-4 z-50 flex-shrink-0">
+      <div className="flex flex-col md:flex-row justify-between items-center px-6 py-4 border-b border-white/[0.055] bg-[#030305]/58 backdrop-blur-md gap-4 z-50 flex-shrink-0">
         <div className="flex items-center gap-4 text-left shrink-0">
           <div className="relative">
             {/* Bounce back button */}
@@ -79,9 +79,9 @@ export const WorkbenchStep: React.FC = () => {
           </div>
           
           <div className="min-w-0">
-            <h2 className="text-xs font-mono font-bold text-neutral-450 tracking-wider uppercase pl-0.5">workspace // workbench</h2>
-            <p className="text-[10px] text-violet-400 font-mono mt-0.5 max-w-[560px] whitespace-normal break-words leading-relaxed pl-0.5" title={customFilename}>
-              {processedSubs?.length || 0} lines ready | {customFilename || 'unnamed'}
+            <h2 className="text-xs font-semibold text-neutral-300 tracking-wide pl-0.5">字幕工作台</h2>
+            <p className="text-[10px] text-[#d8c39a] font-mono mt-0.5 max-w-[620px] whitespace-normal break-words leading-relaxed pl-0.5" title={customFilename}>
+              {processedSubs?.length || 0} 行已准备 · {customFilename || '未命名字幕'}
             </p>
           </div>
         </div>
@@ -117,14 +117,8 @@ export const WorkbenchStep: React.FC = () => {
             className="group py-2 px-3.5 glass-btn-ar text-xs font-bold text-neutral-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
             onClick={() => setWorkflowStep(3)}
           >
-            <Eye className="w-3.5 h-3.5 text-violet-400" />
+            <Eye className="w-3.5 h-3.5 text-[#d8c39a]" />
             放映厅预览
-            <motion.span
-              animate={{ x: [0, 3, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </motion.span>
           </motion.button>
         </div>
       </div>

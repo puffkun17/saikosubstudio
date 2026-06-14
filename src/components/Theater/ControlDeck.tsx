@@ -133,8 +133,8 @@ export const ControlDeck: React.FC = () => {
                 onClick={() => setSceneBackground(scene.id)}
                 title={scene.desc}
               >
-                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-white/20'}`} />
-                {scene.id === 'cinema' && <Film className="w-4 h-4 text-violet-400" />}
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-[#d8c39a] shadow-[0_0_8px_rgba(197,164,110,0.65)]' : 'bg-white/20'}`} />
+                {scene.id === 'cinema' && <Film className="w-4 h-4 text-[#d8c39a]" />}
                 <span>{isCinemaWithBackdrop ? '剧照' : scene.name}</span>
               </button>
             );
@@ -144,11 +144,11 @@ export const ControlDeck: React.FC = () => {
               whileHover={{ scale: 1.02, y: -0.5 }}
               whileTap={{ scale: 0.98 }}
               type="button"
-              className="py-1.5 px-2.5 2xl:py-2 2xl:px-3.5 flex items-center gap-1.5 text-xs font-bold cursor-pointer text-violet-400 hover:text-violet-300 border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 rounded-lg transition-all duration-205 ml-1 flex-shrink-0"
+              className="py-1.5 px-2.5 2xl:py-2 2xl:px-3.5 flex items-center gap-1.5 text-xs font-bold cursor-pointer text-[#d8c39a] hover:text-[#f0ddaf] border border-[#c5a46e]/20 bg-[#c5a46e]/5 hover:bg-[#c5a46e]/10 rounded-lg transition-all duration-205 ml-1 flex-shrink-0"
               onClick={shuffleBackdrop}
               title="从备选剧照池中随机换一张背景剧照"
             >
-              <RefreshCw className="w-3 h-3 text-violet-400 animate-hover-spin" />
+              <RefreshCw className="w-3 h-3 text-[#d8c39a] animate-hover-spin" />
               <span>换张剧照</span>
             </motion.button>
           )}

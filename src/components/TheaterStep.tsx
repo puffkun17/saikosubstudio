@@ -68,7 +68,7 @@ export const TheaterStep: React.FC = () => {
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden relative bg-[#050507]">
       
       {/* 顶部导航栏 */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center px-4 md:px-6 py-2 min-h-[52px] bg-[#030305]/40 backdrop-blur-md border-b border-white/[0.06] z-50 flex-shrink-0 gap-3">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center px-4 md:px-6 py-2 min-h-[52px] bg-[#030305]/58 backdrop-blur-md border-b border-white/[0.055] z-50 flex-shrink-0 gap-3">
         <div className="flex items-center gap-4">
           <motion.button 
             whileHover={{ scale: 1.03, y: -0.5 }}
@@ -80,9 +80,9 @@ export const TheaterStep: React.FC = () => {
           </motion.button>
           
           <div>
-            <h2 className="text-xs font-mono font-bold text-neutral-450 tracking-wider">THEATER // 放映厅</h2>
-            <p className="text-[10px] text-violet-400 font-mono mt-0.5">
-              {theaterAspect} · {sceneBackground}
+            <h2 className="text-xs font-semibold text-neutral-300 tracking-wide">放映厅预览</h2>
+            <p className="text-[10px] text-[#d8c39a] font-mono mt-0.5">
+              {theaterAspect} · {sceneBackground === 'cinema' ? '影院' : sceneBackground === 'nature' ? '自然光' : sceneBackground === 'night' ? '暗夜' : sceneBackground}
             </p>
           </div>
         </div>

@@ -36,7 +36,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
           // Trigger a highlight effect
           const originalBg = element.style.background;
           element.style.transition = 'background 0.3s ease';
-          element.style.background = 'rgba(242, 169, 0, 0.25)';
+          element.style.background = 'rgba(197, 164, 110, 0.22)';
           setTimeout(() => {
             element.style.background = originalBg || 'transparent';
           }, 2000);
@@ -76,7 +76,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
           className="v9-timeline-dial-slider flex-1 min-w-0"
           aria-label="字幕预览进度"
         />
-        <span className="text-[10px] font-mono text-[#f2a900] w-12 text-right tabular-nums">
+        <span className="text-[10px] font-mono text-[#d8c39a] w-12 text-right tabular-nums">
           {jumpPercent}%
         </span>
       </div>
@@ -104,7 +104,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
       
       {/* Dial Gauge */}
       <form onSubmit={handleJumpToLine} className="v9-dial-gauge flex items-center gap-2">
-        <span className="v9-dial-gauge-label">Line</span>
+        <span className="v9-dial-gauge-label">行</span>
         <input 
           type="number"
           min="1"
@@ -115,7 +115,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
           placeholder="1"
         />
         <div className="w-[1px] h-3 bg-white/20" />
-        <span className="v9-dial-gauge-value text-[#f2a900]">{jumpPercent}%</span>
+        <span className="v9-dial-gauge-value text-[#d8c39a]">{jumpPercent}%</span>
       </form>
     </div>
   );
