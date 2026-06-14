@@ -32,6 +32,7 @@ export interface LibraryItem {
   date: string;
   subs: SubRow[];
   backdrop: string | null;
+  backdropList?: string[] | null;
   customStyle: StyleSettings;
 }
 
@@ -309,6 +310,23 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     return { tasks: nextTasks };
   }),
   setRefScreenshot: (refScreenshot) => set({ refScreenshot }),
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   triggerTempGuides: () => {
     set({ tempShowGuides: true });
     if (tempShowTimeoutId) {
@@ -903,6 +921,40 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       };
 
       const currentTasks = [...state.tasks];
+      newFiles.forEach(file => {
+        const fileEpKey = parseEpisodeKey(file.name);
+        const fileBase = getBaseTitle(file.name).toLowerCase();
+
+        let matchedTask = currentTasks.find(t => {
+          const sameBase = t.files.some(f => getBaseTitle(f.name).toLowerCase() === fileBase);
+          if (!sameBase) return false;
+          if (fileEpKey || t.epKey) return fileEpKey === t.epKey;
+          return true;
+        });
+
+        if (matchedTask) {
+          const fileExists = matchedTask.files.some(f => f.name === file.name);
+          if (!fileExists) {
+            matchedTask.files = [...matchedTask.files, file];
+          } else {
+            matchedTask.files = matchedTask.files.map(f => f.name === file.name ? file : f);
+          }
+        } else {
+          const baseName = getBaseTitle(file.name);
+          const newTask = {
+            id: `task_${fileEpKey ? "tv_" + fileEpKey : "movie_" + fileBase}_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
+            title: fileEpKey ? `${baseName} ${fileEpKey}` : baseName,
+            epKey: fileEpKey,
+            zh: null,
+            en: null,
+            commentary: null,
+            files: [file],
+            status: "unpaired"
+          };
+          currentTasks.push(newTask);
+        }
+      });
+
 
       newFiles.forEach(file => {
         const fileEpKey = parseEpisodeKey(file.name);

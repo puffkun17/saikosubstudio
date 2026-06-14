@@ -48,7 +48,7 @@ export const SequenceList: React.FC = () => {
     }, 60);
 
     return () => clearTimeout(timer);
-  }, [previewIndex, showAllSubs, processedSubs?.length]);
+  }, [previewIndex, showAllSubs]);
 
   const handleRowClick = (sub: any) => {
     setPreviewIndex(sub.index - 1);
