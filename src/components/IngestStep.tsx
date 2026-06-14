@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { DragZone } from '@/components/Ingest/DragZone';
 import { TaskList } from '@/components/Ingest/TaskList';
@@ -14,8 +14,8 @@ export const IngestStep: React.FC = () => {
     libraryList, 
     loadFromLibrary, 
     deleteFromLibrary, 
-    setWorkflowStep,
-    processedSubs
+#    setWorkflowStep,
+#    processedSubs
   } = useStudioStore();
 
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);

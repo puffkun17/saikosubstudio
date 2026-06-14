@@ -65,7 +65,7 @@ export function decodeBuffer(buffer: ArrayBuffer): DecodeResult {
       if (/\d{2}:\d{2}:\d{2}/.test(text)) {
         return { text, encoding: encoding + ' (Auto)' };
       }
-    } catch (e) {
+    } catch (_e) {
       continue;
     }
   }
@@ -274,7 +274,7 @@ export function smartDetectTitle(name1: string, name2: string, content1 = '', co
   const s2 = cleanFilename(name2).split(/[.\s_\-]/).filter(Boolean);
   
   const commonWords = s1.filter(w => s2.includes(w));
-  let suggested = commonWords.join(' ');
+  const suggested = commonWords.join(' ');
 
   // 1. If we have common words between filenames, prioritize it
   if (suggested.length > 3) return suggested;
@@ -673,7 +673,7 @@ export function alignSubtitlesIndustrial(
     for (let j = 1; j <= N; j++) {
       const scoreMatch = dp[i-1][j-1] + getPairScore(i-1, j-1);
       const scoreGapZh = dp[i-1][j] + gapPenalty;
-      const scoreGapEn = dp[i][j-1] + gapPenalty;
+      const _scoreGapEn = dp[i][j-1] + gapPenalty;
       dp[i][j] = Math.max(scoreMatch, scoreGapZh, scoreGapEn);
     }
   }
@@ -687,7 +687,7 @@ export function alignSubtitlesIndustrial(
     if (i > 0 && j > 0) {
       const scoreMatch = dp[i-1][j-1] + getPairScore(i-1, j-1);
       const scoreGapZh = dp[i-1][j] + gapPenalty;
-      const scoreGapEn = dp[i][j-1] + gapPenalty;
+      const _scoreGapEn = dp[i][j-1] + gapPenalty;
       const current = dp[i][j];
       
       if (current === scoreMatch) {
@@ -934,7 +934,7 @@ export function checkIsBilingual(text: string): boolean {
   
   if (cleanText.includes('[Events]') && cleanText.includes('Dialogue:')) {
     const lines = cleanText.split(/\r?\n/);
-    for (let line of lines) {
+    for (const line of lines) {
       if (line.trim().startsWith('Dialogue:')) {
         const parts = line.split(',');
         if (parts.length >= 10) {

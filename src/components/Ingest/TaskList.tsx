@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
 
 
-const truncateMiddle = (text: string, maxLength: number = 45) => {
+const _truncateMiddle = (text: string, maxLength: number = 45) => {
   if (!text || text.length <= maxLength) return text;
   const charsToShow = maxLength - 3;
   const frontChars = Math.ceil(charsToShow * 0.5);
@@ -23,7 +23,7 @@ export const TaskList: React.FC = () => {
     selectedTaskId, 
     selectTask, 
     bindTrack, 
-    removeFileFromTask, 
+    // removeFileFromTask, 
     deleteTask, 
     uploadedFiles,
     customFilename,
