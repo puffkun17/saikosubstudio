@@ -81,7 +81,8 @@ export const TaskList: React.FC = () => {
             size: text.length
           });
         } catch (error: unknown) {
-          addLog(`读取文件 ${file.name} 失败: ${error.message}`, "error");
+          const msg = error instanceof Error ? error.message : String(error);
+          addLog(`读取文件 ${file.name} 失败: ${msg}`, "error");
         }
       }
     }
