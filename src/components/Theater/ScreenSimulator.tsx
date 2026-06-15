@@ -167,6 +167,8 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
     }
   }
 
+  const isImax = theaterAspect === '1.9:1';
+
   const getBackdropStyle = () => {
     const bgSize = theaterAspect === '4:3' ? '100% 100%' : 'cover';
     
@@ -200,9 +202,9 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
       ? { left: '10.8073%', top: '11.4907%', width: '78.3854%', height: '71.0404%' }
       : { left: '1.6812%', top: '3.8752%', width: '96.0000%', height: '90.3592%' };
 
-  const innerAspect = theaterAspect === '16:9' ? '16/9' : 
-                      theaterAspect === '4:3' ? '4/3' : 
-                      theaterAspect === '1.9:1' ? '1.9/1' : '2.39/1';
+  const innerAspect = theaterAspect === '16:9' ? '16/9' :
+                      theaterAspect === '4:3' ? '4/3' :
+                      isImax ? '16/9' : '2.39/1';
 
   // 改进后的黑条磁吸计算，对宽屏（2.39:1 / 1.9:1）支持更好
   const getBlackBarCenterCqh = () => {
@@ -210,7 +212,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
     let movieAspectNum = 16/9;
 
     if (theaterAspect === '4:3') movieAspectNum = 4/3;
-    else if (theaterAspect === '1.9:1') movieAspectNum = 1.9;
+    else if (isImax) movieAspectNum = physAspect;
     else if (theaterAspect === '2.39:1') movieAspectNum = 2.39;
 
     if (movieAspectNum > physAspect) {
@@ -226,7 +228,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
 
   return (
     <div 
-      className="flex-1 flex justify-center items-center bg-[#050507] w-full h-full overflow-hidden p-6 md:p-12 relative"
+      className="flex-1 flex justify-center items-center bg-[#050507] w-full h-full overflow-hidden p-4 md:p-8 relative"
       onMouseEnter={triggerTempGuides}
       onMouseMove={triggerTempGuides}
     >
@@ -271,12 +273,21 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
             className="relative flex-shrink-0 bg-[#070709] transition-all duration-300 overflow-hidden"
             style={{
               aspectRatio: innerAspect,
-              width: '10000px',
+              width: isImax ? '100%' : '10000px',
+              height: isImax ? '100%' : undefined,
               maxWidth: '100%',
               maxHeight: '100%',
               ...getBackdropStyle()
             }}
           />
+
+          {isImax && !isCrt && (
+            <div className="absolute inset-0 pointer-events-none z-20">
+              <div className="absolute inset-x-0 top-0 h-[7%] bg-gradient-to-b from-black/55 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-[7%] bg-gradient-to-t from-black/55 to-transparent" />
+              <div className="absolute left-[4%] right-[4%] top-[4%] bottom-[4%] border border-[#d8c39a]/12 rounded-sm" />
+            </div>
+          )}
 
           {/* Render State Machine */}
           {subtitle.status === 'idle' && (

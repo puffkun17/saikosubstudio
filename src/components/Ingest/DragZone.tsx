@@ -679,7 +679,7 @@ export const DragZone: React.FC = () => {
             : { scale: 1, boxShadow: 'inset 0 0 42px rgba(0,0,0,0.55), 0 18px 60px rgba(0,0,0,0.24)' }
         }
         transition={{ type: "spring", stiffness: 320, damping: 26 }}
-        className="relative w-full max-w-[920px] h-[280px] mx-auto bg-white/[0.035] border border-white/[0.09] flex flex-col items-center justify-center cursor-pointer overflow-hidden select-none z-10 backdrop-blur-sm"
+        className="relative w-full max-w-[920px] h-[260px] mx-auto bg-white/[0.032] border border-white/[0.08] rounded-xl flex flex-col items-center justify-center cursor-pointer overflow-hidden select-none z-10 backdrop-blur-sm"
       >
         <ParticleCanvas mode={isDragging ? 'dragging' : (isZoneActive ? 'hover' : 'idle')} />
 
@@ -731,11 +731,11 @@ export const DragZone: React.FC = () => {
             </div>
 
             <div>
-              <div className="text-xl font-semibold tracking-wide text-white">建立字幕工作台</div>
-              <div className="text-sm text-neutral-200/85 tracking-wide mt-1">拖入字幕包，系统将整理字幕与影片信息</div>
+              <div className="text-lg font-semibold tracking-tight text-white">建立字幕工作台</div>
+              <div className="text-sm text-neutral-300 tracking-wide mt-1">拖入字幕包，系统将整理字幕与影片信息</div>
             </div>
 
-	            <div className="flex gap-3 text-sm font-mono tracking-wide text-neutral-200/80 mt-2">
+	            <div className="flex gap-3 text-xs font-mono tracking-wide text-neutral-400 mt-2">
 	              <span>SRT</span><span className="text-white/20">·</span><span>ASS</span><span className="text-white/20">·</span><span>ZIP</span>
 	            </div>
 	          </div>
@@ -743,25 +743,25 @@ export const DragZone: React.FC = () => {
 	      </motion.div>
 
 	      <div className="mt-4 w-full max-w-[920px] grid grid-cols-1 md:grid-cols-3 gap-3 px-4 z-20">
-	        <div className="flex items-start gap-3 rounded-xl border border-white/[0.05] bg-white/[0.012] px-4 py-3">
+	        <div className="flex items-start gap-3 rounded-lg border border-white/[0.06] bg-white/[0.018] px-4 py-3">
 	          <FileText className="w-4 h-4 text-[#d8c39a] mt-0.5 shrink-0" />
 	          <div className="min-w-0">
-	            <div className="text-sm font-bold text-white/90">字幕轨</div>
-	            <div className="text-xs text-neutral-300 leading-relaxed mt-0.5">识别标准轨、样式轨、双语轨与导评轨。</div>
+	            <div className="text-sm font-semibold text-white/90">字幕轨</div>
+	            <div className="text-xs text-neutral-400 leading-relaxed mt-0.5">识别标准轨、样式轨、双语轨与导评轨。</div>
 	          </div>
 	        </div>
-	        <div className="flex items-start gap-3 rounded-xl border border-white/[0.05] bg-white/[0.012] px-4 py-3">
+	        <div className="flex items-start gap-3 rounded-lg border border-white/[0.06] bg-white/[0.018] px-4 py-3">
 	          <Archive className="w-4 h-4 text-[#d8c39a]/80 mt-0.5 shrink-0" />
 	          <div className="min-w-0">
-	            <div className="text-sm font-bold text-white/90">字幕包</div>
-	            <div className="text-xs text-neutral-300 leading-relaxed mt-0.5">支持 ZIP 打包导入，并自动忽略非字幕资源。</div>
+	            <div className="text-sm font-semibold text-white/90">字幕包</div>
+	            <div className="text-xs text-neutral-400 leading-relaxed mt-0.5">支持 ZIP 打包导入，并自动忽略非字幕资源。</div>
 	          </div>
 	        </div>
-	        <div className="flex items-start gap-3 rounded-xl border border-white/[0.05] bg-white/[0.012] px-4 py-3">
+	        <div className="flex items-start gap-3 rounded-lg border border-white/[0.06] bg-white/[0.018] px-4 py-3">
 	          <Sparkles className="w-4 h-4 text-[#c5a46e] mt-0.5 shrink-0" />
 	          <div className="min-w-0">
-	            <div className="text-sm font-bold text-white/90">片源信息</div>
-	            <div className="text-xs text-neutral-300 leading-relaxed mt-0.5">导入后自动补全影视资料与预览画面。</div>
+	            <div className="text-sm font-semibold text-white/90">片源信息</div>
+	            <div className="text-xs text-neutral-400 leading-relaxed mt-0.5">导入后自动补全影视资料与预览画面。</div>
 	          </div>
 	        </div>
 	      </div>

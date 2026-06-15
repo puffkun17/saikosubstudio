@@ -39,9 +39,9 @@ const FontFamilySelect = ({
   onChange: (v: string) => void 
 }) => (
   <div className="flex items-center justify-between py-2 border-b border-white/[0.03]">
-    <span className="text-xs text-neutral-400 font-mono uppercase tracking-wider font-bold">{label}</span>
+    <span className="text-sm text-neutral-300 font-medium">{label}</span>
     <select
-      className="bg-white/[0.02] border border-white/[0.08] focus:border-white/15 rounded-lg text-xs px-2 py-1 text-neutral-300 outline-none cursor-pointer transition-all w-40 text-right"
+      className="bg-white/[0.02] border border-white/[0.08] focus:border-white/15 rounded-lg text-sm px-2 py-1.5 text-neutral-200 outline-none cursor-pointer transition-all w-40 text-right"
       value={value}
       onChange={e => onChange(e.target.value)}
     >
@@ -71,7 +71,7 @@ const ColorPicker = ({
         className="flex items-center justify-between cursor-pointer select-none group"
         onClick={onToggle}
       >
-        <span className="text-xs text-neutral-400 font-mono font-bold tracking-wider">{label}</span>
+        <span className="text-sm text-neutral-300 font-medium">{label}</span>
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-mono text-neutral-450 uppercase">{value}</span>
           <div 
@@ -217,8 +217,8 @@ export const StyleSidebar: React.FC = () => {
       <div className="pb-3 border-b border-white/[0.06] flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-1.5 select-none">
           <LayoutGrid className="w-4 h-4 text-violet-400" />
-          <h3 className="text-xs font-mono font-bold text-neutral-200 tracking-wider uppercase pl-0.5">
-            styles // 样式模板
+          <h3 className="text-base font-semibold text-neutral-100 tracking-tight pl-0.5">
+            样式模板
           </h3>
         </div>
         
@@ -241,9 +241,9 @@ export const StyleSidebar: React.FC = () => {
       {/* Templates & Presets */}
       <div className="flex flex-col gap-3 border-b border-white/[0.06] pb-4 flex-shrink-0">
         <div className="flex justify-between items-center select-none">
-          <span className="text-xs text-neutral-400 font-mono uppercase tracking-wider pl-0.5 font-bold">预设模板</span>
+          <span className="text-sm text-neutral-300 font-medium pl-0.5">预设模板</span>
           <button 
-            className="flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-violet-400 hover:text-violet-300 transition-colors cursor-pointer font-bold"
+            className="flex items-center gap-1 text-sm text-[#d8c39a] hover:text-[#f0ddaf] transition-colors cursor-pointer font-medium"
             onClick={() => {
               setTemplateNameInput(`自定义模板 ${customTemplates.length + 1}`);
               setShowTemplateSave(v => !v);
@@ -322,16 +322,16 @@ export const StyleSidebar: React.FC = () => {
 
       {/* Style Editors */}
       <div className="flex flex-col gap-4 flex-1">
-        <span className="text-xs text-neutral-400 font-mono uppercase tracking-wider select-none pl-0.5 font-bold">参数微调</span>
+        <span className="text-sm text-neutral-300 font-medium select-none pl-0.5">参数微调</span>
         
         {/* 整体缩放 (globalScale) - 高优先暴露 */}
         <div className="flex flex-col gap-1 border-b border-white/[0.04] pb-3">
-          <div className="flex justify-between text-xs font-mono tracking-wider font-bold uppercase text-neutral-400 select-none">
+          <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
             <span>整体缩放 (Global Scale)</span>
             <motion.span 
               animate={{ scale: [1, 1.05, 1] }} 
               key={customStyle.globalScale ?? 1}
-              className="font-mono text-violet-400 font-bold text-xs"
+              className="font-mono text-[#d8c39a] font-semibold text-xs"
             >
               {(customStyle.globalScale ?? 1).toFixed(2)}×
             </motion.span>
@@ -342,18 +342,18 @@ export const StyleSidebar: React.FC = () => {
             onChange={e => handleStyleChange('globalScale', parseFloat(e.target.value))}
             className="w-full glass-slider-input"
           />
-          <div className="text-[10px] text-neutral-500 font-mono">影响所有字号的最终换算（阅片环境一致性关键）</div>
+          <div className="text-xs text-neutral-500">影响所有字号的最终换算</div>
         </div>
 
         {/* Font Sizes & Sliders */}
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <div className="flex justify-between text-xs font-mono tracking-wider font-bold uppercase text-neutral-400 select-none">
+            <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
               <span>中文字号 (参考单位 / ASS)</span>
               <motion.span 
                 animate={{ scale: [1, 1.05, 1] }} 
                 key={customStyle.zhFontSize} 
-                className="font-mono text-violet-400 font-bold text-xs"
+                className="font-mono text-[#d8c39a] font-semibold text-xs"
               >
                 {customStyle.zhFontSize}px
               </motion.span>
@@ -367,12 +367,12 @@ export const StyleSidebar: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-1">
-            <div className="flex justify-between text-xs font-mono tracking-wider font-bold uppercase text-neutral-400 select-none">
+            <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
               <span>英文字号 (参考单位 / ASS)</span>
               <motion.span 
                 animate={{ scale: [1, 1.05, 1] }}
                 key={customStyle.enFontSize}
-                className="font-mono text-violet-400 font-bold text-xs"
+                className="font-mono text-[#d8c39a] font-semibold text-xs"
               >
                 {customStyle.enFontSize}px
               </motion.span>
@@ -386,12 +386,12 @@ export const StyleSidebar: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-1">
-            <div className="flex justify-between text-xs font-mono tracking-wider font-bold uppercase text-neutral-400 select-none">
+            <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
               <span>垂直边距 (参考单位 / ASS)</span>
               <motion.span 
                 animate={{ scale: [1, 1.05, 1] }}
                 key={customStyle.marginV}
-                className="font-mono text-violet-400 font-bold text-xs"
+                className="font-mono text-[#d8c39a] font-semibold text-xs"
               >
                 {customStyle.marginV}px
               </motion.span>
@@ -410,7 +410,7 @@ export const StyleSidebar: React.FC = () => {
 
         {/* 字体家族选择 - 阅片环境 CJK 协调核心 */}
         <div className="flex flex-col mt-1 border-t border-white/[0.04] pt-2">
-          <span className="text-xs text-neutral-400 font-mono uppercase tracking-wider select-none pl-0.5 font-bold mb-1">字体家族 (阅片环境协调)</span>
+          <span className="text-sm text-neutral-300 font-medium select-none pl-0.5 mb-1">字体家族</span>
           
           <FontFamilySelect 
             label="中文字体" 

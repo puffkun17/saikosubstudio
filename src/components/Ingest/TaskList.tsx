@@ -159,12 +159,12 @@ export const TaskList: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col gap-3.5 glass-panel-ar p-4 md:p-5 rounded-3xl desktop-panel-fit-visible relative shadow-2xl group transition-all duration-500 hover:border-violet-500/20 hover:shadow-[0_24px_60px_rgba(0,0,0,0.55),_0_0_40px_rgba(168,85,247,0.08)] bg-gradient-to-b from-transparent via-transparent to-violet-950/[0.015]">
+    <div className="flex flex-col gap-3 glass-panel-ar p-4 md:p-5 rounded-xl desktop-panel-fit-visible relative shadow-xl group transition-all duration-300 hover:border-[#c5a46e]/15 bg-gradient-to-b from-transparent via-transparent to-white/[0.006]">
       
       {/* Header section */}
       <div className="flex justify-between items-center pb-2.5 border-b border-white/[0.06] flex-shrink-0 select-none gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <h3 className="text-base font-bold text-neutral-100 tracking-wide font-sans">
+          <h3 className="text-lg font-semibold text-neutral-100 tracking-tight font-sans">
             字幕文件
           </h3>
           <span className="text-xs font-semibold text-[#d8c39a] bg-white/[0.03] border border-white/[0.08] px-2.5 py-0.5 rounded-full">
@@ -192,7 +192,7 @@ export const TaskList: React.FC = () => {
           ) : (
             <button
               type="button"
-              className="group px-3 py-2 glass-btn-ar rounded-xl text-xs md:text-sm tracking-[0.04em] flex items-center gap-1.5 transition-all duration-200 cursor-pointer border border-white/5 hover:bg-white/[0.04]"
+              className="group px-3 py-2 glass-btn-ar rounded-lg text-sm tracking-wide flex items-center gap-1.5 transition-all duration-200 cursor-pointer border border-white/5 hover:bg-white/[0.04]"
               onClick={() => setPendingCancelUpload(true)}
               title="取消本次导入并返回上传入口"
             >
@@ -201,7 +201,7 @@ export const TaskList: React.FC = () => {
             </button>
           )}
           <button 
-            className="group px-4 py-2 glass-btn-ar rounded-xl text-xs md:text-sm tracking-[0.04em] flex items-center gap-1.5 transition-all duration-200 cursor-pointer border border-white/5 hover:bg-white/[0.04]"
+            className="group px-4 py-2 glass-btn-ar rounded-lg text-sm tracking-wide flex items-center gap-1.5 transition-all duration-200 cursor-pointer border border-white/5 hover:bg-white/[0.04]"
             onClick={() => fileInputRef.current?.click()}
           >
             <Plus className="w-3.5 h-3.5 text-[#d8c39a] group-hover:rotate-90 transition-transform duration-300" />
@@ -235,7 +235,7 @@ export const TaskList: React.FC = () => {
       <div className="flex-1 flex flex-col gap-3.5 overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-white/[0.03] relative min-h-0 overflow-x-visible">
         
         {/* Banner/Title Card */}
-        <div className="p-3 bg-white/[0.015] border border-white/[0.04] rounded-xl flex items-center justify-between gap-3 relative flex-shrink-0 shadow-lg">
+        <div className="p-3 bg-white/[0.018] border border-white/[0.06] rounded-lg flex items-center justify-between gap-3 relative flex-shrink-0">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <motion.span 
               animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }}
@@ -282,11 +282,11 @@ export const TaskList: React.FC = () => {
         <div className="flex flex-col gap-3.5 flex-1 min-h-0 overflow-visible">
           
           {/* Track Bindings - Wide horizontal card */}
-          <div className="p-4 bg-white/[0.01] border border-white/[0.04] rounded-xl flex flex-col gap-3 shadow-md overflow-visible relative">
-            <h4 className="text-sm text-neutral-200 font-semibold block select-none">
+          <div className="p-4 bg-white/[0.014] border border-white/[0.055] rounded-lg flex flex-col gap-3 overflow-visible relative">
+            <h4 className="text-base text-neutral-100 font-semibold block select-none">
               字幕文件匹配
             </h4>
-            <div className="flex flex-col gap-2.5 bg-white/[0.005] p-3 rounded-lg border border-white/[0.03] overflow-visible relative">
+            <div className="flex flex-col gap-2.5 bg-[#020204]/55 p-3 rounded-lg border border-white/[0.055] overflow-visible relative">
               {/* Chinese binding */}
               <div className="flex flex-row items-center gap-2 overflow-visible">
                 <span className="w-24 text-sm text-neutral-200 font-semibold shrink-0 text-left">
@@ -341,7 +341,7 @@ export const TaskList: React.FC = () => {
           </div>
 
           {/* Configuration & Process Dock */}
-          <div className="p-4 bg-white/[0.01] border border-white/[0.04] rounded-xl flex flex-col gap-3 shadow-md overflow-visible mt-auto">
+          <div className="p-4 bg-white/[0.014] border border-white/[0.055] rounded-lg flex flex-col gap-3 overflow-visible mt-auto">
             
             {/* ASS style extraction hint */}
             {showAssHint && foundAssStyle && (

@@ -21,15 +21,15 @@
   --color-surface-3: #10101a;
   
   /* Consistent type scale for aesthetics and readability (esp. Chinese on dark) */
-  --text-xs: 0.8125rem;  /* 13px - labels, badges, meta */
-  --text-sm: 0.9375rem;  /* 15px - body, dropdown content */
-  --text-base: 1rem;     /* 16px - default */
-  --text-lg: 1.125rem;   /* 18px - panel titles, emphasis */
-  --text-xl: 1.25rem;    /* 20px - section headers */
-  --text-2xl: 1.5rem;    /* 24px - main titles like movie name */
+  --text-xs: 0.75rem;    /* 12px - badges, quiet labels */
+  --text-sm: 0.875rem;   /* 14px - controls, dense content */
+  --text-base: 0.9375rem; /* 15px - primary body */
+  --text-lg: 1rem;       /* 16px - panel titles */
+  --text-xl: 1.125rem;   /* 18px - section headers */
+  --text-2xl: 1.25rem;   /* 20px - emphasized titles */
   
-  --text-h1: 3.815rem;
-  --text-h4: 1.953rem;
+  --text-h1: 2.75rem;
+  --text-h4: 1.5rem;
   --text-h6: 1.25rem;
 }
 
@@ -73,22 +73,22 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-feature-settings: "tnum" "palt";
-  line-height: 1.6; /* better for Chinese body text on dark panels */
+  line-height: 1.5;
   transform: translateZ(0);
 }
 
 /* Consistent, aesthetic type scale + CJK readability (small sizes protected, better leading for Chinese) */
-.text-xs { font-size: var(--text-xs); line-height: 1.5; }
-.text-sm { font-size: var(--text-sm); line-height: 1.55; }
-.text-base { font-size: var(--text-base); line-height: 1.6; }
-.text-lg { font-size: var(--text-lg); line-height: 1.5; }
-.text-xl { font-size: var(--text-xl); line-height: 1.4; }
-.text-2xl { font-size: var(--text-2xl); line-height: 1.35; }
+.text-xs { font-size: var(--text-xs); line-height: 1.45; }
+.text-sm { font-size: var(--text-sm); line-height: 1.5; }
+.text-base { font-size: var(--text-base); line-height: 1.55; }
+.text-lg { font-size: var(--text-lg); line-height: 1.45; }
+.text-xl { font-size: var(--text-xl); line-height: 1.35; }
+.text-2xl { font-size: var(--text-2xl); line-height: 1.3; }
 
 /* Protect tiny text and boost Chinese readability on dark glass */
-.text-\[9px\], .text-\[10px\], .text-\[11px\], .text-\[0\.5625rem\], .text-\[0\.625rem\], .text-\[0\.6875rem\], .text-xs {
+.text-\[9px\], .text-\[10px\], .text-\[11px\], .text-\[0\.5625rem\], .text-\[0\.625rem\], .text-\[0\.6875rem\] {
   font-size: var(--text-xs) !important;
-  line-height: 1.5 !important;
+  line-height: 1.45 !important;
   font-feature-settings: "tnum" "palt";
 }
 

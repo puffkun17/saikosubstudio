@@ -80,20 +80,19 @@ export const TheaterStep: React.FC = () => {
           </motion.button>
           
           <div>
-            <h2 className="text-xs font-semibold text-neutral-300 tracking-wide">放映厅预览</h2>
-            <p className="text-[10px] text-[#d8c39a] font-mono mt-0.5">
+            <h2 className="text-sm font-semibold text-neutral-200 tracking-tight">放映厅预览</h2>
+            <p className="text-xs text-[#d8c39a] mt-0.5">
               {theaterAspect} · {sceneBackground === 'cinema' ? '影院' : sceneBackground === 'nature' ? '自然光' : sceneBackground === 'night' ? '暗夜' : sceneBackground}
             </p>
           </div>
         </div>
 
         <div className="flex items-center justify-start xl:justify-end gap-2.5 flex-wrap w-full xl:w-auto">
-          <TimelineControls variant="compact" />
           <ControlDeck />
           
           <button 
             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-            className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer
+            className={`py-2 px-3.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer
               ${isSettingsOpen ? 'glass-btn-ar-active' : 'glass-btn-ar text-neutral-350 hover:text-white'}`}
           >
             <Sliders className="w-3.5 h-3.5" />
@@ -107,18 +106,23 @@ export const TheaterStep: React.FC = () => {
       {/* 主体内容 */}
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* Theater 预览区域 */}
-        <div className="flex-1 flex items-center justify-center p-3 md:p-6 xl:p-8 relative min-w-0">
-          <SimulatorBoundary>
-            <ScreenSimulator
-              subtitle={subtitleSlot}
-              backdrop={backdropSlot}
-              style={customStyle}
-              previewIndex={safePreviewIndex}
-              theaterAspect={theaterAspect}
-              guides={{ show: showGuides, temp: tempShowGuides }}
-              triggerTempGuides={triggerTempGuides}
-            />
-          </SimulatorBoundary>
+        <div className={`flex-1 flex flex-col items-center justify-center gap-3 p-3 md:p-5 xl:p-6 relative min-w-0 transition-[padding] duration-500 ease-out ${isSettingsOpen ? 'xl:pr-[390px]' : ''}`}>
+          <div className="w-full max-w-[1080px] shrink-0 px-1">
+            <TimelineControls variant="theater" />
+          </div>
+          <div className="flex-1 w-full min-h-0 flex items-center justify-center">
+            <SimulatorBoundary>
+              <ScreenSimulator
+                subtitle={subtitleSlot}
+                backdrop={backdropSlot}
+                style={customStyle}
+                previewIndex={safePreviewIndex}
+                theaterAspect={theaterAspect}
+                guides={{ show: showGuides, temp: tempShowGuides }}
+                triggerTempGuides={triggerTempGuides}
+              />
+            </SimulatorBoundary>
+          </div>
         </div>
 
         {/* 样式侧边栏 */}
@@ -129,7 +133,7 @@ export const TheaterStep: React.FC = () => {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: 360, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="absolute right-6 top-6 bottom-6 w-[340px] z-50 glass-panel-ar rounded-3xl overflow-hidden flex flex-col"
+              className="absolute right-4 md:right-6 top-4 md:top-6 bottom-4 md:bottom-6 w-[min(360px,calc(100vw-2rem))] z-50 glass-panel-ar rounded-3xl overflow-hidden flex flex-col"
             >
               <StyleSidebar />
             </motion.div>

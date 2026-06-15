@@ -35,16 +35,10 @@ const getDefaultScale = () => {
   const savedScale = localStorage.getItem('nexus_site_scale');
   if (savedScale) {
     const parsed = parseFloat(savedScale);
-    if (!isNaN(parsed)) return parsed;
+    if (!isNaN(parsed) && parsed >= 1.0 && parsed <= 1.3) return parsed;
   }
 
-  const w = window.screen.width;
-  const h = window.screen.height;
-  const dpr = window.devicePixelRatio || 1;
-
-  if (w < 1600 || h < 900) return 1.0;
-  if (w < 2560 && dpr < 2) return 1.2;
-  return 1.5;
+  return 1.0;
 };
 
 // ─── Tray ─────────────────────────────────────────────────────────────────────
@@ -72,7 +66,7 @@ export const SystemTray = () => {
   }, [scale]);
 
   const cycleScale = () => {
-    const nextScales: Record<number, number> = { 1.0: 1.2, 1.2: 1.35, 1.35: 1.5, 1.5: 1.0 };
+    const nextScales: Record<number, number> = { 1.0: 1.1, 1.1: 1.2, 1.2: 1.3, 1.3: 1.0 };
     const next = nextScales[scale] || 1.0;
     setScale(next);
     localStorage.setItem('nexus_site_scale', String(next));

@@ -59,27 +59,27 @@ export const IngestStep: React.FC = () => {
 
       <div className="flex items-center gap-2 mb-2 select-none z-20 flex-shrink-0">
         <span className="w-1.5 h-1.5 rounded-full bg-[#c5a46e]/80" />
-        <span className="text-xs font-semibold tracking-wide text-[#d8c39a]/85">
+        <span className="text-xs font-medium tracking-wide text-[#d8c39a]/80">
           字幕导入 · 轨道整理 · 片源匹配
         </span>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 md:mb-5 z-20 flex-shrink-0">
         <div className="flex flex-col gap-2 text-left">
-          <h1 className="!text-[clamp(2.35rem,5.2vw,4.4rem)] font-extrabold tracking-tight text-white flex items-center flex-wrap font-sans">
+          <h1 className="!text-[clamp(1.85rem,3.2vw,2.75rem)] font-semibold tracking-tight text-white flex items-center flex-wrap font-sans">
             SaikoSubStudio
-            <span className="text-xs text-[#d8c39a] bg-[#c5a46e]/10 border border-[#c5a46e]/20 px-3 py-1 rounded-full ml-4 font-mono font-bold tracking-wide shadow-[0_0_15px_rgba(197,164,110,0.1)]">
+            <span className="text-xs text-[#d8c39a] bg-[#c5a46e]/10 border border-[#c5a46e]/20 px-2.5 py-0.5 rounded-md ml-3 font-mono font-semibold tracking-wide shadow-[0_0_15px_rgba(197,164,110,0.08)]">
               v2.0.1
             </span>
           </h1>
-          <p className="text-sm text-neutral-300 tracking-wide">
+          <p className="text-sm text-neutral-400 tracking-wide">
             导入字幕包，整理轨道、样式与片源信息。
           </p>
         </div>
         
         <div className="flex flex-wrap items-center gap-3 md:gap-4">
           <button 
-            className="px-5 py-2.5 glass-btn-ar rounded-full text-sm tracking-wide text-neutral-300 hover:text-white flex items-center gap-2 cursor-pointer transition-all duration-300 group"
+            className="px-4 py-2 glass-btn-ar rounded-lg text-sm tracking-wide text-neutral-300 hover:text-white flex items-center gap-2 cursor-pointer transition-all duration-300 group"
             onClick={() => setIsLibraryOpen(true)}
           >
             <Clock className="w-3.5 h-3.5 text-[#d8c39a]" />
@@ -113,11 +113,11 @@ export const IngestStep: React.FC = () => {
             className="flex-1 desktop-panel-fit-hidden grid grid-cols-1 lg:grid-cols-3 gap-4 z-10 max-w-[1600px] mx-auto w-full relative"
           >
             {/* TMDB Panel */}
-            <div className="lg:col-span-1 desktop-panel-fit-hidden min-w-0 p-1 bg-white/[0.01] border border-white/[0.04] rounded-[28px] shadow-2xl hover:border-[#c5a46e]/15 transition-colors duration-500">
+            <div className="lg:col-span-1 desktop-panel-fit-hidden min-w-0 p-1 bg-white/[0.012] border border-white/[0.06] rounded-xl shadow-xl hover:border-[#c5a46e]/15 transition-colors duration-500">
               <TmdbPanel />
             </div>
             {/* TaskList */}
-            <div className="lg:col-span-2 flex flex-col desktop-panel-fit-visible min-w-0 relative p-1 bg-white/[0.01] border border-white/[0.04] rounded-[28px] shadow-2xl hover:border-[#c5a46e]/15 transition-colors duration-500">
+            <div className="lg:col-span-2 flex flex-col desktop-panel-fit-visible min-w-0 relative p-1 bg-white/[0.012] border border-white/[0.06] rounded-xl shadow-xl hover:border-[#c5a46e]/15 transition-colors duration-500">
               <TaskList />
             </div>
           </motion.div>

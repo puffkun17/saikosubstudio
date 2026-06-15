@@ -51,7 +51,7 @@ export const TmdbPanel: React.FC = () => {
   };
 
   return (
-    <div className={`flex flex-col gap-3.5 glass-panel-ar p-4 md:p-5 rounded-3xl desktop-panel-fit-hidden relative shadow-2xl group transition-all duration-500
+    <div className={`flex flex-col gap-3.5 glass-panel-ar p-4 md:p-5 rounded-xl desktop-panel-fit-hidden relative shadow-xl group transition-all duration-300
       ${tmdbData 
         ? 'border-violet-500/20 shadow-[0_24px_60px_rgba(0,0,0,0.55),_0_0_40px_rgba(168,85,247,0.08)] bg-gradient-to-b from-transparent via-transparent to-violet-950/[0.015]' 
         : 'hover:border-violet-500/10'}`}>
@@ -77,7 +77,7 @@ export const TmdbPanel: React.FC = () => {
       
       <div className="flex justify-between items-center pb-3 border-b border-white/[0.06] z-10">
         <div className="flex items-center gap-3.5">
-          <h3 className="text-base font-extrabold text-neutral-100 tracking-tight font-sans">
+          <h3 className="text-lg font-semibold text-neutral-100 tracking-tight font-sans">
             片源信息
           </h3>
           <a 
@@ -125,7 +125,7 @@ export const TmdbPanel: React.FC = () => {
               {/* Movie metadata (Title + Badges) */}
               <div className="flex-1 flex flex-col gap-3 min-w-0 text-left pt-1">
                 <div>
-                  <h4 className="text-2xl font-extrabold text-neutral-100 leading-snug tracking-tight font-sans">
+                  <h4 className="text-xl font-semibold text-neutral-100 leading-snug tracking-tight font-sans">
                     {tmdbData.title}
                   </h4>
                   {tmdbData.originalTitle && tmdbData.originalTitle !== tmdbData.title && (
@@ -158,7 +158,7 @@ export const TmdbPanel: React.FC = () => {
                 </div>
 
                 {tmdbData.isAnime && (
-                  <div className="mt-1 px-2.5 py-0.5 bg-violet-500/10 text-violet-400 border border-violet-500/20 rounded-lg text-xs font-mono uppercase tracking-wider font-bold w-max flex items-center gap-1.5 select-none">
+                  <div className="mt-1 px-2.5 py-0.5 bg-[#c5a46e]/10 text-[#d8c39a] border border-[#c5a46e]/20 rounded-md text-xs font-semibold w-max flex items-center gap-1.5 select-none">
                     <motion.span
                       animate={{ rotate: 360, y: [0, -1.5, 0] }}
                       transition={{ 
@@ -176,13 +176,13 @@ export const TmdbPanel: React.FC = () => {
             </div>
 
             {/* Bottom Row: Synopsis text - consistent scale, better CJK leading for readability */}
-            <div className="border-l-2 border-violet-500/30 pl-3.5 py-0.5 text-sm text-neutral-300 leading-[1.65] font-sans text-left line-clamp-5 lg:line-clamp-6 min-h-0 w-full">
+            <div className="border-l-2 border-[#c5a46e]/25 pl-3.5 py-0.5 text-sm text-neutral-300 leading-[1.65] font-sans text-left line-clamp-5 lg:line-clamp-6 min-h-0 w-full">
               {tmdbData.overview || '暂无剧情简介...'}
             </div>
           </motion.div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-neutral-600 gap-4">
-            <div className="relative p-4 rounded-full bg-white/[0.005] border border-white/5 shadow-[0_0_25px_rgba(139,92,246,0.03)] group-hover:border-violet-500/10 transition-colors">
+              <div className="relative p-4 rounded-xl bg-white/[0.012] border border-white/[0.06] shadow-[0_0_25px_rgba(0,0,0,0.08)] group-hover:border-[#c5a46e]/10 transition-colors">
               <Database className="w-10 h-10 opacity-30 text-violet-400" />
             </div>
             <p className="text-sm text-neutral-300 max-w-[28ch] leading-[1.6]">
