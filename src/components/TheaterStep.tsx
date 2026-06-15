@@ -68,7 +68,7 @@ export const TheaterStep: React.FC = () => {
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden relative bg-[#050507]">
       
       {/* 顶部导航栏 */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center px-4 md:px-6 py-2 min-h-[52px] bg-[#030305]/58 backdrop-blur-md border-b border-white/[0.055] z-50 flex-shrink-0 gap-3">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center px-5 md:px-8 py-4 min-h-[68px] bg-[#020203]/72 backdrop-blur-md border-b border-white/[0.07] z-50 flex-shrink-0 gap-3">
         <div className="flex items-center gap-4">
           <motion.button 
             whileHover={{ scale: 1.03, y: -0.5 }}
@@ -80,8 +80,8 @@ export const TheaterStep: React.FC = () => {
           </motion.button>
           
           <div>
-            <h2 className="text-sm font-semibold text-neutral-200 tracking-tight">放映厅预览</h2>
-            <p className="text-xs text-[#d8c39a] mt-0.5">
+            <h2 className="text-xl font-semibold text-neutral-100 tracking-tight">放映厅预览</h2>
+            <p className="text-sm text-[#e5e7eb] mt-0.5">
               {theaterAspect} · {sceneBackground === 'cinema' ? '影院' : sceneBackground === 'nature' ? '自然光' : sceneBackground === 'night' ? '暗夜' : sceneBackground}
             </p>
           </div>
@@ -92,7 +92,7 @@ export const TheaterStep: React.FC = () => {
           
           <button 
             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-            className={`py-2 px-3.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer
+            className={`py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer
               ${isSettingsOpen ? 'glass-btn-ar-active' : 'glass-btn-ar text-neutral-350 hover:text-white'}`}
           >
             <Sliders className="w-3.5 h-3.5" />
@@ -133,7 +133,7 @@ export const TheaterStep: React.FC = () => {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: 360, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="absolute right-4 md:right-6 top-4 md:top-6 bottom-4 md:bottom-6 w-[min(360px,calc(100vw-2rem))] z-50 glass-panel-ar rounded-3xl overflow-hidden flex flex-col"
+              className="absolute right-4 md:right-6 top-4 md:top-6 bottom-4 md:bottom-6 w-[min(380px,calc(100vw-2rem))] z-50 glass-panel-ar rounded-2xl overflow-hidden flex flex-col"
             >
               <StyleSidebar />
             </motion.div>

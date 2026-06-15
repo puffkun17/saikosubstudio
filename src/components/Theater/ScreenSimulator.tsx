@@ -285,7 +285,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
             <div className="absolute inset-0 pointer-events-none z-20">
               <div className="absolute inset-x-0 top-0 h-[7%] bg-gradient-to-b from-black/55 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 h-[7%] bg-gradient-to-t from-black/55 to-transparent" />
-              <div className="absolute left-[4%] right-[4%] top-[4%] bottom-[4%] border border-[#d8c39a]/12 rounded-sm" />
+              <div className="absolute left-[4%] right-[4%] top-[4%] bottom-[4%] border border-[#e5e7eb]/12 rounded-sm" />
             </div>
           )}
 
@@ -344,7 +344,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
             style={{
               bottom: `${paddingBottomCqh}cqh`,
               opacity: (guides.show || guides.temp) ? 1 : 0,
-              borderBottom: `1px dashed ${isMagnetic ? '#10b981' : 'rgba(168,85,247,0.45)'}`,
+              borderBottom: `1px dashed ${isMagnetic ? '#9ca3af' : 'rgba(255,255,255,0.24)'}`,
               boxShadow: isMagnetic ? '0 0 10px #10b981, 0 0 4px #10b981' : 'none',
               transform: 'scaleY(0.5)',
               transformOrigin: 'bottom'

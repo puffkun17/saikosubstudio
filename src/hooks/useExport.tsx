@@ -50,7 +50,7 @@ export const useExport = () => {
 /**
  * #9 — Export dropdown that closes on outside click
  */
-export const ExportDropdown: React.FC<{ variant?: 'gold' | 'ghost' }> = ({ variant = 'gold' }) => {
+export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ variant = 'primary' }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { handleDownload } = useExport();
@@ -67,16 +67,16 @@ export const ExportDropdown: React.FC<{ variant?: 'gold' | 'ghost' }> = ({ varia
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  const goldClass = 'py-1.5 px-3 md:py-2 md:px-4 glass-btn-ar text-white font-bold text-xs md:text-sm flex items-center gap-1.5 transition-all cursor-pointer';
+  const primaryClass = 'py-1.5 px-3 md:py-2 md:px-4 glass-btn-ar text-white font-bold text-xs md:text-sm flex items-center gap-1.5 transition-all cursor-pointer';
   const ghostClass = 'py-1.5 px-3.5 glass-btn-ar text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer';
 
   return (
     <div className="relative" ref={ref}>
       <button
-        className={variant === 'gold' ? goldClass : ghostClass}
+        className={variant === 'primary' ? primaryClass : ghostClass}
         onClick={() => setOpen(!open)}
       >
-        <svg className="w-3.5 h-3.5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+        <svg className="w-3.5 h-3.5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
         </svg>
         导出
@@ -91,7 +91,7 @@ export const ExportDropdown: React.FC<{ variant?: 'gold' | 'ghost' }> = ({ varia
             className="w-full py-3 px-4 text-xs font-semibold hover:bg-white/5 text-left border-b border-white/[0.06] transition text-white/80 hover:text-white flex items-center gap-2 cursor-pointer"
             onClick={() => { handleDownload('ass'); setOpen(false); }}
           >
-            <span className="font-mono text-violet-400 text-[0.625rem] bg-violet-500/10 px-1.5 py-0.5 rounded">ASS</span>
+            <span className="font-mono text-[#e6dfe6] text-[0.625rem] bg-[#998aa0]/18 border border-[#b9a7b5]/20 px-1.5 py-0.5 rounded">ASS</span>
             ASS 格式 (.ass)
           </button>
           <button

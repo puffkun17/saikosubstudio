@@ -36,7 +36,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
           // Trigger a highlight effect
           const originalBg = element.style.background;
           element.style.transition = 'background 0.3s ease';
-          element.style.background = 'rgba(197, 164, 110, 0.22)';
+          element.style.background = 'rgba(255, 255, 255, 0.10)';
           setTimeout(() => {
             element.style.background = originalBg || 'transparent';
           }, 2000);
@@ -76,7 +76,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
           className="v9-timeline-dial-slider flex-1 min-w-0"
           aria-label="字幕预览进度"
         />
-        <span className="text-xs font-mono text-[#d8c39a] w-12 text-right tabular-nums">
+        <span className="text-xs font-mono text-[#e5e7eb] w-12 text-right tabular-nums">
           {jumpPercent}%
         </span>
       </div>
@@ -88,7 +88,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
       <div className="w-full bg-[#08080c]/78 border border-white/[0.07] px-4 py-3 rounded-2xl flex items-center gap-4 shadow-[0_12px_32px_rgba(0,0,0,0.28)] backdrop-blur-md">
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs font-semibold text-neutral-300">预览进度</span>
-          <span className="text-xs font-mono text-[#d8c39a] tabular-nums">
+          <span className="text-xs font-mono text-[#e5e7eb] tabular-nums">
             {Math.max(1, Math.min(parseInt(jumpLineVal || '1', 10), processedSubs.length))} / {processedSubs.length}
           </span>
         </div>
@@ -118,7 +118,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
             placeholder="1"
           />
           <div className="w-[1px] h-3 bg-white/20" />
-          <span className="v9-dial-gauge-value text-[#d8c39a]">{jumpPercent}%</span>
+          <span className="v9-dial-gauge-value text-[#e5e7eb]">{jumpPercent}%</span>
         </form>
       </div>
     );
@@ -156,7 +156,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
           placeholder="1"
         />
         <div className="w-[1px] h-3 bg-white/20" />
-        <span className="v9-dial-gauge-value text-[#d8c39a]">{jumpPercent}%</span>
+        <span className="v9-dial-gauge-value text-[#e5e7eb]">{jumpPercent}%</span>
       </form>
     </div>
   );

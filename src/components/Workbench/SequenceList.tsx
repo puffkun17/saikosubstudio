@@ -76,7 +76,7 @@ export const SequenceList: React.FC = () => {
               }
             </span>
             {isOverlimit && !showAllSubs && (
-              <span className="hidden sm:inline text-xs text-amber-100/70 truncate">
+              <span className="hidden sm:inline text-xs text-[#d7cec3]/75 truncate">
                 已启用轻量预览，展开后显示完整时间轴
               </span>
             )}
@@ -85,7 +85,7 @@ export const SequenceList: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowAllSubs(true)}
-              className="flex items-center gap-1 text-xs text-[#d8c39a] hover:text-[#f0ddaf] transition cursor-pointer font-bold shrink-0"
+              className="flex items-center gap-1 text-xs text-[#e5e7eb] hover:text-[#ffffff] transition cursor-pointer font-bold shrink-0"
             >
               <ChevronDown className="w-3 h-3" />
               展开全部
@@ -108,7 +108,7 @@ export const SequenceList: React.FC = () => {
               const rowClass = `relative flex gap-6 py-4 px-8 border-b border-white/[0.04] cursor-pointer text-left overflow-hidden transition-all duration-400
                 ${isActive ? 'glass-lens-active' : 'bg-transparent hover:bg-white/[0.015]'}
                 ${(!isActive && hasActiveRow) ? 'glass-blur-inactive' : ''}
-                ${isLyric && !isActive ? 'bg-[#c5a46e]/[0.01]' : ''}`;
+                ${isLyric && !isActive ? 'bg-[#9ca3af]/[0.01]' : ''}`;
 
               return (
                 <div
@@ -121,7 +121,7 @@ export const SequenceList: React.FC = () => {
                   {isActive && (
                     <motion.div
                       layoutId="activeSubIndicator"
-                      className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#d8c39a] shadow-[0_0_12px_rgba(197,164,110,0.55)]"
+                      className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#e5e7eb] shadow-[0_0_12px_rgba(156,163,175,0.55)]"
                       transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                     />
                   )}
@@ -131,12 +131,12 @@ export const SequenceList: React.FC = () => {
                       <motion.span
                         animate={{ y: [0, -2, 0], scale: [1, 1.05, 1] }}
                         transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-                        className="inline-flex select-none text-[#d8c39a]"
+                        className="inline-flex select-none text-[#e5e7eb]"
                       >
                         <Music2 className="w-3 h-3" />
                       </motion.span>
                     )}
-                    <span className={isActive ? 'text-[#d8c39a] font-semibold' : ''}>
+                    <span className={isActive ? 'text-[#e5e7eb] font-semibold' : ''}>
                       {sub.ts.replace(' --> ', ' - ')}
                     </span>
                   </div>
@@ -156,7 +156,7 @@ export const SequenceList: React.FC = () => {
                               setEditingIndex(null);
                             }
                           }}
-                          className="bg-white/[0.02] border border-white/[0.08] text-sm font-medium leading-relaxed text-neutral-100 rounded-lg px-3 py-1.5 w-full outline-none focus:border-[#c5a46e]/50 focus:bg-white/[0.04] transition-all"
+                          className="bg-white/[0.02] border border-white/[0.08] text-sm font-medium leading-relaxed text-neutral-100 rounded-lg px-3 py-1.5 w-full outline-none focus:border-[#9ca3af]/50 focus:bg-white/[0.04] transition-all"
                           placeholder="中文字幕文本"
                           autoFocus
                         />
@@ -173,14 +173,14 @@ export const SequenceList: React.FC = () => {
                                 setEditingIndex(null);
                               }
                             }}
-                            className="bg-white/[0.015] border border-white/[0.06] text-xs font-normal leading-relaxed text-[#d8c39a]/90 rounded-lg px-3 py-1.5 w-full outline-none focus:border-[#c5a46e]/50 focus:bg-white/[0.035] transition-all"
+                            className="bg-white/[0.015] border border-white/[0.06] text-xs font-normal leading-relaxed text-[#e5e7eb]/90 rounded-lg px-3 py-1.5 w-full outline-none focus:border-[#9ca3af]/50 focus:bg-white/[0.035] transition-all"
                             placeholder="英文字幕文本"
                           />
                         )}
                         <div className="flex justify-end gap-2 mt-1">
                           <button
                             type="button"
-                            className="px-3 py-1 bg-[#c5a46e]/15 hover:bg-[#c5a46e]/25 text-[#f0ddaf] border border-[#c5a46e]/25 rounded-lg text-xs font-bold transition cursor-pointer"
+                            className="px-3 py-1 bg-[#9ca3af]/15 hover:bg-[#9ca3af]/25 text-[#ffffff] border border-[#9ca3af]/25 rounded-lg text-xs font-bold transition cursor-pointer"
                             onClick={(e) => { e.stopPropagation(); setEditingIndex(null); }}
                           >
                             保存
@@ -193,7 +193,7 @@ export const SequenceList: React.FC = () => {
                           {zhText}
                         </div>
                         {enText && (
-                          <div className={`text-xs mt-0.5 font-normal leading-relaxed break-words ${isActive ? 'text-[#d8c39a]/90' : 'text-neutral-400'}`}>
+                          <div className={`text-xs mt-0.5 font-normal leading-relaxed break-words ${isActive ? 'text-[#e5e7eb]/90' : 'text-neutral-400'}`}>
                             {enText}
                           </div>
                         )}
@@ -206,12 +206,12 @@ export const SequenceList: React.FC = () => {
                       <motion.span
                         animate={{ opacity: [0.3, 0.8, 0.3] }}
                         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                        className="text-[#d8c39a] font-medium select-none whitespace-nowrap text-xs bg-[#c5a46e]/5 border border-[#c5a46e]/15 px-1.5 py-0.5 rounded"
+                        className="text-[#e5e7eb] font-medium select-none whitespace-nowrap text-xs bg-[#9ca3af]/5 border border-[#9ca3af]/15 px-1.5 py-0.5 rounded"
                       >
                         双击编辑
                       </motion.span>
                     )}
-                    <span className={`font-mono tabular-nums ${isActive ? 'text-[#d8c39a] font-semibold' : 'text-neutral-700'}`}>
+                    <span className={`font-mono tabular-nums ${isActive ? 'text-[#e5e7eb] font-semibold' : 'text-neutral-700'}`}>
                       #{sub.index}
                     </span>
                   </div>
@@ -223,7 +223,7 @@ export const SequenceList: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAllSubs(true)}
-                className="flex items-center justify-center gap-2 py-4 text-sm font-medium text-[#d8c39a] hover:text-[#f0ddaf] transition-colors border-t border-white/[0.06] bg-white/[0.005] backdrop-blur-md cursor-pointer"
+                className="flex items-center justify-center gap-2 py-4 text-sm font-medium text-[#e5e7eb] hover:text-[#ffffff] transition-colors border-t border-white/[0.06] bg-white/[0.005] backdrop-blur-md cursor-pointer"
               >
                 <ChevronDown className="w-4 h-4" />
                 还有 {total - LIMIT} 行未展示，点击全量加载

@@ -214,7 +214,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   tmdbBackdropList: [],
   isTemplateLab: false,
   customStyle: {
-    zhFontSize: 20, enFontSize: 12, zhColor: '#FFFFFF', enColor: '#B0B0B0', zhOutline: '#FF9C41', enOutline: '#000000', enScale: 90, maxLenZh: 20, maxLenEn: 80, marginV: 20, resolution: '1080p', aspectRatio: '16:9', globalScale: 1.0, lyricFontSize: 16, lyricColor: '#E6E6FA', lyricItalic: true, lyricPosition: 'top',
+    zhFontSize: 20, enFontSize: 12, zhColor: '#FFFFFF', enColor: '#B0B0B0', zhOutline: '#4B5563', enOutline: '#000000', enScale: 90, maxLenZh: 20, maxLenEn: 80, marginV: 20, resolution: '1080p', aspectRatio: '16:9', globalScale: 1.0, lyricFontSize: 16, lyricColor: '#E6E6FA', lyricItalic: true, lyricPosition: 'top',
     // 字体家族默认（系统级，跨平台较稳）
     zhFontFamily: 'system-ui, sans-serif',
     enFontFamily: 'Helvetica Neue, Arial, sans-serif'

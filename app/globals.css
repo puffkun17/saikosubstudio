@@ -3,13 +3,13 @@
 @theme {
   --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Source Han Sans CN", "Noto Sans SC", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "PingFang SC", "Microsoft YaHei", "Source Han Sans CN", "Noto Sans SC", monospace;
-  --color-accent-neon: #a855f7;
-  --color-accent-glow: rgba(168, 85, 247, 0.08);
-  --color-accent-gold: #c5a46e;
+  --color-accent-neon: #e5e7eb;
+  --color-accent-glow: rgba(229, 231, 235, 0.08);
+  --color-accent-muted: #9ca3af;
   --color-accent-emerald: #10b981;
   --color-accent-emerald-glow: rgba(16, 185, 129, 0.12);
-  --color-bg-dark: #050507;
-  --color-bg-base: #08080c;
+  --color-bg-dark: #020203;
+  --color-bg-base: #070707;
   --color-surface-base: rgba(255, 255, 255, 0.02);
   --color-surface-elevated: rgba(255, 255, 255, 0.05);
   --color-text-primary: #ffffff;
@@ -21,20 +21,20 @@
   --color-surface-3: #10101a;
   
   /* Consistent type scale for aesthetics and readability (esp. Chinese on dark) */
-  --text-xs: 0.75rem;    /* 12px - badges, quiet labels */
-  --text-sm: 0.875rem;   /* 14px - controls, dense content */
-  --text-base: 0.9375rem; /* 15px - primary body */
-  --text-lg: 1rem;       /* 16px - panel titles */
-  --text-xl: 1.125rem;   /* 18px - section headers */
-  --text-2xl: 1.25rem;   /* 20px - emphasized titles */
+  --text-xs: 0.8125rem;  /* 13px - badges, quiet labels */
+  --text-sm: 1rem;       /* 16px - controls, dense content */
+  --text-base: 1.0625rem; /* 17px - primary body */
+  --text-lg: 1.1875rem;  /* 19px - panel titles */
+  --text-xl: 1.375rem;   /* 22px - section headers */
+  --text-2xl: 1.75rem;   /* 28px - emphasized titles */
   
-  --text-h1: 2.75rem;
-  --text-h4: 1.5rem;
-  --text-h6: 1.25rem;
+  --text-h1: clamp(3.5rem, 5.6vw, 6.75rem);
+  --text-h4: 1.75rem;
+  --text-h6: 1.375rem;
 }
 
 :root {
-  --background: #030305;
+  --background: #020203;
   --foreground: #ffffff;
 }
 
@@ -78,8 +78,8 @@ body {
 }
 
 /* Consistent, aesthetic type scale + CJK readability (small sizes protected, better leading for Chinese) */
-.text-xs { font-size: var(--text-xs); line-height: 1.45; }
-.text-sm { font-size: var(--text-sm); line-height: 1.5; }
+.text-xs { font-size: var(--text-xs); line-height: 1.5; }
+.text-sm { font-size: var(--text-sm); line-height: 1.55; }
 .text-base { font-size: var(--text-base); line-height: 1.55; }
 .text-lg { font-size: var(--text-lg); line-height: 1.45; }
 .text-xl { font-size: var(--text-xl); line-height: 1.35; }
@@ -114,7 +114,7 @@ body::before {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  opacity: 0.008; /* 进一步降低以解决 Windows+Chrome 严重底纹问题，同时保留轻微电影胶片质感 */
+  opacity: 0.005; /* 保留轻微质感，但避免破坏参考站式的纯黑阅读感 */
   pointer-events: none;
   z-index: 9999;
   mix-blend-mode: screen;
@@ -188,7 +188,7 @@ body::before {
 }
 
 .bg-aurora-glow-purple {
-  background: radial-gradient(circle at center, rgba(168, 85, 247, 0.15) 0%, transparent 65%);
+  background: radial-gradient(circle at center, rgba(229, 231, 235, 0.08) 0%, transparent 65%);
   animation: auroraBreathe 14s infinite ease-in-out;
 }
 
@@ -332,19 +332,19 @@ body::before {
 }
 
 .v9-wheel-item.active {
-  color: #d8c39a;
+  color: #e5e7eb;
   font-weight: 700;
-  text-shadow: 0 0 10px rgba(197, 164, 110, 0.32);
+  text-shadow: 0 0 10px rgba(229, 231, 235, 0.22);
 }
 
 .v9-wheel-label {
-  font-size: 0.8125rem;
-  font-weight: 700;
+  font-size: 0.9375rem;
+  font-weight: 650;
   letter-spacing: 0;
 }
 
 .v9-wheel-desc {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   margin-top: 1px;
   font-weight: 500;
 }
@@ -357,31 +357,31 @@ body::before {
   background: rgba(255, 255, 255, 0.015);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 8px;
-  padding: 4px 12px;
+  padding: 6px 14px;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .v9-dial-gauge-label {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.35);
   font-weight: 600;
   text-transform: none;
 }
 
 .v9-dial-gauge-input {
-  width: 48px;
+  width: 56px;
   background: transparent;
   border: none;
-  color: #d8c39a;
+  color: #e5e7eb;
   font-weight: 700;
   font-family: monospace;
-  font-size: 0.8rem;
+  font-size: 0.9375rem;
   outline: none;
   text-align: center;
 }
 
 .v9-dial-gauge-value {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: #ffffff;
   font-weight: 600;
   font-family: monospace;
@@ -391,7 +391,7 @@ body::before {
 .v9-timeline-dial-slider {
   -webkit-appearance: none;
   width: 100%;
-  height: 4px;
+  height: 5px;
   border-radius: 2px;
   background: rgba(255, 255, 255, 0.08);
   outline: none;
@@ -400,20 +400,20 @@ body::before {
 
 .v9-timeline-dial-slider::-webkit-slider-runnable-track {
   width: 100%;
-  height: 4px;
+  height: 5px;
   border-radius: 2px;
-  background: linear-gradient(90deg, rgba(197, 164, 110, 0.36) 0%, rgba(168, 85, 247, 0.18) 42%, rgba(255, 255, 255, 0.055) 100%);
+  background: linear-gradient(90deg, rgba(229, 231, 235, 0.46) 0%, rgba(255, 255, 255, 0.12) 58%, rgba(255, 255, 255, 0.055) 100%);
 }
 
 .v9-timeline-dial-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: #d8c39a;
+  background: #e5e7eb;
   border: 2px solid #08080c;
-  box-shadow: 0 0 8px rgba(197, 164, 110, 0.5);
-  margin-top: -4px;
+  box-shadow: 0 0 8px rgba(229, 231, 235, 0.26);
+  margin-top: -5.5px;
   transition: transform 0.15s;
 }
 
@@ -501,33 +501,32 @@ html.ua-safari .font-mono {
 */
 
 .glass-panel-ar {
-  background: rgba(255, 255, 255, 0.012);
-  backdrop-filter: blur(28px) saturate(118%);
-  border: 1px solid rgba(255, 255, 255, 0.055);
+  background: rgba(12, 12, 14, 0.62);
+  backdrop-filter: blur(24px) saturate(108%);
+  border: 1px solid rgba(255, 255, 255, 0.085);
   box-shadow: 
-    inset 0 1px 1px rgba(255, 255, 255, 0.06),
-    0 22px 54px rgba(0, 0, 0, 0.48),
-    0 0 24px rgba(197, 164, 110, 0.018);
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 18px 52px rgba(0, 0, 0, 0.42);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translateZ(0); /* improve backdrop-filter consistency on Windows Chrome */
 }
 
 .glass-btn-ar {
-  background: rgba(255, 255, 255, 0.014);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(10px);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  color: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translateZ(0);
   /* glass-btn-ar 是 glass-panel-ar 的按钮变体，blur 值较低（10px），更轻量，适合交互元素 */
 }
 
 .glass-btn-ar:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.055);
   color: rgba(255, 255, 255, 0.95);
-  border-color: rgba(197, 164, 110, 0.2);
-  box-shadow: 0 4px 15px rgba(197, 164, 110, 0.035);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.025);
 }
 
 .glass-btn-ar:active {
@@ -536,19 +535,19 @@ html.ua-safari .font-mono {
 }
 
 .glass-btn-ar-active {
-  background: rgba(197, 164, 110, 0.075) !important;
-  border-color: rgba(197, 164, 110, 0.32) !important;
-  color: #d8c39a !important;
+  background: rgba(229, 231, 235, 0.09) !important;
+  border-color: rgba(229, 231, 235, 0.36) !important;
+  color: #e5e7eb !important;
   box-shadow: 
-    inset 0 1px 1px rgba(197, 164, 110, 0.14),
-    0 0 18px rgba(197, 164, 110, 0.12) !important;
+    inset 0 1px 0 rgba(229, 231, 235, 0.16),
+    0 0 16px rgba(229, 231, 235, 0.10) !important;
 }
 
 /* Glass Range Input */
 .glass-slider-input {
   -webkit-appearance: none;
   width: 100%;
-  height: 4px;
+  height: 5px;
   background: rgba(255, 255, 255, 0.06);
   border-radius: 2px;
   outline: none;
@@ -557,20 +556,20 @@ html.ua-safari .font-mono {
 
 .glass-slider-input::-webkit-slider-runnable-track {
   width: 100%;
-  height: 4px;
+  height: 5px;
   background: rgba(255, 255, 255, 0.06);
   border-radius: 2px;
 }
 
 .glass-slider-input::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: #ffffff;
-  border: 2.5px solid #c5a46e;
-  box-shadow: 0 0 10px rgba(197, 164, 110, 0.5);
-  margin-top: -4px;
+  border: 2.5px solid #9ca3af;
+  box-shadow: 0 0 10px rgba(229, 231, 235, 0.22);
+  margin-top: -5.5px;
   transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
@@ -580,7 +579,7 @@ html.ua-safari .font-mono {
 
 .glass-slider-input::-webkit-slider-thumb:active {
   transform: scale(0.95);
-  background: #d8c39a;
+  background: #e5e7eb;
 }
 
 /* Glass recessed slot */
@@ -599,13 +598,13 @@ html.ua-safari .font-mono {
 }
 
 .glass-lens-active {
-  background: rgba(255, 255, 255, 0.028) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(197, 164, 110, 0.18) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
   box-shadow: 
     inset 0 1px 1px rgba(255, 255, 255, 0.13),
     0 12px 30px rgba(0, 0, 0, 0.35),
-    0 0 15px rgba(197, 164, 110, 0.04);
+    0 0 12px rgba(255, 255, 255, 0.03);
   transform: scale(1.008);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }

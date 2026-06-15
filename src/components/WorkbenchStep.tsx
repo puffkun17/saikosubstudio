@@ -32,7 +32,7 @@ export const WorkbenchStep: React.FC = () => {
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#050507]">
       {/* Top Navbar */}
-      <div className="flex flex-col md:flex-row justify-between items-center px-6 py-4 border-b border-white/[0.055] bg-[#030305]/58 backdrop-blur-md gap-4 z-50 flex-shrink-0">
+      <div className="flex flex-col md:flex-row justify-between items-center px-6 md:px-8 py-5 border-b border-white/[0.07] bg-[#020203]/72 backdrop-blur-md gap-4 z-50 flex-shrink-0">
         <div className="flex items-center gap-4 text-left shrink-0">
           <div className="relative">
             {/* Bounce back button */}
@@ -79,8 +79,8 @@ export const WorkbenchStep: React.FC = () => {
           </div>
           
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-neutral-200 tracking-wide pl-0.5">字幕工作台</h2>
-            <p className="text-xs text-[#d8c39a] mt-0.5 max-w-[620px] whitespace-normal break-words leading-relaxed pl-0.5" title={customFilename}>
+            <h2 className="text-xl font-semibold text-neutral-100 tracking-tight pl-0.5">字幕工作台</h2>
+            <p className="text-sm text-[#e5e7eb] mt-0.5 max-w-[720px] whitespace-normal break-words leading-relaxed pl-0.5" title={customFilename}>
               {processedSubs?.length || 0} 行已准备 · {customFilename || '未命名字幕'}
             </p>
           </div>
@@ -96,7 +96,7 @@ export const WorkbenchStep: React.FC = () => {
           <motion.button 
             whileHover={{ scale: 1.02, y: -0.5 }}
             whileTap={{ scale: 0.98 }}
-            className={`py-2 px-3.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5 cursor-pointer
+            className={`py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer
               ${isSettingsOpen ? 'glass-btn-ar-active' : 'glass-btn-ar text-neutral-350 hover:text-white'}`}
             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
             title="样式配置选项"
@@ -114,10 +114,10 @@ export const WorkbenchStep: React.FC = () => {
           <motion.button 
             whileHover={{ scale: 1.02, y: -0.5 }}
             whileTap={{ scale: 0.98 }}
-            className="group py-2 px-3.5 glass-btn-ar text-sm font-bold text-neutral-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+            className="group py-2.5 px-4 glass-btn-ar text-sm font-semibold text-neutral-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
             onClick={() => setWorkflowStep(3)}
           >
-            <Eye className="w-3.5 h-3.5 text-[#d8c39a]" />
+            <Eye className="w-3.5 h-3.5 text-[#e5e7eb]" />
             放映厅预览
           </motion.button>
         </div>
@@ -127,7 +127,7 @@ export const WorkbenchStep: React.FC = () => {
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* Center Panel: Subtitle sequence list */}
         <div className={`flex-1 p-6 min-h-0 overflow-hidden flex flex-col items-center z-10 transition-all duration-300 ${isSettingsOpen ? 'lg:pr-[364px]' : 'pr-0'}`}>
-          <div className="max-w-5xl w-full flex-1 min-h-0 flex flex-col overflow-hidden bg-white/[0.01] border border-white/[0.06] rounded-xl">
+          <div className="max-w-6xl w-full flex-1 min-h-0 flex flex-col overflow-hidden bg-white/[0.012] border border-white/[0.075] rounded-xl">
             <SequenceList />
           </div>
         </div>
@@ -140,7 +140,7 @@ export const WorkbenchStep: React.FC = () => {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: 360, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="absolute right-6 top-6 bottom-6 w-[340px] z-50 glass-panel-ar rounded-3xl overflow-hidden flex flex-col"
+              className="absolute right-6 top-6 bottom-6 w-[360px] z-50 glass-panel-ar rounded-2xl overflow-hidden flex flex-col"
             >
               <StyleSidebar />
             </motion.div>

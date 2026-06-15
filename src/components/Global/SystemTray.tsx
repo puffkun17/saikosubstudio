@@ -93,12 +93,12 @@ export const SystemTray = () => {
   return (
     <nav
       aria-label="System tray"
-      className="fixed top-0 w-full z-50 h-[56px] flex items-center px-5 md:px-7
-        bg-[#030305]/58 backdrop-blur-md border-b border-white/[0.055]
+      className="fixed top-0 w-full z-50 h-[64px] flex items-center px-5 md:px-8
+        bg-[#020203]/72 backdrop-blur-md border-b border-white/[0.07]
         justify-between transition-colors duration-300"
     >
       {/* ── Left: brand + nav ──────────────────────────────── */}
-      <div className="flex items-center gap-3 text-sm tracking-tight min-w-0">
+      <div className="flex items-center gap-3 text-base tracking-tight min-w-0">
         <Link
           href="/"
           onClick={handleNavClick}
@@ -111,7 +111,7 @@ export const SystemTray = () => {
         </Link>
 
         <span className="text-white/15 select-none">/</span>
-        <span className="text-[#d8c39a] font-medium truncate">
+        <span className="text-[#e5e7eb] font-medium truncate">
           {isHome ? STEP_LABEL[workflowStep] : crumb}
         </span>
       </div>
@@ -147,14 +147,14 @@ export const SystemTray = () => {
       <div className="flex items-center gap-4 shrink-0">
         <button
           onClick={cycleScale}
-          className="px-2.5 py-1 rounded-lg glass-btn-ar text-xs font-mono text-neutral-300 hover:text-neutral-100 cursor-pointer select-none flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-xl glass-btn-ar text-xs font-mono text-neutral-300 hover:text-neutral-100 cursor-pointer select-none flex items-center gap-1.5"
           title="调节网页整体缩放"
         >
           <span className="text-xs opacity-70 font-bold tracking-wide">A±</span>
-          <span className="font-bold text-[#d8c39a]" suppressHydrationWarning>{Math.round(scale * 100)}%</span>
+          <span className="font-bold text-[#e5e7eb]" suppressHydrationWarning>{Math.round(scale * 100)}%</span>
         </button>
         <span
-          className="text-xs font-mono text-white/45 tabular-nums tracking-wide"
+          className="text-xs font-mono text-white/50 tabular-nums"
           aria-label="Current time"
         >
           {time}

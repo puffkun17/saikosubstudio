@@ -42,7 +42,7 @@ export default function Home() {
           >
             {l.type === 'success' && <span className="mr-2.5 text-emerald-500">✓</span>}
             {l.type === 'error' && <span className="mr-2.5 text-rose-500">✕</span>}
-            {l.type === 'info' && <span className="mr-2.5 text-accent-gold">ℹ</span>}
+            {l.type === 'info' && <span className="mr-2.5 text-white/70">ℹ</span>}
             <span className="flex-1">{l.msg}</span>
           </div>
         ))}
