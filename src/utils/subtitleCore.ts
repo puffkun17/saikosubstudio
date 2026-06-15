@@ -205,7 +205,8 @@ export function cleanFilename(n: string): string {
   if (!n) return '';
   let title = n.replace(/_merged_\d{8}_\d{6}/gi, '');
   title = title.replace(/\.(srt|ass|txt|zip|rar|vtt)$/i, '');
-  const hasEpisodeKey = /\bS\d{1,4}E\d{1,4}\b/i.test(title) || /\b(?:EP|E)\d{1,4}\b/i.test(title);
+  const parsedTitle = parseMediaFilename(title);
+  const hasEpisodeKey = Boolean(parsedTitle.episodeKey);
   
   // Movie year match. Episode filenames often include documentary/source years
   // before SxxExx; those should not become part of the searchable series title.
@@ -257,6 +258,180 @@ export function cleanFilename(n: string): string {
   title = title.replace(/[([【（][\s)*\]】）]/g, ' ');
   title = title.replace(/[\s.\-_/\\:+]+/g, ' ');
   return title.trim();
+}
+
+const HAN_NUMERAL_MAP: Record<string, number> = {
+  零: 0,
+  〇: 0,
+  一: 1,
+  二: 2,
+  两: 2,
+  三: 3,
+  四: 4,
+  五: 5,
+  六: 6,
+  七: 7,
+  八: 8,
+  九: 9,
+};
+
+const parseLooseNumber = (value: string): number | null => {
+  const raw = value.trim();
+  if (!raw) return null;
+  if (/^\d+$/.test(raw)) return parseInt(raw, 10);
+
+  let total = 0;
+  let section = 0;
+  let hasUnit = false;
+
+  for (const char of raw) {
+    if (char === '十') {
+      hasUnit = true;
+      section = (section || 1) * 10;
+      total += section;
+      section = 0;
+      continue;
+    }
+    const digit = HAN_NUMERAL_MAP[char];
+    if (digit === undefined) return null;
+    section = digit;
+  }
+
+  const parsed = total + section;
+  return hasUnit || raw.length === 1 ? parsed : null;
+};
+
+const normalizeEpisodeKey = (season: number | null, episode: number | null) => {
+  if (!episode && !season) return undefined;
+  if (season && episode) return `S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`;
+  if (season) return `S${String(season).padStart(2, '0')}`;
+  if (episode) return `E${String(episode).padStart(2, '0')}`;
+  return undefined;
+};
+
+const stripKnownMediaTags = (value: string) => {
+  const tags = [
+    '1080p', '4k', '2160p', '720p', 'web-dl', 'webdl', 'webrip', 'web', 'atmos', 'x264', 'h264', 'x265', 'h265', 'hevc', '10bit', '8bit',
+    'ddp5\\.1', 'dd5\\.1', '5\\.1', '7\\.1', '6ch', 'bluray', 'brrip', 'bdrip', 'hdrip', 'dvdrip', 'psa', 'rarbg', 'yts', 'tgx', 'yify',
+    'director', 'commentary', 'comment', '解说', '导轨',
+    '简体', '繁体', '中英特效字幕', '中英双语字幕', '中英字幕', '双语字幕', '中文字幕', '英文字幕', '特效字幕', '中英双语', '官译双语', '中英', '双语', '双语种', '特效', '字幕',
+    'zh-cn', 'zh_cn', 'zh-tw', 'zh-hk', 'chs', 'cht', 'gbk', 'utf8', 'eng', 'en', 'zh', 'cn', 'kr', 'jp',
+    '英文', '中字', '英字', 'h\\.264', 'h\\.265', 'atvp', 'flux'
+  ];
+  const tagRegex = new RegExp(`[\\s.\\-_(（\\[【]+(?:${tags.join('|')})(?=[\\s.\\-_)）\\]】]|$)`, 'gi');
+  let clean = value;
+  let prev = '';
+  while (clean !== prev) {
+    prev = clean;
+    clean = clean.replace(tagRegex, ' ');
+  }
+  return clean;
+};
+
+export type ParsedMediaFilename = {
+  rawBase: string;
+  title: string;
+  episodeKey?: string;
+  season?: number;
+  episode?: number;
+  year?: string;
+  hasUsableTitle: boolean;
+  mediaHint: 'tv' | 'movie' | 'unknown';
+};
+
+export function parseMediaFilename(name: string): ParsedMediaFilename {
+  const rawBase = (name || '')
+    .replace(/_merged_\d{8}_\d{6}/gi, '')
+    .replace(/\.(srt|ass|txt|zip|rar|7z|vtt)$/i, '')
+    .trim();
+
+  let working = rawBase;
+  let season: number | null = null;
+  let episode: number | null = null;
+
+  const seasonEpisodeMatch = working.match(/\bS(\d{1,4})[\s._-]*E(\d{1,4})\b/i);
+  if (seasonEpisodeMatch) {
+    season = parseInt(seasonEpisodeMatch[1], 10);
+    episode = parseInt(seasonEpisodeMatch[2], 10);
+    working = working.replace(seasonEpisodeMatch[0], ' ');
+  }
+
+  if (!episode) {
+    const seasonOnlyMatch = working.match(/\bS(\d{1,4})\b/i);
+    const episodeOnlyMatch = working.match(/\b(?:EP|E)(\d{1,4})\b/i);
+    if (seasonOnlyMatch) {
+      season = parseInt(seasonOnlyMatch[1], 10);
+      working = working.replace(seasonOnlyMatch[0], ' ');
+    }
+    if (episodeOnlyMatch) {
+      episode = parseInt(episodeOnlyMatch[1], 10);
+      working = working.replace(episodeOnlyMatch[0], ' ');
+    }
+  }
+
+  const chineseSeasonEpisodeMatch = working.match(/第?([零〇一二两三四五六七八九十\d]{1,4})季\s*第?([零〇一二两三四五六七八九十\d]{1,4})[集话話]/);
+  if (chineseSeasonEpisodeMatch) {
+    season = parseLooseNumber(chineseSeasonEpisodeMatch[1]);
+    episode = parseLooseNumber(chineseSeasonEpisodeMatch[2]);
+    working = working.replace(chineseSeasonEpisodeMatch[0], ' ');
+  } else {
+    const chineseSeasonMatch = working.match(/第?([零〇一二两三四五六七八九十\d]{1,4})季/);
+    const chineseEpisodeMatch = working.match(/第?([零〇一二两三四五六七八九十\d]{1,4})[集话話]/);
+    if (chineseSeasonMatch) {
+      season = parseLooseNumber(chineseSeasonMatch[1]);
+      working = working.replace(chineseSeasonMatch[0], ' ');
+    }
+    if (chineseEpisodeMatch) {
+      episode = parseLooseNumber(chineseEpisodeMatch[1]);
+      working = working.replace(chineseEpisodeMatch[0], ' ');
+    }
+  }
+
+  const bracketEpisodeMatch = working.match(/[\[【](\d{1,4})[\]】]/);
+  if (!episode && bracketEpisodeMatch) {
+    episode = parseInt(bracketEpisodeMatch[1], 10);
+    working = working.replace(bracketEpisodeMatch[0], ' ');
+  }
+
+  const episodeKey = normalizeEpisodeKey(season, episode);
+  const isEpisode = Boolean(episodeKey);
+  let year = '';
+  const yearMatch = !isEpisode ? working.match(/\b(19\d{2}|20\d{2})\b/) : null;
+  if (yearMatch) {
+    year = yearMatch[1];
+    working = working.replace(yearMatch[0], ' ');
+  } else if (isEpisode) {
+    working = working.replace(/\b(19\d{2}|20\d{2})\b/g, ' ');
+  }
+
+  const colonParts = working.split(/\s*[:：]\s*/).filter(Boolean);
+  if (colonParts.length > 1) {
+    const tail = colonParts[colonParts.length - 1];
+    if (tail.split(/[\s.\-_]+/).filter(Boolean).length >= 2) {
+      working = tail;
+    }
+  }
+
+  let title = stripKnownMediaTags(working);
+  title = title.replace(/[\[【(（][^\]】)）]*[\]】)）]/g, ' ');
+  title = title.replace(/-[a-zA-Z0-9]+$/g, ' ');
+  title = title.replace(/[([【（][\s)*\]】）]/g, ' ');
+  title = title.replace(/[\s.\-_/\\:+]+/g, ' ').trim();
+
+  const hasLettersOrChinese = /[a-zA-Z\u4e00-\u9fff]/.test(title);
+  const looksOnlyEpisode = /^(?:s?\d{1,4}|e?\d{1,4})$/i.test(title.replace(/\s+/g, ''));
+  const hasUsableTitle = title.length >= 2 && hasLettersOrChinese && !looksOnlyEpisode;
+
+  return {
+    rawBase,
+    title,
+    episodeKey,
+    season: season || undefined,
+    episode: episode || undefined,
+    year: year || undefined,
+    hasUsableTitle,
+    mediaHint: isEpisode ? 'tv' : year ? 'movie' : 'unknown',
+  };
 }
 
 /**

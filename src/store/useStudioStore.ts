@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { SubRow, StyleSettings, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, autoSignature, extractStylesFromAss, parseSubtitle, cleanFilename, splitSingleBilingualText } from '../utils/subtitleCore';
+import { SubRow, StyleSettings, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, autoSignature, extractStylesFromAss, parseSubtitle, cleanFilename, splitSingleBilingualText, parseMediaFilename } from '../utils/subtitleCore';
 
 export interface Subfile {
   id: string;
@@ -178,7 +178,7 @@ export interface StudioState {
   setTasks: (tasks: TaskPair[] | ((prev: TaskPair[]) => TaskPair[])) => void;
   setRefScreenshot: (url: string | null) => void;
   triggerTempGuides: () => void;
-  searchTmdb: (query: string, options?: { silent?: boolean }) => Promise<void>;
+  searchTmdb: (query: string, options?: { silent?: boolean; fallbackTitle?: string }) => Promise<void>;
   searchTmdbManual: (query: string, type: TmdbMediaType, year: string) => Promise<void>;
   selectTmdbSuggestion: (s: TmdbSuggestion, options?: { silent?: boolean }) => Promise<void>;
   shuffleBackdrop: () => void;
@@ -396,10 +396,44 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     const silent = options?.silent ?? false;
     const rawSearchStr = query.trim();
     if (!rawSearchStr) return;
-    
-    const isEpisodeQuery = /\bS\d{1,4}E\d{1,4}\b/i.test(rawSearchStr) || /\b(?:EP|E)\d{1,4}\b/i.test(rawSearchStr);
-    const searchStr = cleanFilename(rawSearchStr);
-    if (!searchStr) return;
+
+    const parsed = parseMediaFilename(rawSearchStr);
+    const fallbackParsed = options?.fallbackTitle ? parseMediaFilename(options.fallbackTitle) : null;
+    const activeTask = get().tasks.find(t => t.id === get().selectedTaskId);
+    const searchTitle =
+      (parsed.hasUsableTitle ? parsed.title : '') ||
+      (fallbackParsed?.hasUsableTitle ? fallbackParsed.title : '') ||
+      (activeTask?.files || [])
+        .map(file => parseMediaFilename(file.name))
+        .find(item => item.hasUsableTitle)?.title ||
+      '';
+
+    const episodeKey = parsed.episodeKey || fallbackParsed?.episodeKey || activeTask?.epKey;
+    const isEpisodeQuery = Boolean(episodeKey) || parsed.mediaHint === 'tv' || fallbackParsed?.mediaHint === 'tv';
+    const searchStr = cleanFilename(searchTitle);
+
+    if (!searchStr) {
+      if (episodeKey) {
+        const epMatch = episodeKey.match(/S(\d+)E(\d+)/i);
+        const season = epMatch ? parseInt(epMatch[1], 10).toString() : get().tmdbManualInput.season;
+        const episode = epMatch ? parseInt(epMatch[2], 10).toString() : get().tmdbManualInput.episode;
+        set(state => ({
+          tmdbManualInput: {
+            ...state.tmdbManualInput,
+            title: '',
+            type: 'tv',
+            season,
+            episode
+          },
+          tmdbSuggestions: [],
+          tmdbData: null,
+          tmdbBackdrop: null,
+          tmdbManualOpen: !silent
+        }));
+        if (!silent) get().addLog(`已识别为 ${episodeKey}，请补充剧名以关联片源信息`, 'info');
+      }
+      return;
+    }
 
     set({ isSearchingTmdb: true });
     if (!silent) get().addLog(`正在匹配片源信息`, 'info');
@@ -420,23 +454,45 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       const chnPart = chnMatch ? chnMatch.join(' ') : '';
       const engPart = engMatch ? engMatch.join(' ') : '';
 
-      const runSearch = async (q: string) => {
-        const url = `/api/tmdb/search/multi?query=${encodeURIComponent(q)}&language=zh-CN`;
+      const runSearch = async (q: string, endpoint: 'multi' | 'tv' | 'movie' = 'multi') => {
+        const url = `/api/tmdb/search/${endpoint}?query=${encodeURIComponent(q)}&language=zh-CN`;
         const res = await fetch(url);
         if (!res.ok) return [];
         const data = await res.json() as { results?: TmdbSuggestion[] };
-        return (data.results || []).filter((item) => item.media_type === 'movie' || item.media_type === 'tv');
+        return (data.results || [])
+          .map((item) => ({ ...item, media_type: item.media_type || (endpoint === 'multi' ? item.media_type : endpoint) }))
+          .filter((item) => item.media_type === 'movie' || item.media_type === 'tv');
       };
 
-      let results = await runSearch(cleanQuery);
-      if (results.length === 0 && chnPart) {
-        results = await runSearch(chnPart);
-      }
-      if (results.length === 0 && engPart) {
-        results = await runSearch(engPart);
+      const candidateQueries = [cleanQuery, chnPart, engPart]
+        .map(q => q.trim())
+        .filter((q, index, arr) => q.length >= 2 && arr.indexOf(q) === index);
+
+      const mergeResults = (target: TmdbSuggestion[], incoming: TmdbSuggestion[]) => {
+        const keys = new Set(target.map(item => `${item.media_type}:${item.id}`));
+        incoming.forEach(item => {
+          const key = `${item.media_type}:${item.id}`;
+          if (!keys.has(key)) {
+            target.push(item);
+            keys.add(key);
+          }
+        });
+      };
+
+      const results: TmdbSuggestion[] = [];
+      for (const q of candidateQueries) {
+        if (isEpisodeQuery) {
+          mergeResults(results, await runSearch(q, 'tv'));
+          mergeResults(results, await runSearch(q, 'multi'));
+        } else {
+          mergeResults(results, await runSearch(q, 'multi'));
+        }
+        if (results.length >= 8) break;
       }
 
       const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const normalizeLoose = (str: string) => str.toLowerCase().replace(/[\s._\-:：'"“”‘’（）()[\]【】]/g, '');
+      const normalizedQueryLoose = normalizeLoose(cleanQuery);
 
       // Helper function to calculate score for a single item
       const calculateItemScore = (item: TmdbSuggestion) => {
@@ -444,7 +500,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const relDate = item.release_date || item.first_air_date || '';
         const itemYear = relDate.substring(0, 4);
         if (isEpisodeQuery) {
-          score += item.media_type === 'tv' ? 120 : -80;
+          score += item.media_type === 'tv' ? 180 : -180;
         }
         if (year && itemYear === year) {
           score += 100;
@@ -452,10 +508,16 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const normTitle = normalize(item.title || item.name || '');
         const normOrigTitle = normalize(item.original_title || item.original_name || '');
         const normQ = normalize(cleanQuery);
+        const looseTitle = normalizeLoose(item.title || item.name || '');
+        const looseOrigTitle = normalizeLoose(item.original_title || item.original_name || '');
         if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) {
-          score += isEpisodeQuery ? 150 : 50;
+          score += isEpisodeQuery ? 180 : 60;
+        } else if (normalizedQueryLoose && (looseTitle === normalizedQueryLoose || looseOrigTitle === normalizedQueryLoose)) {
+          score += isEpisodeQuery ? 170 : 55;
         } else if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) {
           score += 20;
+        } else if (normalizedQueryLoose && (looseTitle.includes(normalizedQueryLoose) || looseOrigTitle.includes(normalizedQueryLoose) || normalizedQueryLoose.includes(looseTitle) || normalizedQueryLoose.includes(looseOrigTitle))) {
+          score += 24;
         }
         return score;
       };
@@ -471,7 +533,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             const part1 = words.slice(0, k).join(' ');
             const part2 = words.slice(k).join(' ');
             const colonQuery = `${part1}: ${part2}`;
-            const extraResults = await runSearch(colonQuery);
+            const extraResults = await runSearch(colonQuery, isEpisodeQuery ? 'tv' : 'multi');
             if (extraResults.length > 0) {
               const existingIds = new Set(results.map((r) => r.id));
               let addedCount = 0;
@@ -494,7 +556,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const relDate = item.release_date || item.first_air_date || '';
         const itemYear = relDate.substring(0, 4);
         if (isEpisodeQuery) {
-          score += item.media_type === 'tv' ? 120 : -80;
+          score += item.media_type === 'tv' ? 180 : -180;
         }
         if (year && itemYear === year) {
           score += 100;
@@ -503,11 +565,21 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const normTitle = normalize(item.title || item.name || '');
         const normOrigTitle = normalize(item.original_title || item.original_name || '');
         const normQ = normalize(cleanQuery);
+        const looseTitle = normalizeLoose(item.title || item.name || '');
+        const looseOrigTitle = normalizeLoose(item.original_title || item.original_name || '');
         
         if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) {
-          score += isEpisodeQuery ? 150 : 50;
+          score += isEpisodeQuery ? 180 : 60;
+        } else if (normalizedQueryLoose && (looseTitle === normalizedQueryLoose || looseOrigTitle === normalizedQueryLoose)) {
+          score += isEpisodeQuery ? 170 : 55;
         } else if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) {
           score += 20;
+        } else if (normalizedQueryLoose && (looseTitle.includes(normalizedQueryLoose) || looseOrigTitle.includes(normalizedQueryLoose) || normalizedQueryLoose.includes(looseTitle) || normalizedQueryLoose.includes(looseOrigTitle))) {
+          score += 24;
+        }
+
+        if (isEpisodeQuery && item.media_type !== 'tv') {
+          score -= 120;
         }
         
         const displayTitle = item.title || item.name || '';
@@ -525,7 +597,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       if (sortedResults.length > 0) {
         if (!silent) get().addLog(`已找到候选片源，正在选择最匹配项`, "success");
         const best = sortedResults[0];
-        get().selectTmdbSuggestion(best, { silent });
+        if (isEpisodeQuery && best.media_type !== 'tv') {
+          if (!silent) get().addLog(`已识别为剧集片源，需手动确认候选`, 'info');
+          set({ tmdbManualOpen: !silent });
+        } else {
+          get().selectTmdbSuggestion(best, { silent });
+        }
       } else {
         set({ tmdbData: null, tmdbBackdrop: null });
         if (!silent) get().addLog("暂未自动确认片源，可手动选择候选", "error");
@@ -802,9 +879,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       task.zh?.text || '',
       task.en?.text || ''
     );
-    set({ customFilename: detectTitle, filenameSource: 'auto' });
+    const parsedFiles = task.files.map(file => parseMediaFilename(file.name));
+    const parsedTitle = parsedFiles.find(item => item.hasUsableTitle);
+    const displayTitle = parsedTitle?.title || detectTitle || task.title;
+    set({ customFilename: displayTitle, filenameSource: 'auto' });
 
-    const cleanName = detectTitle.replace(/\.[^/.]+$/, "");
+    const cleanName = (parsedTitle?.title || detectTitle).replace(/\.[^/.]+$/, "").trim();
     // Pre-fill type and season/episode if epKey exists
     let type = 'movie';
     let season = '1';
@@ -832,7 +912,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
     if (!task.tmdbData) {
       setTimeout(() => {
-        get().searchTmdb(cleanName);
+        if (cleanName) {
+          get().searchTmdb(`${cleanName} ${task.epKey || ''}`.trim(), { fallbackTitle: task.title });
+        } else if (task.epKey) {
+          set({ tmdbManualOpen: true });
+          get().addLog(`已识别为 ${task.epKey}，请补充剧名以关联片源信息`, 'info');
+        }
       }, 50);
     }
 
@@ -1027,26 +1112,17 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         }
       });
 
-      const parseEpisodeKey = (name: string): string | undefined => {
-        let match = name.match(/S(\d+)E(\d+)/i);
-        if (match) return `S${match[1].padStart(2,'0')}E${match[2].padStart(2,'0')}`;
-        match = name.match(/(?:EP|E)(\d+)\b/i);
-        if (match) return `E${match[1].padStart(2,'0')}`;
-        match = name.match(/[\[【](\d+)[\]】]/);
-        if (match) return `E${match[1].padStart(2,'0')}`;
-        return undefined;
-      };
+      const parsedByName = new Map(
+        newFiles.map(file => [file.name, parseMediaFilename(file.name)])
+      );
+      const fallbackBatchTitle = [...parsedByName.values()]
+        .filter(item => item.hasUsableTitle)
+        .sort((a, b) => b.title.length - a.title.length)[0]?.title || '';
 
-      const getBaseTitle = (n: string): string => {
-        let title = n.replace(/\.(srt|ass|txt|zip|rar)$/i, '');
-        const tvMatch = title.match(/^(.*?)(?:[\s.\-_(【\[]*(?:s\d{1,4}e\d{1,4}|s\d{1,4}|ep\d{1,4})\b)(.*)$/i);
-        if (tvMatch) title = tvMatch[1];
-        title = title.replace(/[\[【(（][^\]】)）]*[\]】)）]/g, ' ');
-        const removeRegex = /[\s.\-_]+(1080p|4k|2160p|720p|web\-dl|webdl|web|atmos|x264|h264|x265|h265|hevc|ddp5\.1|dd5\.1|5\.1|bluray|bdrip|hdrip|webrip|director|commentary|comment|eng_sdh|eng|sdh|chn|cht|chs|zh\-cn|zh_cn|zh\-tw|zh\-hk|zh|en|简|繁|中英|双语|中字|英字|英文|特效|字幕|官译|解说|导轨|atvp|flux)/gi;
-        title = title.replace(removeRegex, ' ');
-        title = title.replace(/\b(eng|sdh|zh|en|cn|chs|cht)\b/gi, ' ');
-        title = title.replace(/[\s.\-_]+/g, ' ').trim();
-        return title;
+      const parseEpisodeKey = (name: string): string | undefined => parsedByName.get(name)?.episodeKey || parseMediaFilename(name).episodeKey;
+      const getBaseTitle = (name: string): string => {
+        const parsed = parsedByName.get(name) || parseMediaFilename(name);
+        return parsed.hasUsableTitle ? parsed.title : fallbackBatchTitle;
       };
 
       const currentTasks = state.tasks.map(task => ({
@@ -1058,7 +1134,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const fileBase = getBaseTitle(file.name).toLowerCase();
 
         const matchedTask = currentTasks.find(t => {
-          const sameBase = t.files.some(f => getBaseTitle(f.name).toLowerCase() === fileBase);
+          const sameBase = fileBase
+            ? t.files.some(f => getBaseTitle(f.name).toLowerCase() === fileBase)
+            : true;
           if (!sameBase) return false;
           if (fileEpKey || t.epKey) return fileEpKey === t.epKey;
           return true;
@@ -1075,7 +1153,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           const baseName = getBaseTitle(file.name);
           const newTask = {
             id: `task_${fileEpKey ? "tv_" + fileEpKey : "movie_" + fileBase}_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
-            title: fileEpKey ? `${baseName} ${fileEpKey}` : baseName,
+            title: fileEpKey ? `${baseName || '待补充剧名'} ${fileEpKey}` : (baseName || '待补充片源'),
             epKey: fileEpKey,
             zh: null,
             en: null,

@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
-import { decodeBuffer, detectLanguageByContent, checkIsBilingual } from '@/utils/subtitleCore';
+import { decodeBuffer, detectLanguageByContent, checkIsBilingual, parseMediaFilename } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
 import { UploadCloud, Folder, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -327,12 +327,17 @@ export const DragZone: React.FC = () => {
 
       setPhase('metadata');
       let displayTitle = '影视数据';
+      let metadataLinked = false;
       if (validItems[0]) {
-        const guess = validItems[0].name.replace(/\.[^.]+$/, '').replace(/[._-]+/g, ' ').trim();
-        if (guess.length > 2) {
-          displayTitle = guess.length > 42 ? guess.slice(0, 40) + '…' : guess;
+        const parsedCandidates = validItems.map(item => parseMediaFilename(item.name));
+        const titleCandidate = parsedCandidates.find(item => item.hasUsableTitle);
+        const episodeCandidate = parsedCandidates.find(item => item.episodeKey);
+        const guess = `${titleCandidate?.title || ''} ${episodeCandidate?.episodeKey || ''}`.trim() || validItems[0].name;
+        if (guess.length > 2 && titleCandidate?.hasUsableTitle) {
+          displayTitle = titleCandidate.title.length > 42 ? titleCandidate.title.slice(0, 40) + '…' : titleCandidate.title;
           setIngestMessage('正在匹配片源信息');
           await searchTmdb(guess, { silent: true }).catch(() => {});
+          metadataLinked = Boolean(useStudioStore.getState().tmdbData);
         }
       }
       await sleep(820);
@@ -344,8 +349,8 @@ export const DragZone: React.FC = () => {
         status: item.accepted ? 'success' : 'skipped',
         note: item.note,
       })));
-      setIngestMessage(displayTitle === '影视数据' ? '字幕工作台已准备完成' : `已关联片源：${displayTitle}`);
-      setResultChips(prev => [...prev.slice(0, 5), displayTitle === '影视数据' ? '片源待确认' : '片源已关联']);
+      setIngestMessage(metadataLinked ? `已关联片源：${displayTitle}` : '字幕工作台已准备完成');
+      setResultChips(prev => [...prev.slice(0, 5), metadataLinked ? '片源已关联' : '片源待确认']);
       await sleep(850);
 
       processFiles(detectedFiles);
