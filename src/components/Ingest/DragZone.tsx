@@ -1,23 +1,11 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
 import { decodeBuffer, detectLanguageByContent, checkIsBilingual } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
-import { UploadCloud, Folder, FileText, CheckCircle2, Archive, Sparkles } from 'lucide-react';
+import { UploadCloud, Folder, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  size: number;
-  alpha: number;
-  color: string;
-  angle: number;
-  speed: number;
-}
 
 type ParseStatus = 'reading' | 'analyzing' | 'success' | 'warning' | 'skipped';
 
@@ -69,6 +57,16 @@ const PHASE_COPY: Record<IngestPhase, string> = {
   needs_review: '需要手动确认片源',
   error: '部分内容需要处理',
 };
+
+const WABI_FEATURES = [
+  '识别 SRT / ASS 字幕轨',
+  '支持 ZIP 字幕包',
+  '区分单语 / 双语 / 导评',
+  '整理输出文件名',
+  '补全片源信息',
+];
+
+const FORMAT_MARKS = ['SRT', 'ASS', 'ZIP'];
 
 const getExtension = (name: string) => {
   const idx = name.lastIndexOf('.');
@@ -129,153 +127,6 @@ const describeTrack = (file: Subfile) => {
   if (file.lang === 'zh-CN' || file.lang === 'zh-TW') return '主字幕轨';
   if (file.lang === 'en') return '副字幕轨';
   return '待确认轨';
-};
-
-const ParticleCanvas: React.FC<{ mode: 'idle' | 'hover' | 'dragging' | 'parsing' }> = ({ mode }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animationFrameId: number;
-    let width = canvas.width = canvas.offsetWidth;
-    let height = canvas.height = canvas.offsetHeight;
-
-    const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = canvas.offsetWidth;
-      height = canvas.height = canvas.offsetHeight;
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    // Initialize particles
-    const particleCount = mode === 'parsing' ? 60 : 35;
-    const particles: Particle[] = [];
-
-    const createParticle = (isInitial = false): Particle => {
-      const pSize = Math.random() * 2.2 + 0.8;
-      let px = Math.random() * width;
-      let py = Math.random() * height;
-
-      if (!isInitial && (mode === 'hover' || mode === 'dragging' || mode === 'parsing')) {
-        // Spawn at outer border of canvas
-        const side = Math.floor(Math.random() * 4);
-        if (side === 0) { px = 0; py = Math.random() * height; } // left
-        else if (side === 1) { px = width; py = Math.random() * height; } // right
-        else if (side === 2) { px = Math.random() * width; py = 0; } // top
-        else { px = Math.random() * width; py = height; } // bottom
-      }
-
-      let color = 'rgba(255, 255, 255, ';
-      if (mode === 'hover' || mode === 'parsing') {
-        color = 'rgba(168, 85, 247, '; // Neon Purple
-      } else if (mode === 'dragging') {
-        color = 'rgba(16, 185, 129, '; // Neon Emerald
-      }
-
-      return {
-        x: px,
-        y: py,
-        vx: (Math.random() - 0.5) * (mode === 'parsing' ? 1.5 : 0.6),
-        vy: (Math.random() - 0.5) * (mode === 'parsing' ? 1.5 : 0.6),
-        size: pSize,
-        alpha: Math.random() * 0.4 + 0.15,
-        color,
-        angle: Math.random() * Math.PI * 2,
-        speed: Math.random() * 1.2 + 0.8,
-      };
-    };
-
-    for (let i = 0; i < particleCount; i++) {
-      particles.push(createParticle(true));
-    }
-
-    const animate = () => {
-      ctx.clearRect(0, 0, width, height);
-
-      const cx = width / 2;
-      const cy = height / 2;
-
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-
-        if (mode === 'idle') {
-          // Slow random drift
-          p.x += p.vx;
-          p.y += p.vy;
-
-          if (p.x < 0) p.x = width;
-          if (p.x > width) p.x = 0;
-          if (p.y < 0) p.y = height;
-          if (p.y > height) p.y = 0;
-        } else if (mode === 'hover' || mode === 'dragging') {
-          // Gravitational pull to center
-          const dx = cx - p.x;
-          const dy = cy - p.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < 25) {
-            particles[i] = createParticle(false);
-            continue;
-          }
-
-          const force = 0.03 + (mode === 'dragging' ? 0.03 : 0.015);
-          p.vx += (dx / dist) * force;
-          p.vy += (dy / dist) * force;
-
-          p.vx *= 0.94;
-          p.vy *= 0.94;
-
-          p.x += p.vx;
-          p.y += p.vy;
-        } else if (mode === 'parsing') {
-          // Spiral inwards
-          const dx = p.x - cx;
-          const dy = p.y - cy;
-          let dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < 15) {
-            particles[i] = createParticle(false);
-            continue;
-          }
-
-          let angle = Math.atan2(dy, dx);
-          dist -= p.speed * 1.8;
-          angle += 0.06;
-
-          p.x = cx + Math.cos(angle) * dist;
-          p.y = cy + Math.sin(angle) * dist;
-
-          p.alpha = Math.min(0.7, dist / (width / 2.5));
-        }
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = p.color + p.alpha + ')';
-        ctx.fill();
-      }
-
-      animationFrameId = requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [mode]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 w-full h-full pointer-events-none z-0"
-    />
-  );
 };
 
 export const DragZone: React.FC = () => {
@@ -560,62 +411,58 @@ export const DragZone: React.FC = () => {
   if (isParsing) {
     const activeStepIndex = Math.max(0, PHASE_STEPS.findIndex(step => step.id === ingestPhase));
     return (
-      <div className="w-full max-w-6xl mx-auto relative flex flex-col items-center justify-center min-h-[560px] px-4">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#9ca3af_0%,transparent_72%)] opacity-[0.032] pointer-events-none -z-10" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#9ca3af]/[0.012] to-transparent pointer-events-none -z-10" />
-        <ParticleCanvas mode="parsing" />
-
-        <div className="relative z-10 w-full max-w-[980px] rounded-2xl border border-white/[0.08] bg-black/42 backdrop-blur-xl overflow-hidden shadow-[0_28px_80px_rgba(0,0,0,0.45)]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(156,163,175,0.1),transparent_58%)] pointer-events-none" />
-          <div className="relative h-[340px] flex flex-col items-center justify-center overflow-hidden">
-            <div className="absolute inset-x-10 top-8 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-            <div className="absolute inset-x-10 bottom-8 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+      <div className="w-full max-w-6xl mx-auto relative flex min-h-[540px] flex-col items-center justify-center px-4">
+        <div className="relative z-10 w-full max-w-[980px] overflow-hidden rounded-[18px] border border-white/[0.075] bg-[#080806]/78 shadow-[0_24px_80px_rgba(0,0,0,0.42)]">
+          <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_0%,rgba(255,255,255,0.035)_46%,transparent_54%)] opacity-35 pointer-events-none" />
+          <div className="relative flex min-h-[320px] flex-col items-center justify-center px-8 text-center">
             <motion.div
-              animate={{ y: ['-120%', '120%'], opacity: [0, 0.8, 0] }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute left-10 right-10 h-px bg-gradient-to-r from-transparent via-[#e5e7eb] to-transparent shadow-[0_0_20px_rgba(156,163,175,0.38)]"
-            />
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
-              className="absolute w-56 h-56 rounded-full border border-[#9ca3af]/16"
-            />
-            <motion.div
-              animate={{ rotate: -360 }}
-              transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
-              className="absolute w-44 h-44 rounded-full border border-dashed border-white/12"
-            />
-
-            <div className="relative z-10 flex flex-col items-center text-center px-8">
-              <div className="w-24 h-24 rounded-full border border-[#9ca3af]/25 bg-[#9ca3af]/[0.04] flex items-center justify-center shadow-[0_0_42px_rgba(156,163,175,0.14)] mb-7">
-                <Sparkles className="w-10 h-10 text-[#e5e7eb]" />
-              </div>
-              <motion.h3
-                key={ingestMessage}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-xl md:text-2xl font-semibold text-white tracking-tight"
-              >
+              key={ingestMessage}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-center"
+            >
+              <span className="mb-5 font-mono text-xs uppercase tracking-[0.32em] text-[#a8b7a3]/75">
+                SUBTITLE WORKBENCH
+              </span>
+              <h3 className="max-w-[760px] text-2xl md:text-[2.125rem] font-semibold tracking-tight text-neutral-50">
                 {ingestMessage}
-              </motion.h3>
-              <p className="mt-3 text-sm text-neutral-300">
-                正在建立字幕工作台
+              </h3>
+              <p className="mt-4 max-w-[560px] text-sm leading-relaxed text-neutral-400">
+                正在整理字幕轨、文件结构与片源线索
               </p>
+            </motion.div>
+
+            <div className="mt-10 flex w-full max-w-[660px] flex-col gap-3">
+              <div className="h-px w-full bg-gradient-to-r from-transparent via-white/16 to-transparent" />
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-medium text-neutral-500">
+                {PHASE_STEPS.map((step, index) => {
+                  const active = step.id === ingestPhase;
+                  const complete = activeStepIndex >= index || ingestPhase === 'ready';
+                  return (
+                    <motion.span
+                      key={step.id}
+                      animate={{ opacity: active ? 1 : complete ? 0.72 : 0.36 }}
+                      className={`${active ? 'text-neutral-100' : complete ? 'text-neutral-300' : 'text-neutral-600'}`}
+                    >
+                      {step.label}
+                    </motion.span>
+                  );
+                })}
+              </div>
+              <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
             </div>
           </div>
 
-          <div className="relative border-t border-white/[0.06] px-5 py-4">
-            <div className="grid grid-cols-5 gap-2">
+          <div className="relative border-t border-white/[0.055] px-5 py-4">
+            <div className="grid grid-cols-5 gap-2" aria-hidden="true">
               {PHASE_STEPS.map((step, index) => {
-                const active = step.id === ingestPhase;
                 const complete = activeStepIndex >= index || ingestPhase === 'ready';
                 return (
-                  <div key={step.id} className="flex flex-col gap-2 min-w-0">
-                    <div className={`h-1 rounded-full transition-all duration-500 ${complete ? 'bg-[#9ca3af]/70 shadow-[0_0_10px_rgba(156,163,175,0.2)]' : 'bg-white/[0.08]'}`} />
-                    <span className={`text-xs truncate text-center font-semibold ${active ? 'text-white' : complete ? 'text-[#e5e7eb]/80' : 'text-white/45'}`}>
-                      {step.label}
-                    </span>
-                  </div>
+                  <div
+                    key={step.id}
+                    className={`h-1 rounded-full transition-all duration-500 ${complete ? 'bg-[#a8b7a3]/70' : 'bg-white/[0.07]'}`}
+                  />
                 );
               })}
             </div>
@@ -627,7 +474,7 @@ export const DragZone: React.FC = () => {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.04 }}
-                  className="px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs text-neutral-200"
+                  className="rounded-full border border-white/[0.075] bg-white/[0.025] px-3 py-1 text-xs text-neutral-300"
                 >
                   {chip}
                 </motion.span>
@@ -649,122 +496,81 @@ export const DragZone: React.FC = () => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Borderless cinematic screen area（无边界但可感知的字幕放映区域）:
-          Large open "projection frame" without hard circular border.
-          Left/right film-strip perforations give clear perception of the drop zone.
-          Very subtle inner lighting and top highlight make the screen feel "lit" and special
-          without boxing the content. Perfect for subtitle/film theme.
-      */}
-      {/* Left film perforation strip（左侧胶片齿孔） - perceptible reel edge */}
-      <div className="absolute left-0 top-0 bottom-0 w-5 z-30 pointer-events-none flex flex-col justify-around py-3">
-        {Array.from({ length: 11 }).map((_, i) => (
-          <div key={i} className="mx-auto w-2.5 h-[5px] bg-black/80 rounded-[1px]" />
-        ))}
-      </div>
-
-      {/* Right film perforation strip */}
-      <div className="absolute right-0 top-0 bottom-0 w-5 z-30 pointer-events-none flex flex-col justify-around py-3">
-        {Array.from({ length: 11 }).map((_, i) => (
-          <div key={i} className="mx-auto w-2.5 h-[5px] bg-black/80 rounded-[1px]" />
-        ))}
-      </div>
-
-      {/* Main borderless screen - the perceptible drop target */}
       <motion.div
         onClick={() => fileInputRef.current?.click()}
         animate={isDragging
-          ? { scale: 0.985, boxShadow: 'inset 0 0 90px rgba(0,0,0,0.95)' }
+          ? { scale: 0.988, boxShadow: 'inset 0 0 90px rgba(0,0,0,0.82), 0 20px 80px rgba(168,183,163,0.08)' }
           : isZoneActive
-            ? { scale: 1.006, boxShadow: 'inset 0 0 38px rgba(0,0,0,0.48), 0 0 54px rgba(156,163,175,0.11)' }
-            : { scale: 1, boxShadow: 'inset 0 0 42px rgba(0,0,0,0.55), 0 18px 60px rgba(0,0,0,0.24)' }
+            ? { scale: 1.002, boxShadow: 'inset 0 0 54px rgba(0,0,0,0.52), 0 24px 72px rgba(0,0,0,0.28)' }
+            : { scale: 1, boxShadow: 'inset 0 0 42px rgba(0,0,0,0.46), 0 18px 60px rgba(0,0,0,0.22)' }
         }
         transition={{ type: "spring", stiffness: 320, damping: 26 }}
-        className="relative w-full max-w-[1120px] h-[340px] mx-auto bg-white/[0.028] border border-white/[0.085] rounded-2xl flex flex-col items-center justify-center cursor-pointer overflow-hidden select-none z-10 backdrop-blur-sm"
+        className="relative z-10 mx-auto flex min-h-[336px] w-full max-w-[1120px] cursor-pointer select-none flex-col items-center justify-center overflow-hidden rounded-[18px] border border-white/[0.08] bg-[#080807]/70 px-8 backdrop-blur-sm"
       >
-        <ParticleCanvas mode={isDragging ? 'dragging' : (isZoneActive ? 'hover' : 'idle')} />
+        <div className="absolute inset-0 bg-[linear-gradient(120deg,transparent_0%,rgba(255,255,255,0.025)_48%,transparent_58%)] opacity-50 pointer-events-none" />
+        <div className="absolute inset-x-10 top-7 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <div className="absolute inset-x-10 bottom-7 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent" />
 
-        {/* Very subtle screen highlight for user perception without hard border */}
-        <div className="absolute inset-x-8 top-5 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent" />
-        <div className="absolute inset-x-8 bottom-5 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-
-        {/*
-          Custom cinematic Ingest Lens icon (no generic AI cloud)
-          - aperture（光圈）: 多叶片结构，模拟真实相机/投影机镜头，增加电影感。
-          - dual-track waveform（双轨波形）: 两条波浪线代表双语字幕（中英轨），这是本工具的核心身份。
-          这个 SVG 比 <UploadCloud> 更有领域特征（domain-specific），避免 AI 模板感。
-        */}
         {isDragging ? (
-          <div className="flex flex-col items-center gap-2 z-20">
-            <motion.div
-              animate={{ y: [-2, 2, -2] }}
-              transition={{ repeat: Infinity, duration: 1.1, ease: "easeInOut" }}
+          <div className="relative z-20 flex flex-col items-center gap-4 text-center">
+            <motion.span
+              animate={{ opacity: [0.72, 1, 0.72] }}
+              transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+              className="font-mono text-sm uppercase tracking-[0.42em] text-[#a8b7a3]"
             >
-              <svg width="70" height="70" viewBox="0 0 52 52" fill="none" className="drop-shadow-[0_0_12px_rgba(156,163,175,0.45)]">
-                {/* Clean outer ring */}
-                <circle cx="26" cy="26" r="23" stroke="#9ca3af" strokeWidth="2" strokeOpacity="0.7" />
-                {/* Inner bold film base */}
-                <rect x="12" y="22" width="28" height="8" rx="1" stroke="#9ca3af" strokeWidth="1.5" strokeOpacity="0.9" fill="none" />
-                {/* Subtitle lines (two clean tracks) */}
-                <line x1="14" y1="19" x2="38" y2="19" stroke="#e5e7eb" strokeWidth="1.2" strokeOpacity="0.85" />
-                <line x1="14" y1="33" x2="38" y2="33" stroke="#e5e7eb" strokeWidth="1.2" strokeOpacity="0.85" />
-                {/* Small center marker for "lens" focus */}
-                <circle cx="26" cy="26" r="3" fill="#9ca3af" fillOpacity="0.4" />
-              </svg>
-            </motion.div>
-            <span className="text-xl text-[#e5e7eb] font-semibold">松手导入</span>
+              RELEASE TO IMPORT
+            </motion.span>
+            <span className="text-2xl font-semibold tracking-tight text-neutral-50">松手导入字幕</span>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3 z-20 text-center">
-            <div className="relative">
-              <svg width="82" height="82" viewBox="0 0 56 56" fill="none"
-                className={`transition-all duration-300 ${isZoneActive ? 'text-[#e5e7eb] drop-shadow-[0_0_14px_rgba(156,163,175,0.35)]' : 'text-neutral-200/90'}`}>
-                {/* Clean outer ring */}
-                <circle cx="28" cy="28" r="25" stroke="currentColor" strokeWidth="1.8" strokeOpacity="0.6" />
-                {/* Bold film base (horizontal rectangle for reel feel) */}
-                <rect x="10" y="22" width="36" height="12" rx="2" stroke="currentColor" strokeWidth="1.6" strokeOpacity="0.85" fill="none" />
-                {/* Two clean subtitle track lines */}
-                <line x1="12" y1="18" x2="44" y2="18" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.9" />
-                <line x1="12" y1="38" x2="44" y2="38" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.9" />
-                {/* Subtle center focus dot */}
-                <circle cx="28" cy="28" r="4" fill="currentColor" fillOpacity="0.25" />
-              </svg>
+          <div className="relative z-20 flex max-w-[760px] flex-col items-center gap-7 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <motion.span
+                animate={{ opacity: isZoneActive ? [0.55, 1, 0.55] : 0.62 }}
+                transition={{ repeat: isZoneActive ? Infinity : 0, duration: 2.4, ease: 'easeInOut' }}
+                className="font-mono text-xs uppercase tracking-[0.36em] text-neutral-500"
+              >
+                SUBTITLE WORKBENCH
+              </motion.span>
+              <h3 className="text-2xl md:text-[2.25rem] font-semibold tracking-tight text-neutral-50">
+                建立字幕工作台
+              </h3>
+              <p className="max-w-[560px] text-base leading-relaxed text-neutral-400">
+                拖入字幕包，整理轨道、样式与片源信息。
+              </p>
             </div>
 
-            <div>
-              <div className="text-2xl font-semibold tracking-tight text-white">建立字幕工作台</div>
-              <div className="text-base text-neutral-300 mt-2">拖入字幕包，系统将整理字幕与影片信息</div>
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex items-center justify-center gap-4 font-mono text-sm text-neutral-400">
+                {FORMAT_MARKS.map((mark, index) => (
+                  <React.Fragment key={mark}>
+                    {index > 0 && <span className="text-white/14">/</span>}
+                    <span>{mark}</span>
+                  </React.Fragment>
+                ))}
+              </div>
+              <div className="h-px w-48 bg-gradient-to-r from-transparent via-[#a8b7a3]/42 to-transparent" />
             </div>
+          </div>
+        )}
+      </motion.div>
 
-	            <div className="flex gap-3 text-sm font-mono text-neutral-400 mt-3">
-	              <span>SRT</span><span className="text-white/20">·</span><span>ASS</span><span className="text-white/20">·</span><span>ZIP</span>
-	            </div>
-	          </div>
-	        )}
-	      </motion.div>
-
-	      <div className="mt-5 w-full max-w-[1120px] grid grid-cols-1 md:grid-cols-3 gap-4 px-4 z-20">
-	        <div className="flex items-start gap-4 rounded-xl border border-white/[0.075] bg-white/[0.018] px-5 py-4">
-	          <FileText className="w-5 h-5 text-[#e5e7eb] mt-0.5 shrink-0" />
-	          <div className="min-w-0">
-	            <div className="text-base font-semibold text-white/90">字幕轨</div>
-	            <div className="text-sm text-neutral-400 leading-relaxed mt-1">识别标准轨、样式轨、双语轨与导评轨。</div>
-	          </div>
-	        </div>
-	        <div className="flex items-start gap-4 rounded-xl border border-white/[0.075] bg-white/[0.018] px-5 py-4">
-	          <Archive className="w-5 h-5 text-[#e5e7eb]/80 mt-0.5 shrink-0" />
-	          <div className="min-w-0">
-	            <div className="text-base font-semibold text-white/90">字幕包</div>
-	            <div className="text-sm text-neutral-400 leading-relaxed mt-1">支持 ZIP 打包导入，并自动忽略非字幕资源。</div>
-	          </div>
-	        </div>
-	        <div className="flex items-start gap-4 rounded-xl border border-white/[0.075] bg-white/[0.018] px-5 py-4">
-	          <Sparkles className="w-5 h-5 text-[#9ca3af] mt-0.5 shrink-0" />
-	          <div className="min-w-0">
-	            <div className="text-base font-semibold text-white/90">片源信息</div>
-	            <div className="text-sm text-neutral-400 leading-relaxed mt-1">导入后自动补全影视资料与预览画面。</div>
-	          </div>
-	        </div>
-	      </div>
+      <div className="mt-5 w-full max-w-[1120px] px-4 z-20">
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-[14px] border border-white/[0.055] bg-white/[0.012] px-5 py-4 text-sm text-neutral-400">
+          {WABI_FEATURES.map((feature, index) => (
+            <motion.span
+              key={feature}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.08, duration: 0.4 }}
+              className="inline-flex items-center gap-2 whitespace-nowrap"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-[#a8b7a3]/70" />
+              {feature}
+            </motion.span>
+          ))}
+        </div>
+      </div>
 
 	      {(preflightItems.length > 0 || trackSummaries.length > 0) && (
 	        <div className="mt-5 w-full max-w-[1120px] px-4 z-20">
@@ -804,23 +610,22 @@ export const DragZone: React.FC = () => {
 	        </div>
 	      )}
 
-	      {/* Refined action buttons — stronger cinematic glass, better hierarchy and breathing */}
-	      <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10 w-full sm:w-auto px-4 z-20">
+	      <div className="flex flex-col sm:flex-row gap-4 justify-center mt-9 w-full sm:w-auto px-4 z-20">
         <button
           onClick={() => fileInputRef.current?.click()}
           className="group w-full sm:w-auto px-10 py-4 rounded-xl text-base font-semibold cursor-pointer transition-all duration-200
-            bg-white/[0.022] hover:bg-[#9ca3af]/5 border border-white/[0.055] hover:border-[#9ca3af]/30
-            text-white/90 hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.35)] hover:shadow-[0_0_18px_rgba(156,163,175,0.08)] active:scale-[0.985]"
+            bg-neutral-100 hover:bg-white border border-white/[0.16]
+            text-black shadow-[0_12px_30px_rgba(0,0,0,0.28)] active:scale-[0.985]"
 	        >
-	          <UploadCloud className="inline-block w-4 h-4 mr-2 align-[-2px] text-[#e5e7eb]" />
+	          <UploadCloud className="inline-block w-4 h-4 mr-2 align-[-2px] text-black/75" />
 	          浏览文件 / ZIP
 	        </button>
 
         <button
           onClick={() => folderInputRef.current?.click()}
           className="group w-full sm:w-auto px-10 py-4 rounded-xl text-base font-semibold cursor-pointer transition-all duration-200
-            bg-white/[0.01] hover:bg-white/[0.035] border border-white/[0.04] hover:border-white/15
-            text-neutral-400 hover:text-neutral-100 shadow-[0_2px_8px_rgba(0,0,0,0.35)] hover:shadow-[0_0_14px_rgba(255,255,255,0.06)] active:scale-[0.985]"
+            bg-white/[0.012] hover:bg-white/[0.04] border border-white/[0.055] hover:border-white/16
+            text-neutral-400 hover:text-neutral-100 shadow-[0_2px_8px_rgba(0,0,0,0.35)] active:scale-[0.985]"
 	        >
 	          <Folder className="inline-block w-4 h-4 mr-2 align-[-2px] text-neutral-300" />
 	          扫描文件夹
