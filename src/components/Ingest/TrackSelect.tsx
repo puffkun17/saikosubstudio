@@ -21,12 +21,12 @@ interface TrackSelectProps {
 const getLangBadgeMini = (lang?: string) => {
   if (!lang) return null;
   const map: Record<string, { label: string; color: string }> = {
-    'zh-CN': { label: '简', color: 'text-[#dbe4e8] bg-[#7f95a0]/18 border border-[#9cafb8]/35' },
-    'zh-TW': { label: '繁', color: 'text-[#dbe4e8] bg-[#7f95a0]/18 border border-[#9cafb8]/35' },
-    'zh': { label: '中', color: 'text-[#dbe4e8] bg-[#7f95a0]/18 border border-[#9cafb8]/35' },
-    'en': { label: '英', color: 'text-[#dfe8dd] bg-[#84977f]/18 border border-[#a8b7a3]/35' },
-    'bilingual': { label: '双', color: 'text-[#e6dfe6] bg-[#998aa0]/18 border border-[#b9a7b5]/35' },
-    'commentary': { label: '导', color: 'text-[#eadfd8] bg-[#9f897b]/18 border border-[#c0a89a]/35' },
+    'zh-CN': { label: '简', color: 'text-sky-200 bg-sky-500/22 border border-sky-300/45' },
+    'zh-TW': { label: '繁', color: 'text-cyan-200 bg-cyan-500/22 border border-cyan-300/45' },
+    'zh': { label: '中', color: 'text-sky-200 bg-sky-500/22 border border-sky-300/45' },
+    'en': { label: '英', color: 'text-emerald-200 bg-emerald-500/22 border border-emerald-300/45' },
+    'bilingual': { label: '双', color: 'text-fuchsia-200 bg-fuchsia-500/22 border border-fuchsia-300/45' },
+    'commentary': { label: '导', color: 'text-orange-200 bg-orange-500/22 border border-orange-300/45' },
   };
   const entry = map[lang];
   if (!entry) return null;
@@ -48,8 +48,8 @@ const truncateMiddle = (text: string, maxLength: number = 80) => {
 const FileNameText: React.FC<{ name: string; className?: string }> = ({ name, className = '' }) => {
   const shouldScroll = name.length > 42;
   return (
-    <span className={`min-w-0 overflow-hidden whitespace-nowrap ${className}`} title={name}>
-      <span className={shouldScroll ? 'inline-block subtitle-marquee' : 'truncate'}>
+    <span className={`hover-marquee ${className}`} title={name}>
+      <span className={shouldScroll ? 'hover-marquee-content' : 'truncate'}>
         {name}
       </span>
     </span>

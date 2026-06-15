@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
 import { useStudioStore } from '@/store/useStudioStore';
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
@@ -15,19 +13,17 @@ const HomeIcon = () => (
   </svg>
 );
 
-// ─── Route configuration ──────────────────────────────────────────────────────
-
-const NAV_ITEMS: { href: string; label: string; Icon: React.FC }[] = [];
-
-const CRUMB_MAP: Record<string, string> = {
-  '/': 'SubStudio',
-};
-
 const STEP_LABEL: Record<number, string> = {
   1: '上传',
   2: '工作台',
   3: '放映厅',
 };
+
+const WORKFLOW_STEPS = [
+  { id: 1, label: '上传' },
+  { id: 2, label: '工作台' },
+  { id: 3, label: '放映厅' },
+];
 
 const getDefaultScale = () => {
   if (typeof window === 'undefined') return 1.0;
@@ -44,19 +40,42 @@ const getDefaultScale = () => {
 // ─── Tray ─────────────────────────────────────────────────────────────────────
 
 export const SystemTray = () => {
-  const pathname = usePathname();
   const [time, setTime] = useState('');
   const [scale, setScale] = useState(getDefaultScale);
-  const { workflowStep, restartSystem, tasks } = useStudioStore();
+  const { workflowStep, restartSystem, tasks, processedSubs, setWorkflowStep } = useStudioStore();
 
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (!isHome && tasks.length > 0 && workflowStep > 1) {
-      const confirmLeave = window.confirm('离开此页面将丢失当前的字幕任务信息，确定要离开吗？');
-      if (!confirmLeave) {
-        e.preventDefault();
-      } else {
+  const hasUploadData = tasks.length > 0;
+  const hasWorkbenchData = Boolean(processedSubs?.length);
+
+  const handleStepClick = (targetStep: number) => {
+    if (targetStep === workflowStep) return;
+
+    if (targetStep === 1) {
+      if (hasUploadData || hasWorkbenchData) {
+        const confirmReset = window.confirm('返回上传入口会清空当前字幕任务。确认重新开始吗？');
+        if (!confirmReset) return;
         restartSystem();
+        return;
       }
+      setWorkflowStep(1);
+      return;
+    }
+
+    if (targetStep === 2) {
+      if (!hasUploadData && !hasWorkbenchData) {
+        window.alert('请先导入字幕文件，再进入工作台。');
+        return;
+      }
+      setWorkflowStep(2);
+      return;
+    }
+
+    if (targetStep === 3) {
+      if (!hasWorkbenchData) {
+        window.alert('请先完成字幕导入或合并，再进入放映厅预览。');
+        return;
+      }
+      setWorkflowStep(3);
     }
   };
 
@@ -87,9 +106,6 @@ export const SystemTray = () => {
     return () => clearInterval(id);
   }, []);
 
-  const isHome = pathname === '/';
-  const crumb  = CRUMB_MAP[pathname] ?? 'SubStudio';
-
   return (
     <nav
       aria-label="System tray"
@@ -98,50 +114,44 @@ export const SystemTray = () => {
         justify-between transition-colors duration-300"
     >
       {/* ── Left: brand + nav ──────────────────────────────── */}
-      <div className="flex items-center gap-3 text-base tracking-tight min-w-0">
-        <Link
-          href="/"
-          onClick={handleNavClick}
-          className={`flex items-center gap-1.5 transition-colors duration-150 shrink-0 font-semibold
-            ${isHome ? 'text-white/90' : 'text-white/40 hover:text-white/80'}`}
-          aria-label="Go to SubStudio home"
+      <div className="flex items-center gap-4 text-base tracking-tight min-w-0">
+        <button
+          type="button"
+          onClick={() => handleStepClick(1)}
+          className="flex items-center gap-1.5 transition-colors duration-150 shrink-0 font-semibold text-white/90 hover:text-white cursor-pointer"
+          aria-label="返回上传入口"
         >
           <HomeIcon />
           <span>SubStudio</span>
-        </Link>
+        </button>
 
-        <span className="text-white/15 select-none">/</span>
-        <span className="text-[#e5e7eb] font-medium truncate">
-          {isHome ? STEP_LABEL[workflowStep] : crumb}
-        </span>
-      </div>
-
-      {/* ── Center: app nav tabs ─────────────────────────────────────── */}
-      {NAV_ITEMS.length > 0 && (
-        <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-1.5
-          bg-white/[0.015] p-1 rounded-full border border-white/[0.08] backdrop-blur-md">
-          {NAV_ITEMS.map(({ href, label, Icon }) => {
-            const isActive = pathname === href;
+        <div className="hidden md:flex items-center gap-1 rounded-xl border border-white/[0.07] bg-white/[0.018] p-1">
+          {WORKFLOW_STEPS.map(step => {
+            const isActive = workflowStep === step.id;
+            const disabled = (step.id === 2 && !hasUploadData && !hasWorkbenchData) || (step.id === 3 && !hasWorkbenchData);
             return (
-              <Link
-                key={href}
-                href={href}
-                onClick={handleNavClick}
-                className={`flex items-center gap-2 px-3.5 py-1 rounded-full text-[12px] font-medium
-                  transition-all duration-150 border
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => handleStepClick(step.id)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer
                   ${isActive
-                    ? 'text-white bg-white/[0.06] border-white/[0.08] shadow-[0_1px_3px_rgba(0,0,0,0.5)]'
-                    : 'text-white/40 border-transparent hover:text-white/80 hover:bg-white/[0.03]'}`}
+                    ? 'bg-white/[0.10] text-white border border-white/[0.08]'
+                    : disabled
+                      ? 'text-white/28 cursor-not-allowed'
+                      : 'text-white/58 hover:text-white hover:bg-white/[0.045]'}`}
+                aria-current={isActive ? 'step' : undefined}
               >
-                <span className={`transition-colors duration-150 ${isActive ? 'text-emerald-400' : 'text-current'}`}>
-                  <Icon />
-                </span>
-                <span>{label.toLowerCase()}</span>
-              </Link>
+                {step.label}
+              </button>
             );
           })}
         </div>
-      )}
+
+        <span className="md:hidden text-white/45 font-medium truncate">
+          {STEP_LABEL[workflowStep]}
+        </span>
+      </div>
 
       {/* ── Right: scale selector & clock ─────────────────────────────── */}
       <div className="flex items-center gap-4 shrink-0">

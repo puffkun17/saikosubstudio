@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { SequenceList } from '@/components/Workbench/SequenceList';
-import { TimelineControls } from '@/components/Workbench/TimelineControls';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
 import { ChevronLeft, Eye, Sliders } from 'lucide-react';
@@ -78,20 +77,17 @@ export const WorkbenchStep: React.FC = () => {
             </AnimatePresence>
           </div>
           
-          <div className="min-w-0">
+          <div className="min-w-0 max-w-[720px]">
             <h2 className="text-xl font-semibold text-neutral-100 tracking-tight pl-0.5">字幕工作台</h2>
-            <p className="text-sm text-[#e5e7eb] mt-0.5 max-w-[720px] whitespace-normal break-words leading-relaxed pl-0.5" title={customFilename}>
-              {processedSubs?.length || 0} 行已准备 · {customFilename || '未命名字幕'}
+            <p className="text-sm text-neutral-400 mt-0.5 whitespace-normal break-words leading-relaxed pl-0.5" title={customFilename}>
+              <span className="text-neutral-100 font-semibold">{processedSubs?.length || 0} 行</span>
+              <span className="mx-2 text-white/18">/</span>
+              <span>{customFilename || '未命名字幕'}</span>
             </p>
           </div>
         </div>
 
-        {/* Timeline Slider and controls in header */}
-        <div className="flex-1 w-full md:w-auto flex items-center justify-end gap-3.5 flex-wrap">
-          <div className="flex-1 min-w-[360px] max-w-4xl">
-            <TimelineControls />
-          </div>
-
+        <div className="flex-1 w-full md:w-auto flex items-center justify-end gap-2.5 flex-wrap">
           {/* Style sidebar toggle */}
           <motion.button 
             whileHover={{ scale: 1.02, y: -0.5 }}
@@ -108,17 +104,15 @@ export const WorkbenchStep: React.FC = () => {
           {/* Shared export dropdown */}
           <ExportDropdown variant="ghost" />
 
-          <div className="w-[1px] h-4 bg-white/[0.08] hidden md:block" />
-
           {/* Preview scene button with Arrow bounce guide */}
           <motion.button 
             whileHover={{ scale: 1.02, y: -0.5 }}
             whileTap={{ scale: 0.98 }}
-            className="group py-2.5 px-4 glass-btn-ar text-sm font-semibold text-neutral-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+            className="group py-2.5 px-5 rounded-xl bg-white text-black text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer border border-white/20 hover:bg-neutral-200 hover:scale-[1.01] shadow-[0_10px_26px_rgba(255,255,255,0.08)]"
             onClick={() => setWorkflowStep(3)}
           >
-            <Eye className="w-3.5 h-3.5 text-[#e5e7eb]" />
-            放映厅预览
+            <Eye className="w-3.5 h-3.5 text-black/80" />
+            下一步：放映厅预览
           </motion.button>
         </div>
       </div>
@@ -126,7 +120,7 @@ export const WorkbenchStep: React.FC = () => {
       {/* Main Split stage */}
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* Center Panel: Subtitle sequence list */}
-        <div className={`flex-1 p-6 min-h-0 overflow-hidden flex flex-col items-center z-10 transition-all duration-300 ${isSettingsOpen ? 'lg:pr-[364px]' : 'pr-0'}`}>
+        <div className={`flex-1 p-6 min-h-0 overflow-hidden flex flex-col items-center z-10 transition-all duration-300 ${isSettingsOpen ? 'lg:pr-[396px]' : 'pr-0'}`}>
           <div className="max-w-6xl w-full flex-1 min-h-0 flex flex-col overflow-hidden bg-white/[0.012] border border-white/[0.075] rounded-xl">
             <SequenceList />
           </div>
@@ -140,7 +134,7 @@ export const WorkbenchStep: React.FC = () => {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: 360, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="absolute right-6 top-6 bottom-6 w-[360px] z-50 glass-panel-ar rounded-2xl overflow-hidden flex flex-col"
+              className="absolute right-6 top-6 bottom-6 w-[390px] z-50 glass-panel-ar rounded-2xl overflow-hidden flex flex-col"
             >
               <StyleSidebar />
             </motion.div>

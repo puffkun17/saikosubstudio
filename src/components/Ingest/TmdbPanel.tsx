@@ -84,19 +84,20 @@ export const TmdbPanel: React.FC = () => {
             href="https://www.themoviedb.org/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center h-8 px-2.5 py-1 rounded-lg bg-black/40 border border-white/5 hover:border-[#9ca3af]/30 hover:bg-[#9ca3af]/5 hover:scale-[1.03] transition-all duration-300 group/logo"
+            className="flex items-center gap-2 h-8 px-2.5 py-1 rounded-lg bg-black/40 border border-white/5 hover:border-[#9ca3af]/30 hover:bg-[#9ca3af]/5 hover:scale-[1.03] transition-all duration-300 group/logo"
             title="Powered by The Movie Database"
           >
+            <span className="text-xs text-white/45 font-medium">Powered by</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/tmdb_logo_blue_square.svg" alt="TMDB Logo" className="h-full w-auto object-contain brightness-100 contrast-110 filter drop-shadow-[0_0_4px_rgba(59,130,246,0.6)]" />
           </a>
         </div>
         <button
-          className="group px-4 py-2.5 glass-btn-ar text-sm transition-all flex items-center gap-1.5 cursor-pointer border border-white/5 hover:bg-white/[0.04]"
+          className="group px-4 py-2.5 rounded-xl bg-white text-black text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer border border-white/20 hover:bg-neutral-200 hover:scale-[1.01]"
           onClick={() => setTmdbManualOpen(true)}
         >
           <Search className="w-3.5 h-3.5 group-hover:scale-110 group-hover:rotate-6 transition-transform" />
-          检索
+          重新检索
         </button>
       </div>
 

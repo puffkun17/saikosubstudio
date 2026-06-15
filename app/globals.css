@@ -216,8 +216,29 @@ body::before {
   will-change: transform;
 }
 
+.hover-marquee {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.hover-marquee-content {
+  display: inline-block;
+  min-width: max-content;
+}
+
+.hover-marquee:hover .hover-marquee-content,
+.hover-marquee:focus-within .hover-marquee-content {
+  animation: subtitleMarquee 11s ease-in-out infinite;
+  will-change: transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .subtitle-marquee {
+    animation: none;
+  }
+  .hover-marquee:hover .hover-marquee-content,
+  .hover-marquee:focus-within .hover-marquee-content {
     animation: none;
   }
 }

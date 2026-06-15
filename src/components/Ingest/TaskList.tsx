@@ -101,14 +101,14 @@ export const TaskList: React.FC = () => {
 
   const getProcessBtnText = (task: TaskPair) => {
     if (task.isBilingualSingle) {
-      return '加载原生双语';
+      return '下一步：预览双语字幕';
     }
     const hasZh = !!task.zh;
     const hasEn = !!task.en;
     if (hasZh && hasEn) {
-      return '合并双语字幕';
+      return '下一步：合并双语字幕';
     } else {
-      return '导入单轨字幕';
+      return '下一步：预览单轨字幕';
     }
   };
 
@@ -130,8 +130,8 @@ export const TaskList: React.FC = () => {
   const renderMarqueeText = (text: string, className = '') => {
     const shouldScroll = text.length > 38;
     return (
-      <span className={`min-w-0 overflow-hidden whitespace-nowrap ${className}`} title={text}>
-        <span className={shouldScroll ? 'inline-block subtitle-marquee' : 'truncate'}>
+      <span className={`hover-marquee ${className}`} title={text}>
+        <span className={shouldScroll ? 'hover-marquee-content' : 'truncate'}>
           {text}
         </span>
       </span>
@@ -164,10 +164,10 @@ export const TaskList: React.FC = () => {
       {/* Header section */}
       <div className="flex justify-between items-center pb-4 border-b border-white/[0.07] flex-shrink-0 select-none gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <h3 className="text-xl font-semibold text-neutral-100 tracking-tight font-sans">
-            字幕文件
+          <h3 className="text-xl font-semibold text-neutral-100 tracking-tight font-sans whitespace-nowrap">
+            字幕文件数：
           </h3>
-          <span className="text-xs font-semibold text-[#e5e7eb] bg-white/[0.03] border border-white/[0.08] px-2.5 py-0.5 rounded-full">
+          <span className="text-sm font-semibold text-[#e5e7eb] bg-white/[0.05] border border-white/[0.09] px-3 py-1 rounded-full">
             {tasks.length}
           </span>
         </div>
@@ -197,7 +197,7 @@ export const TaskList: React.FC = () => {
               title="取消本次导入并返回上传入口"
             >
               <RotateCcw className="w-3.5 h-3.5 text-neutral-400 group-hover:text-rose-300 transition-colors" />
-              取消导入
+              取消本次导入
             </button>
           )}
           <button
@@ -205,7 +205,7 @@ export const TaskList: React.FC = () => {
             onClick={() => fileInputRef.current?.click()}
           >
             <Plus className="w-3.5 h-3.5 text-[#e5e7eb] group-hover:rotate-90 transition-transform duration-300" />
-            关联文件
+            继续添加
           </button>
         </div>
       </div>
@@ -382,7 +382,7 @@ export const TaskList: React.FC = () => {
               <div className="flex-1 flex flex-col gap-1.5 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                   <label className="text-sm text-neutral-200 font-semibold select-none">
-                    输出文件名
+                    字幕输出文件名称
                   </label>
                   <span className="shrink-0 rounded-md border border-[#9ca3af]/18 bg-[#9ca3af]/8 px-2 py-0.5 text-xs font-bold text-[#e5e7eb]">
                     {getFilenameSourceLabel()}
@@ -444,7 +444,7 @@ export const TaskList: React.FC = () => {
               )}
 
               {/* Action Button */}
-              <div className="w-full lg:w-56 shrink-0">
+              <div className="w-full lg:w-72 shrink-0">
                 <button
                   className={`w-full h-12 rounded-xl font-semibold text-center text-base transition-all flex items-center justify-center gap-2 cursor-pointer
                     ${(!activeTask.zh && !activeTask.en) || isProcessing
@@ -458,7 +458,7 @@ export const TaskList: React.FC = () => {
                   ) : (
                     <Play className={`w-4 h-4 shrink-0 ${(!activeTask.zh && !activeTask.en) ? 'text-white/20 fill-white/10' : 'text-black fill-black/20'}`} />
                   )}
-                  {isProcessing ? '正在对齐合并...' : getProcessBtnText(activeTask)}
+                  {isProcessing ? '正在准备下一步...' : getProcessBtnText(activeTask)}
                 </button>
               </div>
 

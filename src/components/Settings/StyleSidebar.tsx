@@ -38,10 +38,10 @@ const FontFamilySelect = ({
   options: FontFamilyOption[];
   onChange: (v: string) => void
 }) => (
-  <div className="flex items-center justify-between py-2 border-b border-white/[0.03]">
-    <span className="text-sm text-neutral-300 font-medium">{label}</span>
+  <div className="flex items-center justify-between gap-3 py-2">
+    <span className="text-sm text-neutral-300 font-medium shrink-0">{label}</span>
     <select
-      className="bg-white/[0.02] border border-white/[0.08] focus:border-white/15 rounded-lg text-sm px-2 py-1.5 text-neutral-200 outline-none cursor-pointer transition-all w-40 text-right"
+      className="min-w-0 bg-black/25 border border-white/[0.08] focus:border-white/20 rounded-lg text-sm px-2.5 py-2 text-neutral-200 outline-none cursor-pointer transition-all w-40 text-right"
       value={value}
       onChange={e => onChange(e.target.value)}
     >
@@ -66,16 +66,16 @@ const ColorPicker = ({
   onChange: (val: string) => void
 }) => {
   return (
-    <div className="flex flex-col py-2 border-b border-white/[0.03]">
+    <div className="flex flex-col py-2">
       <div
         className="flex items-center justify-between cursor-pointer select-none group"
         onClick={onToggle}
       >
         <span className="text-sm text-neutral-300 font-medium">{label}</span>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-neutral-450 tabular-nums">{value}</span>
+          <span className="text-xs font-mono text-neutral-500 tabular-nums">{value}</span>
           <div
-            className="w-5 h-5 rounded-full border border-white/10 shadow-sm relative transition-all duration-200 group-hover:scale-105"
+            className="w-5 h-5 rounded-full border border-white/15 shadow-sm relative transition-all duration-200 group-hover:scale-105"
             style={{ backgroundColor: value }}
           >
             {isOpen && (
@@ -96,18 +96,18 @@ const ColorPicker = ({
             transition={{ type: "spring", stiffness: 350, damping: 28 }}
             className="overflow-hidden"
           >
-            <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-white/[0.03]">
+            <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-white/[0.04]">
               {PRESET_COLORS.map(c => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => onChange(c)}
-                  className={`w-5.5 h-5.5 rounded-full border transition-all cursor-pointer ${value === c ? 'border-[#e5e7eb] shadow-[0_0_8px_rgba(156,163,175,0.35)] scale-105' : 'border-white/[0.08] hover:border-white/25 hover:scale-105'}`}
+                  className={`h-5 w-5 rounded-full border transition-all cursor-pointer ${value === c ? 'border-[#e5e7eb] shadow-[0_0_8px_rgba(156,163,175,0.35)] scale-105' : 'border-white/[0.10] hover:border-white/25 hover:scale-105'}`}
                   style={{ backgroundColor: c }}
                 />
               ))}
               <div
-                className="relative w-5.5 h-5.5 rounded-full overflow-hidden border border-white/[0.08] hover:border-white/25 hover:scale-105 shrink-0 cursor-pointer transition-all"
+                className="relative h-5 w-5 rounded-full overflow-hidden border border-white/[0.10] hover:border-white/25 hover:scale-105 shrink-0 cursor-pointer transition-all"
                 title="自定义颜色"
               >
                 <div className="absolute inset-0 bg-[conic-gradient(red,yellow,green,cyan,blue,magenta,red)] opacity-80" />
@@ -125,6 +125,67 @@ const ColorPicker = ({
     </div>
   );
 };
+
+const SettingSection = ({
+  title,
+  children,
+  action
+}: {
+  title: string;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) => (
+  <section className="rounded-xl border border-white/[0.07] bg-white/[0.018] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+    <div className="flex items-center justify-between gap-3 mb-3">
+      <h4 className="text-sm font-semibold text-neutral-100 tracking-tight">{title}</h4>
+      {action}
+    </div>
+    <div className="flex flex-col gap-3">{children}</div>
+  </section>
+);
+
+const SliderControl = ({
+  label,
+  value,
+  min,
+  max,
+  step,
+  suffix,
+  hint,
+  onChange
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  suffix: string;
+  hint?: string;
+  onChange: (value: number) => void;
+}) => (
+  <div className="flex flex-col gap-1.5">
+    <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
+      <span>{label}</span>
+      <motion.span
+        animate={{ scale: [1, 1.035, 1] }}
+        key={`${label}-${value}`}
+        className="font-mono text-neutral-100 font-semibold text-xs tabular-nums"
+      >
+        {suffix === 'x' ? value.toFixed(2) : value}{suffix}
+      </motion.span>
+    </div>
+    <input
+      type="range"
+      min={min}
+      max={max}
+      step={step}
+      value={value}
+      onChange={e => onChange(Number(e.target.value))}
+      className="w-full glass-slider-input"
+    />
+    {hint && <div className="text-xs text-neutral-500 leading-relaxed">{hint}</div>}
+  </div>
+);
 
 export const StyleSidebar: React.FC = () => {
   const {
@@ -213,80 +274,81 @@ export const StyleSidebar: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 text-left w-full h-full bg-transparent overflow-y-auto scrollbar-thin">
-      <div className="pb-3 border-b border-white/[0.06] flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-1.5 select-none">
-          <LayoutGrid className="w-4 h-4 text-[#e5e7eb]" />
-          <h3 className="text-lg font-semibold text-neutral-100 tracking-tight pl-0.5">
-            样式模板
-          </h3>
+    <div className="flex h-full w-full flex-col overflow-y-auto bg-[#08080a]/72 p-5 text-left scrollbar-thin">
+      <div className="mb-5 flex flex-shrink-0 items-start justify-between gap-4 border-b border-white/[0.07] pb-4">
+        <div className="min-w-0 select-none">
+          <div className="flex items-center gap-2">
+            <LayoutGrid className="h-4 w-4 text-neutral-200" />
+            <h3 className="text-lg font-semibold tracking-tight text-neutral-50">
+              样式参数
+            </h3>
+          </div>
+          <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+            调整字幕在预览与导出中的呈现
+          </p>
         </div>
 
-        {/* Compact guides toggle */}
-        <div
-          className="flex items-center gap-2 cursor-pointer hover:opacity-85 select-none"
+        <button
+          type="button"
+          className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-all cursor-pointer
+            ${showGuides
+              ? 'border-white/15 bg-white/[0.08] text-neutral-100'
+              : 'border-white/[0.07] bg-white/[0.02] text-neutral-500 hover:text-neutral-200 hover:bg-white/[0.05]'}`}
           onClick={() => setShowGuides(!showGuides)}
-          title="定位辅助线开关"
+          title="预览辅助线"
         >
-          <Eye className={`w-4 h-4 ${showGuides ? 'text-[#e5e7eb]' : 'text-neutral-500'}`} />
-          <input
-            type="checkbox"
-            checked={showGuides}
-            readOnly
-            className="w-3 h-3 rounded border-white/[0.08] text-[#e5e7eb] bg-transparent focus:ring-transparent pointer-events-none"
-          />
-        </div>
+          <Eye className="h-3.5 w-3.5" />
+          辅助线
+        </button>
       </div>
 
-      {/* Templates & Presets */}
-      <div className="flex flex-col gap-3 border-b border-white/[0.06] pb-4 flex-shrink-0">
-        <div className="flex justify-between items-center select-none">
-          <span className="text-sm text-neutral-300 font-medium pl-0.5">预设模板</span>
-          <button
-            className="flex items-center gap-1 text-sm text-[#e5e7eb] hover:text-[#ffffff] transition-colors cursor-pointer font-medium"
-            onClick={() => {
-              setTemplateNameInput(`自定义模板 ${customTemplates.length + 1}`);
-              setShowTemplateSave(v => !v);
-            }}
-          >
-            <Save className="w-3 h-3" /> 保存当前
-          </button>
-        </div>
-
-        {/* Inline template save block with bounce */}
-        <AnimatePresence>
-          {showTemplateSave && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 350, damping: 25 }}
-              className="overflow-hidden"
+      <div className="flex flex-1 flex-col gap-4">
+        <SettingSection
+          title="模板"
+          action={
+            <button
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-300 transition-colors hover:text-white cursor-pointer"
+              onClick={() => {
+                setTemplateNameInput(`自定义模板 ${customTemplates.length + 1}`);
+                setShowTemplateSave(v => !v);
+              }}
             >
-              <div className="flex gap-1.5 py-1.5">
-                <input
-                  type="text"
-                  autoFocus
-                  value={templateNameInput}
-                  onChange={e => setTemplateNameInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleSaveTemplate(); if (e.key === 'Escape') setShowTemplateSave(false); }}
-                  className="flex-1 bg-white/[0.02] border border-white/[0.08] focus:border-white/15 text-neutral-200 text-sm rounded-lg py-1.5 px-2.5 outline-none transition-all"
-                  placeholder="模板名称..."
-                />
-                <button
-                  onClick={handleSaveTemplate}
-                  className="px-3 py-1.5 bg-[#e5e7eb] hover:bg-[#ffffff] text-black text-sm font-semibold rounded-lg transition flex-shrink-0 cursor-pointer"
-                >
-                  保存
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <Save className="h-3.5 w-3.5" />
+              保存
+            </button>
+          }
+        >
+          <AnimatePresence>
+            {showTemplateSave && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                className="overflow-hidden"
+              >
+                <div className="flex gap-2 pb-1">
+                  <input
+                    type="text"
+                    autoFocus
+                    value={templateNameInput}
+                    onChange={e => setTemplateNameInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSaveTemplate(); if (e.key === 'Escape') setShowTemplateSave(false); }}
+                    className="min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-black/25 px-3 py-2 text-sm text-neutral-200 outline-none transition-all focus:border-white/20"
+                    placeholder="模板名称"
+                  />
+                  <button
+                    onClick={handleSaveTemplate}
+                    className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-black transition hover:bg-neutral-200 cursor-pointer"
+                  >
+                    确定
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        {/* Dropdown template selector */}
-        <div className="flex gap-2 items-center">
-          <div className="relative flex-1">
+          <div className="flex items-center gap-2">
             <select
               value={activePreset}
               onChange={(e) => {
@@ -297,7 +359,7 @@ export const StyleSidebar: React.FC = () => {
                   if (tpl) handleApplyPreset(tpl);
                 }
               }}
-              className="w-full h-9 bg-white/[0.01] border border-white/[0.08] focus:border-white/15 rounded-lg text-sm px-2.5 text-neutral-300 outline-none cursor-pointer transition-all"
+              className="h-10 min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-black/25 px-3 text-sm text-neutral-200 outline-none transition-all focus:border-white/20 cursor-pointer"
             >
               <option value="classic">默认经典样式</option>
               {customTemplates.map(tpl => (
@@ -307,160 +369,109 @@ export const StyleSidebar: React.FC = () => {
                 <option value="custom" disabled>自定义配置（未保存）</option>
               )}
             </select>
+            {activePreset !== 'classic' && activePreset !== 'custom' && (
+              <button
+                onClick={() => deleteCustomTemplate(activePreset)}
+                className="grid h-10 w-10 place-items-center rounded-lg border border-white/[0.07] bg-white/[0.02] text-neutral-500 transition-colors hover:bg-white/[0.05] hover:text-neutral-200 cursor-pointer"
+                title="删除当前模板"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
-          {activePreset !== 'classic' && activePreset !== 'custom' && (
-            <button
-              onClick={() => deleteCustomTemplate(activePreset)}
-              className="p-2 text-neutral-400 hover:text-rose-450 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer flex-shrink-0"
-              title="删除当前模板"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
+        </SettingSection>
 
-      {/* Style Editors */}
-      <div className="flex flex-col gap-4 flex-1">
-        <span className="text-sm text-neutral-300 font-medium select-none pl-0.5">参数微调</span>
-
-        {/* 整体缩放 (globalScale) - 高优先暴露 */}
-        <div className="flex flex-col gap-1 border-b border-white/[0.04] pb-3">
-          <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
-            <span>整体缩放</span>
-            <motion.span
-              animate={{ scale: [1, 1.05, 1] }}
-              key={customStyle.globalScale ?? 1}
-              className="font-mono text-[#e5e7eb] font-semibold text-xs"
-            >
-              {(customStyle.globalScale ?? 1).toFixed(2)}×
-            </motion.span>
-          </div>
-          <input
-            type="range" min="0.6" max="1.8" step="0.05"
+        <SettingSection title="文字尺寸">
+          <SliderControl
+            label="整体缩放"
             value={customStyle.globalScale ?? 1}
-            onChange={e => handleStyleChange('globalScale', parseFloat(e.target.value))}
-            className="w-full glass-slider-input"
+            min={0.6}
+            max={1.8}
+            step={0.05}
+            suffix="x"
+            hint="统一影响字幕整体大小"
+            onChange={value => handleStyleChange('globalScale', value)}
           />
-          <div className="text-xs text-neutral-500">影响所有字号的最终换算</div>
-        </div>
+          <SliderControl
+            label="中文字幕"
+            value={customStyle.zhFontSize}
+            min={12}
+            max={36}
+            suffix="px"
+            onChange={value => handleStyleChange('zhFontSize', value)}
+          />
+          <SliderControl
+            label="英文字幕"
+            value={customStyle.enFontSize}
+            min={8}
+            max={24}
+            suffix="px"
+            onChange={value => handleStyleChange('enFontSize', value)}
+          />
+          <SliderControl
+            label="底部距离"
+            value={customStyle.marginV}
+            min={10}
+            max={60}
+            suffix="px"
+            onChange={value => {
+              handleStyleChange('marginV', value);
+              triggerTempGuides();
+            }}
+          />
+        </SettingSection>
 
-        {/* Font Sizes & Sliders */}
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
-              <span>中文字号</span>
-              <motion.span
-                animate={{ scale: [1, 1.05, 1] }}
-                key={customStyle.zhFontSize}
-                className="font-mono text-[#e5e7eb] font-semibold text-xs"
-              >
-                {customStyle.zhFontSize}px
-              </motion.span>
-            </div>
-            <input
-              type="range" min="12" max="36"
-              value={customStyle.zhFontSize}
-              onChange={e => handleStyleChange('zhFontSize', parseInt(e.target.value, 10))}
-              className="w-full glass-slider-input"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
-              <span>英文字号</span>
-              <motion.span
-                animate={{ scale: [1, 1.05, 1] }}
-                key={customStyle.enFontSize}
-                className="font-mono text-[#e5e7eb] font-semibold text-xs"
-              >
-                {customStyle.enFontSize}px
-              </motion.span>
-            </div>
-            <input
-              type="range" min="8" max="24"
-              value={customStyle.enFontSize}
-              onChange={e => handleStyleChange('enFontSize', parseInt(e.target.value, 10))}
-              className="w-full glass-slider-input"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
-              <span>垂直边距</span>
-              <motion.span
-                animate={{ scale: [1, 1.05, 1] }}
-                key={customStyle.marginV}
-                className="font-mono text-[#e5e7eb] font-semibold text-xs"
-              >
-                {customStyle.marginV}px
-              </motion.span>
-            </div>
-            <input
-              type="range" min="10" max="60"
-              value={customStyle.marginV}
-              onChange={e => {
-                handleStyleChange('marginV', parseInt(e.target.value, 10));
-                triggerTempGuides();
-              }}
-              className="w-full glass-slider-input"
-            />
-          </div>
-        </div>
-
-        {/* 字体家族选择 - 阅片环境 CJK 协调核心 */}
-        <div className="flex flex-col mt-1 border-t border-white/[0.04] pt-2">
-          <span className="text-sm text-neutral-300 font-medium select-none pl-0.5 mb-1">字体家族</span>
-
+        <SettingSection title="字体">
           <FontFamilySelect
-            label="中文字体"
+            label="中文"
             value={customStyle.zhFontFamily || FONT_FAMILIES_ZH[0].value}
             options={FONT_FAMILIES_ZH}
             onChange={(v) => handleStyleChange('zhFontFamily', v)}
           />
           <FontFamilySelect
-            label="英文字体"
+            label="英文"
             value={customStyle.enFontFamily || FONT_FAMILIES_EN[0].value}
             options={FONT_FAMILIES_EN}
             onChange={(v) => handleStyleChange('enFontFamily', v)}
           />
-        </div>
+        </SettingSection>
 
-        {/* Color pickers & resolution */}
-        <div className="flex flex-col mt-1 border-t border-white/[0.04] pt-2">
+        <SettingSection title="颜色">
           <ColorPicker
-            label="中文/主字色"
+            label="中文文字"
             value={customStyle.zhColor}
             isOpen={openPicker === 'zhColor'}
             onToggle={() => setOpenPicker(openPicker === 'zhColor' ? null : 'zhColor')}
             onChange={(c) => handleStyleChange('zhColor', c)}
           />
           <ColorPicker
-            label="中文描边色"
+            label="中文描边"
             value={customStyle.zhOutline}
             isOpen={openPicker === 'zhOutline'}
             onToggle={() => setOpenPicker(openPicker === 'zhOutline' ? null : 'zhOutline')}
             onChange={(c) => handleStyleChange('zhOutline', c)}
           />
           <ColorPicker
-            label="英文/次字色"
+            label="英文文字"
             value={customStyle.enColor}
             isOpen={openPicker === 'enColor'}
             onToggle={() => setOpenPicker(openPicker === 'enColor' ? null : 'enColor')}
             onChange={(c) => handleStyleChange('enColor', c)}
           />
           <ColorPicker
-            label="英文描边色"
+            label="英文描边"
             value={customStyle.enOutline || '#000000'}
             isOpen={openPicker === 'enOutline'}
             onToggle={() => setOpenPicker(openPicker === 'enOutline' ? null : 'enOutline')}
             onChange={(c) => handleStyleChange('enOutline', c)}
           />
+        </SettingSection>
 
-          <div className="flex items-center justify-between py-2.5 border-b border-white/[0.03]">
-            <span className="text-sm text-neutral-300 font-medium">画质分辨率</span>
+        <SettingSection title="输出">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm font-medium text-neutral-300">画面规格</span>
             <select
-              className="bg-white/[0.02] border border-white/[0.08] focus:border-white/15 rounded-lg text-sm px-2 py-1.5 text-neutral-300 outline-none cursor-pointer transition-all w-36 text-right"
+              className="h-10 w-36 rounded-lg border border-white/[0.08] bg-black/25 px-3 text-right text-sm text-neutral-200 outline-none transition-all focus:border-white/20 cursor-pointer"
               value={customStyle.resolution || '1080p'}
               onChange={e => handleStyleChange('resolution', e.target.value as StyleSettings['resolution'])}
             >
@@ -469,93 +480,72 @@ export const StyleSidebar: React.FC = () => {
               <option value="4K">超高清 4K</option>
             </select>
           </div>
-        </div>
+        </SettingSection>
 
-        {/* Lyrics Styles */}
         {hasLyrics && (
-        <div className="flex flex-col gap-2 pb-4">
-          <div
-            className="flex justify-between items-center cursor-pointer select-none group"
-            onClick={() => setIsLyricsExpanded(!isLyricsExpanded)}
-          >
-            <span className="text-sm text-neutral-300 font-medium flex items-center group-hover:text-neutral-100 transition-colors pl-0.5">
-              歌词特殊样式
-              {hasLyrics && <span className="text-[#e5e7eb] ml-2 text-xs font-medium bg-[#9ca3af]/10 px-1.5 py-0.5 rounded border border-[#9ca3af]/15 animate-pulse">已识别</span>}
-            </span>
-            <div className="p-1 rounded group-hover:bg-white/[0.05] transition-colors">
-              {isLyricsExpanded ? <ChevronUp className="w-3.5 h-3.5 text-neutral-400" /> : <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />}
-            </div>
-          </div>
-
-          <AnimatePresence initial={false}>
-            {isLyricsExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                className="overflow-hidden"
+          <SettingSection
+            title="歌词"
+            action={
+              <button
+                type="button"
+                className="rounded-md border border-white/[0.08] bg-white/[0.02] p-1 text-neutral-400 transition-colors hover:bg-white/[0.05] hover:text-neutral-100 cursor-pointer"
+                onClick={() => setIsLyricsExpanded(!isLyricsExpanded)}
               >
-                <div className="pt-2 flex flex-col border-t border-white/[0.04]">
-                  {hasLyrics ? (
-                    <div className="flex flex-col">
-                      <div className="flex flex-col gap-1.5 py-2 border-b border-white/[0.03]">
-                        <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
-                          <span>歌词字号</span>
-                          <span className="font-mono text-[#e5e7eb] font-semibold text-xs">{customStyle.lyricFontSize ?? 16}px</span>
-                        </div>
-                        <input
-                          type="range" min="10" max="30"
-                          value={customStyle.lyricFontSize ?? 16}
-                          onChange={e => handleStyleChange('lyricFontSize', parseInt(e.target.value, 10))}
-                          className="w-full glass-slider-input"
-                        />
-                      </div>
-
-                      <ColorPicker
-                        label="歌词颜色"
-                        value={customStyle.lyricColor ?? '#E6E6FA'}
-                        isOpen={openPicker === 'lyricColor'}
-                        onToggle={() => setOpenPicker(openPicker === 'lyricColor' ? null : 'lyricColor')}
-                        onChange={(c) => handleStyleChange('lyricColor', c)}
-                      />
-
-                      <div className="flex items-center justify-between py-2 border-b border-white/[0.03]">
-                        <span className="text-sm text-neutral-300 font-medium">歌词位置</span>
-                        <select
-                          className="bg-white/[0.02] border border-white/[0.08] focus:border-white/15 rounded-lg text-sm px-2 py-1.5 text-neutral-300 outline-none cursor-pointer transition-all w-32 text-right"
-                          value={customStyle.lyricPosition ?? 'top'}
-                          onChange={e => handleStyleChange('lyricPosition', e.target.value as StyleSettings['lyricPosition'])}
-                        >
-                          <option value="top">顶部置顶</option>
-                          <option value="bottom">底部置底</option>
-                        </select>
-                      </div>
-
-                      <div className="flex items-center justify-between py-2">
-                        <span className="text-sm text-neutral-300 font-medium">启用斜体</span>
-                        <button
-                          type="button"
-                          className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all border cursor-pointer
-                            ${customStyle.lyricItalic ?? true
-                              ? 'bg-[#9ca3af]/15 border-[#9ca3af]/30 text-[#e5e7eb]'
-                              : 'bg-white/[0.01] border-white/[0.06] text-neutral-500'}`}
-                          onClick={() => handleStyleChange('lyricItalic', !(customStyle.lyricItalic ?? true))}
-                        >
-                          斜体
-                        </button>
-                      </div>
+                {isLyricsExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              </button>
+            }
+          >
+            <AnimatePresence initial={false}>
+              {isLyricsExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex flex-col gap-3 pt-1">
+                    <SliderControl
+                      label="歌词字号"
+                      value={customStyle.lyricFontSize ?? 16}
+                      min={10}
+                      max={30}
+                      suffix="px"
+                      onChange={value => handleStyleChange('lyricFontSize', value)}
+                    />
+                    <ColorPicker
+                      label="歌词颜色"
+                      value={customStyle.lyricColor ?? '#E6E6FA'}
+                      isOpen={openPicker === 'lyricColor'}
+                      onToggle={() => setOpenPicker(openPicker === 'lyricColor' ? null : 'lyricColor')}
+                      onChange={(c) => handleStyleChange('lyricColor', c)}
+                    />
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-medium text-neutral-300">位置</span>
+                      <select
+                        className="h-10 w-32 rounded-lg border border-white/[0.08] bg-black/25 px-3 text-right text-sm text-neutral-200 outline-none transition-all focus:border-white/20 cursor-pointer"
+                        value={customStyle.lyricPosition ?? 'top'}
+                        onChange={e => handleStyleChange('lyricPosition', e.target.value as StyleSettings['lyricPosition'])}
+                      >
+                        <option value="top">顶部</option>
+                        <option value="bottom">底部</option>
+                      </select>
                     </div>
-                  ) : (
-                    <div className="text-xs text-neutral-450 bg-white/[0.005] border border-white/[0.05] p-2.5 rounded-xl leading-relaxed mt-2">
-                      未检测到包含 ♪ ♫ 等音符标记的歌词序列轨道。样式配置将不生效。
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                    <button
+                      type="button"
+                      className={`h-9 rounded-lg border px-3 text-sm font-semibold transition-all cursor-pointer
+                        ${customStyle.lyricItalic ?? true
+                          ? 'border-white/15 bg-white/[0.08] text-neutral-100'
+                          : 'border-white/[0.07] bg-white/[0.02] text-neutral-500 hover:text-neutral-200'}`}
+                      onClick={() => handleStyleChange('lyricItalic', !(customStyle.lyricItalic ?? true))}
+                    >
+                      斜体歌词
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </SettingSection>
         )}
       </div>
     </div>
