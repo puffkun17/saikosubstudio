@@ -64,16 +64,16 @@ export const ColorSampler: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#0c0c10] border border-white/5 p-4 rounded-2xl flex flex-col gap-4 text-left w-full">
+    <div className="bg-[#0c0c10] border border-white/5 p-4 rounded-xl flex flex-col gap-4 text-left w-full">
       <div className="pb-2.5 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ImageIcon className="w-4 h-4 text-accent-gold" />
-          <span className="text-xs font-semibold text-white tracking-wider uppercase">截图字幕分析 (COLOR PICKER)</span>
+          <span className="text-sm font-semibold text-neutral-100">截图取色</span>
         </div>
         
         {refScreenshot && (
           <button 
-            className="text-[0.625rem] text-rose-400 font-semibold hover:underline"
+            className="text-xs text-rose-300 font-medium hover:text-rose-200 transition-colors"
             onClick={() => {
               if (refScreenshot.startsWith('blob:')) URL.revokeObjectURL(refScreenshot);
               setRefScreenshot(null);
@@ -92,7 +92,7 @@ export const ColorSampler: React.FC = () => {
             onClick={() => fileInputRef.current?.click()}
           >
             <ImageIcon className="w-6 h-6 text-white/30" />
-            <span className="text-[0.625rem] text-text-secondary">上传剧照或截图参考</span>
+            <span className="text-sm text-neutral-400">上传剧照或截图参考</span>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -105,13 +105,13 @@ export const ColorSampler: React.FC = () => {
                 className="w-full h-full object-cover opacity-75"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-2">
-                <span className="text-[0.625rem] font-medium text-white truncate max-w-full">参考剧照加载就绪</span>
+                <span className="text-xs font-medium text-white truncate max-w-full">参考剧照加载就绪</span>
               </div>
             </div>
 
             {/* Target Select */}
             <div className="flex flex-col gap-1.5">
-              <span className="text-[0.625rem] text-text-secondary font-bold uppercase tracking-wider">吸色对应目标</span>
+              <span className="text-xs text-neutral-400 font-medium">吸色应用到</span>
               <div className="grid grid-cols-3 gap-1">
                 {(['zhColor', 'zhOutline', 'enColor'] as const).map(target => {
                   const label = target === 'zhColor' ? '中文' : target === 'zhOutline' ? '描边' : '英文';
@@ -120,7 +120,7 @@ export const ColorSampler: React.FC = () => {
                     <button
                       key={target}
                       type="button"
-                      className={`py-1 text-center rounded text-[0.625rem] font-bold border transition
+                      className={`py-1.5 text-center rounded-md text-xs font-medium border transition
                         ${active ? 'bg-accent-gold/15 border-accent-gold text-white' : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10'}`}
                       onClick={() => setPickColorTarget(target)}
                     >
@@ -133,9 +133,9 @@ export const ColorSampler: React.FC = () => {
 
             {/* Opacity slider */}
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-[0.625rem] font-medium text-text-secondary">
+              <div className="flex justify-between text-xs font-medium text-neutral-400">
                 <span>截图背景透明度</span>
-                <span>{Math.round(overlayOpacity * 100)}%</span>
+                <span className="font-mono text-[#d8c39a] tabular-nums">{Math.round(overlayOpacity * 100)}%</span>
               </div>
               <input 
                 type="range" min="0.1" max="1.0" step="0.05"
@@ -148,16 +148,16 @@ export const ColorSampler: React.FC = () => {
             {/* EyeDropper button */}
             {eyeDropperSupported ? (
               <button 
-                className="w-full py-2 bg-accent-gold hover:bg-accent-gold/90 text-black font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all shadow hover:shadow-accent-gold/10"
+                className="w-full py-2.5 bg-accent-gold hover:bg-accent-gold/90 text-black font-semibold rounded-lg text-sm flex items-center justify-center gap-1.5 transition-all shadow hover:shadow-accent-gold/10"
                 onClick={triggerEyeDropper}
               >
                 <Pipette className="w-3.5 h-3.5" />
-                浏览器吸色器 (EyeDropper)
+                启动吸色器
               </button>
             ) : (
-              <div className="p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg text-[0.625rem] text-amber-300/80 flex items-start gap-2">
+              <div className="p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg text-xs text-amber-300/80 flex items-start gap-2 leading-relaxed">
                 <ShieldAlert className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <span>您的浏览器暂不支持原生 EyeDropper 吸色器。建议在画质区悬浮显示截图进行人工对比调试。</span>
+                <span>当前浏览器暂不支持吸色器。可以保留参考截图，通过画面叠加进行人工对比。</span>
               </div>
             )}
           </div>

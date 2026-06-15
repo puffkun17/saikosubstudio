@@ -76,7 +76,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
           className="v9-timeline-dial-slider flex-1 min-w-0"
           aria-label="字幕预览进度"
         />
-        <span className="text-[10px] font-mono text-[#d8c39a] w-12 text-right tabular-nums">
+        <span className="text-xs font-mono text-[#d8c39a] w-12 text-right tabular-nums">
           {jumpPercent}%
         </span>
       </div>

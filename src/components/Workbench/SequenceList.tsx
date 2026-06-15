@@ -136,7 +136,7 @@ export const SequenceList: React.FC = () => {
                         <Music2 className="w-3 h-3" />
                       </motion.span>
                     )}
-                    <span className={isActive ? 'text-[#d8c39a] font-bold' : ''}>
+                    <span className={isActive ? 'text-[#d8c39a] font-semibold' : ''}>
                       {sub.ts.replace(' --> ', ' - ')}
                     </span>
                   </div>
@@ -201,17 +201,17 @@ export const SequenceList: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="w-24 flex items-center justify-end gap-3 self-center select-none font-mono text-xs">
+                  <div className="w-24 flex items-center justify-end gap-3 self-center select-none text-xs">
                     {isActive && editingIndex !== sub.index && (
                       <motion.span
                         animate={{ opacity: [0.3, 0.8, 0.3] }}
                         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                        className="text-[#d8c39a] font-bold select-none whitespace-nowrap text-xs bg-[#c5a46e]/5 border border-[#c5a46e]/15 px-1.5 py-0.5 rounded"
+                        className="text-[#d8c39a] font-medium select-none whitespace-nowrap text-xs bg-[#c5a46e]/5 border border-[#c5a46e]/15 px-1.5 py-0.5 rounded"
                       >
                         双击编辑
                       </motion.span>
                     )}
-                    <span className={isActive ? 'text-[#d8c39a] font-bold' : 'text-neutral-700'}>
+                    <span className={`font-mono tabular-nums ${isActive ? 'text-[#d8c39a] font-semibold' : 'text-neutral-700'}`}>
                       #{sub.index}
                     </span>
                   </div>
@@ -223,7 +223,7 @@ export const SequenceList: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAllSubs(true)}
-                className="flex items-center justify-center gap-2 py-4 text-xs font-mono uppercase tracking-wider text-[#d8c39a] hover:text-[#f0ddaf] transition-colors border-t border-white/[0.06] bg-white/[0.005] backdrop-blur-md cursor-pointer font-bold"
+                className="flex items-center justify-center gap-2 py-4 text-sm font-medium text-[#d8c39a] hover:text-[#f0ddaf] transition-colors border-t border-white/[0.06] bg-white/[0.005] backdrop-blur-md cursor-pointer"
               >
                 <ChevronDown className="w-4 h-4" />
                 还有 {total - LIMIT} 行未展示，点击全量加载

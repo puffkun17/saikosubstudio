@@ -247,15 +247,15 @@ export const TmdbPanel: React.FC = () => {
                       value={tmdbManualInput.type}
                       onChange={e => setTmdbManualInput({ ...tmdbManualInput, type: e.target.value as 'movie' | 'tv' })}
                     >
-                      <option value="movie" className="bg-[#0b0b12] text-white">电影 (Movie)</option>
-                      <option value="tv" className="bg-[#0b0b12] text-white">剧集 (TV Show)</option>
+                      <option value="movie" className="bg-[#0b0b12] text-white">电影</option>
+                      <option value="tv" className="bg-[#0b0b12] text-white">剧集</option>
                     </select>
                     <input
                       type="number"
-                      className="w-1/3 bg-white/[0.02] border border-white/[0.06] focus:border-violet-500/30 focus:bg-white/[0.04] rounded-xl py-3 px-4 text-white text-sm font-mono outline-none transition-all placeholder:text-white/20"
+                      className="w-1/3 bg-white/[0.02] border border-white/[0.06] focus:border-violet-500/30 focus:bg-white/[0.04] rounded-xl py-3 px-4 text-white text-sm font-mono tabular-nums outline-none transition-all placeholder:text-white/20"
                       value={tmdbManualInput.year}
                       onChange={e => setTmdbManualInput({ ...tmdbManualInput, year: e.target.value })}
-                      placeholder="年份 (可选)"
+                      placeholder="年份"
                     />
                   </div>
 
@@ -263,17 +263,17 @@ export const TmdbPanel: React.FC = () => {
                     <div className="flex gap-3">
                       <input
                         type="number" min="1"
-                        className="flex-1 bg-white/[0.02] border border-white/[0.06] focus:border-violet-500/30 focus:bg-white/[0.04] rounded-xl py-3 px-4 text-white text-sm font-mono outline-none transition-all placeholder:text-white/20"
+                        className="flex-1 bg-white/[0.02] border border-white/[0.06] focus:border-violet-500/30 focus:bg-white/[0.04] rounded-xl py-3 px-4 text-white text-sm font-mono tabular-nums outline-none transition-all placeholder:text-white/20"
                         value={tmdbManualInput.season || ''}
                         onChange={e => setTmdbManualInput({ ...tmdbManualInput, season: e.target.value })}
-                        placeholder="季 S01 (可选)"
+                        placeholder="季"
                       />
                       <input
                         type="number" min="1"
-                        className="flex-1 bg-white/[0.02] border border-white/[0.06] focus:border-violet-500/30 focus:bg-white/[0.04] rounded-xl py-3 px-4 text-white text-sm font-mono outline-none transition-all placeholder:text-white/20"
+                        className="flex-1 bg-white/[0.02] border border-white/[0.06] focus:border-violet-500/30 focus:bg-white/[0.04] rounded-xl py-3 px-4 text-white text-sm font-mono tabular-nums outline-none transition-all placeholder:text-white/20"
                         value={tmdbManualInput.episode || ''}
                         onChange={e => setTmdbManualInput({ ...tmdbManualInput, episode: e.target.value })}
-                        placeholder="集 E01 (可选)"
+                        placeholder="集"
                       />
                     </div>
                   )}

@@ -594,7 +594,7 @@ export const DragZone: React.FC = () => {
                 key={ingestMessage}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-lg md:text-xl font-bold text-white tracking-[0.08em]"
+                className="text-lg md:text-xl font-semibold text-white tracking-tight"
               >
                 {ingestMessage}
               </motion.h3>
@@ -732,10 +732,10 @@ export const DragZone: React.FC = () => {
 
             <div>
               <div className="text-lg font-semibold tracking-tight text-white">建立字幕工作台</div>
-              <div className="text-sm text-neutral-300 tracking-wide mt-1">拖入字幕包，系统将整理字幕与影片信息</div>
+              <div className="text-sm text-neutral-300 mt-1">拖入字幕包，系统将整理字幕与影片信息</div>
             </div>
 
-	            <div className="flex gap-3 text-xs font-mono tracking-wide text-neutral-400 mt-2">
+	            <div className="flex gap-3 text-xs font-mono text-neutral-400 mt-2">
 	              <span>SRT</span><span className="text-white/20">·</span><span>ASS</span><span className="text-white/20">·</span><span>ZIP</span>
 	            </div>
 	          </div>

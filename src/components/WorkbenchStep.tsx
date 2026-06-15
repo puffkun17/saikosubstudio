@@ -56,18 +56,18 @@ export const WorkbenchStep: React.FC = () => {
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   className="absolute top-full left-0 mt-2 z-50 glass-panel-ar rounded-xl p-4 w-64 shadow-2xl"
                 >
-                  <p className="text-xs text-neutral-400 leading-relaxed mb-3">
+                  <p className="text-sm text-neutral-300 leading-relaxed mb-3">
                     返回将<span className="text-rose-400 font-bold"> 清除当前对齐数据</span>，确认？
                   </p>
                   <div className="flex gap-2">
                     <button
-                      className="flex-1 py-1.5 text-[10px] font-mono uppercase tracking-wider font-bold glass-btn-ar rounded cursor-pointer"
+                      className="flex-1 py-2 text-sm font-medium glass-btn-ar rounded-lg cursor-pointer"
                       onClick={() => setShowBackConfirm(false)}
                     >
                       取消
                     </button>
                     <button
-                      className="flex-1 py-1.5 text-[10px] font-mono uppercase tracking-wider font-bold bg-rose-500/80 hover:bg-rose-500 text-white rounded cursor-pointer transition-colors duration-200"
+                      className="flex-1 py-2 text-sm font-semibold bg-rose-500/80 hover:bg-rose-500 text-white rounded-lg cursor-pointer transition-colors duration-200"
                       onClick={() => { setShowBackConfirm(false); setProcessedSubs(null); setWorkflowStep(1); }}
                     >
                       确认返回

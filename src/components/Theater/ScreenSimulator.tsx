@@ -292,8 +292,8 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
           {/* Render State Machine */}
           {subtitle.status === 'idle' && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 select-none">
-              <span className="text-white/20 text-xs font-mono tracking-widest uppercase">
-                [ Empty Canvas ]
+              <span className="text-white/30 text-sm font-medium">
+                暂无字幕预览
               </span>
             </div>
           )}
@@ -301,18 +301,18 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
           {subtitle.status === 'loading' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-30 select-none bg-black/60 backdrop-blur-xs">
               <div className="w-6 h-6 border-2 border-accent-neon border-t-transparent rounded-full animate-spin mb-3" />
-              <span className="text-white/40 text-xs font-mono tracking-widest uppercase">
-                {subtitle.progress ? `Loading ${Math.round(subtitle.progress * 100)}%` : 'Loading Subtitles...'}
+              <span className="text-white/55 text-sm font-medium">
+                {subtitle.progress ? `字幕载入中 ${Math.round(subtitle.progress * 100)}%` : '正在载入字幕'}
               </span>
             </div>
           )}
 
           {subtitle.status === 'error' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-30 select-none bg-black/85">
-              <span className="text-rose-500/80 text-xs font-mono tracking-widest uppercase mb-1">
-                [ Data Error ]
+              <span className="text-rose-300/85 text-sm font-semibold mb-1">
+                预览数据异常
               </span>
-              <span className="text-white/40 text-[0.625rem] font-mono tracking-wide px-4 text-center max-w-xs break-words">
+              <span className="text-white/45 text-xs px-4 text-center max-w-xs break-words leading-relaxed">
                 {subtitle.message}
               </span>
             </div>
@@ -351,8 +351,8 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
             }}
           >
             {isMagnetic && (
-               <div className="absolute right-4 -top-3.5 text-[0.5625rem] text-[#10b981]/90 font-mono tracking-[0.2em] uppercase bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(16,185,129,0.5)] scale-y-200">
-                 MAGNETIC ALIGNED
+               <div className="absolute right-4 -top-4 text-xs text-[#10b981]/90 font-medium bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-md shadow-[0_0_8px_rgba(16,185,129,0.35)] scale-y-200">
+                 已贴合参考线
                </div>
             )}
           </div>

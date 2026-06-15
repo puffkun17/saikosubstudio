@@ -73,7 +73,7 @@ const ColorPicker = ({
       >
         <span className="text-sm text-neutral-300 font-medium">{label}</span>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono text-neutral-450 uppercase">{value}</span>
+          <span className="text-xs font-mono text-neutral-450 tabular-nums">{value}</span>
           <div 
             className="w-5 h-5 rounded-full border border-white/10 shadow-sm relative transition-all duration-200 group-hover:scale-105"
             style={{ backgroundColor: value }}
@@ -270,12 +270,12 @@ export const StyleSidebar: React.FC = () => {
                   value={templateNameInput}
                   onChange={e => setTemplateNameInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleSaveTemplate(); if (e.key === 'Escape') setShowTemplateSave(false); }}
-                  className="flex-1 bg-white/[0.02] border border-white/[0.08] focus:border-white/15 text-neutral-250 text-xs rounded-lg py-1.5 px-2.5 outline-none transition-all"
+                  className="flex-1 bg-white/[0.02] border border-white/[0.08] focus:border-white/15 text-neutral-200 text-sm rounded-lg py-1.5 px-2.5 outline-none transition-all"
                   placeholder="模板名称..."
                 />
                 <button
                   onClick={handleSaveTemplate}
-                  className="px-3 py-1.5 bg-violet-500/80 hover:bg-violet-500 text-white text-xs font-bold rounded-lg transition flex-shrink-0 cursor-pointer"
+                  className="px-3 py-1.5 bg-violet-500/80 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition flex-shrink-0 cursor-pointer"
                 >
                   保存
                 </button>
@@ -297,14 +297,14 @@ export const StyleSidebar: React.FC = () => {
                   if (tpl) handleApplyPreset(tpl);
                 }
               }}
-              className="w-full h-8.5 bg-white/[0.01] border border-white/[0.08] focus:border-white/15 rounded-lg text-xs px-2.5 text-neutral-300 outline-none cursor-pointer transition-all"
+              className="w-full h-9 bg-white/[0.01] border border-white/[0.08] focus:border-white/15 rounded-lg text-sm px-2.5 text-neutral-300 outline-none cursor-pointer transition-all"
             >
-              <option value="classic">默认经典样式 (Classic)</option>
+              <option value="classic">默认经典样式</option>
               {customTemplates.map(tpl => (
                 <option key={tpl.id} value={tpl.id}>{tpl.name}</option>
               ))}
               {activePreset === 'custom' && (
-                <option value="custom" disabled>自定义配置 (未保存)</option>
+                <option value="custom" disabled>自定义配置（未保存）</option>
               )}
             </select>
           </div>
@@ -327,7 +327,7 @@ export const StyleSidebar: React.FC = () => {
         {/* 整体缩放 (globalScale) - 高优先暴露 */}
         <div className="flex flex-col gap-1 border-b border-white/[0.04] pb-3">
           <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
-            <span>整体缩放 (Global Scale)</span>
+            <span>整体缩放</span>
             <motion.span 
               animate={{ scale: [1, 1.05, 1] }} 
               key={customStyle.globalScale ?? 1}
@@ -349,7 +349,7 @@ export const StyleSidebar: React.FC = () => {
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
             <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
-              <span>中文字号 (参考单位 / ASS)</span>
+              <span>中文字号</span>
               <motion.span 
                 animate={{ scale: [1, 1.05, 1] }} 
                 key={customStyle.zhFontSize} 
@@ -368,7 +368,7 @@ export const StyleSidebar: React.FC = () => {
 
           <div className="flex flex-col gap-1">
             <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
-              <span>英文字号 (参考单位 / ASS)</span>
+              <span>英文字号</span>
               <motion.span 
                 animate={{ scale: [1, 1.05, 1] }}
                 key={customStyle.enFontSize}
@@ -387,7 +387,7 @@ export const StyleSidebar: React.FC = () => {
 
           <div className="flex flex-col gap-1">
             <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
-              <span>垂直边距 (参考单位 / ASS)</span>
+              <span>垂直边距</span>
               <motion.span 
                 animate={{ scale: [1, 1.05, 1] }}
                 key={customStyle.marginV}
@@ -458,9 +458,9 @@ export const StyleSidebar: React.FC = () => {
           />
           
           <div className="flex items-center justify-between py-2.5 border-b border-white/[0.03]">
-            <span className="text-xs text-neutral-400 font-mono uppercase tracking-wider font-bold">画质分辨率</span>
+            <span className="text-sm text-neutral-300 font-medium">画质分辨率</span>
             <select
-              className="bg-white/[0.02] border border-white/[0.08] focus:border-white/15 rounded-lg text-xs px-2 py-1 text-neutral-300 outline-none cursor-pointer transition-all w-32 text-right"
+              className="bg-white/[0.02] border border-white/[0.08] focus:border-white/15 rounded-lg text-sm px-2 py-1.5 text-neutral-300 outline-none cursor-pointer transition-all w-36 text-right"
               value={customStyle.resolution || '1080p'}
               onChange={e => handleStyleChange('resolution', e.target.value as StyleSettings['resolution'])}
             >
@@ -478,9 +478,9 @@ export const StyleSidebar: React.FC = () => {
             className="flex justify-between items-center cursor-pointer select-none group"
             onClick={() => setIsLyricsExpanded(!isLyricsExpanded)}
           >
-            <span className="text-xs text-neutral-400 font-mono uppercase tracking-wider flex items-center group-hover:text-neutral-250 transition-colors pl-0.5 font-bold">
+            <span className="text-sm text-neutral-300 font-medium flex items-center group-hover:text-neutral-100 transition-colors pl-0.5">
               歌词特殊样式
-              {hasLyrics && <span className="text-violet-400 ml-2 text-[10px] font-mono bg-violet-500/10 px-1.5 py-0.5 rounded border border-violet-500/15 animate-pulse">active</span>}
+              {hasLyrics && <span className="text-violet-300 ml-2 text-xs font-medium bg-violet-500/10 px-1.5 py-0.5 rounded border border-violet-500/15 animate-pulse">已识别</span>}
             </span>
             <div className="p-1 rounded group-hover:bg-white/[0.05] transition-colors">
               {isLyricsExpanded ? <ChevronUp className="w-3.5 h-3.5 text-neutral-400" /> : <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />}
@@ -500,9 +500,9 @@ export const StyleSidebar: React.FC = () => {
                   {hasLyrics ? (
                     <div className="flex flex-col">
                       <div className="flex flex-col gap-1.5 py-2 border-b border-white/[0.03]">
-                        <div className="flex justify-between text-xs font-mono font-bold uppercase text-neutral-400 select-none">
+                        <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
                           <span>歌词字号</span>
-                          <span className="font-mono text-violet-400 font-bold text-xs">{customStyle.lyricFontSize ?? 16}px</span>
+                          <span className="font-mono text-violet-300 font-semibold text-xs">{customStyle.lyricFontSize ?? 16}px</span>
                         </div>
                         <input 
                           type="range" min="10" max="30" 
@@ -521,9 +521,9 @@ export const StyleSidebar: React.FC = () => {
                       />
                       
                       <div className="flex items-center justify-between py-2 border-b border-white/[0.03]">
-                        <span className="text-xs text-neutral-450 font-mono tracking-wider font-bold">歌词位置</span>
+                        <span className="text-sm text-neutral-300 font-medium">歌词位置</span>
                         <select
-                          className="bg-white/[0.02] border border-white/[0.08] focus:border-white/15 rounded-lg text-xs px-2 py-1 text-neutral-350 outline-none cursor-pointer transition-all w-32 text-right"
+                          className="bg-white/[0.02] border border-white/[0.08] focus:border-white/15 rounded-lg text-sm px-2 py-1.5 text-neutral-300 outline-none cursor-pointer transition-all w-32 text-right"
                           value={customStyle.lyricPosition ?? 'top'}
                           onChange={e => handleStyleChange('lyricPosition', e.target.value as StyleSettings['lyricPosition'])}
                         >
@@ -533,16 +533,16 @@ export const StyleSidebar: React.FC = () => {
                       </div>
 
                       <div className="flex items-center justify-between py-2">
-                        <span className="text-xs text-neutral-450 font-mono tracking-wider font-bold">启用斜体</span>
+                        <span className="text-sm text-neutral-300 font-medium">启用斜体</span>
                         <button 
                           type="button"
-                          className={`px-2.5 py-1 rounded-md text-xs font-mono font-bold transition-all border cursor-pointer
+                          className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all border cursor-pointer
                             ${customStyle.lyricItalic ?? true 
                               ? 'bg-violet-500/15 border-violet-500/30 text-violet-400' 
                               : 'bg-white/[0.01] border-white/[0.06] text-neutral-500'}`}
                           onClick={() => handleStyleChange('lyricItalic', !(customStyle.lyricItalic ?? true))}
                         >
-                          Italic
+                          斜体
                         </button>
                       </div>
                     </div>
