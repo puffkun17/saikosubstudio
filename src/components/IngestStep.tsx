@@ -59,7 +59,7 @@ export const IngestStep: React.FC = () => {
 
       <div className="flex items-center gap-2 mb-2 select-none z-20 flex-shrink-0">
         <span className="w-1.5 h-1.5 rounded-full bg-[#c5a46e]/80" />
-        <span className="text-[0.625rem] font-mono uppercase tracking-[0.24em] text-[#c5a46e]/70">
+        <span className="text-xs font-semibold tracking-wide text-[#d8c39a]/85">
           字幕导入 · 轨道整理 · 片源匹配
         </span>
       </div>
@@ -68,18 +68,18 @@ export const IngestStep: React.FC = () => {
         <div className="flex flex-col gap-2 text-left">
           <h1 className="!text-[clamp(2.35rem,5.2vw,4.4rem)] font-extrabold tracking-tight text-white flex items-center flex-wrap font-sans">
             SaikoSubStudio
-            <span className="text-[0.5625rem] text-[#d8c39a] bg-[#c5a46e]/10 border border-[#c5a46e]/20 px-3 py-1 rounded-full ml-4 font-mono font-bold uppercase tracking-widest shadow-[0_0_15px_rgba(197,164,110,0.1)]">
+            <span className="text-xs text-[#d8c39a] bg-[#c5a46e]/10 border border-[#c5a46e]/20 px-3 py-1 rounded-full ml-4 font-mono font-bold tracking-wide shadow-[0_0_15px_rgba(197,164,110,0.1)]">
               v2.0.1
             </span>
           </h1>
-          <p className="text-xs md:text-sm text-neutral-400 tracking-wide text-neutral-400/80">
+          <p className="text-sm text-neutral-300 tracking-wide">
             导入字幕包，整理轨道、样式与片源信息。
           </p>
         </div>
         
         <div className="flex flex-wrap items-center gap-3 md:gap-4">
           <button 
-            className="px-5 py-2.5 glass-btn-ar rounded-full text-xs tracking-[0.06em] text-neutral-400 hover:text-white flex items-center gap-2 cursor-pointer transition-all duration-300 group"
+            className="px-5 py-2.5 glass-btn-ar rounded-full text-sm tracking-wide text-neutral-300 hover:text-white flex items-center gap-2 cursor-pointer transition-all duration-300 group"
             onClick={() => setIsLibraryOpen(true)}
           >
             <Clock className="w-3.5 h-3.5 text-[#d8c39a]" />

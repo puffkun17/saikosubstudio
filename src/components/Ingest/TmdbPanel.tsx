@@ -78,7 +78,7 @@ export const TmdbPanel: React.FC = () => {
       <div className="flex justify-between items-center pb-3 border-b border-white/[0.06] z-10">
         <div className="flex items-center gap-3.5">
           <h3 className="text-base font-extrabold text-neutral-100 tracking-tight font-sans">
-            元数据检索
+            片源信息
           </h3>
           <a 
             href="https://www.themoviedb.org/" 
@@ -92,7 +92,7 @@ export const TmdbPanel: React.FC = () => {
           </a>
         </div>
         <button
-          className="group px-4 py-2 glass-btn-ar text-xs md:text-sm font-mono uppercase tracking-[0.08em] transition-all flex items-center gap-1.5 cursor-pointer border border-white/5 hover:bg-white/[0.04]"
+          className="group px-4 py-2 glass-btn-ar text-sm tracking-wide transition-all flex items-center gap-1.5 cursor-pointer border border-white/5 hover:bg-white/[0.04]"
           onClick={() => setTmdbManualOpen(true)}
         >
           <Search className="w-3.5 h-3.5 group-hover:scale-110 group-hover:rotate-6 transition-transform" />
@@ -129,13 +129,13 @@ export const TmdbPanel: React.FC = () => {
                     {tmdbData.title}
                   </h4>
                   {tmdbData.originalTitle && tmdbData.originalTitle !== tmdbData.title && (
-                    <p className="text-sm text-neutral-400 mt-0.5 font-mono truncate">{tmdbData.originalTitle}</p>
+                    <p className="text-sm text-neutral-300 mt-0.5 truncate">{tmdbData.originalTitle}</p>
                   )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5 select-none">
                   {tmdbData.year && (
-                    <span className="px-2 py-0.5 bg-white/[0.03] border border-white/[0.06] rounded-md text-xs font-mono font-bold text-neutral-300 tracking-wider">
+                    <span className="px-2 py-0.5 bg-white/[0.03] border border-white/[0.06] rounded-md text-xs font-bold text-neutral-200">
                       {tmdbData.year}
                     </span>
                   )}
@@ -151,7 +151,7 @@ export const TmdbPanel: React.FC = () => {
                     </span>
                   )}
                   {tmdbData.genres && tmdbData.genres.map((g: string, i: number) => (
-                    <span key={i} className="px-2 py-0.5 bg-white/[0.02] border border-white/[0.04] text-xs font-mono rounded-md font-semibold text-neutral-400">
+                    <span key={i} className="px-2 py-0.5 bg-white/[0.025] border border-white/[0.05] text-xs rounded-md font-semibold text-neutral-300">
                       {g}
                     </span>
                   ))}
@@ -187,10 +187,10 @@ export const TmdbPanel: React.FC = () => {
             </div>
             <p className="text-sm text-neutral-300 max-w-[28ch] leading-[1.6]">
               暂未匹配影视元数据<br/>
-              <span className="text-xs font-mono text-neutral-400 mt-1 block">关联字幕文件后将自动检索元数据</span>
+              <span className="text-xs text-neutral-300 mt-1 block">关联字幕文件后将自动查找片源信息</span>
             </p>
             <div className="opacity-30 hover:opacity-75 transition-opacity duration-300 mt-4 flex flex-col items-center gap-1.5">
-              <span className="text-[0.625rem] font-mono uppercase tracking-widest text-neutral-400">数据支持</span>
+              <span className="text-xs font-semibold text-neutral-300">数据支持</span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/tmdb_logo_blue_square.svg" alt="TMDB Logo" className="h-6 w-auto object-contain brightness-90 contrast-110" />
             </div>
@@ -295,7 +295,7 @@ export const TmdbPanel: React.FC = () => {
                 {/* Candidates List */}
                 {tmdbSuggestions.length > 0 && (
                   <div className="flex flex-col gap-3 mt-4">
-                    <span className="text-xs text-white/60 font-medium">候选结果 ({tmdbSuggestions.length})</span>
+                    <span className="text-xs text-white/75 font-medium">匹配结果 ({tmdbSuggestions.length})</span>
                     <div className="flex flex-col gap-2">
                       {tmdbSuggestions.map(s => {
                         const isChosen = pendingSuggestion?.id === s.id || (!pendingSuggestion && selectedSuggestion?.id === s.id);

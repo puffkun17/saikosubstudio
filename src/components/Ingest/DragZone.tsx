@@ -598,7 +598,7 @@ export const DragZone: React.FC = () => {
               >
                 {ingestMessage}
               </motion.h3>
-              <p className="mt-2 text-xs text-neutral-500 font-mono uppercase tracking-[0.18em]">
+              <p className="mt-2 text-xs text-neutral-300">
                 正在建立字幕工作台
               </p>
             </div>
@@ -612,7 +612,7 @@ export const DragZone: React.FC = () => {
                 return (
                   <div key={step.id} className="flex flex-col gap-2 min-w-0">
                     <div className={`h-1 rounded-full transition-all duration-500 ${complete ? 'bg-[#c5a46e]/70 shadow-[0_0_10px_rgba(197,164,110,0.2)]' : 'bg-white/[0.08]'}`} />
-                    <span className={`text-[10px] font-mono truncate text-center ${active ? 'text-white' : complete ? 'text-[#d8c39a]/70' : 'text-white/28'}`}>
+                    <span className={`text-xs truncate text-center font-semibold ${active ? 'text-white' : complete ? 'text-[#d8c39a]/80' : 'text-white/45'}`}>
                       {step.label}
                     </span>
                   </div>
@@ -627,7 +627,7 @@ export const DragZone: React.FC = () => {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.04 }}
-                  className="px-2.5 py-1 rounded-full bg-white/[0.035] border border-white/[0.07] text-[11px] text-neutral-300"
+                  className="px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs text-neutral-200"
                 >
                   {chip}
                 </motion.span>
@@ -711,7 +711,7 @@ export const DragZone: React.FC = () => {
                 <circle cx="26" cy="26" r="3" fill="#c5a46e" fillOpacity="0.4" />
               </svg>
             </motion.div>
-            <span className="text-xs font-mono tracking-[0.2em] text-[#d8c39a] font-semibold">松手导入</span>
+            <span className="text-sm tracking-wide text-[#d8c39a] font-semibold">松手导入</span>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 z-20 text-center">
@@ -731,11 +731,11 @@ export const DragZone: React.FC = () => {
             </div>
 
             <div>
-              <div className="text-lg font-mono font-semibold tracking-[2px] text-white">建立字幕工作台</div>
-              <div className="text-xs text-neutral-200/80 tracking-wide mt-1">拖入字幕包，系统将整理轨道、样式与片源信息</div>
+              <div className="text-xl font-semibold tracking-wide text-white">建立字幕工作台</div>
+              <div className="text-sm text-neutral-200/85 tracking-wide mt-1">拖入字幕包，系统将整理字幕与影片信息</div>
             </div>
 
-	            <div className="flex gap-3 text-xs font-mono tracking-[1px] text-neutral-200/75 mt-2">
+	            <div className="flex gap-3 text-sm font-mono tracking-wide text-neutral-200/80 mt-2">
 	              <span>SRT</span><span className="text-white/20">·</span><span>ASS</span><span className="text-white/20">·</span><span>ZIP</span>
 	            </div>
 	          </div>
@@ -746,22 +746,22 @@ export const DragZone: React.FC = () => {
 	        <div className="flex items-start gap-3 rounded-xl border border-white/[0.05] bg-white/[0.012] px-4 py-3">
 	          <FileText className="w-4 h-4 text-[#d8c39a] mt-0.5 shrink-0" />
 	          <div className="min-w-0">
-	            <div className="text-xs font-bold text-white/80">字幕轨</div>
-	            <div className="text-[11px] text-neutral-500 leading-relaxed mt-0.5">识别标准轨、样式轨、双语轨与导评轨。</div>
+	            <div className="text-sm font-bold text-white/90">字幕轨</div>
+	            <div className="text-xs text-neutral-300 leading-relaxed mt-0.5">识别标准轨、样式轨、双语轨与导评轨。</div>
 	          </div>
 	        </div>
 	        <div className="flex items-start gap-3 rounded-xl border border-white/[0.05] bg-white/[0.012] px-4 py-3">
 	          <Archive className="w-4 h-4 text-[#d8c39a]/80 mt-0.5 shrink-0" />
 	          <div className="min-w-0">
-	            <div className="text-xs font-bold text-white/80">字幕包</div>
-	            <div className="text-[11px] text-neutral-500 leading-relaxed mt-0.5">支持 ZIP 打包导入，并自动忽略非字幕资源。</div>
+	            <div className="text-sm font-bold text-white/90">字幕包</div>
+	            <div className="text-xs text-neutral-300 leading-relaxed mt-0.5">支持 ZIP 打包导入，并自动忽略非字幕资源。</div>
 	          </div>
 	        </div>
 	        <div className="flex items-start gap-3 rounded-xl border border-white/[0.05] bg-white/[0.012] px-4 py-3">
 	          <Sparkles className="w-4 h-4 text-[#c5a46e] mt-0.5 shrink-0" />
 	          <div className="min-w-0">
-	            <div className="text-xs font-bold text-white/80">片源信息</div>
-	            <div className="text-[11px] text-neutral-500 leading-relaxed mt-0.5">导入后自动补全影视资料与预览画面。</div>
+	            <div className="text-sm font-bold text-white/90">片源信息</div>
+	            <div className="text-xs text-neutral-300 leading-relaxed mt-0.5">导入后自动补全影视资料与预览画面。</div>
 	          </div>
 	        </div>
 	      </div>
@@ -771,15 +771,15 @@ export const DragZone: React.FC = () => {
 	          <div className="rounded-2xl border border-white/[0.055] bg-black/30 overflow-hidden">
 	            {preflightItems.length > 0 && (
 	              <div className="p-3 border-b border-white/[0.045]">
-	                <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/35 mb-2">导入概览</div>
+	                <div className="text-xs font-semibold text-white/60 mb-2">导入概览</div>
 	                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
 	                  {preflightItems.slice(0, 6).map((item) => (
 	                    <div key={`${item.name}-${item.file.size}`} className="flex items-center gap-2 text-xs min-w-0">
-	                      <span className={`px-1.5 py-0.5 rounded font-mono text-[10px] ${item.accepted ? 'bg-[#c5a46e]/10 text-[#d8c39a]' : 'bg-amber-500/10 text-amber-300'}`}>
+	                      <span className={`px-1.5 py-0.5 rounded font-semibold ${item.accepted ? 'bg-[#c5a46e]/10 text-[#d8c39a]' : 'bg-amber-500/10 text-amber-300'}`}>
 	                        {item.label}
 	                      </span>
 	                      <span className="truncate text-white/70">{item.name}</span>
-	                      <span className="text-white/30 truncate hidden sm:inline">{item.note}</span>
+	                      <span className="text-white/50 truncate hidden sm:inline">{item.note}</span>
 	                    </div>
 	                  ))}
 	                </div>
@@ -787,14 +787,14 @@ export const DragZone: React.FC = () => {
 	            )}
 	            {trackSummaries.length > 0 && (
 	              <div className="p-3">
-	                <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/35 mb-2">轨道识别</div>
+	                <div className="text-xs font-semibold text-white/60 mb-2">轨道识别</div>
 	                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
 	                  {trackSummaries.slice(0, 6).map((item) => (
 	                    <div key={`${item.name}-${item.source}`} className="flex items-center gap-2 text-xs min-w-0">
 	                      <CheckCircle2 className="w-3.5 h-3.5 text-[#d8c39a] shrink-0" />
-	                      <span className="px-1.5 py-0.5 rounded bg-[#c5a46e]/10 text-[#d8c39a] font-mono text-[10px]">{item.format}</span>
+	                      <span className="px-1.5 py-0.5 rounded bg-[#c5a46e]/10 text-[#d8c39a] font-semibold">{item.format}</span>
 	                      <span className="text-white/70 truncate">{item.lang}</span>
-	                      <span className="text-white/30 truncate">{item.name}</span>
+	                      <span className="text-white/55 truncate">{item.name}</span>
 	                    </div>
 	                  ))}
 	                </div>
@@ -808,7 +808,7 @@ export const DragZone: React.FC = () => {
 	      <div className="flex flex-col sm:flex-row gap-4 justify-center mt-9 w-full sm:w-auto px-4 z-20">
         <button 
           onClick={() => fileInputRef.current?.click()}
-          className="group w-full sm:w-auto px-9 py-3.5 rounded-2xl text-sm font-mono uppercase tracking-[0.12em] font-semibold cursor-pointer transition-all duration-200 
+          className="group w-full sm:w-auto px-9 py-3.5 rounded-2xl text-sm tracking-wide font-semibold cursor-pointer transition-all duration-200 
             bg-white/[0.022] hover:bg-[#c5a46e]/5 border border-white/[0.055] hover:border-[#c5a46e]/30 
             text-white/90 hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.35)] hover:shadow-[0_0_18px_rgba(197,164,110,0.08)] active:scale-[0.985]"
 	        >
@@ -818,7 +818,7 @@ export const DragZone: React.FC = () => {
         
         <button 
           onClick={() => folderInputRef.current?.click()}
-          className="group w-full sm:w-auto px-9 py-3.5 rounded-2xl text-sm font-mono uppercase tracking-[0.12em] font-semibold cursor-pointer transition-all duration-200 
+          className="group w-full sm:w-auto px-9 py-3.5 rounded-2xl text-sm tracking-wide font-semibold cursor-pointer transition-all duration-200 
             bg-white/[0.01] hover:bg-white/[0.035] border border-white/[0.04] hover:border-white/15 
             text-neutral-400 hover:text-neutral-100 shadow-[0_2px_8px_rgba(0,0,0,0.35)] hover:shadow-[0_0_14px_rgba(255,255,255,0.06)] active:scale-[0.985]"
 	        >

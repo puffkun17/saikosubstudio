@@ -69,14 +69,14 @@ export const SequenceList: React.FC = () => {
       {total > 0 && (
         <div className="flex items-center justify-between gap-4 px-8 py-3 border-b border-white/[0.06] bg-white/[0.005] flex-shrink-0">
           <div className="min-w-0 flex items-center gap-3">
-            <span className="text-[0.625rem] font-mono text-neutral-500 uppercase tracking-widest pl-0.5 font-bold whitespace-nowrap">
+            <span className="text-xs text-neutral-300 tracking-wide pl-0.5 font-semibold whitespace-nowrap">
               {isOverlimit
                 ? (showAllSubs ? `全部 ${total} 行` : `显示 ${LIMIT} / ${total} 行`)
                 : `字幕序列 · ${total} 行`
               }
             </span>
             {isOverlimit && !showAllSubs && (
-              <span className="hidden sm:inline text-[0.625rem] text-amber-200/45 font-mono truncate">
+              <span className="hidden sm:inline text-xs text-amber-100/70 truncate">
                 已启用轻量预览，展开后显示完整时间轴
               </span>
             )}
@@ -85,7 +85,7 @@ export const SequenceList: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowAllSubs(true)}
-              className="flex items-center gap-1 text-[0.625rem] text-[#d8c39a] hover:text-[#f0ddaf] transition font-mono uppercase tracking-wider cursor-pointer font-bold shrink-0"
+              className="flex items-center gap-1 text-xs text-[#d8c39a] hover:text-[#f0ddaf] transition cursor-pointer font-bold shrink-0"
             >
               <ChevronDown className="w-3 h-3" />
               展开全部
@@ -126,7 +126,7 @@ export const SequenceList: React.FC = () => {
                     />
                   )}
 
-                  <div className="w-40 font-mono text-[0.6875rem] text-neutral-500 self-center tracking-wider flex items-center gap-2 select-none">
+                  <div className="w-40 font-mono text-xs text-neutral-300 self-center tracking-wide flex items-center gap-2 select-none">
                     {isLyric && (
                       <motion.span
                         animate={{ y: [0, -2, 0], scale: [1, 1.05, 1] }}
@@ -156,7 +156,7 @@ export const SequenceList: React.FC = () => {
                               setEditingIndex(null);
                             }
                           }}
-                          className="bg-white/[0.02] border border-white/[0.08] text-[0.8125rem] font-medium leading-relaxed text-neutral-100 rounded-lg px-3 py-1.5 w-full outline-none focus:border-[#c5a46e]/50 focus:bg-white/[0.04] transition-all"
+                          className="bg-white/[0.02] border border-white/[0.08] text-sm font-medium leading-relaxed text-neutral-100 rounded-lg px-3 py-1.5 w-full outline-none focus:border-[#c5a46e]/50 focus:bg-white/[0.04] transition-all"
                           placeholder="中文字幕文本"
                           autoFocus
                         />
@@ -173,14 +173,14 @@ export const SequenceList: React.FC = () => {
                                 setEditingIndex(null);
                               }
                             }}
-                            className="bg-white/[0.015] border border-white/[0.06] text-[0.6875rem] font-light leading-relaxed text-[#d8c39a]/85 rounded-lg px-3 py-1.5 w-full outline-none focus:border-[#c5a46e]/50 focus:bg-white/[0.035] transition-all"
+                            className="bg-white/[0.015] border border-white/[0.06] text-xs font-normal leading-relaxed text-[#d8c39a]/90 rounded-lg px-3 py-1.5 w-full outline-none focus:border-[#c5a46e]/50 focus:bg-white/[0.035] transition-all"
                             placeholder="英文字幕文本"
                           />
                         )}
                         <div className="flex justify-end gap-2 mt-1">
                           <button
                             type="button"
-                            className="px-3 py-1 bg-[#c5a46e]/15 hover:bg-[#c5a46e]/25 text-[#f0ddaf] border border-[#c5a46e]/25 rounded-lg text-[0.625rem] font-mono uppercase tracking-wider transition cursor-pointer"
+                            className="px-3 py-1 bg-[#c5a46e]/15 hover:bg-[#c5a46e]/25 text-[#f0ddaf] border border-[#c5a46e]/25 rounded-lg text-xs font-bold transition cursor-pointer"
                             onClick={(e) => { e.stopPropagation(); setEditingIndex(null); }}
                           >
                             保存
@@ -189,11 +189,11 @@ export const SequenceList: React.FC = () => {
                       </div>
                     ) : (
                       <>
-                        <div className={`text-[0.8125rem] font-medium leading-relaxed break-words ${isActive ? 'text-white' : 'text-neutral-350'}`}>
+                        <div className={`text-sm font-medium leading-relaxed break-words ${isActive ? 'text-white' : 'text-neutral-200'}`}>
                           {zhText}
                         </div>
                         {enText && (
-                          <div className={`text-[0.6875rem] mt-0.5 font-light leading-relaxed break-words ${isActive ? 'text-[#d8c39a]/85' : 'text-neutral-500'}`}>
+                          <div className={`text-xs mt-0.5 font-normal leading-relaxed break-words ${isActive ? 'text-[#d8c39a]/90' : 'text-neutral-400'}`}>
                             {enText}
                           </div>
                         )}
@@ -201,12 +201,12 @@ export const SequenceList: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="w-24 flex items-center justify-end gap-3 self-center select-none font-mono text-[0.625rem]">
+                  <div className="w-24 flex items-center justify-end gap-3 self-center select-none font-mono text-xs">
                     {isActive && editingIndex !== sub.index && (
                       <motion.span
                         animate={{ opacity: [0.3, 0.8, 0.3] }}
                         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                        className="text-[#d8c39a] font-bold select-none whitespace-nowrap text-[0.5625rem] bg-[#c5a46e]/5 border border-[#c5a46e]/15 px-1.5 py-0.5 rounded"
+                        className="text-[#d8c39a] font-bold select-none whitespace-nowrap text-xs bg-[#c5a46e]/5 border border-[#c5a46e]/15 px-1.5 py-0.5 rounded"
                       >
                         双击编辑
                       </motion.span>
@@ -231,7 +231,7 @@ export const SequenceList: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-neutral-600 font-mono text-[0.6875rem] uppercase tracking-wider py-24 select-none">
+          <div className="flex-1 flex items-center justify-center text-neutral-400 text-xs tracking-wide py-24 select-none">
             暂无可预览字幕序列
           </div>
         )}

@@ -79,8 +79,8 @@ export const WorkbenchStep: React.FC = () => {
           </div>
           
           <div className="min-w-0">
-            <h2 className="text-xs font-semibold text-neutral-300 tracking-wide pl-0.5">字幕工作台</h2>
-            <p className="text-[10px] text-[#d8c39a] font-mono mt-0.5 max-w-[620px] whitespace-normal break-words leading-relaxed pl-0.5" title={customFilename}>
+            <h2 className="text-sm font-semibold text-neutral-200 tracking-wide pl-0.5">字幕工作台</h2>
+            <p className="text-xs text-[#d8c39a] mt-0.5 max-w-[620px] whitespace-normal break-words leading-relaxed pl-0.5" title={customFilename}>
               {processedSubs?.length || 0} 行已准备 · {customFilename || '未命名字幕'}
             </p>
           </div>
@@ -96,7 +96,7 @@ export const WorkbenchStep: React.FC = () => {
           <motion.button 
             whileHover={{ scale: 1.02, y: -0.5 }}
             whileTap={{ scale: 0.98 }}
-            className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer
+            className={`py-2 px-3.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5 cursor-pointer
               ${isSettingsOpen ? 'glass-btn-ar-active' : 'glass-btn-ar text-neutral-350 hover:text-white'}`}
             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
             title="样式配置选项"
@@ -114,7 +114,7 @@ export const WorkbenchStep: React.FC = () => {
           <motion.button 
             whileHover={{ scale: 1.02, y: -0.5 }}
             whileTap={{ scale: 0.98 }}
-            className="group py-2 px-3.5 glass-btn-ar text-xs font-bold text-neutral-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+            className="group py-2 px-3.5 glass-btn-ar text-sm font-bold text-neutral-200 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
             onClick={() => setWorkflowStep(3)}
           >
             <Eye className="w-3.5 h-3.5 text-[#d8c39a]" />

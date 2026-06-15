@@ -104,7 +104,7 @@ export const SystemTray = () => {
         justify-between transition-colors duration-300"
     >
       {/* ── Left: brand + nav ──────────────────────────────── */}
-      <div className="flex items-center gap-3 text-[12px] tracking-tight min-w-0">
+      <div className="flex items-center gap-3 text-sm tracking-tight min-w-0">
         <Link
           href="/"
           onClick={handleNavClick}
@@ -153,14 +153,14 @@ export const SystemTray = () => {
       <div className="flex items-center gap-4 shrink-0">
         <button
           onClick={cycleScale}
-          className="px-2.5 py-1 rounded-lg glass-btn-ar text-[11px] font-mono text-neutral-400 hover:text-neutral-200 cursor-pointer select-none flex items-center gap-1"
+          className="px-2.5 py-1 rounded-lg glass-btn-ar text-xs font-mono text-neutral-300 hover:text-neutral-100 cursor-pointer select-none flex items-center gap-1.5"
           title="调节网页整体缩放"
         >
-          <span className="text-[10px] opacity-50 uppercase font-bold tracking-wider">A±</span>
+          <span className="text-xs opacity-70 font-bold tracking-wide">A±</span>
           <span className="font-bold text-[#d8c39a]" suppressHydrationWarning>{Math.round(scale * 100)}%</span>
         </button>
         <span
-          className="text-[11px] font-mono text-white/30 tabular-nums tracking-wider"
+          className="text-xs font-mono text-white/45 tabular-nums tracking-wide"
           aria-label="Current time"
         >
           {time}

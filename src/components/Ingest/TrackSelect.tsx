@@ -31,7 +31,7 @@ const getLangBadgeMini = (lang?: string) => {
   const entry = map[lang];
   if (!entry) return null;
   return (
-    <span className={`text-xs font-bold px-1.5 py-0.5 rounded flex-shrink-0 text-[0.6875rem] ${entry.color}`}>
+    <span className={`text-xs font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${entry.color}`}>
       {entry.label}
     </span>
   );
@@ -95,8 +95,8 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
       {/* Recessed Port Socket Trigger button */}
       <button
         type="button"
-        className={`w-full flex items-center gap-2 rounded-lg py-2 px-3 text-xs outline-none transition-all duration-200 cursor-pointer font-mono text-left bg-[#020204] shadow-[inset_0_2px_4px_rgba(0,0,0,0.85)]
-          ${open ? 'border-accent-gold/45 text-white' : 'border-black/60 hover:border-neutral-800 text-white/80'}`}
+        className={`w-full flex items-center gap-2 rounded-lg py-2.5 px-3 text-sm outline-none transition-all duration-200 cursor-pointer text-left bg-[#020204] shadow-[inset_0_2px_4px_rgba(0,0,0,0.85)]
+          ${open ? 'border-accent-gold/45 text-white' : 'border-white/[0.07] hover:border-white/[0.14] text-white/85'}`}
         onClick={() => setOpen(!open)}
       >
         <span className="flex-1 min-w-0 truncate">
@@ -106,13 +106,13 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
               <FileNameText name={selectedOption.name} className="text-neutral-300 font-medium flex-1" />
             </span>
           ) : (
-            <span className="text-white/20">{placeholder}</span>
+            <span className="text-white/38">{placeholder}</span>
           )}
         </span>
         {countLabel != null && (
-          <span className="text-accent-gold text-xs font-mono flex-shrink-0 font-bold bg-[#0a0a0d] px-1 py-0.5 rounded border border-black">{countLabel}L</span>
+          <span className="text-accent-gold text-xs font-mono flex-shrink-0 font-bold bg-[#0a0a0d] px-1.5 py-0.5 rounded border border-white/[0.06]">{countLabel}行</span>
         )}
-        <ChevronDown className={`w-3 h-3 text-white/20 flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180 text-accent-gold' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-white/35 flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180 text-accent-gold' : ''}`} />
       </button>
 
       {/* Outset Layered Dropdown Board */}
@@ -121,11 +121,11 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
           {/* Unbound option */}
           <button
             className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-white/[0.03] transition text-left cursor-pointer active:bg-white/[0.01]
-              ${!value ? 'text-white/80 bg-white/[0.01] font-semibold' : 'text-white/40'}`}
+              ${!value ? 'text-white/85 bg-white/[0.01] font-semibold' : 'text-white/55'}`}
             onClick={() => { onChange(''); setOpen(false); }}
           >
             {!value && <Check className="w-3 h-3 text-accent-gold flex-shrink-0" />}
-            <span className={`text-sm ${!value ? 'pl-0' : 'pl-[18px]'} text-neutral-400`}>-- 未绑定 --</span>
+            <span className={`text-sm ${!value ? 'pl-0' : 'pl-[18px]'} text-neutral-300`}>未选择</span>
           </button>
 
           {/* File options */}
@@ -144,16 +144,16 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
                   : <span className="w-3 flex-shrink-0" />
                 }
                 {getLangBadgeMini(opt.lang)}
-                <FileNameText name={truncateMiddle(opt.name, 120)} className="flex-1 font-mono text-sm" />
+                <FileNameText name={truncateMiddle(opt.name, 120)} className="flex-1 font-mono text-sm text-neutral-100" />
                 {opt.count != null && (
-                  <span className="text-white/40 text-xs flex-shrink-0 font-mono tabular-nums">{opt.count}行</span>
+                  <span className="text-white/55 text-xs flex-shrink-0 font-mono tabular-nums">{opt.count}行</span>
                 )}
               </button>
             );
           })}
 
           {options.length === 0 && (
-            <div className="px-3 py-4 text-[0.6875rem] text-white/30 text-center">
+            <div className="px-3 py-4 text-xs text-white/45 text-center">
               暂无已上传的字幕文件
             </div>
           )}

@@ -150,11 +150,11 @@ export const TaskList: React.FC = () => {
     const max = Math.max(zhCount, enCount);
     const diffRatio = max > 0 ? Math.abs(zhCount - enCount) / max : 0;
     if (diffRatio <= 0.05) {
-      diffBadge = <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-mono rounded flex-shrink-0 tracking-wider select-none shadow-[0_0_10px_rgba(16,185,129,0.15)]">已匹配</span>;
+      diffBadge = <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-xs font-semibold rounded flex-shrink-0 select-none shadow-[0_0_10px_rgba(16,185,129,0.15)]">已匹配</span>;
     } else if (diffRatio <= 0.15) {
-      diffBadge = <span className="px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-mono rounded flex-shrink-0 tracking-wider select-none">需检查</span>;
+      diffBadge = <span className="px-2 py-0.5 bg-amber-500/10 text-amber-300 border border-amber-500/20 text-xs font-semibold rounded flex-shrink-0 select-none">需检查</span>;
     } else {
-      diffBadge = <span className="px-2 py-0.5 bg-rose-500/10 text-rose-450 border border-rose-500/20 text-xs font-mono rounded flex-shrink-0 tracking-wider select-none">待确认</span>;
+      diffBadge = <span className="px-2 py-0.5 bg-rose-500/10 text-rose-300 border border-rose-500/20 text-xs font-semibold rounded flex-shrink-0 select-none">待确认</span>;
     }
   }
 
@@ -167,7 +167,7 @@ export const TaskList: React.FC = () => {
           <h3 className="text-base font-bold text-neutral-100 tracking-wide font-sans">
             字幕文件
           </h3>
-          <span className="text-xs font-mono font-bold text-[#d8c39a] bg-white/[0.03] border border-white/[0.08] px-2.5 py-0.5 rounded-full">
+          <span className="text-xs font-semibold text-[#d8c39a] bg-white/[0.03] border border-white/[0.08] px-2.5 py-0.5 rounded-full">
             {tasks.length}
           </span>
         </div>
@@ -247,7 +247,7 @@ export const TaskList: React.FC = () => {
                     ? 'bg-amber-450 shadow-[0_0_10px_rgba(245,158,11,0.7)]' 
                     : 'bg-white/10'}`} 
             />
-            {renderMarqueeText(activeTask.title, 'text-xs md:text-sm font-bold text-neutral-100 pr-1 font-mono uppercase flex-1')}
+            {renderMarqueeText(activeTask.title, 'text-xs md:text-sm font-semibold text-neutral-100 pr-1 font-mono flex-1')}
             {diffBadge}
           </div>
 
@@ -255,13 +255,13 @@ export const TaskList: React.FC = () => {
           {pendingDeleteId === activeTask.id ? (
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <button
-                className="text-xs font-bold font-mono uppercase tracking-wider px-2.5 py-1 rounded-lg bg-rose-600/20 text-rose-350 hover:bg-rose-600/40 border border-rose-500/15 active:translate-y-[1px] transition-colors cursor-pointer"
+                className="text-xs font-bold px-2.5 py-1 rounded-lg bg-rose-600/20 text-rose-300 hover:bg-rose-600/40 border border-rose-500/15 active:translate-y-[1px] transition-colors cursor-pointer"
                 onClick={(e) => { e.stopPropagation(); deleteTask(activeTask.id); setPendingDeleteId(null); }}
               >
                 确认
               </button>
               <button
-                className="text-xs font-bold font-mono uppercase tracking-wider px-2.5 py-1 rounded-lg bg-white/5 text-neutral-400 hover:bg-white/10 hover:text-neutral-200 border border-white/5 active:translate-y-[1px] transition-colors cursor-pointer"
+                className="text-xs font-bold px-2.5 py-1 rounded-lg bg-white/5 text-neutral-300 hover:bg-white/10 hover:text-neutral-100 border border-white/5 active:translate-y-[1px] transition-colors cursor-pointer"
                 onClick={(e) => { e.stopPropagation(); setPendingDeleteId(null); }}
               >
                 取消
@@ -283,13 +283,13 @@ export const TaskList: React.FC = () => {
           
           {/* Track Bindings - Wide horizontal card */}
           <div className="p-4 bg-white/[0.01] border border-white/[0.04] rounded-xl flex flex-col gap-3 shadow-md overflow-visible relative">
-            <h4 className="text-sm font-mono uppercase tracking-wider text-neutral-300 font-semibold block select-none">
+            <h4 className="text-sm text-neutral-200 font-semibold block select-none">
               字幕文件匹配
             </h4>
             <div className="flex flex-col gap-2.5 bg-white/[0.005] p-3 rounded-lg border border-white/[0.03] overflow-visible relative">
               {/* Chinese binding */}
               <div className="flex flex-row items-center gap-2 overflow-visible">
-                <span className="w-24 text-sm font-mono uppercase tracking-wider text-neutral-300 font-semibold shrink-0 text-left">
+                <span className="w-24 text-sm text-neutral-200 font-semibold shrink-0 text-left">
                   主字幕
                 </span>
                 <TrackSelect
@@ -305,7 +305,7 @@ export const TaskList: React.FC = () => {
                 <>
                   {/* English binding */}
                   <div className="flex flex-row items-center gap-2 overflow-visible">
-                    <span className="w-24 text-sm font-mono uppercase tracking-wider text-neutral-300 font-semibold shrink-0 text-left">
+                    <span className="w-24 text-sm text-neutral-200 font-semibold shrink-0 text-left">
                       英文字幕
                     </span>
                     <TrackSelect
@@ -319,7 +319,7 @@ export const TaskList: React.FC = () => {
 
                   {/* Commentary binding */}
                   <div className="flex flex-row items-center gap-2 overflow-visible">
-                    <span className="w-24 text-sm font-mono uppercase tracking-wider text-neutral-300 font-semibold shrink-0 text-left">
+                    <span className="w-24 text-sm text-neutral-200 font-semibold shrink-0 text-left">
                       旁白与导评
                     </span>
                     <TrackSelect
@@ -332,7 +332,7 @@ export const TaskList: React.FC = () => {
                 </>
               ) : (
                 <div className="flex items-center justify-center py-3 px-3 bg-violet-500/[0.02] border border-violet-500/10 rounded-lg mt-1">
-                  <span className="text-[0.625rem] font-mono uppercase tracking-wider text-violet-400 font-semibold">
+                  <span className="text-xs text-[#d8c39a] font-semibold">
                     已识别为双语字幕，可直接进入预览
                   </span>
                 </div>
@@ -350,13 +350,13 @@ export const TaskList: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="p-3.5 bg-violet-650/5 border border-violet-500/20 rounded-xl flex items-center justify-between gap-3 shadow-[0_4px_15px_rgba(0,0,0,0.3)]"
               >
-                <div className="text-xs md:text-sm text-neutral-300 font-mono">
+                <div className="text-xs md:text-sm text-neutral-200">
                   <span className="text-[#d8c39a] font-bold">检测到字幕样式:</span>
                   {' '}中文 {foundAssStyle.zhFontSize}像素 / 英文 {foundAssStyle.enFontSize}像素
                 </div>
                 <div className="flex gap-1.5">
                   <button 
-                    className="px-3 py-1.5 text-violet-300 text-xs font-bold rounded-lg border border-violet-500/20 bg-violet-500/10 hover:bg-violet-500/20 cursor-pointer"
+                    className="px-3 py-1.5 text-[#f0ddaf] text-xs font-bold rounded-lg border border-[#c5a46e]/20 bg-[#c5a46e]/10 hover:bg-[#c5a46e]/20 cursor-pointer"
                     onClick={() => {
                       setCustomStyle(foundAssStyle as StyleSettings);
                       setActivePreset('custom');
@@ -381,17 +381,17 @@ export const TaskList: React.FC = () => {
               {/* Output name */}
               <div className="flex-1 flex flex-col gap-1.5 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <label className="text-sm font-mono uppercase tracking-wider text-neutral-300 font-semibold select-none">
+                  <label className="text-sm text-neutral-200 font-semibold select-none">
                     输出文件名
                   </label>
-                  <span className="shrink-0 rounded-md border border-[#c5a46e]/18 bg-[#c5a46e]/8 px-2 py-0.5 text-[0.625rem] font-bold text-[#d8c39a]">
+                  <span className="shrink-0 rounded-md border border-[#c5a46e]/18 bg-[#c5a46e]/8 px-2 py-0.5 text-xs font-bold text-[#d8c39a]">
                     {getFilenameSourceLabel()}
                   </span>
                 </div>
                 <div className="relative">
                   <input 
                     type="text" 
-                    className="w-full h-10 bg-[#020204] border border-white/[0.06] focus:border-[#c5a46e]/35 focus:bg-white/[0.02] rounded-lg px-3.5 text-white text-xs outline-none transition-all placeholder:text-white/20 font-mono shadow-[inset_0_2px_4px_rgba(0,0,0,0.85)]"
+                    className="w-full h-10 bg-[#020204] border border-white/[0.08] focus:border-[#c5a46e]/40 focus:bg-white/[0.025] rounded-lg px-3.5 text-white text-sm outline-none transition-all placeholder:text-white/35 font-mono shadow-[inset_0_2px_4px_rgba(0,0,0,0.85)]"
                     value={customFilename}
                     onChange={e => setCustomFilename(e.target.value, 'manual')}
                     onFocus={() => setIsFilenameFocused(true)}
@@ -399,7 +399,7 @@ export const TaskList: React.FC = () => {
                     placeholder="自动命名..."
                   />
                   {customFilename.length > 42 && !isFilenameFocused && (
-                    <div className="pointer-events-none absolute inset-y-px left-px right-px rounded-lg bg-[#020204] flex items-center px-3.5 text-xs font-mono text-white overflow-hidden">
+                    <div className="pointer-events-none absolute inset-y-px left-px right-px rounded-lg bg-[#020204] flex items-center px-3.5 text-sm font-mono text-white overflow-hidden">
                       {renderMarqueeText(customFilename, 'w-full')}
                     </div>
                   )}
@@ -409,12 +409,12 @@ export const TaskList: React.FC = () => {
               {/* Alignment Mode Selection */}
               {!activeTask.isBilingualSingle && (
                 <div className="flex flex-col gap-1.5 w-full lg:w-60 shrink-0">
-                  <label className="text-sm font-mono uppercase tracking-wider text-neutral-300 font-semibold select-none">
+                  <label className="text-sm text-neutral-200 font-semibold select-none">
                     对齐方式
                   </label>
                   <div className="grid grid-cols-2 gap-0.5 p-0.5 rounded-lg bg-[#020204] border border-white/[0.06] relative shadow-[inset_0_2px_4px_rgba(0,0,0,0.85)] h-10 items-center">
                     <button
-                      className={`relative z-10 py-1.5 rounded-md text-sm font-mono uppercase tracking-wider transition-all duration-105 cursor-pointer ${alignmentMode === 'standard' ? 'text-white font-bold' : 'text-neutral-500 hover:text-neutral-350'}`}
+                      className={`relative z-10 py-1.5 rounded-md text-sm font-semibold transition-all duration-105 cursor-pointer ${alignmentMode === 'standard' ? 'text-white' : 'text-neutral-300 hover:text-neutral-100'}`}
                       onClick={() => setAlignmentMode('standard')}
                     >
                       {alignmentMode === 'standard' && (
@@ -427,7 +427,7 @@ export const TaskList: React.FC = () => {
                       智能
                     </button>
                     <button
-                      className={`relative z-10 py-1.5 rounded-md text-sm font-mono uppercase tracking-wider transition-all duration-105 cursor-pointer ${alignmentMode === 'industrial' ? 'text-violet-400 font-bold' : 'text-neutral-500 hover:text-neutral-350'}`}
+                      className={`relative z-10 py-1.5 rounded-md text-sm font-semibold transition-all duration-105 cursor-pointer ${alignmentMode === 'industrial' ? 'text-[#d8c39a]' : 'text-neutral-300 hover:text-neutral-100'}`}
                       onClick={() => setAlignmentMode('industrial')}
                     >
                       {alignmentMode === 'industrial' && (
@@ -446,7 +446,7 @@ export const TaskList: React.FC = () => {
               {/* Action Button */}
               <div className="w-full lg:w-56 shrink-0">
                 <button
-                  className={`w-full h-10 rounded-lg font-bold text-center text-sm font-mono uppercase tracking-[0.08em] transition-all flex items-center justify-center gap-2 cursor-pointer
+                  className={`w-full h-10 rounded-lg font-bold text-center text-sm transition-all flex items-center justify-center gap-2 cursor-pointer
                     ${(!activeTask.zh && !activeTask.en) || isProcessing 
                       ? 'bg-white/[0.02] text-white/20 border border-white/5 cursor-not-allowed' 
                       : 'bg-violet-600/25 hover:bg-violet-600/35 text-violet-300 border border-violet-500/30 hover:border-violet-500/50 shadow-[0_4px_20px_rgba(168,85,247,0.18)] hover:scale-[1.01]'}`}
