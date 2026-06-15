@@ -97,6 +97,7 @@ type TmdbImages = {
 };
 
 type TmdbManualInput = { title: string; year: string; type: TmdbMediaType; season: string; episode: string };
+type FilenameSource = 'auto' | 'tmdb' | 'manual' | 'library' | 'unknown';
 
 type CustomTemplate = {
   id: string;
@@ -108,6 +109,7 @@ export interface StudioState {
   workflowStep: number;
   files: { zh: Subfile | null; en: Subfile | null; commentary: Subfile | null };
   customFilename: string;
+  filenameSource: FilenameSource;
   uploadedFiles: Subfile[];
   tasks: TaskPair[];
   selectedTaskId: string | null;
@@ -149,7 +151,7 @@ export interface StudioState {
   addLog: (msg: string, type?: 'info' | 'success' | 'error') => void;
   clearLogs: () => void;
   setIsDragging: (isDragging: boolean) => void;
-  setCustomFilename: (name: string) => void;
+  setCustomFilename: (name: string, source?: FilenameSource) => void;
   setSelectedTaskId: (id: string | null) => void;
   setTmdbData: (data: TmdbMetadata | null) => void;
   setTmdbBackdrop: (url: string | null) => void;
@@ -187,6 +189,7 @@ export interface StudioState {
   bindTrack: (taskId: string, trackKey: 'zh' | 'en' | 'commentary', fileId: string) => void;
   removeFileFromTask: (taskId: string, fileName: string) => void;
   deleteTask: (taskId: string) => void;
+  cancelCurrentUpload: () => void;
   saveToLibrary: () => void;
   deleteFromLibrary: (id: string) => void;
   loadFromLibrary: (item: LibraryItem) => void;
@@ -201,6 +204,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   workflowStep: 1,
   files: { zh: null, en: null, commentary: null },
   customFilename: '',
+  filenameSource: 'unknown',
   uploadedFiles: [],
   tasks: [],
   selectedTaskId: null,
@@ -262,7 +266,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   },
   clearLogs: () => set({ logs: [] }),
   setIsDragging: (isDragging) => set({ isDragging }),
-  setCustomFilename: (customFilename) => set({ customFilename }),
+  setCustomFilename: (customFilename, source = 'manual') => set({ customFilename, filenameSource: source }),
   setSelectedTaskId: (selectedTaskId) => set({ selectedTaskId }),
   setTmdbData: (tmdbData) => set({ tmdbData }),
   setTmdbBackdrop: (tmdbBackdrop) => set({ tmdbBackdrop }),
@@ -285,7 +289,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         tasks: state.tasks.map(t => t.id === selectedTaskId ? { ...t, tmdbBackdrop: nextBackdrop } : t)
       }));
     }
-    get().addLog("已从备选池中随机切换了下一张剧照", "success");
+    get().addLog("已更换背景图", "success");
   },
   setIsTemplateLab: (isTemplateLab) => set({ isTemplateLab }),
   setCustomStyle: (customStyle) => set({ customStyle }),
@@ -746,7 +750,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         }
         formattedName += `.S${seasonStr}E${episodeStr}`;
       }
-      set({ customFilename: formattedName });
+      set({ customFilename: formattedName, filenameSource: 'tmdb' });
 
       if (selectedTaskId) {
         set(state => ({
@@ -798,7 +802,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       task.zh?.text || '',
       task.en?.text || ''
     );
-    set({ customFilename: detectTitle });
+    set({ customFilename: detectTitle, filenameSource: 'auto' });
 
     const cleanName = detectTitle.replace(/\.[^/.]+$/, "");
     // Pre-fill type and season/episode if epKey exists
@@ -906,7 +910,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           const active = nextTasks.find(t => t.id === state.selectedTaskId) || nextTasks[0];
           get().selectTask(active.id);
         } else {
-          set({ selectedTaskId: null, files: { zh: null, en: null, commentary: null }, customFilename: '' });
+          set({ selectedTaskId: null, files: { zh: null, en: null, commentary: null }, customFilename: '', filenameSource: 'unknown' });
         }
       }, 0);
 
@@ -929,13 +933,39 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           const active = nextTasks[0];
           get().selectTask(active.id);
         } else {
-          set({ selectedTaskId: null, files: { zh: null, en: null, commentary: null }, customFilename: '' });
+          set({ selectedTaskId: null, files: { zh: null, en: null, commentary: null }, customFilename: '', filenameSource: 'unknown' });
         }
       }, 0);
 
       get().addLog(`已删除任务: ${taskToDelete.title}`, 'info');
       return { uploadedFiles: nextFiles, tasks: nextTasks };
     });
+  },
+
+  cancelCurrentUpload: () => {
+    set({
+      workflowStep: 1,
+      files: { zh: null, en: null, commentary: null },
+      customFilename: '',
+      filenameSource: 'unknown',
+      uploadedFiles: [],
+      tasks: [],
+      selectedTaskId: null,
+      tmdbData: null,
+      tmdbBackdrop: null,
+      tmdbBackdropList: [],
+      tmdbSuggestions: [],
+      selectedSuggestion: null,
+      tmdbManualOpen: false,
+      isSearchingTmdb: false,
+      processedSubs: null,
+      previewIndex: 0,
+      showAllSubs: false,
+      showAssHint: false,
+      foundAssStyle: null,
+      isProcessing: false
+    });
+    get().addLog("已取消本次导入", "info");
   },
 
   saveToLibrary: () => {
@@ -974,6 +1004,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set({
       processedSubs: item.subs,
       customFilename: item.name,
+      filenameSource: 'library',
       tmdbBackdrop: item.backdrop,
       tmdbBackdropList: item.backdropList || (item.backdrop ? [item.backdrop] : []),
       customStyle: item.customStyle,
@@ -1190,6 +1221,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       workflowStep: 1,
       files: { zh: null, en: null, commentary: null },
       customFilename: '',
+      filenameSource: 'unknown',
       uploadedFiles: [],
       tasks: [],
       selectedTaskId: null,

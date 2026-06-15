@@ -194,6 +194,30 @@ body::before {
   animation-delay: -5s;
 }
 
+@keyframes subtitleMarquee {
+  0%, 12% {
+    transform: translateX(0);
+  }
+  78%, 90% {
+    transform: translateX(-48%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.subtitle-marquee {
+  min-width: max-content;
+  animation: subtitleMarquee 11s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subtitle-marquee {
+    animation: none;
+  }
+}
+
 /* ==========================================================================
    AR Ambient Glow for Screens (Borderless Panoramic look)
    ========================================================================== */

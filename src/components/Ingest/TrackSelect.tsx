@@ -45,6 +45,17 @@ const truncateMiddle = (text: string, maxLength: number = 80) => {
   return text.substring(0, frontChars) + '…' + text.substring(text.length - backChars);
 };
 
+const FileNameText: React.FC<{ name: string; className?: string }> = ({ name, className = '' }) => {
+  const shouldScroll = name.length > 42;
+  return (
+    <span className={`min-w-0 overflow-hidden whitespace-nowrap ${className}`} title={name}>
+      <span className={shouldScroll ? 'inline-block subtitle-marquee' : 'truncate'}>
+        {name}
+      </span>
+    </span>
+  );
+};
+
 export const TrackSelect: React.FC<TrackSelectProps> = ({
   value,
   options,
@@ -90,9 +101,9 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
       >
         <span className="flex-1 min-w-0 truncate">
           {selectedOption ? (
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 min-w-0">
               {getLangBadgeMini(selectedOption.lang)}
-              <span className="truncate text-neutral-300 font-medium" title={selectedOption.name}>{selectedOption.name}</span>
+              <FileNameText name={selectedOption.name} className="text-neutral-300 font-medium flex-1" />
             </span>
           ) : (
             <span className="text-white/20">{placeholder}</span>
@@ -133,7 +144,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
                   : <span className="w-3 flex-shrink-0" />
                 }
                 {getLangBadgeMini(opt.lang)}
-                <span className="flex-1 truncate font-mono text-sm">{truncateMiddle(opt.name)}</span>
+                <FileNameText name={truncateMiddle(opt.name, 120)} className="flex-1 font-mono text-sm" />
                 {opt.count != null && (
                   <span className="text-white/40 text-xs flex-shrink-0 font-mono tabular-nums">{opt.count}行</span>
                 )}
