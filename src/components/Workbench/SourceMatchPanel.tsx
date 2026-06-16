@@ -56,7 +56,7 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
   );
 
   const chartWidth = 620;
-  const chartHeight = 172;
+  const chartHeight = 142;
   const sourceCurve = report.activityCurve.map((value, index, arr) => {
     const prev = arr[index - 1] ?? value;
     const next = arr[index + 1] ?? value;
@@ -92,26 +92,26 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
   };
 
   return (
-    <section className="w-full rounded-xl border border-white/[0.075] bg-[#080807]/72 shadow-[0_20px_70px_rgba(0,0,0,0.28)] overflow-hidden">
-      <div className="grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <div className="border-b xl:border-b-0 xl:border-r border-white/[0.06] p-5 md:p-6 flex flex-col gap-5">
+    <section className="w-full rounded-xl border border-white/[0.075] bg-[#080807]/72 shadow-[0_20px_70px_rgba(0,0,0,0.24)] overflow-hidden">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] gap-0">
+        <div className="border-b xl:border-b-0 xl:border-r border-white/[0.055] px-5 py-4 md:px-6 md:py-5">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] text-neutral-100">
                 <Activity className="h-4 w-4 text-[#a8b7a3]" />
-                {isMatchMode ? '片源匹配体检' : '字幕档案'}
+                {isMatchMode ? '片源匹配' : '字幕概览'}
               </div>
-              <p className="mt-1 text-xs text-neutral-500 leading-relaxed">
-                {isMatchMode ? '本地读取片源时长，生成结构匹配报告。' : '先看字幕自身质量，选择片源后再判断匹配度。'}
+              <p className="mt-1 max-w-[28ch] text-[13px] leading-5 text-neutral-400">
+                {isMatchMode ? '已加入本地片源参照，正在给出结构判断。' : '先确认字幕规模与分布，再加入本地片源判断合轴。'}
               </p>
             </div>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/[0.05] transition cursor-pointer"
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-white/[0.09] bg-white/[0.035] px-3.5 py-2.5 text-[13px] font-medium text-neutral-200 transition hover:border-white/[0.16] hover:bg-white/[0.07] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a8b7a3]/70 active:translate-y-px cursor-pointer"
             >
               <Upload className="h-3.5 w-3.5" />
-              选择片源
+              {isMatchMode ? '更换片源' : '加入片源'}
             </button>
             <input
               ref={inputRef}
@@ -123,68 +123,64 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
           </div>
 
           {isMatchMode ? (
-            <div className="flex items-end justify-between gap-4">
+            <div className="mt-5 flex items-end justify-between gap-4 border-y border-white/[0.055] py-4">
               <div>
                 <motion.div
                   key={report.score}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`text-5xl font-semibold tracking-tight ${meta.tone}`}
+                  className={`text-[46px] leading-none font-semibold tracking-[-0.04em] ${meta.tone}`}
                 >
                   {report.score}
                 </motion.div>
-                <div className="mt-1 text-xs font-mono text-neutral-500">MATCH SCORE</div>
+                <div className="mt-1 text-[11px] font-mono uppercase tracking-[0.12em] text-neutral-500">match score</div>
               </div>
               <div className="text-right">
-                <div className={`text-lg font-semibold ${meta.tone}`}>{meta.label}</div>
+                <div className={`text-[15px] font-semibold ${meta.tone}`}>{meta.label}</div>
                 <div className="mt-1 text-xs text-neutral-500">可信度 {report.confidence}%</div>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.018] px-3 py-3">
-                <div className="text-[11px] text-neutral-500">字数</div>
-                <div className="mt-2 text-xl font-semibold text-neutral-100">{formatCount(report.stats.characterCount)}</div>
+            <dl className="mt-5 grid grid-cols-3 gap-0 overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.016]">
+              <div className="px-3.5 py-3">
+                <dt className="text-[11px] text-neutral-500">文本量</dt>
+                <dd className="mt-1.5 text-[19px] leading-none font-semibold tracking-[-0.02em] text-neutral-100">{formatCount(report.stats.characterCount)}</dd>
               </div>
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.018] px-3 py-3">
-                <div className="text-[11px] text-neutral-500">跨度</div>
-                <div className="mt-2 text-xl font-semibold text-neutral-100">{formatMsClock(report.stats.spanMs)}</div>
+              <div className="border-l border-white/[0.055] px-3.5 py-3">
+                <dt className="text-[11px] text-neutral-500">时间跨度</dt>
+                <dd className="mt-1.5 text-[19px] leading-none font-semibold tracking-[-0.02em] text-neutral-100">{formatMsClock(report.stats.spanMs)}</dd>
               </div>
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.018] px-3 py-3">
-                <div className="text-[11px] text-neutral-500">分布</div>
-                <div className="mt-2 text-base font-semibold text-[#a8b7a3]">{report.stats.distributionLabel}</div>
+              <div className="border-l border-white/[0.055] px-3.5 py-3">
+                <dt className="text-[11px] text-neutral-500">对白密度</dt>
+                <dd className="mt-1.5 text-[18px] leading-none font-semibold tracking-[-0.02em] text-[#a8b7a3]">{report.stats.densityPerMinute}</dd>
               </div>
-            </div>
+            </dl>
           )}
 
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.018] p-4">
-            <div className="text-base font-semibold text-neutral-100">{report.title}</div>
-            <p className="mt-2 text-sm leading-relaxed text-neutral-400">{report.summary}</p>
+          <div className="mt-4">
+            <div className="text-[15px] font-semibold tracking-[-0.01em] text-neutral-100">{report.title}</div>
+            <p className="mt-1.5 max-w-[36ch] text-[13px] leading-5 text-neutral-400">{report.summary}</p>
           </div>
 
-          <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3">
-            <div className="text-xs text-neutral-500">{isMatchMode ? '建议操作' : '下一步'}</div>
-            <div className="mt-1 text-sm font-semibold text-neutral-100">
-              {isMatchMode ? meta.action : '选择本地片源，生成匹配体检'}
-            </div>
-          </div>
-
-          <div className="min-h-6 text-xs text-neutral-500 flex items-center gap-2">
-            <FileVideo className="h-3.5 w-3.5 text-neutral-500" />
-            <span className="truncate">
-              {videoName ? `${videoName}${videoDurationMs ? ` · ${formatMsClock(videoDurationMs)}` : ''}` : '未选择片源时，仅显示字幕档案数据'}
+          <div className="mt-4 flex items-center gap-2 text-xs text-neutral-500">
+            <FileVideo className="h-3.5 w-3.5 shrink-0 text-neutral-500" />
+            <span className="min-w-0 truncate">
+              {videoName ? `${videoName}${videoDurationMs ? ` · ${formatMsClock(videoDurationMs)}` : ''}` : '本地读取元数据，不上传文件'}
             </span>
           </div>
-          {metadataError && <div className="text-xs text-[#c0a89a]">{metadataError}</div>}
+          {metadataError && <div className="mt-2 text-xs text-[#c0a89a]">{metadataError}</div>}
         </div>
 
-        <div className="p-5 md:p-6 flex flex-col gap-5 min-w-0">
-          <figure className="rounded-xl border border-white/[0.055] bg-black/22 p-4 overflow-hidden">
-            <figcaption className="flex items-center justify-between gap-3 pb-3 text-xs text-neutral-500">
-              <span>{isMatchMode ? '片源覆盖 / 字幕活动谱' : '字幕时间分布图'}</span>
-              <span>{formatCount(report.stats.lineCount)} 行 · {report.stats.densityPerMinute}/分钟</span>
+        <div className="px-5 py-4 md:px-6 md:py-5 min-w-0">
+          <figure className="overflow-hidden">
+            <figcaption className="flex items-start justify-between gap-3 pb-2 text-xs text-neutral-500">
+              <div>
+                <div className="text-[13px] font-medium text-neutral-300">{isMatchMode ? '片源覆盖与字幕活动' : '字幕时间分布'}</div>
+                <div className="mt-0.5 text-[12px] text-neutral-500">{report.stats.distributionLabel} · {formatCount(report.stats.lineCount)} 行</div>
+              </div>
+              <span className="shrink-0 tabular-nums">{report.stats.densityPerMinute} 行/分钟</span>
             </figcaption>
-            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label="片源与字幕活动谱图" className="w-full h-[172px] overflow-visible">
+            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label={isMatchMode ? '片源覆盖与字幕活动图' : '字幕时间分布图'} className="w-full h-[142px] overflow-visible">
               <defs>
                 <linearGradient id="sourceArea" x1="0" x2="0" y1="0" y2="1">
                   <stop offset="0%" stopColor="#f5f5f4" stopOpacity="0.18" />
@@ -233,14 +229,14 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
             </svg>
           </figure>
 
-          <div className="rounded-xl border border-white/[0.055] bg-white/[0.012] p-4">
-            <div className="flex items-center justify-between text-xs text-neutral-500 mb-3">
-              <span>{isMatchMode ? '覆盖范围' : '字幕跨度'}</span>
+          <div className="mt-3 rounded-lg border border-white/[0.05] bg-white/[0.012] px-4 py-3">
+            <div className="flex items-center justify-between gap-3 text-xs text-neutral-500 mb-2.5">
+              <span>{isMatchMode ? '片源覆盖' : '字幕跨度'}</span>
               <span>
-                字幕 {formatMsClock(report.subtitleStartMs)} - {formatMsClock(report.subtitleEndMs)}
+                {formatMsClock(report.subtitleStartMs)} - {formatMsClock(report.subtitleEndMs)}
               </span>
             </div>
-            <div className="relative h-3 rounded-full bg-white/[0.06] overflow-hidden">
+            <div className="relative h-2 rounded-full bg-white/[0.06] overflow-hidden">
               <motion.div
                 className="absolute top-0 bottom-0 rounded-full bg-[#a8b7a3]/70"
                 initial={{ left: `${coverageStart * 100}%`, right: `${100 - coverageStart * 100}%` }}
@@ -250,19 +246,25 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            {report.findings.slice(0, 3).map(finding => (
-              <div key={finding.id} className={`rounded-xl border p-3 ${severityClass[finding.severity]}`}>
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  <FindingIcon severity={finding.severity} />
-                  {finding.label}
+          {isMatchMode ? (
+            <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-3">
+              {report.findings.slice(0, 3).map(finding => (
+                <div key={finding.id} className={`rounded-lg border p-3 ${severityClass[finding.severity]}`}>
+                  <div className="flex items-center gap-2 text-[13px] font-semibold">
+                    <FindingIcon severity={finding.severity} />
+                    {finding.label}
+                  </div>
+                  <p className="mt-1.5 text-xs leading-5 text-current/75">
+                    {finding.detail}
+                  </p>
                 </div>
-                <p className="mt-2 text-xs leading-relaxed text-current/75">
-                  {finding.detail}
-                </p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 text-xs leading-5 text-neutral-500">
+              这张图只描述字幕自身的时间分布。要判断是否合轴，请加入本地片源作为参照。
+            </p>
+          )}
         </div>
       </div>
     </section>

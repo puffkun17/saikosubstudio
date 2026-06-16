@@ -125,7 +125,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
   }
 
   return (
-    <div className="v9-dial-slider-container w-full bg-[#121216]/50 border border-white/5 p-3 rounded-2xl flex items-center justify-between gap-4">
+    <div className="v9-dial-slider-container w-full bg-white/[0.018] border border-white/[0.055] px-3 py-2.5 rounded-xl flex items-center justify-between gap-4">
       {/* Slider range input */}
       <div className="v9-dial-slider-wrapper flex-1 flex items-center min-w-[280px]">
         <input 
@@ -140,6 +140,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
           onMouseUp={() => handleJumpToLine()}
           onTouchEnd={() => handleJumpToLine()}
           className="v9-timeline-dial-slider w-full"
+          aria-label="字幕时间轴位置"
         />
       </div>
       

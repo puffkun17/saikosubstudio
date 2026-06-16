@@ -204,8 +204,8 @@ export const createSourceMatchReport = (
   } else {
     findings.push({
       id: 'no-video',
-      label: '等待片源参照',
-      detail: '当前仅展示字幕自身结构；选择本地视频后，才会生成匹配结论。',
+      label: '可加入片源参照',
+      detail: '当前只展示字幕自身结构；选择本地视频后，再判断是否合轴。',
       severity: 'notice',
     });
   }
@@ -221,8 +221,8 @@ export const createSourceMatchReport = (
   let recommendedAction: SourceMatchReport['recommendedAction'] = 'continue';
 
   if (!videoDurationMs) {
-    title = '字幕档案已生成';
-    summary = '这里先呈现字幕的字数、时间跨度与分布情况，不对片源匹配度下结论。';
+    title = '字幕概览已准备';
+    summary = '已读取字幕文本与时间轴。这里先看文本规模、时间跨度和对白分布，不对片源匹配度下结论。';
     recommendedAction = 'continue';
   } else if (normalizedScore < 45 || severeCount > 0) {
     grade = 'poor';

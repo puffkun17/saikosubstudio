@@ -66,20 +66,20 @@ export const SequenceList: React.FC = () => {
   const hasActiveRow = previewIndex >= 0 && previewIndex < total;
 
   return (
-    <div className="flex-1 overflow-hidden bg-white/[0.01] border border-white/[0.06] rounded-xl flex flex-col backdrop-blur-md">
+    <div className="flex-1 overflow-hidden bg-white/[0.01] border border-white/[0.055] rounded-xl flex flex-col backdrop-blur-md">
       {total > 0 && (
-        <div className="flex flex-col gap-3 px-6 py-4 border-b border-white/[0.06] bg-white/[0.008] flex-shrink-0">
+        <div className="flex flex-col gap-3 px-5 md:px-6 py-3.5 border-b border-white/[0.055] bg-white/[0.008] flex-shrink-0">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0 flex items-center gap-3">
-              <span className="text-sm text-neutral-100 font-semibold whitespace-nowrap">
-                {isOverlimit
-                  ? (showAllSubs ? `完整时间轴 · ${total} 行` : `轻量时间轴 · ${LIMIT} / ${total} 行`)
-                  : `完整时间轴 · ${total} 行`
-                }
+              <span className="text-[15px] tracking-[-0.01em] text-neutral-100 font-semibold whitespace-nowrap">
+                时间轴
+              </span>
+              <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-xs tabular-nums text-neutral-400">
+                {isOverlimit && !showAllSubs ? `${LIMIT} / ${total} 行` : `${total} 行`}
               </span>
               {isOverlimit && !showAllSubs && (
-                <span className="hidden sm:inline text-xs text-[#d7cec3]/75 truncate">
-                  已启用轻量预览，展开后显示完整时间轴
+                <span className="hidden sm:inline text-xs text-neutral-500 truncate">
+                  当前只显示前 {LIMIT} 行，拖动进度时会自动展开
                 </span>
               )}
             </div>
@@ -87,10 +87,10 @@ export const SequenceList: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAllSubs(true)}
-                className="flex items-center gap-1 text-xs text-[#e5e7eb] hover:text-[#ffffff] transition cursor-pointer font-bold shrink-0"
+                className="flex items-center gap-1 rounded-lg border border-white/[0.06] bg-white/[0.018] px-2.5 py-1.5 text-xs text-neutral-300 hover:text-white hover:bg-white/[0.045] transition cursor-pointer font-medium shrink-0"
               >
                 <ChevronDown className="w-3 h-3" />
-                展开全部
+                显示全部
               </button>
             )}
           </div>
@@ -101,7 +101,7 @@ export const SequenceList: React.FC = () => {
       <div ref={listRef} className="flex-1 overflow-y-auto">
         {visibleSubs.length > 0 ? (
           <div className="flex flex-col relative">
-            <div className="sticky top-0 z-20 grid grid-cols-[178px_minmax(0,1fr)_116px] items-center border-b border-white/[0.055] bg-[#08080a]/95 backdrop-blur-md px-8 py-2.5 text-xs font-semibold text-white/45 select-none">
+            <div className="sticky top-0 z-20 grid grid-cols-[170px_minmax(0,1fr)_96px] items-center border-b border-white/[0.055] bg-[#08080a]/95 backdrop-blur-md px-7 py-2.5 text-xs font-medium text-white/42 select-none">
               <div className="pl-2">时间轴</div>
               <div>字幕内容</div>
               <div className="text-right pr-2">行号</div>
@@ -117,7 +117,7 @@ export const SequenceList: React.FC = () => {
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
               const endTime = sub.ts.split(' --> ')[1]?.replace(',', '.').trim() || '';
 
-              const rowClass = `relative grid grid-cols-[178px_minmax(0,1fr)_116px] gap-6 py-4 px-8 border-b border-white/[0.04] cursor-pointer text-left overflow-hidden transition-all duration-400
+              const rowClass = `relative grid grid-cols-[170px_minmax(0,1fr)_96px] gap-5 py-4 px-7 border-b border-white/[0.04] cursor-pointer text-left overflow-hidden transition-all duration-400
                 ${isActive ? 'glass-lens-active' : 'bg-transparent hover:bg-white/[0.015]'}
                 ${(!isActive && hasActiveRow) ? 'glass-blur-inactive' : ''}
                 ${isLyric && !isActive ? 'bg-[#9ca3af]/[0.01]' : ''}`;
@@ -152,7 +152,7 @@ export const SequenceList: React.FC = () => {
                         <Music2 className="w-3 h-3" />
                       </motion.span>
                     )}
-                    <div className={`flex flex-col leading-tight tabular-nums ${isActive ? 'text-[#e5e7eb] font-semibold' : 'text-neutral-400'}`}>
+                    <div className={`flex flex-col leading-tight tabular-nums ${isActive ? 'text-[#e5e7eb] font-semibold' : 'text-neutral-500'}`}>
                       <span>{startTime}</span>
                       <span className="mt-1 text-white/22">{endTime}</span>
                     </div>
@@ -206,11 +206,11 @@ export const SequenceList: React.FC = () => {
                       </div>
                     ) : (
                       <>
-                        <div className={`text-sm font-medium leading-relaxed break-words ${isActive ? 'text-white' : 'text-neutral-200'}`}>
+                        <div className={`text-[15px] font-medium leading-6 break-words ${isActive ? 'text-white' : 'text-neutral-200'}`}>
                           {zhText}
                         </div>
                         {enText && (
-                          <div className={`text-xs mt-0.5 font-normal leading-relaxed break-words ${isActive ? 'text-[#e5e7eb]/90' : 'text-neutral-400'}`}>
+                          <div className={`text-[13px] mt-0.5 font-normal leading-5 break-words ${isActive ? 'text-[#e5e7eb]/90' : 'text-neutral-400'}`}>
                             {enText}
                           </div>
                         )}
@@ -236,10 +236,10 @@ export const SequenceList: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAllSubs(true)}
-                className="flex items-center justify-center gap-2 py-4 text-sm font-medium text-[#e5e7eb] hover:text-[#ffffff] transition-colors border-t border-white/[0.06] bg-white/[0.005] backdrop-blur-md cursor-pointer"
+                className="flex items-center justify-center gap-2 py-4 text-sm font-medium text-neutral-300 hover:text-white transition-colors border-t border-white/[0.06] bg-white/[0.005] backdrop-blur-md cursor-pointer"
               >
                 <ChevronDown className="w-4 h-4" />
-                还有 {total - LIMIT} 行未展示，点击全量加载
+                显示剩余 {total - LIMIT} 行
               </button>
             )}
           </div>
