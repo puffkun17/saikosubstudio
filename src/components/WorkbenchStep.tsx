@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { SequenceList } from '@/components/Workbench/SequenceList';
+import { SourceMatchPanel } from '@/components/Workbench/SourceMatchPanel';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
 import { ChevronLeft, Eye, Sliders } from 'lucide-react';
@@ -121,8 +122,13 @@ export const WorkbenchStep: React.FC = () => {
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* Center Panel: Subtitle sequence list */}
         <div className={`flex-1 p-6 min-h-0 overflow-hidden flex flex-col items-center z-10 transition-all duration-300 ${isSettingsOpen ? 'lg:pr-[396px]' : 'pr-0'}`}>
-          <div className="max-w-6xl w-full flex-1 min-h-0 flex flex-col overflow-hidden bg-white/[0.012] border border-white/[0.075] rounded-xl">
-            <SequenceList />
+          <div className="max-w-6xl w-full flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+            {processedSubs && processedSubs.length > 0 && (
+              <SourceMatchPanel rows={processedSubs} />
+            )}
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white/[0.012] border border-white/[0.075] rounded-xl">
+              <SequenceList />
+            </div>
           </div>
         </div>
 
