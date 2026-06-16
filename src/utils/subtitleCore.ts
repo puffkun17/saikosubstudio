@@ -201,10 +201,16 @@ export function extractStylesFromAss(text: string): Partial<StyleSettings> | nul
   };
 }
 
+const stripSourceBracketTags = (value: string): string => value.replace(
+  /[\[【(（][^\]】)）]*(?:zmk|zimuku|subhd|assrt|shooter|opensubtitles|字幕库|收藏级|精修)[^\]】)）]*[\]】)）]/gi,
+  ' '
+);
+
 export function cleanFilename(n: string): string {
   if (!n) return '';
   let title = n.replace(/_merged_\d{8}_\d{6}/gi, '');
-  title = title.replace(/\.(srt|ass|txt|zip|rar|vtt)$/i, '');
+  title = title.replace(/\.(srt|ass|txt|zip|rar|7z|vtt)$/i, '');
+  title = stripSourceBracketTags(title);
   const parsedTitle = parseMediaFilename(title);
   const hasEpisodeKey = Boolean(parsedTitle.episodeKey);
   
@@ -339,13 +345,84 @@ export type ParsedMediaFilename = {
   mediaHint: 'tv' | 'movie' | 'unknown';
 };
 
+const normalizeSearchText = (value: string): string => value
+  .replace(/[._\-_/\\:+]+/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const isLikelySearchNoiseToken = (token: string): boolean => {
+  const normalized = token.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '');
+  if (!normalized) return true;
+  return [
+    'xxx', 'proper', 'repack', 'rerip', 'internal', 'extended', 'uncut',
+    'web', 'webdl', 'webrip', 'bluray', 'bdrip', 'brrip', 'hdtv',
+    'nf', 'amzn', 'atvp', 'dsnp', 'hulu', 'max', 'aptv',
+    'h264', 'h265', 'x264', 'x265', 'hevc', 'av1',
+    'ddp', 'dd', 'atmos', 'aac', 'dts', 'hdr', 'dv', 'sdr',
+    'playweb', 'ethel', 'successfulcrab', 'flux', 'cakes',
+  ].includes(normalized) || /^\d{3,4}p$/.test(normalized) || /^\d+(?:bit|ch)$/.test(normalized);
+};
+
+const meaningfulTokenCount = (value: string): number => value
+  .split(/\s+/)
+  .filter(token => token && !isLikelySearchNoiseToken(token))
+  .length;
+
+export function buildTmdbSearchQueries(input: string, maxQueries = 10): string[] {
+  const base = normalizeSearchText(cleanFilename(input));
+  if (!base) return [];
+
+  const parsed = parseMediaFilename(base);
+  const candidates: string[] = [];
+  const add = (value: string) => {
+    const clean = normalizeSearchText(cleanFilename(value));
+    if (!clean || clean.length < 2) return;
+    if (meaningfulTokenCount(clean) === 0) return;
+    if (!candidates.some(item => item.toLowerCase() === clean.toLowerCase())) {
+      candidates.push(clean);
+    }
+  };
+
+  add(base);
+  if (parsed.hasUsableTitle) add(parsed.title);
+
+  const tokens = base.split(/\s+/).filter(Boolean);
+  const hasHan = /[\u4e00-\u9fff]/.test(base);
+  if (!hasHan && tokens.length >= 3) {
+    let trimmedTokens = [...tokens];
+    while (trimmedTokens.length >= 2 && isLikelySearchNoiseToken(trimmedTokens[trimmedTokens.length - 1])) {
+      trimmedTokens = trimmedTokens.slice(0, -1);
+      add(trimmedTokens.join(' '));
+    }
+
+    for (let len = Math.min(tokens.length - 1, 6); len >= 2; len -= 1) {
+      add(tokens.slice(0, len).join(' '));
+    }
+
+    for (let len = Math.min(tokens.length - 1, 6); len >= 2; len -= 1) {
+      add(tokens.slice(tokens.length - len).join(' '));
+    }
+
+    for (let len = Math.min(5, tokens.length - 1); len >= 2; len -= 1) {
+      for (let start = 1; start + len <= tokens.length - 1; start += 1) {
+        const window = tokens.slice(start, start + len);
+        if (window.some(token => !isLikelySearchNoiseToken(token))) {
+          add(window.join(' '));
+        }
+      }
+    }
+  }
+
+  return candidates.slice(0, maxQueries);
+}
+
 export function parseMediaFilename(name: string): ParsedMediaFilename {
   const rawBase = (name || '')
     .replace(/_merged_\d{8}_\d{6}/gi, '')
     .replace(/\.(srt|ass|txt|zip|rar|7z|vtt)$/i, '')
     .trim();
 
-  let working = rawBase;
+  let working = stripSourceBracketTags(rawBase);
   let season: number | null = null;
   let episode: number | null = null;
 

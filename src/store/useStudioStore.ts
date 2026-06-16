@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { SubRow, StyleSettings, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, autoSignature, extractStylesFromAss, parseSubtitle, cleanFilename, splitSingleBilingualText, parseMediaFilename } from '../utils/subtitleCore';
+import { SubRow, StyleSettings, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, autoSignature, extractStylesFromAss, parseSubtitle, cleanFilename, splitSingleBilingualText, parseMediaFilename, buildTmdbSearchQueries } from '../utils/subtitleCore';
 
 export interface Subfile {
   id: string;
@@ -441,7 +441,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     try {
       const yearMatch = isEpisodeQuery ? null : searchStr.match(/\b(19\d\d|20\d\d)\b/);
       const year = yearMatch ? yearMatch[1] : '';
-      let cleanQuery = searchStr;
+      const searchQueries = buildTmdbSearchQueries(searchStr, 12);
+      let cleanQuery = searchQueries[0] || searchStr;
       if (year) {
         cleanQuery = cleanQuery.replace(year, '');
       }
@@ -464,9 +465,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           .filter((item) => item.media_type === 'movie' || item.media_type === 'tv');
       };
 
-      const candidateQueries = [cleanQuery, chnPart, engPart]
+      const candidateQueries = [...searchQueries, cleanQuery, chnPart, engPart]
         .map(q => q.trim())
         .filter((q, index, arr) => q.length >= 2 && arr.indexOf(q) === index);
+      const scoringQueries = candidateQueries.length > 0 ? candidateQueries : [cleanQuery];
 
       const mergeResults = (target: TmdbSuggestion[], incoming: TmdbSuggestion[]) => {
         const keys = new Set(target.map(item => `${item.media_type}:${item.id}`));
@@ -481,18 +483,19 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
       const results: TmdbSuggestion[] = [];
       for (const q of candidateQueries) {
+        const previousCount = results.length;
         if (isEpisodeQuery) {
           mergeResults(results, await runSearch(q, 'tv'));
           mergeResults(results, await runSearch(q, 'multi'));
         } else {
           mergeResults(results, await runSearch(q, 'multi'));
         }
+        if (q !== candidateQueries[0] && results.length > previousCount) break;
         if (results.length >= 8) break;
       }
 
       const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
       const normalizeLoose = (str: string) => str.toLowerCase().replace(/[\s._\-:：'"“”‘’（）()[\]【】]/g, '');
-      const normalizedQueryLoose = normalizeLoose(cleanQuery);
 
       // Helper function to calculate score for a single item
       const calculateItemScore = (item: TmdbSuggestion) => {
@@ -507,18 +510,26 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         }
         const normTitle = normalize(item.title || item.name || '');
         const normOrigTitle = normalize(item.original_title || item.original_name || '');
-        const normQ = normalize(cleanQuery);
         const looseTitle = normalizeLoose(item.title || item.name || '');
         const looseOrigTitle = normalizeLoose(item.original_title || item.original_name || '');
-        if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) {
-          score += isEpisodeQuery ? 180 : 60;
-        } else if (normalizedQueryLoose && (looseTitle === normalizedQueryLoose || looseOrigTitle === normalizedQueryLoose)) {
-          score += isEpisodeQuery ? 170 : 55;
-        } else if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) {
-          score += 20;
-        } else if (normalizedQueryLoose && (looseTitle.includes(normalizedQueryLoose) || looseOrigTitle.includes(normalizedQueryLoose) || normalizedQueryLoose.includes(looseTitle) || normalizedQueryLoose.includes(looseOrigTitle))) {
-          score += 24;
-        }
+        const queryScores = scoringQueries.map((query) => {
+          const normQ = normalize(query);
+          const looseQ = normalizeLoose(query);
+          if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) {
+            return isEpisodeQuery ? 180 : 60;
+          }
+          if (looseQ && (looseTitle === looseQ || looseOrigTitle === looseQ)) {
+            return isEpisodeQuery ? 170 : 55;
+          }
+          if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) {
+            return 20;
+          }
+          if (looseQ && (looseTitle.includes(looseQ) || looseOrigTitle.includes(looseQ) || looseQ.includes(looseTitle) || looseQ.includes(looseOrigTitle))) {
+            return 24;
+          }
+          return 0;
+        });
+        score += Math.max(0, ...queryScores);
         return score;
       };
 
@@ -564,19 +575,26 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         
         const normTitle = normalize(item.title || item.name || '');
         const normOrigTitle = normalize(item.original_title || item.original_name || '');
-        const normQ = normalize(cleanQuery);
         const looseTitle = normalizeLoose(item.title || item.name || '');
         const looseOrigTitle = normalizeLoose(item.original_title || item.original_name || '');
-        
-        if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) {
-          score += isEpisodeQuery ? 180 : 60;
-        } else if (normalizedQueryLoose && (looseTitle === normalizedQueryLoose || looseOrigTitle === normalizedQueryLoose)) {
-          score += isEpisodeQuery ? 170 : 55;
-        } else if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) {
-          score += 20;
-        } else if (normalizedQueryLoose && (looseTitle.includes(normalizedQueryLoose) || looseOrigTitle.includes(normalizedQueryLoose) || normalizedQueryLoose.includes(looseTitle) || normalizedQueryLoose.includes(looseOrigTitle))) {
-          score += 24;
-        }
+        const queryScores = scoringQueries.map((query) => {
+          const normQ = normalize(query);
+          const looseQ = normalizeLoose(query);
+          if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) {
+            return isEpisodeQuery ? 180 : 60;
+          }
+          if (looseQ && (looseTitle === looseQ || looseOrigTitle === looseQ)) {
+            return isEpisodeQuery ? 170 : 55;
+          }
+          if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) {
+            return 20;
+          }
+          if (looseQ && (looseTitle.includes(looseQ) || looseOrigTitle.includes(looseQ) || looseQ.includes(looseTitle) || looseQ.includes(looseOrigTitle))) {
+            return 24;
+          }
+          return 0;
+        });
+        score += Math.max(0, ...queryScores);
 
         if (isEpisodeQuery && item.media_type !== 'tv') {
           score -= 120;
@@ -604,7 +622,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           get().selectTmdbSuggestion(best, { silent });
         }
       } else {
-        set({ tmdbData: null, tmdbBackdrop: null });
+        const hasExistingMetadata = Boolean(get().tmdbData);
+        if (!hasExistingMetadata) {
+          set({ tmdbData: null, tmdbBackdrop: null });
+        }
         if (!silent) get().addLog("暂未自动确认片源，可手动选择候选", "error");
       }
     } catch (e: unknown) {
@@ -634,15 +655,36 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         return data.results || [];
       };
 
-      const results = await runSearchManual(searchStr);
+      const candidateQueries = buildTmdbSearchQueries(searchStr, 12);
+      const scoringQueries = candidateQueries.length > 0 ? candidateQueries : [searchStr];
+      const results: TmdbSuggestion[] = [];
+      const seen = new Set<number>();
+
+      for (const q of scoringQueries) {
+        const incoming = await runSearchManual(q);
+        incoming.forEach((item) => {
+          if (!seen.has(item.id)) {
+            results.push(item);
+            seen.add(item.id);
+          }
+        });
+        if (q !== scoringQueries[0] && incoming.length > 0) break;
+        if (results.length >= 10) break;
+      }
 
       const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
       const calculateItemScore = (item: TmdbSuggestion) => {
         const normTitle = normalize(item.title || item.name || '');
         const normOrigTitle = normalize(item.original_title || item.original_name || '');
-        const normQ = normalize(searchStr);
-        if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) return 50;
-        return 0;
+        return Math.max(
+          0,
+          ...scoringQueries.map((query) => {
+            const normQ = normalize(query);
+            if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) return 50;
+            if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) return 20;
+            return 0;
+          })
+        );
       };
 
       const hasExactMatch = results.some((item) => calculateItemScore(item) >= 50);
@@ -658,11 +700,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             const colonQuery = `${part1}: ${part2}`;
             const extraResults = await runSearchManual(colonQuery);
             if (extraResults.length > 0) {
-              const existingIds = new Set(results.map((r) => r.id));
               let addedCount = 0;
               extraResults.forEach((r) => {
-                if (!existingIds.has(r.id)) {
+                if (!seen.has(r.id)) {
                   results.push(r);
+                  seen.add(r.id);
                   addedCount++;
                 }
               });
@@ -684,13 +726,13 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
         const normTitle = normalize(item.title || item.name || '');
         const normOrigTitle = normalize(item.original_title || item.original_name || '');
-        const normQ = normalize(searchStr);
-
-        if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) {
-          score += 50;
-        } else if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) {
-          score += 20;
-        }
+        const queryScores = scoringQueries.map((query) => {
+          const normQ = normalize(query);
+          if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) return 50;
+          if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) return 20;
+          return 0;
+        });
+        score += Math.max(0, ...queryScores);
 
         return { item: { ...item, media_type: type }, score };
       });
@@ -910,7 +952,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       }
     }));
 
-    if (!task.tmdbData) {
+    if (!task.tmdbData && !get().tmdbData) {
       setTimeout(() => {
         if (cleanName) {
           get().searchTmdb(`${cleanName} ${task.epKey || ''}`.trim(), { fallbackTitle: task.title });
