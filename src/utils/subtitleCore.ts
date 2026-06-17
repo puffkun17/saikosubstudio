@@ -241,7 +241,7 @@ export function cleanFilename(n: string): string {
   }
 
   // TV Show episode match (S01E01, S01, EP01)
-  const tvMatch = title.match(/^(.*?)(?:[\s.\-_(【\[]*(?:s\d{1,4}e\d{1,4}|s\d{1,4}|ep\d{1,4})\b)(.*)$/i);
+  const tvMatch = title.match(/^(.*?)[\s._\-_(【\[]*(?:s\d{1,4}[\s._-]*e\d{1,4}|s\d{1,4}|ep\d{1,4})(?=$|[\s._\-_)）\]】])(.*)$/i);
   if (tvMatch) {
       title = tvMatch[1];
       const colonParts = title.split(/\s*[:：]\s*/).filter(Boolean);
@@ -256,14 +256,15 @@ export function cleanFilename(n: string): string {
 
   const tags = [
     '1080p', '4k', '2160p', '720p', 'web-dl', 'webdl', 'webrip', 'web', 'atmos', 'x264', 'h264', 'x265', 'h265', 'hevc', '10bit', '8bit',
-    'ddp5\\.1', 'dd5\\.1', '5\\.1', '7\\.1', '6ch', 'bluray', 'brrip', 'bdrip', 'hdrip', 'dvdrip', 'psa', 'rarbg', 'yts', 'tgx', 'yify', 'cakes', 'am',
+    'ddp5\\.1', 'ddp5[\\s._-]*1', 'dd5\\.1', 'dd5[\\s._-]*1', '5\\.1', '7\\.1', '6ch', 'bluray', 'brrip', 'bdrip', 'hdrip', 'dvdrip', 'psa', 'rarbg', 'yts', 'tgx', 'yify', 'cakes',
+    'amzn', 'nf', 'dsnp', 'hulu', 'max', 'aptv', 'playweb', 'ethel', 'successfulcrab',
     'director', 'commentary', 'comment', '解说', '导轨',
     '简体', '繁体', '中英特效字幕', '中英双语字幕', '中英字幕', '双语字幕', '中文字幕', '英文字幕', '特效字幕', '中英双语', '官译双语', '中英', '双语', '双语种', '特效', '字幕',
     'zh-cn', 'zh_cn', 'zh-tw', 'zh-hk', 'chs', 'cht', 'gbk', 'utf8', 'eng', 'en', 'zh', 'cn', 'kr', 'jp',
-    '英文', '中字', '英字', 'h\\.264', 'h\\.265', 'atvp', 'flux'
+    '英文', '中字', '英字', 'h\\.264', 'h[\\s._-]*264', 'h\\.265', 'h[\\s._-]*265', 'atvp', 'flux'
   ];
   
-  const tagRegex = new RegExp(`[\\s.\\-_(（\\[【]+(?:${tags.join('|')})(?=[\\s.\\-_)）\\]】]|$)`, 'gi');
+  const tagRegex = new RegExp(`[\\s.\\-_/&+_(（\\[【]+(?:${tags.join('|')})(?=[\\s.\\-_/&+_)）\\]】]|$)`, 'gi');
   let prev = '';
   while (title !== prev) {
     prev = title;
@@ -274,7 +275,7 @@ export function cleanFilename(n: string): string {
   title = title.replace(/-[a-zA-Z0-9]+$/g, '');
   
   title = title.replace(/[([【（][\s)*\]】）]/g, ' ');
-  title = title.replace(/[\s.\-_/\\:+]+/g, ' ');
+  title = title.replace(/[\s.\-_/\\:+&]+/g, ' ');
   return title.trim();
 }
 
@@ -330,13 +331,14 @@ const normalizeEpisodeKey = (season: number | null, episode: number | null) => {
 const stripKnownMediaTags = (value: string) => {
   const tags = [
     '1080p', '4k', '2160p', '720p', 'web-dl', 'webdl', 'webrip', 'web', 'atmos', 'x264', 'h264', 'x265', 'h265', 'hevc', '10bit', '8bit',
-    'ddp5\\.1', 'dd5\\.1', '5\\.1', '7\\.1', '6ch', 'bluray', 'brrip', 'bdrip', 'hdrip', 'dvdrip', 'psa', 'rarbg', 'yts', 'tgx', 'yify',
+    'ddp5\\.1', 'ddp5[\\s._-]*1', 'dd5\\.1', 'dd5[\\s._-]*1', '5\\.1', '7\\.1', '6ch', 'bluray', 'brrip', 'bdrip', 'hdrip', 'dvdrip', 'psa', 'rarbg', 'yts', 'tgx', 'yify',
+    'amzn', 'nf', 'dsnp', 'hulu', 'max', 'aptv', 'playweb', 'ethel', 'successfulcrab',
     'director', 'commentary', 'comment', '解说', '导轨',
     '简体', '繁体', '中英特效字幕', '中英双语字幕', '中英字幕', '双语字幕', '中文字幕', '英文字幕', '特效字幕', '中英双语', '官译双语', '中英', '双语', '双语种', '特效', '字幕',
     'zh-cn', 'zh_cn', 'zh-tw', 'zh-hk', 'chs', 'cht', 'gbk', 'utf8', 'eng', 'en', 'zh', 'cn', 'kr', 'jp',
-    '英文', '中字', '英字', 'h\\.264', 'h\\.265', 'atvp', 'flux'
+    '英文', '中字', '英字', 'h\\.264', 'h[\\s._-]*264', 'h\\.265', 'h[\\s._-]*265', 'atvp', 'flux'
   ];
-  const tagRegex = new RegExp(`[\\s.\\-_(（\\[【]+(?:${tags.join('|')})(?=[\\s.\\-_)）\\]】]|$)`, 'gi');
+  const tagRegex = new RegExp(`[\\s.\\-_/&+_(（\\[【]+(?:${tags.join('|')})(?=[\\s.\\-_/&+_)）\\]】]|$)`, 'gi');
   let clean = value;
   let prev = '';
   while (clean !== prev) {
@@ -358,7 +360,8 @@ export type ParsedMediaFilename = {
 };
 
 const normalizeSearchText = (value: string): string => value
-  .replace(/[._\-_/\\:+]+/g, ' ')
+  .replace(/&amp;/gi, ' ')
+  .replace(/[._\-_/\\:+&]+/g, ' ')
   .replace(/\s+/g, ' ')
   .trim();
 
@@ -438,23 +441,23 @@ export function parseMediaFilename(name: string): ParsedMediaFilename {
   let season: number | null = null;
   let episode: number | null = null;
 
-  const seasonEpisodeMatch = working.match(/\bS(\d{1,4})[\s._-]*E(\d{1,4})\b/i);
+  const seasonEpisodeMatch = working.match(/(^|[\s._\-_(【\[])(S(\d{1,4})[\s._-]*E(\d{1,4}))(?=$|[\s._\-_)）\]】])/i);
   if (seasonEpisodeMatch) {
-    season = parseInt(seasonEpisodeMatch[1], 10);
-    episode = parseInt(seasonEpisodeMatch[2], 10);
-    working = working.replace(seasonEpisodeMatch[0], ' ');
+    season = parseInt(seasonEpisodeMatch[3], 10);
+    episode = parseInt(seasonEpisodeMatch[4], 10);
+    working = working.replace(seasonEpisodeMatch[2], ' ');
   }
 
   if (!episode) {
-    const seasonOnlyMatch = working.match(/\bS(\d{1,4})\b/i);
-    const episodeOnlyMatch = working.match(/\b(?:EP|E)(\d{1,4})\b/i);
+    const seasonOnlyMatch = working.match(/(^|[\s._\-_(【\[])(S(\d{1,4}))(?=$|[\s._\-_)）\]】])/i);
+    const episodeOnlyMatch = working.match(/(^|[\s._\-_(【\[])((?:EP|E)(\d{1,4}))(?=$|[\s._\-_)）\]】])/i);
     if (seasonOnlyMatch) {
-      season = parseInt(seasonOnlyMatch[1], 10);
-      working = working.replace(seasonOnlyMatch[0], ' ');
+      season = parseInt(seasonOnlyMatch[3], 10);
+      working = working.replace(seasonOnlyMatch[2], ' ');
     }
     if (episodeOnlyMatch) {
-      episode = parseInt(episodeOnlyMatch[1], 10);
-      working = working.replace(episodeOnlyMatch[0], ' ');
+      episode = parseInt(episodeOnlyMatch[3], 10);
+      working = working.replace(episodeOnlyMatch[2], ' ');
     }
   }
 

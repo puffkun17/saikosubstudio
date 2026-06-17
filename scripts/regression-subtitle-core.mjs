@@ -32,6 +32,7 @@ const require = createRequire(import.meta.url);
 const {
   alignSubtitlesIndustrial,
   buildTmdbSearchQueries,
+  cleanFilename,
   classifySubtitleCue,
   generateSrtContent,
   mergeSubtitles,
@@ -60,6 +61,22 @@ const assertIncludes = (items, expected, message) => {
 {
   const queries = buildTmdbSearchQueries('[zmk.pw]【收藏级精修】Slow.Horses.S05.1080p_2160p.WEB.zip');
   assert.equal(queries[0], 'Slow Horses', 'Subtitle package labels should be stripped before TMDB search.');
+}
+
+{
+  const sample = 'Mayor of Kingstown Teeth and Tissue AMZN playWEB 简体&英文';
+  assert.equal(cleanFilename(sample), 'Mayor of Kingstown Teeth and Tissue');
+  const queries = buildTmdbSearchQueries(sample, 12);
+  assertIncludes(queries, 'Mayor of Kingstown', 'Episode titles without SxxExx should still fall back to the series title.');
+}
+
+{
+  const sample = 'Alien_Earth_S01E02_1080p_DSNP_WEB-DL_DDP5_1_H_264_zh-CN_merged_20260617_223000.ass';
+  assert.equal(cleanFilename(sample), 'Alien Earth');
+  const parsed = parseMediaFilename(sample);
+  assert.equal(parsed.title, 'Alien Earth');
+  assert.equal(parsed.episodeKey, 'S01E02');
+  assert.deepEqual(buildTmdbSearchQueries(sample, 8), ['Alien Earth']);
 }
 
 {

@@ -99,7 +99,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
           ${open ? 'border-white/30 text-white' : 'border-white/[0.07] hover:border-white/[0.14] text-white/85'}`}
         onClick={() => setOpen(!open)}
       >
-        <span className="flex-1 min-w-0 truncate">
+        <span className="flex-1 min-w-0 overflow-hidden">
           {selectedOption ? (
             <span className="flex items-center gap-1.5 min-w-0">
               {getLangBadgeMini(selectedOption.lang)}

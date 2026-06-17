@@ -51,7 +51,7 @@ export const TmdbPanel: React.FC = () => {
   };
 
   return (
-    <div className={`flex flex-col gap-4 glass-panel-ar p-5 md:p-6 rounded-xl desktop-panel-fit-hidden relative shadow-xl group transition-all duration-300
+    <div className={`flex flex-col gap-5 glass-panel-ar p-5 md:p-6 xl:p-7 rounded-xl desktop-panel-fit-hidden relative shadow-xl group transition-all duration-300
       ${tmdbData
         ? 'border-[#9ca3af]/20 shadow-[0_24px_60px_rgba(0,0,0,0.55),_0_0_36px_rgba(156,163,175,0.06)] bg-gradient-to-b from-transparent via-transparent to-[#9ca3af]/[0.012]'
         : 'hover:border-[#9ca3af]/12'}`}>
@@ -75,9 +75,9 @@ export const TmdbPanel: React.FC = () => {
         />
       )}
 
-      <div className="flex justify-between items-center pb-4 border-b border-white/[0.07] z-10">
+      <div className="flex justify-between items-center gap-4 pb-4 border-b border-white/[0.07] z-10">
         <div className="flex items-center gap-3.5">
-          <h3 className="text-xl font-semibold text-neutral-100 tracking-tight font-sans">
+          <h3 className="text-[22px] font-semibold text-neutral-100 tracking-tight font-sans">
             片源信息
           </h3>
           <a
@@ -93,7 +93,7 @@ export const TmdbPanel: React.FC = () => {
           </a>
         </div>
         <button
-          className="group px-4 py-2.5 rounded-xl bg-white text-black text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer border border-white/20 hover:bg-neutral-200 hover:scale-[1.01]"
+          className="group px-4 py-2.5 rounded-xl bg-white text-black text-[15px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer border border-white/20 hover:bg-neutral-200 hover:scale-[1.01]"
           onClick={() => setTmdbManualOpen(true)}
         >
           <Search className="w-3.5 h-3.5 group-hover:scale-110 group-hover:rotate-6 transition-transform" />
@@ -106,10 +106,10 @@ export const TmdbPanel: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative flex flex-col gap-4 pb-2 select-none w-full"
+            className="relative flex flex-col gap-5 pb-2 select-none w-full"
           >
             {/* Top row: Poster + Title/Badges */}
-            <div className="flex flex-row gap-4 items-start w-full">
+            <div className="flex flex-row gap-5 items-start w-full">
               {/* Maximized Poster Image */}
               {tmdbData.posterUrl ? (
                 <motion.img
@@ -117,42 +117,42 @@ export const TmdbPanel: React.FC = () => {
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                   src={tmdbData.posterUrl}
                   alt={tmdbData.title}
-                  className="w-32 lg:w-36 h-auto aspect-[2/3] object-cover rounded-xl border border-white/10 shadow-[0_12px_24px_rgba(0,0,0,0.4)] group-hover:border-[#9ca3af]/20 transition-all duration-300 shrink-0 cursor-pointer"
+                  className="w-[8.5rem] lg:w-36 xl:w-40 h-auto aspect-[2/3] object-cover rounded-xl border border-white/10 shadow-[0_12px_24px_rgba(0,0,0,0.4)] group-hover:border-[#9ca3af]/20 transition-all duration-300 shrink-0 cursor-pointer"
                 />
               ) : (
                 <div className="w-28 lg:w-32 aspect-[2/3] bg-white/[0.01] border border-white/5 rounded-xl flex items-center justify-center text-neutral-600 shadow-[0_12px_24px_rgba(0,0,0,0.4)] flex-shrink-0" />
               )}
 
               {/* Movie metadata (Title + Badges) */}
-              <div className="flex-1 flex flex-col gap-3 min-w-0 text-left pt-1">
+              <div className="flex-1 flex flex-col gap-3.5 min-w-0 text-left pt-1">
                 <div>
-                  <h4 className="text-2xl font-semibold text-neutral-100 leading-tight tracking-tight font-sans">
+                  <h4 className="text-[26px] font-semibold text-neutral-100 leading-[1.12] tracking-tight font-sans">
                     {tmdbData.title}
                   </h4>
                   {tmdbData.originalTitle && tmdbData.originalTitle !== tmdbData.title && (
-                    <p className="text-sm text-neutral-300 mt-0.5 truncate">{tmdbData.originalTitle}</p>
+                    <p className="text-base text-neutral-300 mt-1 truncate">{tmdbData.originalTitle}</p>
                   )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5 select-none">
                   {tmdbData.year && (
-                    <span className="px-2 py-0.5 bg-white/[0.03] border border-white/[0.06] rounded-md text-xs font-bold text-neutral-200">
+                    <span className="px-2.5 py-1 bg-white/[0.03] border border-white/[0.06] rounded-md text-[13px] font-bold text-neutral-200">
                       {tmdbData.year}
                     </span>
                   )}
                   {tmdbData.voteAverage > 0 && (
-                    <span className="px-2.5 py-1 bg-[#9ca3af]/10 text-[#e5e7eb] border border-[#9ca3af]/18 rounded-md text-xs font-mono font-bold flex items-center gap-1.5">
+                    <span className="px-2.5 py-1 bg-[#9ca3af]/10 text-[#e5e7eb] border border-[#9ca3af]/18 rounded-md text-[13px] font-mono font-bold flex items-center gap-1.5">
                       <Star className="w-3.5 h-3.5 fill-[#e5e7eb] text-[#e5e7eb]" />
                       {tmdbData.voteAverage.toFixed(1)}
                     </span>
                   )}
                   {rtScore && (
-                    <span className="px-2 py-0.5 bg-red-500/10 text-red-400 border border-red-500/15 rounded-md text-xs font-mono font-bold flex items-center gap-1.5 shadow-[0_0_8px_rgba(239,68,68,0.08)]">
+                    <span className="px-2.5 py-1 bg-red-500/10 text-red-400 border border-red-500/15 rounded-md text-[13px] font-mono font-bold flex items-center gap-1.5 shadow-[0_0_8px_rgba(239,68,68,0.08)]">
                       RT {rtScore}%
                     </span>
                   )}
                   {tmdbData.genres && tmdbData.genres.map((g: string, i: number) => (
-                    <span key={i} className="px-2 py-0.5 bg-white/[0.025] border border-white/[0.05] text-xs rounded-md font-semibold text-neutral-300">
+                    <span key={i} className="px-2.5 py-1 bg-white/[0.025] border border-white/[0.05] text-[13px] rounded-md font-semibold text-neutral-300">
                       {g}
                     </span>
                   ))}
@@ -177,7 +177,7 @@ export const TmdbPanel: React.FC = () => {
             </div>
 
             {/* Bottom Row: Synopsis text - consistent scale, better CJK leading for readability */}
-            <div className="border-l-2 border-[#9ca3af]/25 pl-4 py-1 text-base text-neutral-300 leading-[1.72] font-sans text-left line-clamp-5 lg:line-clamp-6 min-h-0 w-full">
+            <div className="border-l-2 border-[#9ca3af]/25 pl-4 py-1 text-[15.5px] text-neutral-300 leading-[1.78] font-sans text-left line-clamp-6 lg:line-clamp-7 min-h-0 w-full">
               {tmdbData.overview || '暂无剧情简介...'}
             </div>
           </motion.div>

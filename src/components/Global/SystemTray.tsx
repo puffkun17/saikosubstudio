@@ -109,12 +109,12 @@ export const SystemTray = () => {
   return (
     <nav
       aria-label="System tray"
-      className="fixed top-0 w-full z-50 h-[64px] flex items-center px-5 md:px-8
+      className="fixed top-0 w-full z-50 h-[68px] flex items-center px-5 md:px-8
         bg-[#020203]/72 backdrop-blur-md border-b border-white/[0.07]
         justify-between transition-colors duration-300"
     >
       {/* ── Left: brand + nav ──────────────────────────────── */}
-      <div className="flex items-center gap-4 text-base tracking-tight min-w-0">
+      <div className="flex items-center gap-4 text-[17px] tracking-tight min-w-0">
         <button
           type="button"
           onClick={() => handleStepClick(1)}
@@ -134,7 +134,7 @@ export const SystemTray = () => {
                 key={step.id}
                 type="button"
                 onClick={() => handleStepClick(step.id)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer
+                  className={`px-3.5 py-2 rounded-lg text-[15px] font-medium transition-all cursor-pointer
                   ${isActive
                     ? 'bg-white/[0.10] text-white border border-white/[0.08]'
                     : disabled
@@ -154,17 +154,17 @@ export const SystemTray = () => {
       </div>
 
       {/* ── Right: scale selector & clock ─────────────────────────────── */}
-      <div className="flex items-center gap-4 shrink-0">
+      <div className="flex items-center gap-3 shrink-0">
         <button
           onClick={cycleScale}
-          className="px-3 py-1.5 rounded-xl glass-btn-ar text-xs font-mono text-neutral-300 hover:text-neutral-100 cursor-pointer select-none flex items-center gap-1.5"
+          className="px-4 py-2 rounded-xl glass-btn-ar text-sm font-mono text-neutral-300 hover:text-neutral-100 cursor-pointer select-none flex items-center gap-2"
           title="调节网页整体缩放"
         >
-          <span className="text-xs opacity-70 font-bold tracking-wide">A±</span>
+          <span className="text-[13px] opacity-75 font-bold tracking-wide">A±</span>
           <span className="font-bold text-[#e5e7eb]" suppressHydrationWarning>{Math.round(scale * 100)}%</span>
         </button>
         <span
-          className="text-xs font-mono text-white/50 tabular-nums"
+          className="text-sm font-mono text-white/60 tabular-nums"
           aria-label="Current time"
         >
           {time}
