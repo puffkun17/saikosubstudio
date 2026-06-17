@@ -1,15 +1,27 @@
 // Subtitle Processing Core Engine in TypeScript
 
+export type CueKind = 'dialogue' | 'screen_text' | 'narration' | 'lyrics' | 'commentary' | 'unknown';
+
+export interface CueClassification {
+  kind: CueKind;
+  confidence: number;
+  reasons: string[];
+  placement?: 'top' | 'positioned' | 'bottom';
+}
+
 export interface SubRow {
   ts: string;
   text: string;
   type?: string;
+  cueKind?: CueKind;
   index: number;
 }
 
 export interface RawSub {
   ts: string;
   text: string;
+  cueKind?: CueKind;
+  cueMeta?: CueClassification;
 }
 
 export interface DecodeResult {
@@ -575,6 +587,96 @@ export function cleanSubtitleContent(text: string, isEnglish = false): string {
 
 const timestampRegex = /\d{2}:\d{2}:\d{2}[,.]\d{3}\s*-->\s*\d{2}:\d{2}:\d{2}[,.]\d{3}/;
 
+const stripSubtitleInlineTags = (text: string): string => text
+  .replace(/\{\\[^}]*\}/g, '')
+  .replace(/<[^>]*>/g, '')
+  .replace(/\\N/gi, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+export function classifySubtitleCue(
+  text: string,
+  context: { timingLine?: string; assStyle?: string } = {}
+): CueClassification {
+  const rawText = text || '';
+  const cleanText = stripSubtitleInlineTags(rawText);
+  const timingLine = context.timingLine || '';
+  const style = context.assStyle || '';
+  const reasons: string[] = [];
+  let screenScore = 0;
+  let narrationScore = 0;
+  let placement: CueClassification['placement'];
+
+  if (isLyricText(rawText)) {
+    return { kind: 'lyrics', confidence: 92, reasons: ['lyric-symbol'] };
+  }
+
+  if (/\\an[789]\b/i.test(rawText) || /\balign\s*:\s*top\b/i.test(timingLine) || /\bline\s*:\s*(?:[0-2]?\d%?|top)\b/i.test(timingLine)) {
+    screenScore += 28;
+    placement = 'top';
+    reasons.push('top-position');
+  }
+  if (/\\pos\s*\(|\\move\s*\(/i.test(rawText) || /\bX1\s*:\s*\d+|\bY1\s*:\s*\d+|\bposition\s*:/i.test(timingLine)) {
+    screenScore += 34;
+    placement = placement || 'positioned';
+    reasons.push('explicit-position');
+  }
+  if (/\b(signs?|screen|title|top|text|onscreen|caption|location)\b/i.test(style)) {
+    screenScore += 42;
+    placement = placement || 'top';
+    reasons.push('ass-style');
+  }
+
+  if (/^[A-Z0-9][A-Z0-9\s.'’:&-]{1,28}$/.test(cleanText) && /[A-Z]/.test(cleanText)) {
+    screenScore += 22;
+    reasons.push('sign-like-uppercase');
+  }
+  if (/(牌匾|招牌|标识|路牌|字幕|屏幕|短信|邮件|标题|文件|海报|报纸|新闻标题|告示|警告|禁止|入口|出口|EXIT|WARNING|POLICE|NOTICE)/i.test(cleanText)) {
+    screenScore += 24;
+    reasons.push('screen-text-keyword');
+  }
+  if (/^(?:\d{4}年|\d{1,2}月|\d{1,2}日|[一二三四五六七八九十\d]+个月后|[一二三四五六七八九十\d]+年后|第[一二三四五六七八九十\d]+章|第[一二三四五六七八九十\d]+幕)/.test(cleanText)) {
+    screenScore += 20;
+    reasons.push('title-card-pattern');
+  }
+
+  const hasDialoguePunctuation = /[。！？!?]$/.test(cleanText);
+  const hasCommonDialogueWords = /(我|你|他|她|我们|你们|他们|是|有|在|去|来|说|做|看|听|想|要|会|能|了|吗|呢|吧|yeah|yes|no|you|i|we|they|he|she|what|why|how)/i.test(cleanText);
+  if (cleanText.length > 0 && cleanText.length <= 14 && !hasDialoguePunctuation && !hasCommonDialogueWords) {
+    screenScore += 12;
+    reasons.push('short-label-like');
+  }
+
+  if (/^\([^)]+\)$|^（[^）]+）$|^\[[^\]]+\]$|^【[^】]+】$/.test(cleanText)) {
+    narrationScore += 34;
+    reasons.push('bracket-note');
+  }
+  if (/(旁白|画外音|广播|播报|通知|音效|声音|脚步声|笑声|掌声|音乐)/.test(cleanText)) {
+    narrationScore += 38;
+    reasons.push('narration-or-sound-keyword');
+  }
+
+  if (screenScore >= 38 && screenScore >= narrationScore) {
+    return {
+      kind: 'screen_text',
+      confidence: Math.min(96, 52 + screenScore),
+      reasons,
+      placement,
+    };
+  }
+
+  if (narrationScore >= 38) {
+    return {
+      kind: 'narration',
+      confidence: Math.min(92, 48 + narrationScore),
+      reasons,
+      placement,
+    };
+  }
+
+  return { kind: 'dialogue', confidence: 55, reasons: [], placement };
+}
+
 /**
  * Clean SRT raw text.
  */
@@ -637,8 +739,9 @@ export function parseSrt(text: string): RawSub[] {
     const line = lines[i].trim();
     if (!line) { i++; continue; }
     
-    if (timestampRegex.test(line)) {
-      const timestamp = line.replace(/(\d{2}:\d{2}:\d{2})\.(\d{3})/g, "$1,$2");
+    const timestampMatch = line.match(timestampRegex);
+    if (timestampMatch) {
+      const timestamp = timestampMatch[0].replace(/(\d{2}:\d{2}:\d{2})\.(\d{3})/g, "$1,$2");
       i++;
       const contentLines: string[] = [];
       
@@ -654,7 +757,9 @@ export function parseSrt(text: string): RawSub[] {
       }
       
       if (contentLines.length > 0) {
-        subtitles.push({ ts: timestamp, text: contentLines.join(" ") });
+        const cueText = contentLines.join(" ");
+        const cueMeta = classifySubtitleCue(cueText, { timingLine: line });
+        subtitles.push({ ts: timestamp, text: cueText, cueKind: cueMeta.kind, cueMeta });
       }
     } else {
       i++;
@@ -672,13 +777,24 @@ export function parseSubtitle(text: string): RawSub[] {
   if (isAss) {
     const lines = text.split(/\r?\n/);
     const parsed: RawSub[] = [];
+    let formatKeys: string[] = [];
     lines.forEach(l => {
-      if (l.trim().startsWith('Dialogue:')) {
+      const trimmed = l.trim();
+      if (trimmed.startsWith('Format:')) {
+        formatKeys = trimmed.replace('Format:', '').split(',').map(key => key.trim().toLowerCase());
+      }
+      if (trimmed.startsWith('Dialogue:')) {
         const parts = l.split(',');
         if (parts.length >= 10) {
-          const ts = `${parts[1].replace('.', ',')} --> ${parts[2].replace('.', ',')}`;
-          const cleanDiag = parts.slice(9).join(',').replace(/\\N/g, '\n').replace(/\{[^}]*\}/g, '').trim();
-          parsed.push({ ts, text: cleanDiag });
+          const startIdx = formatKeys.indexOf('start') >= 0 ? formatKeys.indexOf('start') : 1;
+          const endIdx = formatKeys.indexOf('end') >= 0 ? formatKeys.indexOf('end') : 2;
+          const styleIdx = formatKeys.indexOf('style') >= 0 ? formatKeys.indexOf('style') : 3;
+          const textIdx = formatKeys.indexOf('text') >= 0 ? formatKeys.indexOf('text') : 9;
+          const ts = `${parts[startIdx].replace('.', ',')} --> ${parts[endIdx].replace('.', ',')}`;
+          const rawDiag = parts.slice(textIdx).join(',');
+          const cleanDiag = rawDiag.replace(/\\N/g, '\n').replace(/\{[^}]*\}/g, '').trim();
+          const cueMeta = classifySubtitleCue(rawDiag, { assStyle: parts[styleIdx] || '' });
+          parsed.push({ ts, text: cleanDiag, cueKind: cueMeta.kind, cueMeta });
         }
       }
     });
@@ -740,7 +856,8 @@ interface Extraction {
 }
 
 function extractDialogueAndNotes(text: string): Extraction {
-  text = text.trim();
+  text = cleanSubtitleContent(text.trim());
+  if (!text) return { dialogue: "", notes: "", type: "dialogue" };
   const score = analyzeContentType(text);
   if (score >= 40) return { dialogue: "", notes: text, type: "note" };
   if (score >= 20 && score < 40) {
@@ -759,34 +876,47 @@ function extractDialogueAndNotes(text: string): Extraction {
   return { dialogue: text, notes: "", type: "dialogue" };
 }
 
+const resolveCueKind = (text: string, explicit?: CueKind): CueKind => explicit || classifySubtitleCue(text).kind;
+
+const combineCueKind = (...kinds: Array<CueKind | undefined>): CueKind | undefined => {
+  const known = kinds.filter(Boolean) as CueKind[];
+  if (known.includes('lyrics')) return 'lyrics';
+  if (known.length > 0 && known.every(kind => kind === 'screen_text')) return 'screen_text';
+  if (known.length > 0 && known.every(kind => kind === 'narration')) return 'narration';
+  if (known.includes('commentary')) return 'commentary';
+  return known.length > 0 ? 'dialogue' : undefined;
+};
+
 interface PreprocessedRow {
   ts: string;
   text: string;
   type: 'note' | 'dialogue';
+  cueKind?: CueKind;
 }
 
 function preprocessMixedContent(subs: RawSub[]): PreprocessedRow[] {
   const processed: PreprocessedRow[] = [];
   for (const sub of subs) {
     const { ts, text } = sub;
+    const cueKind = resolveCueKind(text, sub.cueKind);
     const ex = extractDialogueAndNotes(text);
     if (ex.notes && !ex.dialogue) {
       if (isLyricText(ex.notes)) {
-        processed.push({ ts, text: ex.notes, type: "dialogue" });
+        processed.push({ ts, text: ex.notes, type: "dialogue", cueKind: 'lyrics' });
       } else {
-        processed.push({ ts, text: ex.notes, type: "note" });
+        processed.push({ ts, text: ex.notes, type: "note", cueKind: cueKind === 'screen_text' ? 'screen_text' : 'narration' });
       }
     } else if (ex.dialogue && !ex.notes) {
-      processed.push({ ts, text: ex.dialogue, type: "dialogue" });
+      processed.push({ ts, text: ex.dialogue, type: "dialogue", cueKind });
     } else if (ex.dialogue && ex.notes) {
       if (isLyricText(ex.notes)) {
-        processed.push({ ts, text: ex.notes, type: "dialogue" });
+        processed.push({ ts, text: ex.notes, type: "dialogue", cueKind: 'lyrics' });
       } else {
-        processed.push({ ts, text: ex.notes, type: "note" });
+        processed.push({ ts, text: ex.notes, type: "note", cueKind: cueKind === 'screen_text' ? 'screen_text' : 'narration' });
       }
-      processed.push({ ts, text: ex.dialogue, type: "dialogue" });
+      processed.push({ ts, text: ex.dialogue, type: "dialogue", cueKind });
     } else {
-      processed.push({ ts, text, type: "dialogue" });
+      processed.push({ ts, text, type: "dialogue", cueKind });
     }
   }
   return processed;
@@ -821,10 +951,11 @@ export function mergeSubtitles(
   
   const commProc = commSubs.map(s => ({
     ...s,
-    type: "commentary"
+    type: "commentary",
+    cueKind: 'commentary' as CueKind
   }));
   
-  const mergedDialogues: { ts: string; text: string; type: string }[] = [];
+  const mergedDialogues: { ts: string; text: string; type: string; cueKind?: CueKind }[] = [];
   let i = 0, j = 0;
   while (i < zhDialogues.length && j < enDialogues.length) {
     const zh = zhDialogues[i];
@@ -838,21 +969,22 @@ export function mergeSubtitles(
       mergedDialogues.push({
         ts: `${msToTime(Math.min(zhS, enS))} --> ${msToTime(Math.max(zhE, enE))}`,
         text: `${zh.text}\n${en.text}`,
-        type: "merged"
+        type: "merged",
+        cueKind: combineCueKind(zh.cueKind, en.cueKind)
       });
       i++; j++;
     } else if (zhS <= enS) {
-      mergedDialogues.push({ ts: zh.ts, text: zh.text, type: "dialogue" }); i++;
+      mergedDialogues.push({ ts: zh.ts, text: zh.text, type: "dialogue", cueKind: zh.cueKind }); i++;
     } else {
-      mergedDialogues.push({ ts: en.ts, text: en.text, type: "dialogue" }); j++;
+      mergedDialogues.push({ ts: en.ts, text: en.text, type: "dialogue", cueKind: en.cueKind }); j++;
     }
   }
   while (i < zhDialogues.length) {
-    mergedDialogues.push({ ts: zhDialogues[i].ts, text: zhDialogues[i].text, type: "dialogue" });
+    mergedDialogues.push({ ts: zhDialogues[i].ts, text: zhDialogues[i].text, type: "dialogue", cueKind: zhDialogues[i].cueKind });
     i++;
   }
   while (j < enDialogues.length) {
-    mergedDialogues.push({ ts: enDialogues[j].ts, text: enDialogues[j].text, type: "dialogue" });
+    mergedDialogues.push({ ts: enDialogues[j].ts, text: enDialogues[j].text, type: "dialogue", cueKind: enDialogues[j].cueKind });
     j++;
   }
   
@@ -863,7 +995,7 @@ export function mergeSubtitles(
       if (isLyricText(item.text)) {
         type = "lyrics";
       }
-      return { ...item, type, index: idx + 1 };
+      return { ...item, type, cueKind: item.cueKind || resolveCueKind(item.text), index: idx + 1 };
     });
   
   addLog(`[合并] 处理完成，生成 ${result.length} 条对齐块`, "success");
@@ -889,7 +1021,8 @@ export function alignSubtitlesIndustrial(
   
   const commProc = commSubs.map(s => ({
     ...s,
-    type: "commentary"
+    type: "commentary",
+    cueKind: 'commentary' as CueKind
   }));
 
   const M = zhDialogues.length;
@@ -978,7 +1111,7 @@ export function alignSubtitlesIndustrial(
   
   path.reverse();
   
-  const mergedDialogues: { ts: string; text: string; type: string }[] = [];
+  const mergedDialogues: { ts: string; text: string; type: string; cueKind?: CueKind }[] = [];
   
   for (const step of path) {
     if (step.zhIdx !== null && step.enIdx !== null) {
@@ -995,20 +1128,21 @@ export function alignSubtitlesIndustrial(
         mergedDialogues.push({
           ts: `${msToTime(Math.min(zhS, enS))} --> ${msToTime(Math.max(zhE, enE))}`,
           text: `${zh.text}\n${en.text}`,
-          type: "merged"
+          type: "merged",
+          cueKind: combineCueKind(zh.cueKind, en.cueKind)
         });
       } else {
         // Aligned globally by sequence DP, but too far to merge (e.g. ad insertion on one track).
         // Separate as individual tracks to avoid mismatch.
-        mergedDialogues.push({ ts: zh.ts, text: zh.text, type: "dialogue" });
-        mergedDialogues.push({ ts: en.ts, text: en.text, type: "dialogue" });
+        mergedDialogues.push({ ts: zh.ts, text: zh.text, type: "dialogue", cueKind: zh.cueKind });
+        mergedDialogues.push({ ts: en.ts, text: en.text, type: "dialogue", cueKind: en.cueKind });
       }
     } else if (step.zhIdx !== null) {
       const zh = zhDialogues[step.zhIdx];
-      mergedDialogues.push({ ts: zh.ts, text: zh.text, type: "dialogue" });
+      mergedDialogues.push({ ts: zh.ts, text: zh.text, type: "dialogue", cueKind: zh.cueKind });
     } else if (step.enIdx !== null) {
       const en = enDialogues[step.enIdx];
-      mergedDialogues.push({ ts: en.ts, text: en.text, type: "dialogue" });
+      mergedDialogues.push({ ts: en.ts, text: en.text, type: "dialogue", cueKind: en.cueKind });
     }
   }
   
@@ -1019,7 +1153,7 @@ export function alignSubtitlesIndustrial(
       if (isLyricText(item.text)) {
         type = "lyrics";
       }
-      return { ...item, type, index: idx + 1 };
+      return { ...item, type, cueKind: item.cueKind || resolveCueKind(item.text), index: idx + 1 };
     });
   addLog(`[工业级合并] 处理完成，生成 ${result.length} 条对齐块`, "success");
   return result;
@@ -1029,7 +1163,7 @@ export function generateSrtContent(subs: SubRow[], styleSettings?: StyleSettings
   const { lyricPosition = 'top', lyricItalic = true } = styleSettings || {};
   return subs.map(s => {
     let text = s.text;
-    if (s.type === 'note' || s.type === 'commentary') {
+    if (s.type === 'note' || s.type === 'commentary' || s.cueKind === 'screen_text') {
       if (!text.startsWith("{\\an8}")) {
         text = "{\\an8}" + text;
       }
@@ -1154,7 +1288,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     let style = "Han";
     if (s.type === "lyrics") {
       style = /[一-龥]/.test(s.text) ? "Lyrics" : "Lyrics_EN";
-    } else if (s.type === "note" || s.type === "commentary" || /[翻译制作合并]/.test(s.text)) {
+    } else if (s.type === "note" || s.type === "commentary" || s.cueKind === 'screen_text' || /[翻译制作合并]/.test(s.text)) {
       style = "Note";
     } else if (s.type === "merged") {
       style = "Han";
@@ -1163,7 +1297,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     }
 
     let processedText = s.text;
-    if (s.type === "note" || s.type === "commentary") {
+    if (s.type === "note" || s.type === "commentary" || s.cueKind === 'screen_text') {
       if (!processedText.startsWith("{\\an8}")) {
         processedText = "{\\an8}" + processedText;
       }
@@ -1286,38 +1420,33 @@ export function splitSingleBilingualText(text: string): string {
     return text;
   }
 
-  let lastZhIndex = -1;
-  for (let i = text.length - 1; i >= 0; i--) {
-    if (/[a-zA-Z]/.test(text[i]) && i > 0 && /[一-龥]/.test(text[i-1])) {
-      // Opt-in: found transition point directly
-      lastZhIndex = i - 1;
-      break;
-    }
-    if (/[一-龥]/.test(text[i])) {
-      lastZhIndex = i;
-      break;
-    }
-  }
+  const latinWords = (value: string): string[] => value.match(/[A-Za-z]+(?:'[A-Za-z]+)?/g) || [];
+  const latinChars = (value: string): number => (value.match(/[A-Za-z]/g) || []).length;
+  const hanChars = (value: string): number => (value.match(/[一-龥]/g) || []).length;
+  const isSubtitleLikeEnglish = (value: string): boolean => {
+    const words = latinWords(value);
+    if (words.length >= 2) return true;
+    return words.length === 1 && latinChars(value) >= 10 && hanChars(value) === 0;
+  };
+  const isSubtitleLikeChinese = (value: string): boolean => hanChars(value) >= 2;
 
-  if (lastZhIndex === -1) return text;
-
-  let firstEnIndex = -1;
-  for (let i = lastZhIndex + 1; i < text.length; i++) {
-    if (/[a-zA-Z]/.test(text[i])) {
-      firstEnIndex = i;
-      break;
+  const zhFirstMatch = text.match(/^([\s\S]*?[一-龥][，。！？）】」；：”’"'.,!?\s-]*)([A-Za-z][\s\S]*)$/);
+  if (zhFirstMatch) {
+    const zhPart = zhFirstMatch[1].trim();
+    const enPart = zhFirstMatch[2].trim();
+    if (isSubtitleLikeChinese(zhPart) && isSubtitleLikeEnglish(enPart)) {
+      return `${zhPart}\n${enPart}`;
     }
   }
 
-  if (firstEnIndex === -1) return text;
-
-  let zhPartEnd = lastZhIndex + 1;
-  while (zhPartEnd < firstEnIndex && /[，。！？）】」；：”’]/.test(text[zhPartEnd])) {
-    zhPartEnd++;
+  const enFirstMatch = text.match(/^([A-Za-z][\s\S]*?[A-Za-z][，。！？）】」；：”"'.,!?\s-]*)([一-龥][\s\S]*)$/);
+  if (enFirstMatch) {
+    const enPart = enFirstMatch[1].trim();
+    const zhPart = enFirstMatch[2].trim();
+    if (isSubtitleLikeEnglish(enPart) && isSubtitleLikeChinese(zhPart)) {
+      return `${zhPart}\n${enPart}`;
+    }
   }
 
-  const zhPart = text.substring(0, zhPartEnd).trim();
-  const enPart = text.substring(zhPartEnd).trim();
-
-  return `${zhPart}\n${enPart}`;
+  return text;
 }

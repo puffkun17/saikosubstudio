@@ -206,6 +206,11 @@ export const SequenceList: React.FC = () => {
                       </div>
                     ) : (
                       <>
+                        {sub.cueKind === 'screen_text' && (
+                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[#a8b7a3]/20 bg-[#a8b7a3]/[0.055] px-2 py-0.5 text-[11px] font-medium text-[#cbd6c7]">
+                            画面文字
+                          </span>
+                        )}
                         <div className={`text-[15px] font-medium leading-6 break-words ${isActive ? 'text-white' : 'text-neutral-200'}`}>
                           {zhText}
                         </div>

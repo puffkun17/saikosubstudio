@@ -619,7 +619,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           if (!silent) get().addLog(`已识别为剧集片源，需手动确认候选`, 'info');
           set({ tmdbManualOpen: !silent });
         } else {
-          get().selectTmdbSuggestion(best, { silent });
+          await get().selectTmdbSuggestion(best, { silent });
         }
       } else {
         const hasExistingMetadata = Boolean(get().tmdbData);
