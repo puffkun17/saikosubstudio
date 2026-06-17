@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { SubRow, StyleSettings, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, autoSignature, extractStylesFromAss, parseSubtitle, cleanFilename, splitSingleBilingualText, parseMediaFilename, buildTmdbSearchQueries } from '../utils/subtitleCore';
+import { SubRow, StyleSettings, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, autoSignature, extractStylesFromAss, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries } from '../utils/subtitleCore';
 
 export interface Subfile {
   id: string;
@@ -1305,12 +1305,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       if (currentTask?.isBilingualSingle && files.zh) {
         // Single bilingual srt/ass parsing
         const rawParsed = parseSubtitle(files.zh.text);
-        const parsed: SubRow[] = rawParsed.map((r, idx) => ({
-          ts: r.ts,
-          text: splitSingleBilingualText(r.text),
-          type: 'merged',
-          index: idx + 1
-        }));
+        const parsed: SubRow[] = normalizeSingleBilingualRows(rawParsed);
         
         const finalSubs = autoSignature(parsed);
         set({ processedSubs: finalSubs, previewIndex: 0, workflowStep: 2 });

@@ -32,10 +32,12 @@ const require = createRequire(import.meta.url);
 const {
   alignSubtitlesIndustrial,
   buildTmdbSearchQueries,
+  checkIsBilingual,
   cleanFilename,
   classifySubtitleCue,
   generateSrtContent,
   mergeSubtitles,
+  normalizeSingleBilingualRows,
   parseMediaFilename,
   parseSubtitle,
   splitSingleBilingualText,
@@ -132,6 +134,51 @@ const assertIncludes = (items, expected, message) => {
   assert.equal(splitSingleBilingualText('我们今天去吃 KFC。'), '我们今天去吃 KFC。');
   assert.equal(splitSingleBilingualText('This is fine 这很好'), '这很好\nThis is fine');
   assert.equal(splitSingleBilingualText('中文已换行\nEnglish already split'), '中文已换行\nEnglish already split');
+}
+
+{
+  const separatedBilingualSrt = `1
+00:00:54,000 --> 00:00:57,000
+(WIND HOWLING)
+
+2
+00:00:54,000 --> 00:00:57,000
+（风声响）
+
+3
+00:01:12,620 --> 00:01:16,620
+(DOOR OPENS, CREAKING)
+
+4
+00:01:12,620 --> 00:01:16,620
+（门开了，吱吱作响）
+
+5
+00:01:28,540 --> 00:01:30,250
+What's wrong?
+
+6
+00:01:28,540 --> 00:01:30,250
+怎么了？
+`;
+  assert.equal(checkIsBilingual(separatedBilingualSrt), true, 'Separated same-time bilingual cues should be detected as a bilingual file.');
+  const rows = normalizeSingleBilingualRows(parseSubtitle(separatedBilingualSrt));
+  assert.equal(rows.length, 3, 'Single bilingual files should fold adjacent same-time bilingual cues.');
+  assert.equal(rows[0].text, '（风声响）\n(WIND HOWLING)');
+  assert.equal(rows[1].text, '（门开了，吱吱作响）\n(DOOR OPENS, CREAKING)');
+  assert.equal(rows[2].text, "怎么了？\nWhat's wrong?");
+  assert.equal(rows[2].index, 3);
+}
+
+{
+  assert.equal(checkIsBilingual(`1
+00:00:01,000 --> 00:00:03,000
+我们今天去吃 KFC。
+
+2
+00:00:04,000 --> 00:00:06,000
+然后回家。
+`), false, 'Incidental English words inside Chinese dialogue should not mark a file bilingual.');
 }
 
 {

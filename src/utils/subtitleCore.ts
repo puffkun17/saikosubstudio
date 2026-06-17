@@ -1334,44 +1334,41 @@ export function checkIsBilingual(text: string): boolean {
   if (!text) return false;
   
   const cleanText = text.replace(/[\uFEFF\u200B]/g, '');
-  let subtitles: { text: string }[] = [];
-  
-  if (cleanText.includes('[Events]') && cleanText.includes('Dialogue:')) {
-    const lines = cleanText.split(/\r?\n/);
-    for (const line of lines) {
-      if (line.trim().startsWith('Dialogue:')) {
-        const parts = line.split(',');
-        if (parts.length >= 10) {
-          const dialogueText = parts.slice(9).join(',');
-          subtitles.push({ text: dialogueText });
-        }
-      }
-    }
-  } else {
-    subtitles = parseSrt(cleanText);
-  }
+  const subtitles = parseSubtitle(cleanText);
   
   if (subtitles.length === 0) return false;
   
-  let bilingualCount = 0;
+  const validRows = subtitles.filter(sub => cleanSubtitleContent(sub.text).trim());
+  let bilingualSignals = 0;
   let validCount = 0;
   
-  for (const sub of subtitles) {
-    const cleanSubText = sub.text.replace(/\{[^}]*\}/g, '').replace(/<[^>]*>/g, '').trim();
-    if (!cleanSubText) continue;
-    
+  for (let i = 0; i < validRows.length; i += 1) {
+    const sub = validRows[i];
+    const cleanSubText = cleanSubtitleContent(sub.text);
+    const lang = detectCueLanguage(splitSingleBilingualText(cleanSubText));
     validCount++;
-    const hasZh = /[一-龥]/.test(cleanSubText);
-    const hasEn = /[a-zA-Z]/.test(cleanSubText);
-    
-    if (hasZh && hasEn) {
-      bilingualCount++;
+
+    if (lang === 'mixed') {
+      bilingualSignals++;
+      continue;
+    }
+
+    const next = validRows[i + 1];
+    if (!next) continue;
+    const nextLang = detectCueLanguage(splitSingleBilingualText(next.text));
+    const adjacentBilingualPair = areTimeRangesNearEqual(sub.ts, next.ts)
+      && ((lang === 'zh' && nextLang === 'en') || (lang === 'en' && nextLang === 'zh'));
+
+    if (adjacentBilingualPair) {
+      bilingualSignals += 2;
+      validCount++;
+      i += 1;
     }
   }
   
   if (validCount === 0) return false;
-  const ratio = bilingualCount / validCount;
-  return ratio >= 0.8;
+  const ratio = bilingualSignals / validCount;
+  return ratio >= 0.6;
 }
 
 export function autoSignature(subs: SubRow[]): SubRow[] {
@@ -1452,4 +1449,76 @@ export function splitSingleBilingualText(text: string): string {
   }
 
   return text;
+}
+
+type CueLanguage = 'zh' | 'en' | 'mixed' | 'unknown';
+
+const detectCueLanguage = (text: string): CueLanguage => {
+  const clean = cleanSubtitleContent(text).replace(/[♪♫♬]/g, '').trim();
+  const hasZh = /[一-龥]/.test(clean);
+  const hasLatin = /[A-Za-z]/.test(clean);
+  if (hasZh && hasLatin) return 'mixed';
+  if (hasZh) return 'zh';
+  if (hasLatin) return 'en';
+  return 'unknown';
+};
+
+const areTimeRangesNearEqual = (a: string, b: string, toleranceMs = 120): boolean => {
+  const [aStart, aEnd] = a.split(' --> ').map(timeToMs);
+  const [bStart, bEnd] = b.split(' --> ').map(timeToMs);
+  if ([aStart, aEnd, bStart, bEnd].some(Number.isNaN)) return a === b;
+  return Math.abs(aStart - bStart) <= toleranceMs && Math.abs(aEnd - bEnd) <= toleranceMs;
+};
+
+const combineRowCueKind = (...kinds: Array<CueKind | undefined>): CueKind | undefined => {
+  const known = kinds.filter(Boolean) as CueKind[];
+  if (known.length === 0) return undefined;
+  if (known.includes('lyrics')) return 'lyrics';
+  if (known.every(kind => kind === 'screen_text')) return 'screen_text';
+  if (known.every(kind => kind === 'narration')) return 'narration';
+  if (known.includes('commentary')) return 'commentary';
+  return known.includes('screen_text') ? 'screen_text' : known[0];
+};
+
+export function normalizeSingleBilingualRows(rows: RawSub[]): SubRow[] {
+  const result: SubRow[] = [];
+  let i = 0;
+
+  while (i < rows.length) {
+    const current = rows[i];
+    const next = rows[i + 1];
+    const currentText = splitSingleBilingualText(current.text);
+    const currentLang = detectCueLanguage(currentText);
+    const nextText = next ? splitSingleBilingualText(next.text) : '';
+    const nextLang = next ? detectCueLanguage(nextText) : 'unknown';
+
+    const canFoldPair = next
+      && areTimeRangesNearEqual(current.ts, next.ts)
+      && ((currentLang === 'zh' && nextLang === 'en') || (currentLang === 'en' && nextLang === 'zh'));
+
+    if (canFoldPair) {
+      const zhText = currentLang === 'zh' ? currentText : nextText;
+      const enText = currentLang === 'en' ? currentText : nextText;
+      result.push({
+        ts: current.ts,
+        text: `${zhText}\n${enText}`,
+        type: 'merged',
+        cueKind: combineRowCueKind(current.cueKind, next.cueKind),
+        index: result.length + 1,
+      });
+      i += 2;
+      continue;
+    }
+
+    result.push({
+      ts: current.ts,
+      text: currentText,
+      type: currentLang === 'mixed' || currentText.includes('\n') ? 'merged' : 'dialogue',
+      cueKind: current.cueKind,
+      index: result.length + 1,
+    });
+    i += 1;
+  }
+
+  return result;
 }
