@@ -6,6 +6,8 @@ import { Play, Plus, RotateCcw, X } from 'lucide-react';
 import { parseSrt, decodeBuffer, detectLanguageByContent, checkIsBilingual, StyleSettings } from '@/utils/subtitleCore';
 import { motion } from 'framer-motion';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
+import { InfoHint } from '@/components/ui/InfoHint';
+import { getSubtitleTermHint } from '@/utils/subtitleTerminology';
 
 export const TaskList: React.FC = () => {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -283,14 +285,22 @@ export const TaskList: React.FC = () => {
 
           {/* Track Bindings - Wide horizontal card */}
           <div className="p-5 bg-white/[0.014] border border-white/[0.07] rounded-xl flex flex-col gap-4 overflow-visible relative">
-            <h4 className="text-lg text-neutral-100 font-semibold block select-none">
-              字幕文件匹配
-            </h4>
+            <div className="flex items-center gap-2">
+              <h4 className="text-lg text-neutral-100 font-semibold block select-none">
+                字幕文件匹配
+              </h4>
+              <InfoHint label="字幕文件匹配说明">
+                选择要进入处理流程的字幕轨。单个已含中英双语的文件会作为双语字幕处理；分开的中英文件会按时间轴合并。
+              </InfoHint>
+            </div>
             <div className="flex flex-col gap-3 bg-[#020204]/55 p-4 rounded-xl border border-white/[0.065] overflow-visible relative">
               {/* Chinese binding */}
               <div className="flex flex-row items-center gap-2 overflow-visible">
-                <span className="w-28 text-sm text-neutral-200 font-semibold shrink-0 text-left">
+                <span className="w-28 text-sm text-neutral-200 font-semibold shrink-0 text-left inline-flex items-center gap-1.5">
                   主字幕
+                  <InfoHint label="主字幕说明" side="right">
+                    主字幕优先承载中文或双语内容。若文件已识别为双语，系统会自动折叠同时间窗的中英字幕行。
+                  </InfoHint>
                 </span>
                 <TrackSelect
                   value={activeTask.zh?.id || ''}
@@ -319,8 +329,11 @@ export const TaskList: React.FC = () => {
 
                   {/* Commentary binding */}
                   <div className="flex flex-row items-center gap-2 overflow-visible">
-                    <span className="w-28 text-sm text-neutral-200 font-semibold shrink-0 text-left">
+                    <span className="w-28 text-sm text-neutral-200 font-semibold shrink-0 text-left inline-flex items-center gap-1.5">
                       旁白与导评
+                      <InfoHint label="旁白与导评说明" side="right">
+                        {getSubtitleTermHint('narration')} 导评则是导演或制作人员评论音轨字幕，通常不是正片对白。
+                      </InfoHint>
                     </span>
                     <TrackSelect
                       value={activeTask.commentary?.id || ''}
@@ -381,8 +394,11 @@ export const TaskList: React.FC = () => {
               {/* Output name */}
               <div className="flex-1 flex flex-col gap-1.5 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <label className="text-sm text-neutral-200 font-semibold select-none">
+                  <label className="text-sm text-neutral-200 font-semibold select-none inline-flex items-center gap-1.5">
                     字幕输出文件名称
+                    <InfoHint label="字幕输出文件名称说明">
+                      导出文件名可来自片源信息、文件名自动提取、历史存档或手动输入。弱命名文件不会强行生成片名。
+                    </InfoHint>
                   </label>
                   <span className="shrink-0 rounded-md border border-[#9ca3af]/18 bg-[#9ca3af]/8 px-2 py-0.5 text-xs font-bold text-[#e5e7eb]">
                     {getFilenameSourceLabel()}
@@ -409,8 +425,11 @@ export const TaskList: React.FC = () => {
               {/* Alignment Mode Selection */}
               {!activeTask.isBilingualSingle && (
                 <div className="flex flex-col gap-1.5 w-full lg:w-60 shrink-0">
-                  <label className="text-sm text-neutral-200 font-semibold select-none">
+                  <label className="text-sm text-neutral-200 font-semibold select-none inline-flex items-center gap-1.5">
                     对齐方式
+                    <InfoHint label="对齐方式说明" side="left">
+                      智能模式适合常规中英轨合并；细致模式会尝试处理插入、删减或断句不一致，但耗时略高。
+                    </InfoHint>
                   </label>
                   <div className="grid grid-cols-2 gap-0.5 p-0.5 rounded-xl bg-[#020204] border border-white/[0.07] relative shadow-[inset_0_2px_4px_rgba(0,0,0,0.85)] h-12 items-center">
                     <button

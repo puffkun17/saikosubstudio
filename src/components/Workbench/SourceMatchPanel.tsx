@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import type { SubRow } from '@/utils/subtitleCore';
 import { createSourceMatchReport, type SourceMatchFinding, type SourceMatchReport } from '@/utils/timeline/sourceMatch';
 import { formatMsClock } from '@/utils/timeline/timecode';
+import { InfoHint } from '@/components/ui/InfoHint';
 
 const GRADE_META: Record<SourceMatchReport['grade'], { label: string; tone: string; action: string }> = {
   matched: { label: '匹配良好', tone: 'text-neutral-100', action: '继续制作字幕' },
@@ -133,7 +134,12 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                 >
                   {report.score}
                 </motion.div>
-                <div className="mt-1 text-[11px] font-mono uppercase tracking-[0.12em] text-neutral-500">match score</div>
+                <div className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-[0.12em] text-neutral-500">
+                  match score
+                  <InfoHint label="匹配分数说明">
+                    匹配分数综合字幕跨度、片源时长、活动分布和风险提示。它是版本匹配参考，不等同于字幕翻译质量评分。
+                  </InfoHint>
+                </div>
               </div>
               <div className="text-right">
                 <div className={`text-[15px] font-semibold ${meta.tone}`}>{meta.label}</div>
@@ -151,7 +157,12 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                 <dd className="mt-1.5 text-[19px] leading-none font-semibold tracking-[-0.02em] text-neutral-100">{formatMsClock(report.stats.spanMs)}</dd>
               </div>
               <div className="border-l border-white/[0.055] px-3.5 py-3">
-                <dt className="text-[11px] text-neutral-500">对白密度</dt>
+                <dt className="text-[11px] text-neutral-500 inline-flex items-center gap-1.5">
+                  对白密度
+                  <InfoHint label="对白密度说明">
+                    每分钟字幕行数，用于观察字幕分布是否异常。声音说明、歌词和画面文字也会影响这个指标。
+                  </InfoHint>
+                </dt>
                 <dd className="mt-1.5 text-[18px] leading-none font-semibold tracking-[-0.02em] text-[#a8b7a3]">{report.stats.densityPerMinute}</dd>
               </div>
             </dl>
@@ -172,10 +183,15 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
         </div>
 
         <div className="px-5 py-4 md:px-6 md:py-5 min-w-0">
-          <figure className="overflow-hidden">
+          <figure className="overflow-visible">
             <figcaption className="flex items-start justify-between gap-3 pb-2 text-xs text-neutral-500">
               <div>
-                <div className="text-[13px] font-medium text-neutral-300">{isMatchMode ? '片源覆盖与字幕活动' : '字幕时间分布'}</div>
+                <div className="text-[13px] font-medium text-neutral-300 inline-flex items-center gap-1.5">
+                  {isMatchMode ? '片源覆盖与字幕活动' : '字幕时间分布'}
+                  <InfoHint label="字幕分布图说明">
+                    曲线展示字幕活动在全片中的分布。加入本地片源后，会额外显示片源覆盖范围，用来辅助判断是否存在片头、删减或版本差异。
+                  </InfoHint>
+                </div>
                 <div className="mt-0.5 text-[12px] text-neutral-500">{report.stats.distributionLabel} · {formatCount(report.stats.lineCount)} 行</div>
               </div>
               <span className="shrink-0 tabular-nums">{report.stats.densityPerMinute} 行/分钟</span>

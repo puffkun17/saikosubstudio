@@ -5,6 +5,7 @@ import { useStudioStore } from '@/store/useStudioStore';
 import type { StyleSettings } from '@/utils/subtitleCore';
 import { LayoutGrid, Eye, ChevronDown, ChevronUp, Save, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { InfoHint } from '@/components/ui/InfoHint';
 
 const PRESET_COLORS = ['#FFFFFF', '#E0E0E0', '#B0B0B0', '#9CAFB8', '#A8B7A3', '#B9A7B5', '#C0A89A', '#7F8C8D', '#000000'];
 
@@ -469,7 +470,12 @@ export const StyleSidebar: React.FC = () => {
 
         <SettingSection title="输出">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-sm font-medium text-neutral-300">画面规格</span>
+            <span className="text-sm font-medium text-neutral-300 inline-flex items-center gap-1.5">
+              画面规格
+              <InfoHint label="画面规格说明" side="left">
+                用作 ASS 字幕样式的参考画布尺寸，影响字号、边距和描边换算；不会改变视频文件本身的分辨率。
+              </InfoHint>
+            </span>
             <select
               className="h-10 w-36 rounded-lg border border-white/[0.08] bg-black/25 px-3 text-right text-sm text-neutral-200 outline-none transition-all focus:border-white/20 cursor-pointer"
               value={customStyle.resolution || '1080p'}
