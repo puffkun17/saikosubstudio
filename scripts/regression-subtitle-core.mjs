@@ -31,6 +31,7 @@ execFileSync('npx', [
 const require = createRequire(import.meta.url);
 const {
   alignSubtitlesIndustrial,
+  assessMediaIdentity,
   buildTmdbSearchQueries,
   checkIsBilingual,
   cleanFilename,
@@ -90,6 +91,25 @@ const assertIncludes = (items, expected, message) => {
 {
   const queries = buildTmdbSearchQueries('S04E05.srt');
   assert.deepEqual(queries, [], 'Episode-only filenames should not create noisy TMDB searches.');
+  const identity = assessMediaIdentity('S04E05.srt');
+  assert.equal(identity.level, 'partial', 'Episode-only filenames should ask for a title instead of searching TMDB.');
+  assert.equal(identity.shouldAutoSearchTmdb, false);
+}
+
+{
+  const sample = '2024.1080p.HEVC.AC3.5.1.ass';
+  assert.deepEqual(buildTmdbSearchQueries(sample), [], 'Year-and-release-parameter filenames should not create noisy TMDB searches.');
+  const identity = assessMediaIdentity(sample);
+  assert.equal(identity.level, 'weak', 'Files without a media title should be treated as weak identity.');
+  assert.equal(identity.shouldAutoSearchTmdb, false);
+}
+
+{
+  const identity = assessMediaIdentity('Alien_Earth_S01E02_1080p_DSNP_WEB-DL_DDP5_1_H_264_zh-CN.ass');
+  assert.equal(identity.level, 'strong', 'Series title plus episode should be a strong media identity.');
+  assert.equal(identity.title, 'Alien Earth');
+  assert.equal(identity.episodeKey, 'S01E02');
+  assert.equal(identity.shouldAutoSearchTmdb, true);
 }
 
 {

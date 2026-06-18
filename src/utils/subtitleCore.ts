@@ -256,6 +256,7 @@ export function cleanFilename(n: string): string {
 
   const tags = [
     '1080p', '4k', '2160p', '720p', 'web-dl', 'webdl', 'webrip', 'web', 'atmos', 'x264', 'h264', 'x265', 'h265', 'hevc', '10bit', '8bit',
+    'ac3', 'eac3',
     'ddp5\\.1', 'ddp5[\\s._-]*1', 'dd5\\.1', 'dd5[\\s._-]*1', '5\\.1', '7\\.1', '6ch', 'bluray', 'brrip', 'bdrip', 'hdrip', 'dvdrip', 'psa', 'rarbg', 'yts', 'tgx', 'yify', 'cakes',
     'amzn', 'nf', 'dsnp', 'hulu', 'max', 'aptv', 'playweb', 'ethel', 'successfulcrab',
     'director', 'commentary', 'comment', '解说', '导轨',
@@ -359,6 +360,16 @@ export type ParsedMediaFilename = {
   mediaHint: 'tv' | 'movie' | 'unknown';
 };
 
+export type MediaIdentityLevel = 'strong' | 'partial' | 'weak';
+
+export type MediaIdentityAssessment = {
+  level: MediaIdentityLevel;
+  title: string;
+  episodeKey?: string;
+  reason: string;
+  shouldAutoSearchTmdb: boolean;
+};
+
 const normalizeSearchText = (value: string): string => value
   .replace(/&amp;/gi, ' ')
   .replace(/[._\-_/\\:+&]+/g, ' ')
@@ -373,7 +384,7 @@ const isLikelySearchNoiseToken = (token: string): boolean => {
     'web', 'webdl', 'webrip', 'bluray', 'bdrip', 'brrip', 'hdtv',
     'nf', 'amzn', 'atvp', 'dsnp', 'hulu', 'max', 'aptv',
     'h264', 'h265', 'x264', 'x265', 'hevc', 'av1',
-    'ddp', 'dd', 'atmos', 'aac', 'dts', 'hdr', 'dv', 'sdr',
+    'ddp', 'dd', 'ac3', 'eac3', 'atmos', 'aac', 'dts', 'hdr', 'dv', 'sdr',
     'playweb', 'ethel', 'successfulcrab', 'flux', 'cakes',
   ].includes(normalized) || /^\d{3,4}p$/.test(normalized) || /^\d+(?:bit|ch)$/.test(normalized);
 };
@@ -388,6 +399,8 @@ export function buildTmdbSearchQueries(input: string, maxQueries = 10): string[]
   if (!base) return [];
 
   const parsed = parseMediaFilename(base);
+  if (!parsed.hasUsableTitle) return [];
+
   const candidates: string[] = [];
   const add = (value: string) => {
     const clean = normalizeSearchText(cleanFilename(value));
@@ -398,8 +411,8 @@ export function buildTmdbSearchQueries(input: string, maxQueries = 10): string[]
     }
   };
 
+  add(parsed.title);
   add(base);
-  if (parsed.hasUsableTitle) add(parsed.title);
 
   const tokens = base.split(/\s+/).filter(Boolean);
   const hasHan = /[\u4e00-\u9fff]/.test(base);
@@ -523,6 +536,54 @@ export function parseMediaFilename(name: string): ParsedMediaFilename {
     year: year || undefined,
     hasUsableTitle,
     mediaHint: isEpisode ? 'tv' : year ? 'movie' : 'unknown',
+  };
+}
+
+const isSearchableTitle = (value: string): boolean => {
+  const title = normalizeSearchText(value);
+  if (!title) return false;
+  const hasText = /[a-zA-Z\u4e00-\u9fff]/.test(title);
+  const looksLikeBareYear = /^(?:19\d{2}|20\d{2})$/.test(title);
+  const looksOnlyEpisode = /^(?:s?\d{1,4}|e?\d{1,4}|s\d{1,4}e\d{1,4})$/i.test(title.replace(/\s+/g, ''));
+  return title.length >= 2 && hasText && !looksLikeBareYear && !looksOnlyEpisode && meaningfulTokenCount(title) > 0;
+};
+
+export function assessMediaIdentity(input: string, fallbackTitle = ''): MediaIdentityAssessment {
+  const parsed = parseMediaFilename(input);
+  const fallbackParsed = fallbackTitle ? parseMediaFilename(fallbackTitle) : null;
+  const title = isSearchableTitle(parsed.title)
+    ? parsed.title
+    : fallbackParsed && isSearchableTitle(fallbackParsed.title)
+      ? fallbackParsed.title
+      : '';
+  const episodeKey = parsed.episodeKey || fallbackParsed?.episodeKey;
+
+  if (title) {
+    return {
+      level: 'strong',
+      title,
+      episodeKey,
+      reason: episodeKey ? '已识别片名与集数信息' : '已识别可检索片名',
+      shouldAutoSearchTmdb: true,
+    };
+  }
+
+  if (episodeKey) {
+    return {
+      level: 'partial',
+      title: '',
+      episodeKey,
+      reason: '仅识别到集数，缺少片名',
+      shouldAutoSearchTmdb: false,
+    };
+  }
+
+  return {
+    level: 'weak',
+    title: '',
+    episodeKey: undefined,
+    reason: '文件名只包含年份、规格或发布参数',
+    shouldAutoSearchTmdb: false,
   };
 }
 

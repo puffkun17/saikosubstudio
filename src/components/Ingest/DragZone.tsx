@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
-import { decodeBuffer, detectLanguageByContent, checkIsBilingual, parseMediaFilename } from '@/utils/subtitleCore';
+import { decodeBuffer, detectLanguageByContent, checkIsBilingual, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
 import { UploadCloud, Folder, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -333,11 +333,14 @@ export const DragZone: React.FC = () => {
         const titleCandidate = parsedCandidates.find(item => item.hasUsableTitle);
         const episodeCandidate = parsedCandidates.find(item => item.episodeKey);
         const guess = `${titleCandidate?.title || ''} ${episodeCandidate?.episodeKey || ''}`.trim() || validItems[0].name;
-        if (guess.length > 2 && titleCandidate?.hasUsableTitle) {
-          displayTitle = titleCandidate.title.length > 42 ? titleCandidate.title.slice(0, 40) + '…' : titleCandidate.title;
+        const identity = assessMediaIdentity(guess);
+        if (identity.shouldAutoSearchTmdb) {
+          displayTitle = identity.title.length > 42 ? identity.title.slice(0, 40) + '…' : identity.title;
           setIngestMessage('正在匹配片源信息');
           await searchTmdb(guess, { silent: true }).catch(() => {});
           metadataLinked = Boolean(useStudioStore.getState().tmdbData);
+        } else {
+          setIngestMessage(identity.episodeKey ? '已识别集数，请补充片名以关联片源信息' : '文件名信息不足，先建立字幕工作台');
         }
       }
       await sleep(820);

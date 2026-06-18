@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { SubRow, StyleSettings, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, autoSignature, extractStylesFromAss, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries } from '../utils/subtitleCore';
+import { SubRow, StyleSettings, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, autoSignature, extractStylesFromAss, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity } from '../utils/subtitleCore';
 
 export interface Subfile {
   id: string;
@@ -410,9 +410,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
     const episodeKey = parsed.episodeKey || fallbackParsed?.episodeKey || activeTask?.epKey;
     const isEpisodeQuery = Boolean(episodeKey) || parsed.mediaHint === 'tv' || fallbackParsed?.mediaHint === 'tv';
-    const searchStr = cleanFilename(searchTitle);
+    const identity = assessMediaIdentity(`${searchTitle || rawSearchStr} ${episodeKey || ''}`.trim(), options?.fallbackTitle || activeTask?.title || '');
+    const searchStr = cleanFilename(identity.title || searchTitle);
 
-    if (!searchStr) {
+    if (!identity.shouldAutoSearchTmdb || !searchStr) {
       if (episodeKey) {
         const epMatch = episodeKey.match(/S(\d+)E(\d+)/i);
         const season = epMatch ? parseInt(epMatch[1], 10).toString() : get().tmdbManualInput.season;
@@ -426,11 +427,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             episode
           },
           tmdbSuggestions: [],
-          tmdbData: null,
-          tmdbBackdrop: null,
           tmdbManualOpen: !silent
         }));
         if (!silent) get().addLog(`已识别为 ${episodeKey}，请补充剧名以关联片源信息`, 'info');
+      } else {
+        set({ tmdbSuggestions: [], tmdbManualOpen: !silent });
+        if (!silent) get().addLog('文件名信息不足，请补充片名后再关联片源信息', 'info');
       }
       return;
     }
