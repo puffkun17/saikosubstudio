@@ -256,10 +256,33 @@ const resetStoreForTmdb = () => {
     tmdbManualOpen: false,
     isSearchingTmdb: false,
     logs: [],
+    statusNotices: [],
     customFilename: '',
     filenameSource: 'unknown',
   });
 };
+
+{
+  resetStoreForTmdb();
+  const weakName = '2024.1080p.HEVC.AC3.5.1.ass';
+  useStudioStore.getState().processFiles([{
+    id: 'weak-bilingual',
+    name: weakName,
+    text: `1
+00:00:01,000 --> 00:00:03,000
+你好
+Hello`,
+    lang: 'bilingual',
+    isBilingual: true,
+    isCommentary: false,
+    size: 128,
+  }]);
+
+  const state = useStudioStore.getState();
+  assert.notEqual(state.tasks[0]?.title, 'AC3', 'Weak release parameters must not become the task title.');
+  assert.notEqual(state.customFilename, 'AC3', 'Weak release parameters must not become the output filename.');
+  assert.equal(state.tmdbManualInput.title, '', 'Weak release parameters must not prefill the TMDB manual search box.');
+}
 
 const createTmdbSearchResult = (item) => ({
   ok: true,

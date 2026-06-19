@@ -1042,12 +1042,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       task.zh?.text || '',
       task.en?.text || ''
     );
-    const parsedFiles = task.files.map(file => parseMediaFilename(file.name));
-    const parsedTitle = parsedFiles.find(item => item.hasUsableTitle);
-    const displayTitle = parsedTitle?.title || detectTitle || task.title;
+    const fileIdentities = task.files.map(file => assessMediaIdentity(file.name));
+    const parsedTitle = fileIdentities.find(item => item.shouldAutoSearchTmdb);
+    const detectedIdentity = detectTitle ? assessMediaIdentity(detectTitle) : null;
+    const detectedTitle = detectedIdentity?.shouldAutoSearchTmdb ? detectedIdentity.title : '';
+    const displayTitle = parsedTitle?.title || detectedTitle || task.title;
     set({ customFilename: displayTitle, filenameSource: 'auto' });
 
-    const cleanName = (parsedTitle?.title || detectTitle).replace(/\.[^/.]+$/, "").trim();
+    const cleanName = (parsedTitle?.title || detectedTitle).replace(/\.[^/.]+$/, "").trim();
     // Pre-fill type and season/episode if epKey exists
     let type = 'movie';
     let season = '1';
@@ -1276,17 +1278,16 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         }
       });
 
-      const parsedByName = new Map(
-        newFiles.map(file => [file.name, parseMediaFilename(file.name)])
-      );
-      const fallbackBatchTitle = [...parsedByName.values()]
-        .filter(item => item.hasUsableTitle)
+      const parsedByName = new Map(newFiles.map(file => [file.name, parseMediaFilename(file.name)]));
+      const identityByName = new Map(newFiles.map(file => [file.name, assessMediaIdentity(file.name)]));
+      const fallbackBatchTitle = [...identityByName.values()]
+        .filter(item => item.shouldAutoSearchTmdb)
         .sort((a, b) => b.title.length - a.title.length)[0]?.title || '';
 
       const parseEpisodeKey = (name: string): string | undefined => parsedByName.get(name)?.episodeKey || parseMediaFilename(name).episodeKey;
       const getBaseTitle = (name: string): string => {
-        const parsed = parsedByName.get(name) || parseMediaFilename(name);
-        return parsed.hasUsableTitle ? parsed.title : fallbackBatchTitle;
+        const identity = identityByName.get(name) || assessMediaIdentity(name);
+        return identity.shouldAutoSearchTmdb ? identity.title : fallbackBatchTitle;
       };
 
       const currentTasks = state.tasks.map(task => ({
