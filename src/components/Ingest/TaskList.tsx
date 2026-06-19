@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useStudioStore, TaskPair, Subfile } from '@/store/useStudioStore';
-import { Play, Plus, RotateCcw, X } from 'lucide-react';
+import { Play, Plus, RotateCcw, Search, X } from 'lucide-react';
 import { parseSrt, decodeBuffer, detectLanguageByContent, checkIsBilingual, StyleSettings } from '@/utils/subtitleCore';
 import { motion } from 'framer-motion';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
@@ -34,7 +34,8 @@ export const TaskList: React.FC = () => {
     setActivePreset,
     addLog,
     alignmentMode,
-    setAlignmentMode
+    setAlignmentMode,
+    setTmdbManualOpen
   } = useStudioStore();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -147,6 +148,7 @@ export const TaskList: React.FC = () => {
 
   const zhCount = getSubTitleCount(activeTask.zh);
   const enCount = getSubTitleCount(activeTask.en);
+  const needsTitleInput = activeTask.title.includes('待补充片名');
   let diffBadge = null;
   if (activeTask.zh && activeTask.en) {
     const max = Math.max(zhCount, enCount);
@@ -251,6 +253,16 @@ export const TaskList: React.FC = () => {
             />
             {renderMarqueeText(activeTask.title, 'text-sm font-semibold text-neutral-100 pr-1 font-mono flex-1')}
             {diffBadge}
+            {needsTitleInput && (
+              <button
+                type="button"
+                className="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#b7aa96]/18 bg-[#b7aa96]/8 px-2.5 py-1.5 text-xs font-semibold text-[#d8cdbb] transition hover:border-[#b7aa96]/30 hover:bg-[#b7aa96]/12 hover:text-white"
+                onClick={() => setTmdbManualOpen(true)}
+              >
+                <Search className="h-3.5 w-3.5" />
+                补充片名
+              </button>
+            )}
           </div>
 
           {/* Delete Task */}

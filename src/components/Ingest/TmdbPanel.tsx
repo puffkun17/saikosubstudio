@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useStudioStore, type TmdbSuggestion } from '@/store/useStudioStore';
-import { Search, Film, Star, X, Database } from 'lucide-react';
+import { Search, Film, Star, X, Database, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const getRottenTomatoesScore = (title: string, voteAverage: number) => {
@@ -36,11 +36,19 @@ export const TmdbPanel: React.FC = () => {
     if (!searchStr) return;
     setPendingSuggestion(null);
     await useStudioStore.getState().searchTmdbManual(searchStr, tmdbManualInput.type, tmdbManualInput.year);
+    setPendingSuggestion(useStudioStore.getState().tmdbSuggestions[0] || null);
   };
 
   const handleConfirmSelection = async () => {
     if (!pendingSuggestion) return;
     await selectTmdbSuggestion(pendingSuggestion);
+    setPendingSuggestion(null);
+    setTmdbManualOpen(false);
+  };
+
+  const handleApplySuggestion = async (suggestion: TmdbSuggestion) => {
+    setPendingSuggestion(suggestion);
+    await selectTmdbSuggestion(suggestion);
     setPendingSuggestion(null);
     setTmdbManualOpen(false);
   };
@@ -296,7 +304,10 @@ export const TmdbPanel: React.FC = () => {
                 {/* Candidates List */}
                 {tmdbSuggestions.length > 0 && (
                   <div className="flex flex-col gap-3 mt-4">
-                    <span className="text-sm text-white/75 font-medium">匹配结果 ({tmdbSuggestions.length})</span>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm text-white/75 font-medium">匹配结果 ({tmdbSuggestions.length})</span>
+                      <span className="text-xs text-white/35">选择正确片名后应用</span>
+                    </div>
                     <div className="flex flex-col gap-2">
                       {tmdbSuggestions.map(s => {
                         const isChosen = pendingSuggestion?.id === s.id || (!pendingSuggestion && selectedSuggestion?.id === s.id);
@@ -341,6 +352,29 @@ export const TmdbPanel: React.FC = () => {
                                 )}
                               </div>
                             </div>
+
+                            <button
+                              type="button"
+                              className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition active:translate-y-[1px]
+                                ${isChosen
+                                  ? 'bg-[#e5e7eb] text-black hover:bg-white'
+                                  : 'border border-white/[0.08] bg-white/[0.035] text-white/58 hover:bg-white/[0.07] hover:text-white'}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (isChosen) {
+                                  void handleApplySuggestion(s);
+                                } else {
+                                  setPendingSuggestion(s);
+                                }
+                              }}
+                            >
+                              {isChosen ? (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                  确认
+                                </span>
+                              ) : '选择'}
+                            </button>
                           </div>
                         );
                       })}

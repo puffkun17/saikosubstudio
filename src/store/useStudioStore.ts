@@ -1318,7 +1318,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           const baseName = getBaseTitle(file.name);
           const newTask = {
             id: `task_${fileEpKey ? "tv_" + fileEpKey : "movie_" + fileBase}_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
-            title: fileEpKey ? `${baseName || '待补充剧名'} ${fileEpKey}` : (baseName || '待补充片源'),
+            title: fileEpKey ? `${baseName || '待补充片名'} ${fileEpKey}` : (baseName || '待补充片名'),
             epKey: fileEpKey,
             zh: null,
             en: null,
