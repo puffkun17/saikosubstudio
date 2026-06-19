@@ -44,6 +44,21 @@ export interface LogEntry {
   fade: boolean;
 }
 
+export type FeedbackTone = 'message' | 'success' | 'notice' | 'warning' | 'alert';
+
+export type FeedbackAction = 'openTmdbManual';
+
+export interface StatusNotice {
+  id: string;
+  tone: FeedbackTone;
+  title: string;
+  message?: string;
+  meta?: string;
+  action?: FeedbackAction;
+  actionLabel?: string;
+  createdAt: number;
+}
+
 export interface TmdbMetadata {
   title: string;
   originalTitle: string;
@@ -121,6 +136,7 @@ export interface StudioState {
   customStyle: StyleSettings;
   customTemplates: CustomTemplate[];
   logs: LogEntry[];
+  statusNotices: StatusNotice[];
   previewIndex: number;
   sceneBackground: string;
   theaterAspect: string;
@@ -150,6 +166,9 @@ export interface StudioState {
   setLang: (lang: 'zh' | 'en') => void;
   addLog: (msg: string, type?: 'info' | 'success' | 'error') => void;
   clearLogs: () => void;
+  setStatusNotice: (notice: Omit<StatusNotice, 'createdAt'>) => void;
+  dismissStatusNotice: (id: string) => void;
+  clearStatusNotices: () => void;
   setIsDragging: (isDragging: boolean) => void;
   setCustomFilename: (name: string, source?: FilenameSource) => void;
   setSelectedTaskId: (id: string | null) => void;
@@ -221,6 +240,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   },
   customTemplates: [],
   logs: [],
+  statusNotices: [],
   previewIndex: 0,
   sceneBackground: 'cinema',
   theaterAspect: '16:9',
@@ -257,14 +277,25 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       set(state => ({
         logs: state.logs.map(l => l.id === id ? { ...l, fade: true } : l)
       }));
-    }, 6200);
+    }, 4200);
     setTimeout(() => {
       set(state => ({
         logs: state.logs.filter(l => l.id !== id)
       }));
-    }, 7000);
+    }, 5000);
   },
   clearLogs: () => set({ logs: [] }),
+  setStatusNotice: (notice) => {
+    set(state => {
+      const nextNotice: StatusNotice = { ...notice, createdAt: Date.now() };
+      const existing = state.statusNotices.filter(item => item.id !== notice.id);
+      return { statusNotices: [...existing, nextNotice].slice(-3) };
+    });
+  },
+  dismissStatusNotice: (id) => set(state => ({
+    statusNotices: state.statusNotices.filter(item => item.id !== id)
+  })),
+  clearStatusNotices: () => set({ statusNotices: [] }),
   setIsDragging: (isDragging) => set({ isDragging }),
   setCustomFilename: (customFilename, source = 'manual') => set({ customFilename, filenameSource: source }),
   setSelectedTaskId: (selectedTaskId) => set({ selectedTaskId }),
@@ -429,9 +460,27 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           tmdbSuggestions: [],
           tmdbManualOpen: !silent
         }));
+        get().setStatusNotice({
+          id: 'media-identity',
+          tone: 'notice',
+          title: '片名待补全',
+          message: '已保留季集信息，可在检索框补片名。',
+          meta: episodeKey,
+          action: 'openTmdbManual',
+          actionLabel: '打开检索',
+        });
         if (!silent) get().addLog(`已识别为 ${episodeKey}，请补充剧名以关联片源信息`, 'info');
       } else {
         set({ tmdbSuggestions: [], tmdbManualOpen: !silent });
+        get().setStatusNotice({
+          id: 'media-identity',
+          tone: 'warning',
+          title: '文件名较弱',
+          message: '未找到可用于检索的片名，请输入片名后搜索。',
+          meta: '片源线索不足',
+          action: 'openTmdbManual',
+          actionLabel: '手动检索',
+        });
         if (!silent) get().addLog('文件名信息不足，请补充片名后再关联片源信息', 'info');
       }
       return;
@@ -619,6 +668,15 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const best = sortedResults[0];
         if (isEpisodeQuery && best.media_type !== 'tv') {
           if (!silent) get().addLog(`已识别为剧集片源，需手动确认候选`, 'info');
+          get().setStatusNotice({
+            id: 'media-match',
+            tone: 'notice',
+            title: '候选需要确认',
+            message: '已找到剧集候选，请在片源面板中确认。',
+            meta: best.name || best.title || 'TMDB 候选',
+            action: 'openTmdbManual',
+            actionLabel: '查看候选',
+          });
           set({ tmdbManualOpen: !silent });
         } else {
           await get().selectTmdbSuggestion(best, { silent });
@@ -628,10 +686,28 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         if (!hasExistingMetadata) {
           set({ tmdbData: null, tmdbBackdrop: null });
         }
+        get().setStatusNotice({
+          id: 'media-match',
+          tone: 'warning',
+          title: '未自动关联片源',
+          message: '当前关键词没有可靠候选，可调整片名后重试。',
+          meta: searchStr,
+          action: 'openTmdbManual',
+          actionLabel: '调整检索',
+        });
         if (!silent) get().addLog("暂未自动确认片源，可手动选择候选", "error");
       }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
+      get().setStatusNotice({
+        id: 'media-match',
+        tone: 'alert',
+        title: '片源匹配异常',
+        message,
+        meta: 'TMDB 检索',
+        action: 'openTmdbManual',
+        actionLabel: '重新检索',
+      });
       if (!silent) get().addLog(`片源匹配异常: ${message}`, "error");
     } finally {
       set({ isSearchingTmdb: false });
@@ -752,12 +828,39 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       });
       
       if (sortedResults.length > 0) {
+        get().setStatusNotice({
+          id: 'media-match',
+          tone: 'notice',
+          title: '候选待确认',
+          message: `已找到 ${sortedResults.length} 个匹配项。`,
+          meta: searchStr,
+          action: 'openTmdbManual',
+          actionLabel: '查看候选',
+        });
         get().addLog(`手动检索到 ${sortedResults.length} 个候选匹配项，请点选确认`, "success");
       } else {
+        get().setStatusNotice({
+          id: 'media-match',
+          tone: 'warning',
+          title: '未找到候选',
+          message: '可尝试使用原文片名、删除集标题或补充年份。',
+          meta: searchStr,
+          action: 'openTmdbManual',
+          actionLabel: '继续调整',
+        });
         get().addLog("未找到任何匹配候选！", "error");
       }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
+      get().setStatusNotice({
+        id: 'media-match',
+        tone: 'alert',
+        title: '手动检索异常',
+        message,
+        meta: searchStr,
+        action: 'openTmdbManual',
+        actionLabel: '重新检索',
+      });
       get().addLog(`手动搜索异常: ${message}`, "error");
     } finally {
       set({ isSearchingTmdb: false });
@@ -880,9 +983,25 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       }
 
       if (!silent) get().addLog(`已关联片源：${meta.title}`, 'success');
+      get().setStatusNotice({
+        id: 'media-match',
+        tone: 'success',
+        title: '片源已关联',
+        message: meta.originalTitle && meta.originalTitle !== meta.title ? meta.originalTitle : undefined,
+        meta: [meta.title, meta.year].filter(Boolean).join(' · '),
+      });
       set({ tmdbManualOpen: false });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
+      get().setStatusNotice({
+        id: 'media-match',
+        tone: 'alert',
+        title: '片源资料获取失败',
+        message,
+        meta: s.title || s.name || 'TMDB',
+        action: 'openTmdbManual',
+        actionLabel: '重试',
+      });
       if (!silent) get().addLog(`片源资料获取失败: ${message}`, 'error');
     }
   },
@@ -1092,7 +1211,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       showAllSubs: false,
       showAssHint: false,
       foundAssStyle: null,
-      isProcessing: false
+      isProcessing: false,
+      statusNotices: []
     });
     get().addLog("已取消本次导入", "info");
   },
@@ -1347,6 +1467,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       tmdbBackdropList: [],
       isTemplateLab: false,
       logs: [],
+      statusNotices: [],
       previewIndex: 0,
       processedSubs: null,
       showAllSubs: false
