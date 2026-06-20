@@ -166,7 +166,7 @@ export const TaskList: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col gap-4 glass-panel-ar p-5 md:p-6 rounded-xl desktop-panel-fit-visible relative shadow-xl group transition-all duration-300 hover:border-[#9ca3af]/18 bg-gradient-to-b from-transparent via-transparent to-white/[0.006]">
+    <div className="flex flex-col gap-4 glass-panel-ar p-5 md:p-6 rounded-xl desktop-panel-fit-visible relative group transition-all duration-300 hover:border-[#9ca3af]/18">
 
       {/* Header section */}
       <div className="flex justify-between items-center pb-4 border-b border-white/[0.07] flex-shrink-0 select-none gap-3">
@@ -249,11 +249,11 @@ export const TaskList: React.FC = () => {
                 <span className="action-required-marker flex h-2.5 w-2.5 shrink-0 rounded-full" aria-hidden="true" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <CircleAlert className="h-4 w-4 shrink-0 text-[#ff8e75]" aria-hidden="true" />
+                    <CircleAlert className="h-4 w-4 shrink-0 text-[#b9ddd8]" aria-hidden="true" />
                     <span className="text-sm font-semibold text-white">需要补充片名</span>
-                    {activeTask.epKey && <span className="text-xs font-mono text-[#ffc2b2]">{activeTask.epKey}</span>}
+                    {activeTask.epKey && <span className="text-xs font-mono text-[#c6e2de]">{activeTask.epKey}</span>}
                   </div>
-                  <p className="mt-0.5 text-xs leading-relaxed text-[#f0c0b6]">文件名只含技术参数，确认片名后即可关联片源资料。</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-[#b9d8d3]">文件名只含技术参数，确认片名后即可关联片源资料。</p>
                 </div>
                 <button
                   type="button"
@@ -313,7 +313,7 @@ export const TaskList: React.FC = () => {
         <div className="flex flex-col gap-3.5 flex-1 min-h-0 overflow-visible">
 
           {/* Track Bindings - Wide horizontal card */}
-          <div className="p-5 bg-white/[0.014] border border-white/[0.07] rounded-xl flex flex-col gap-4 overflow-visible relative">
+          <div className="pt-2 flex flex-col gap-4 overflow-visible relative">
             <div className="flex items-center gap-2">
               <h4 className="text-lg text-neutral-100 font-semibold block select-none">
                 字幕文件匹配
@@ -322,7 +322,7 @@ export const TaskList: React.FC = () => {
                 选择要进入处理流程的字幕轨。单个已含中英双语的文件会作为双语字幕处理；分开的中英文件会按时间轴合并。
               </InfoHint>
             </div>
-            <div className="flex flex-col gap-3 bg-[#020204]/55 p-4 rounded-xl border border-white/[0.065] overflow-visible relative">
+            <div className="flex flex-col gap-3 bg-black/20 p-4 rounded-lg overflow-visible relative">
               {/* Chinese binding */}
               <div className="flex flex-row items-center gap-2 overflow-visible">
                 <span className="w-28 text-sm text-neutral-200 font-semibold shrink-0 text-left inline-flex items-center gap-1.5">
@@ -383,7 +383,7 @@ export const TaskList: React.FC = () => {
           </div>
 
           {/* Configuration & Process Dock */}
-          <div className="p-5 bg-white/[0.014] border border-white/[0.07] rounded-xl flex flex-col gap-4 overflow-visible mt-auto">
+          <div className="pt-5 border-t border-white/[0.06] flex flex-col gap-4 overflow-visible mt-auto">
 
             {/* ASS style extraction hint */}
             {showAssHint && foundAssStyle && (

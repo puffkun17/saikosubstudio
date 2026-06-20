@@ -63,7 +63,7 @@ export const TmdbPanel: React.FC = () => {
   return (
     <div className={`flex flex-col gap-5 glass-panel-ar p-5 md:p-6 xl:p-7 rounded-xl desktop-panel-fit-hidden relative shadow-xl group transition-all duration-300
       ${tmdbData
-        ? 'border-[#9ca3af]/20 shadow-[0_24px_60px_rgba(0,0,0,0.55),_0_0_36px_rgba(156,163,175,0.06)] bg-gradient-to-b from-transparent via-transparent to-[#9ca3af]/[0.012]'
+        ? 'border-[#9ca3af]/16 bg-gradient-to-b from-transparent via-transparent to-[#9ca3af]/[0.008]'
         : 'hover:border-[#9ca3af]/12'}`}>
 
       {/* Cinematic Poster Background Blur - Liquid Glow (Lively drift) */}
@@ -80,7 +80,7 @@ export const TmdbPanel: React.FC = () => {
             repeat: Infinity,
             ease: "linear"
           }}
-          className="absolute inset-0 bg-cover bg-center -z-10 filter blur-[24px] pointer-events-none opacity-[0.12]"
+          className="absolute inset-0 bg-cover bg-center -z-10 filter blur-[24px] pointer-events-none opacity-[0.06]"
           style={{ backgroundImage: `url(${tmdbData.posterUrl})` }}
         />
       )}
@@ -195,7 +195,7 @@ export const TmdbPanel: React.FC = () => {
           </motion.div>
         ) : needsTitleInput ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-neutral-500 gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-[#f05a3c]/25 bg-[#f05a3c]/[0.06] text-[#ff9d89]">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-[#8ebcb5]/25 bg-[#8ebcb5]/[0.06] text-[#b9ddd8]">
               <CircleAlert className="h-7 w-7" />
             </div>
             <p className="text-base font-semibold text-neutral-200">等待片名确认</p>
@@ -240,7 +240,7 @@ export const TmdbPanel: React.FC = () => {
               <div className="flex justify-between items-center px-6 py-5 border-b border-white/5">
                 <div>
                   <h4 className="text-xl font-semibold text-white tracking-tight">{needsTitleInput ? '补充片名' : '手动检索'}</h4>
-                  {needsTitleInput && <p className="mt-1 text-sm text-[#f0b4a7]">确认后将用于片源资料与导出命名。</p>}
+                  {needsTitleInput && <p className="mt-1 text-sm text-[#b9d8d3]">确认后将用于片源资料与导出命名。</p>}
                 </div>
                 <button
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition cursor-pointer"
@@ -255,7 +255,7 @@ export const TmdbPanel: React.FC = () => {
                   <div className="relative">
                     <input
                       type="text"
-                      className={`w-full bg-white/[0.02] border rounded-xl py-4 pl-12 pr-4 text-white text-base outline-none transition-all ${needsTitleInput ? 'border-[#f05a3c]/35 focus:bg-[#f05a3c]/[0.04] focus:border-[#ff8c73]' : 'border-white/[0.07] focus:bg-white/[0.04] focus:border-[#9ca3af]/35'}`}
+                      className={`w-full bg-white/[0.02] border rounded-xl py-4 pl-12 pr-4 text-white text-base outline-none transition-all ${needsTitleInput ? 'border-[#8ebcb5]/35 focus:bg-[#8ebcb5]/[0.04] focus:border-[#b9ddd8]' : 'border-white/[0.07] focus:bg-white/[0.04] focus:border-[#9ca3af]/35'}`}
                       value={tmdbManualInput.title}
                       onChange={e => setTmdbManualInput({ ...tmdbManualInput, title: e.target.value })}
                       onKeyDown={e => e.key === 'Enter' && handleManualSearch()}
@@ -335,7 +335,7 @@ export const TmdbPanel: React.FC = () => {
                             key={s.id}
                             className={`w-full p-3 rounded-xl flex items-center gap-4 text-left transition-all border cursor-pointer
                             ${isChosen
-                                ? 'border-[#f05a3c]/55 bg-[#f05a3c]/[0.08] shadow-[inset_3px_0_0_#f05a3c]'
+                                ? 'border-[#8ebcb5]/45 bg-[#8ebcb5]/[0.07] shadow-[inset_3px_0_0_#8ebcb5]'
                                 : 'bg-white/[0.015] border-white/5 hover:bg-white/[0.035]'
                               }`}
                             onClick={() => setPendingSuggestion(s)}
@@ -402,7 +402,7 @@ export const TmdbPanel: React.FC = () => {
               <div className="flex justify-between items-center px-6 py-5 border-t border-white/5 bg-black/25">
                 <div className="text-sm text-white/50">
                   {pendingSuggestion ? (
-                    <span className="text-white">已选择 <strong className="text-[#ffad9a]">{pendingSuggestion.title || pendingSuggestion.name}</strong>，请点击右侧确认</span>
+                    <span className="text-white">已选择 <strong className="text-[#b9ddd8]">{pendingSuggestion.title || pendingSuggestion.name}</strong>，请点击右侧确认</span>
                   ) : (
                     '请选择匹配项'
                   )}

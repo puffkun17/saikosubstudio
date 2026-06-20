@@ -20,43 +20,6 @@ export const IngestStep: React.FC = () => {
 
   return (
     <div className="flex-1 w-full h-full flex flex-col p-5 md:p-8 lg:p-10 2xl:p-12 lg:overflow-hidden overflow-y-auto relative bg-[#020203] z-0">
-      {/* Cinematic ambient lights */}
-      <div className="absolute top-[-18%] left-[-12%] w-[58%] h-[58%] bg-[#9ca3af]/[0.018] rounded-full blur-[160px] pointer-events-none -z-10" />
-      <div className="absolute bottom-[-16%] right-[-10%] w-[46%] h-[46%] bg-white/[0.012] rounded-full blur-[150px] pointer-events-none -z-10" />
-
-      {/* Tech grid system */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff02_1px,transparent_1px)] bg-[size:5.5rem_5.5rem] [mask-image:radial-gradient(ellipse_66%_54%_at_50%_40%,#000_70%,transparent_100%)] pointer-events-none -z-10" />
-      
-      {/* Hairline structural layout guides */}
-      <div className="absolute left-[5%] right-[5%] top-[14%] h-px bg-gradient-to-r from-transparent via-white/[0.03] to-transparent pointer-events-none -z-10" />
-      <div className="absolute left-[5%] right-[5%] bottom-[12%] h-px bg-gradient-to-r from-transparent via-white/[0.03] to-transparent pointer-events-none -z-10" />
-
-      {/* Animated drifting sparks */}
-      <motion.div
-        animate={{
-          x: [0, -35, 20, 0],
-          y: [0, 45, -15, 0],
-        }}
-        transition={{
-          duration: 22,
-          repeat: Infinity,
-          ease: "linear"
-        }}
-        className="absolute top-[30%] right-[15%] w-1.5 h-1.5 rounded-full bg-[#9ca3af]/20 blur-[1px] pointer-events-none -z-10"
-      />
-      <motion.div
-        animate={{
-          x: [0, 40, -30, 0],
-          y: [0, -50, 25, 0],
-        }}
-        transition={{
-          duration: 28,
-          repeat: Infinity,
-          ease: "linear"
-        }}
-        className="absolute bottom-[20%] left-[25%] w-2 h-2 rounded-full bg-[#6b8f8d]/14 blur-[1.5px] pointer-events-none -z-10"
-      />
-
       <div className="flex items-center gap-2 mb-3 select-none z-20 flex-shrink-0">
         <span className="w-1.5 h-1.5 rounded-full bg-[#9ca3af]/85" />
         <span className="text-sm font-medium text-[#e5e7eb]/86">
@@ -113,11 +76,11 @@ export const IngestStep: React.FC = () => {
             className="flex-1 desktop-panel-fit-hidden grid grid-cols-1 lg:grid-cols-3 gap-5 z-10 max-w-[1680px] mx-auto w-full relative"
           >
             {/* TMDB Panel */}
-            <div className="lg:col-span-1 desktop-panel-fit-hidden min-w-0 p-1.5 bg-white/[0.014] border border-white/[0.075] rounded-xl shadow-xl hover:border-[#9ca3af]/20 transition-colors duration-500">
+            <div className="lg:col-span-1 desktop-panel-fit-hidden min-w-0">
               <TmdbPanel />
             </div>
             {/* TaskList */}
-            <div className="lg:col-span-2 flex flex-col desktop-panel-fit-visible min-w-0 relative p-1.5 bg-white/[0.014] border border-white/[0.075] rounded-xl shadow-xl hover:border-[#9ca3af]/20 transition-colors duration-500">
+            <div className="lg:col-span-2 flex flex-col desktop-panel-fit-visible min-w-0 relative">
               <TaskList />
             </div>
           </motion.div>
