@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useStudioStore, type TmdbSuggestion } from '@/store/useStudioStore';
-import { Search, Film, Star, X, Database, CheckCircle2 } from 'lucide-react';
+import { Search, Film, Star, X, Database, CheckCircle2, CircleAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const getRottenTomatoesScore = (title: string, voteAverage: number) => {
@@ -23,38 +23,40 @@ export const TmdbPanel: React.FC = () => {
     tmdbManualInput,
     setTmdbManualInput,
     tmdbSuggestions,
+    setTmdbSuggestions,
     selectedSuggestion,
     selectTmdbSuggestion,
-    isSearchingTmdb
+    isSearchingTmdb,
+    tasks,
+    selectedTaskId
   } = useStudioStore();
 
   const [pendingSuggestion, setPendingSuggestion] = useState<TmdbSuggestion | null>(null);
   const rtScore = tmdbData ? getRottenTomatoesScore(tmdbData.title, tmdbData.voteAverage) : null;
+  const activeTask = tasks.find((task) => task.id === selectedTaskId) || tasks[0];
+  const needsTitleInput = Boolean(activeTask?.title.includes('待补充片名'));
+  const shouldHighlightSearch = needsTitleInput && tmdbSuggestions.length === 0;
 
   const handleManualSearch = async () => {
     const searchStr = tmdbManualInput.title.trim();
     if (!searchStr) return;
     setPendingSuggestion(null);
+    setTmdbSuggestions([]);
     await useStudioStore.getState().searchTmdbManual(searchStr, tmdbManualInput.type, tmdbManualInput.year);
     setPendingSuggestion(useStudioStore.getState().tmdbSuggestions[0] || null);
-  };
-
-  const handleConfirmSelection = async () => {
-    if (!pendingSuggestion) return;
-    await selectTmdbSuggestion(pendingSuggestion);
-    setPendingSuggestion(null);
-    setTmdbManualOpen(false);
   };
 
   const handleApplySuggestion = async (suggestion: TmdbSuggestion) => {
     setPendingSuggestion(suggestion);
     await selectTmdbSuggestion(suggestion);
     setPendingSuggestion(null);
+    setTmdbSuggestions([]);
     setTmdbManualOpen(false);
   };
 
   const handleClose = () => {
     setPendingSuggestion(null);
+    setTmdbSuggestions([]);
     setTmdbManualOpen(false);
   };
 
@@ -100,13 +102,15 @@ export const TmdbPanel: React.FC = () => {
             <img src="/tmdb_logo_blue_square.svg" alt="TMDB Logo" className="h-full w-auto object-contain brightness-100 contrast-110 filter drop-shadow-[0_0_4px_rgba(59,130,246,0.6)]" />
           </a>
         </div>
-        <button
-          className="group px-4 py-2.5 rounded-xl bg-white text-black text-[15px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer border border-white/20 hover:bg-neutral-200 hover:scale-[1.01]"
-          onClick={() => setTmdbManualOpen(true)}
-        >
-          <Search className="w-3.5 h-3.5 group-hover:scale-110 group-hover:rotate-6 transition-transform" />
-          重新检索
-        </button>
+        {(tmdbData || !needsTitleInput) && (
+          <button
+            className="group px-4 py-2.5 rounded-xl bg-white text-black text-[15px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer border border-white/20 hover:bg-neutral-200 hover:scale-[1.01]"
+            onClick={() => setTmdbManualOpen(true)}
+          >
+            <Search className="w-3.5 h-3.5 group-hover:scale-110 group-hover:rotate-6 transition-transform" />
+            {tmdbData ? '重新检索' : '手动检索'}
+          </button>
+        )}
       </div>
 
       <div className="lg:flex-1 flex flex-col gap-3 z-10">
@@ -189,6 +193,14 @@ export const TmdbPanel: React.FC = () => {
               {tmdbData.overview || '暂无剧情简介...'}
             </div>
           </motion.div>
+        ) : needsTitleInput ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-neutral-500 gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-[#f05a3c]/25 bg-[#f05a3c]/[0.06] text-[#ff9d89]">
+              <CircleAlert className="h-7 w-7" />
+            </div>
+            <p className="text-base font-semibold text-neutral-200">等待片名确认</p>
+            <p className="max-w-[28ch] text-sm leading-relaxed text-neutral-500">右侧补充片名后，这里会显示影片资料与封面。</p>
+          </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-neutral-600 gap-4">
               <div className="relative p-4 rounded-xl bg-white/[0.012] border border-white/[0.06] shadow-[0_0_25px_rgba(0,0,0,0.08)] group-hover:border-[#9ca3af]/10 transition-colors">
@@ -226,7 +238,10 @@ export const TmdbPanel: React.FC = () => {
             >
               {/* Modal Header */}
               <div className="flex justify-between items-center px-6 py-5 border-b border-white/5">
-                <h4 className="text-xl font-semibold text-white tracking-tight">手动检索</h4>
+                <div>
+                  <h4 className="text-xl font-semibold text-white tracking-tight">{needsTitleInput ? '补充片名' : '手动检索'}</h4>
+                  {needsTitleInput && <p className="mt-1 text-sm text-[#f0b4a7]">确认后将用于片源资料与导出命名。</p>}
+                </div>
                 <button
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition cursor-pointer"
                   onClick={handleClose}
@@ -240,7 +255,7 @@ export const TmdbPanel: React.FC = () => {
                   <div className="relative">
                     <input
                       type="text"
-                      className="w-full bg-white/[0.02] border border-white/[0.07] focus:bg-white/[0.04] focus:border-[#9ca3af]/35 rounded-xl py-4 pl-12 pr-4 text-white text-base outline-none transition-all"
+                      className={`w-full bg-white/[0.02] border rounded-xl py-4 pl-12 pr-4 text-white text-base outline-none transition-all ${needsTitleInput ? 'border-[#f05a3c]/35 focus:bg-[#f05a3c]/[0.04] focus:border-[#ff8c73]' : 'border-white/[0.07] focus:bg-white/[0.04] focus:border-[#9ca3af]/35'}`}
                       value={tmdbManualInput.title}
                       onChange={e => setTmdbManualInput({ ...tmdbManualInput, title: e.target.value })}
                       onKeyDown={e => e.key === 'Enter' && handleManualSearch()}
@@ -288,7 +303,7 @@ export const TmdbPanel: React.FC = () => {
                   )}
 
                   <button
-                    className="w-full py-4 bg-[#e5e7eb] hover:bg-[#ffffff] text-black font-semibold text-base rounded-xl transition-all shadow-[0_4px_20px_rgba(156,163,175,0.16)] hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer"
+                    className={`w-full py-4 font-semibold text-base rounded-xl transition-all hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer ${shouldHighlightSearch ? 'action-required-button' : 'bg-[#e5e7eb] hover:bg-[#ffffff] text-black shadow-[0_4px_20px_rgba(156,163,175,0.16)]'}`}
                     onClick={handleManualSearch}
                     disabled={isSearchingTmdb}
                   >
@@ -319,8 +334,8 @@ export const TmdbPanel: React.FC = () => {
                           <div
                             key={s.id}
                             className={`w-full p-3 rounded-xl flex items-center gap-4 text-left transition-all border cursor-pointer
-                              ${isChosen
-                                ? 'glass-btn-ar-active border-[#9ca3af]/30'
+                            ${isChosen
+                                ? 'border-[#f05a3c]/55 bg-[#f05a3c]/[0.08] shadow-[inset_3px_0_0_#f05a3c]'
                                 : 'bg-white/[0.015] border-white/5 hover:bg-white/[0.035]'
                               }`}
                             onClick={() => setPendingSuggestion(s)}
@@ -357,7 +372,7 @@ export const TmdbPanel: React.FC = () => {
                               type="button"
                               className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition active:translate-y-[1px]
                                 ${isChosen
-                                  ? 'bg-[#e5e7eb] text-black hover:bg-white'
+                                ? 'action-required-button'
                                   : 'border border-white/[0.08] bg-white/[0.035] text-white/58 hover:bg-white/[0.07] hover:text-white'}`}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -387,26 +402,17 @@ export const TmdbPanel: React.FC = () => {
               <div className="flex justify-between items-center px-6 py-5 border-t border-white/5 bg-black/25">
                 <div className="text-sm text-white/50">
                   {pendingSuggestion ? (
-                    <span className="text-white">已选择 <strong className="text-[#e5e7eb]">{pendingSuggestion.title || pendingSuggestion.name}</strong></span>
+                    <span className="text-white">已选择 <strong className="text-[#ffad9a]">{pendingSuggestion.title || pendingSuggestion.name}</strong>，请点击右侧确认</span>
                   ) : (
                     '请选择匹配项'
                   )}
                 </div>
-                <div className="flex gap-3">
-                  <button
-                    className="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl transition text-sm font-bold cursor-pointer"
-                    onClick={handleClose}
-                  >
-                    取消
-                  </button>
-                  <button
-                    className="px-6 py-2.5 bg-[#e5e7eb] hover:bg-[#ffffff] text-black font-semibold text-sm rounded-xl transition disabled:opacity-30 disabled:cursor-not-allowed shadow-[0_4px_15px_rgba(156,163,175,0.22)] cursor-pointer"
-                    onClick={handleConfirmSelection}
-                    disabled={!pendingSuggestion}
-                  >
-                    确认应用
-                  </button>
-                </div>
+                <button
+                  className="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl transition text-sm font-bold cursor-pointer"
+                  onClick={handleClose}
+                >
+                  取消
+                </button>
               </div>
             </motion.div>
           </motion.div>

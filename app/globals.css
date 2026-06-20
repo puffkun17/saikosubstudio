@@ -8,6 +8,12 @@
   --color-accent-muted: #9ca3af;
   --color-accent-emerald: #10b981;
   --color-accent-emerald-glow: rgba(16, 185, 129, 0.12);
+  /* Dedicated action color: reserved for the one thing that needs attention now. */
+  --color-action: #f05a3c;
+  --color-action-strong: #ff6748;
+  --color-action-ink: #260b06;
+  --color-action-soft: rgba(240, 90, 60, 0.12);
+  --color-action-glow: rgba(240, 90, 60, 0.24);
   --color-bg-dark: #020203;
   --color-bg-base: #070707;
   --color-surface-base: rgba(255, 255, 255, 0.02);
@@ -233,12 +239,72 @@ body::before {
   will-change: transform;
 }
 
+/* Workflow attention: one strong, contextual cue instead of scattered alerts. */
+.action-required-surface {
+  border-color: rgba(240, 90, 60, 0.72) !important;
+  background:
+    linear-gradient(90deg, rgba(240, 90, 60, 0.13), rgba(240, 90, 60, 0.035) 38%, rgba(255, 255, 255, 0.018) 72%),
+    rgba(255, 255, 255, 0.018);
+  box-shadow:
+    inset 3px 0 0 var(--color-action),
+    0 0 0 1px rgba(240, 90, 60, 0.09),
+    0 16px 34px rgba(0, 0, 0, 0.22);
+}
+
+.action-required-marker {
+  background: var(--color-action);
+  box-shadow: 0 0 0 5px rgba(240, 90, 60, 0.12), 0 0 18px var(--color-action-glow);
+  animation: actionBeacon 2.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.action-required-button {
+  background: var(--color-action);
+  border: 1px solid rgba(255, 178, 156, 0.48);
+  color: var(--color-action-ink);
+  box-shadow: 0 9px 22px rgba(240, 90, 60, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.action-required-button:hover {
+  background: var(--color-action-strong);
+  box-shadow: 0 12px 28px rgba(240, 90, 60, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.34);
+}
+
+.action-required-button:focus-visible,
+.action-required-surface:focus-within {
+  outline: 2px solid rgba(255, 103, 72, 0.9);
+  outline-offset: 3px;
+}
+
+.action-bypass-button {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.action-bypass-button:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.075);
+  color: #ffffff;
+}
+
+@keyframes actionBeacon {
+  0%, 100% {
+    box-shadow: 0 0 0 5px rgba(240, 90, 60, 0.1), 0 0 15px rgba(240, 90, 60, 0.16);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(240, 90, 60, 0.04), 0 0 24px rgba(240, 90, 60, 0.28);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .subtitle-marquee {
     animation: none;
   }
   .hover-marquee:hover .hover-marquee-content,
   .hover-marquee:focus-within .hover-marquee-content {
+    animation: none;
+  }
+  .action-required-marker {
     animation: none;
   }
 }

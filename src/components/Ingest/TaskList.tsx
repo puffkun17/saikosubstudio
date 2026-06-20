@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useStudioStore, TaskPair, Subfile } from '@/store/useStudioStore';
-import { Play, Plus, RotateCcw, Search, X } from 'lucide-react';
+import { CircleAlert, Play, Plus, RotateCcw, Search, X } from 'lucide-react';
 import { parseSrt, decodeBuffer, detectLanguageByContent, checkIsBilingual, StyleSettings } from '@/utils/subtitleCore';
 import { motion } from 'framer-motion';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
@@ -102,7 +102,10 @@ export const TaskList: React.FC = () => {
     }
   };
 
-  const getProcessBtnText = (task: TaskPair) => {
+  const getProcessBtnText = (task: TaskPair, bypassMetadata = false) => {
+    if (bypassMetadata) {
+      return '暂不关联片源，直接预览';
+    }
     if (task.isBilingualSingle) {
       return '下一步：预览双语字幕';
     }
@@ -239,29 +242,43 @@ export const TaskList: React.FC = () => {
       <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-white/[0.03] relative min-h-0 overflow-x-visible">
 
         {/* Banner/Title Card */}
-        <div className="p-4 bg-white/[0.018] border border-white/[0.07] rounded-xl flex items-center justify-between gap-3 relative flex-shrink-0">
+        <div className={`p-4 rounded-xl flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center relative flex-shrink-0 border transition-colors ${needsTitleInput ? 'action-required-surface' : 'bg-white/[0.018] border-white/[0.07]'}`}>
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <motion.span
-              animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }}
-              transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
-              className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-300
-                ${(activeTask.zh && activeTask.en)
-                  ? 'bg-[#e5e7eb] shadow-[0_0_10px_rgba(156,163,175,0.65)]'
-                  : (activeTask.zh || activeTask.en)
-                    ? 'bg-[#b8ad96] shadow-[0_0_10px_rgba(184,173,150,0.28)]'
-                    : 'bg-white/10'}`}
-            />
-            {renderMarqueeText(activeTask.title, 'text-sm font-semibold text-neutral-100 pr-1 font-mono flex-1')}
-            {diffBadge}
-            {needsTitleInput && (
-              <button
-                type="button"
-                className="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#b7aa96]/18 bg-[#b7aa96]/8 px-2.5 py-1.5 text-xs font-semibold text-[#d8cdbb] transition hover:border-[#b7aa96]/30 hover:bg-[#b7aa96]/12 hover:text-white"
-                onClick={() => setTmdbManualOpen(true)}
-              >
-                <Search className="h-3.5 w-3.5" />
-                补充片名
-              </button>
+            {needsTitleInput ? (
+              <>
+                <span className="action-required-marker flex h-2.5 w-2.5 shrink-0 rounded-full" aria-hidden="true" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <CircleAlert className="h-4 w-4 shrink-0 text-[#ff8e75]" aria-hidden="true" />
+                    <span className="text-sm font-semibold text-white">需要补充片名</span>
+                    {activeTask.epKey && <span className="text-xs font-mono text-[#ffc2b2]">{activeTask.epKey}</span>}
+                  </div>
+                  <p className="mt-0.5 text-xs leading-relaxed text-[#f0c0b6]">文件名只含技术参数，确认片名后即可关联片源资料。</p>
+                </div>
+                <button
+                  type="button"
+                  className="action-required-button ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition active:translate-y-[1px]"
+                  onClick={() => setTmdbManualOpen(true)}
+                >
+                  <Search className="h-4 w-4" />
+                  补充片名
+                </button>
+              </>
+            ) : (
+              <>
+                <motion.span
+                  animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }}
+                  transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
+                  className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-300
+                    ${(activeTask.zh && activeTask.en)
+                      ? 'bg-[#e5e7eb] shadow-[0_0_10px_rgba(156,163,175,0.65)]'
+                      : (activeTask.zh || activeTask.en)
+                        ? 'bg-[#b8ad96] shadow-[0_0_10px_rgba(184,173,150,0.28)]'
+                        : 'bg-white/10'}`}
+                />
+                {renderMarqueeText(activeTask.title, 'text-sm font-semibold text-neutral-100 pr-1 font-mono flex-1')}
+                {diffBadge}
+              </>
             )}
           </div>
 
@@ -476,20 +493,23 @@ export const TaskList: React.FC = () => {
 
               {/* Action Button */}
               <div className="w-full lg:w-72 shrink-0">
-                <button
-                  className={`w-full h-12 rounded-xl font-semibold text-center text-base transition-all flex items-center justify-center gap-2 cursor-pointer
+                  <button
+                    className={`w-full h-12 rounded-xl font-semibold text-center text-base transition-all flex items-center justify-center gap-2 cursor-pointer
                     ${(!activeTask.zh && !activeTask.en) || isProcessing
                       ? 'bg-white/[0.02] text-white/20 border border-white/5 cursor-not-allowed'
-                      : 'bg-[#e5e7eb] hover:bg-[#ffffff] text-black border border-[#9ca3af]/45 hover:border-[#ffffff]/60 shadow-[0_4px_20px_rgba(156,163,175,0.16)] hover:scale-[1.01]'}`}
+                      : needsTitleInput
+                        ? 'action-bypass-button'
+                        : 'bg-[#e5e7eb] hover:bg-[#ffffff] text-black border border-[#9ca3af]/45 hover:border-[#ffffff]/60 shadow-[0_4px_20px_rgba(156,163,175,0.16)] hover:scale-[1.01]'}`}
                   disabled={(!activeTask.zh && !activeTask.en) || isProcessing}
                   onClick={runSubtitleMerge}
+                  title={needsTitleInput ? '跳过片源关联，直接进入字幕预览' : undefined}
                 >
                   {isProcessing ? (
                     <span className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin shrink-0" />
                   ) : (
-                    <Play className={`w-4 h-4 shrink-0 ${(!activeTask.zh && !activeTask.en) ? 'text-white/20 fill-white/10' : 'text-black fill-black/20'}`} />
+                  <Play className={`w-4 h-4 shrink-0 ${(!activeTask.zh && !activeTask.en) ? 'text-white/20 fill-white/10' : needsTitleInput ? 'text-white/80 fill-white/20' : 'text-black fill-black/20'}`} />
                   )}
-                  {isProcessing ? '正在准备下一步...' : getProcessBtnText(activeTask)}
+                  {isProcessing ? '正在准备下一步...' : getProcessBtnText(activeTask, needsTitleInput)}
                 </button>
               </div>
 
