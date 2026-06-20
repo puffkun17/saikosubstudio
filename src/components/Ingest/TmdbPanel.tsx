@@ -129,10 +129,10 @@ export const TmdbPanel: React.FC = () => {
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                   src={tmdbData.posterUrl}
                   alt={tmdbData.title}
-                  className="w-[8.5rem] lg:w-36 xl:w-40 h-auto aspect-[2/3] object-cover rounded-xl border border-white/10 shadow-[0_12px_24px_rgba(0,0,0,0.4)] group-hover:border-[#9ca3af]/20 transition-all duration-300 shrink-0 cursor-pointer"
+                  className="w-32 sm:w-40 lg:w-48 xl:w-52 h-auto aspect-[2/3] object-cover rounded-xl border border-white/10 shadow-[0_12px_24px_rgba(0,0,0,0.4)] group-hover:border-[#9ca3af]/20 transition-all duration-300 shrink-0 cursor-pointer"
                 />
               ) : (
-                <div className="w-28 lg:w-32 aspect-[2/3] bg-white/[0.01] border border-white/5 rounded-xl flex items-center justify-center text-neutral-600 shadow-[0_12px_24px_rgba(0,0,0,0.4)] flex-shrink-0" />
+                <div className="w-32 sm:w-40 lg:w-48 xl:w-52 aspect-[2/3] bg-white/[0.01] border border-white/5 rounded-xl flex items-center justify-center text-neutral-600 shadow-[0_12px_24px_rgba(0,0,0,0.4)] flex-shrink-0" />
               )}
 
               {/* Movie metadata (Title + Badges) */}
