@@ -133,21 +133,21 @@ export const SequenceList: React.FC = () => {
                   {isActive && (
                     <motion.div
                       layoutId="activeSubIndicator"
-                      className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#e5e7eb] shadow-[0_0_12px_rgba(156,163,175,0.55)]"
+                      className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#9ddacb] shadow-[0_0_12px_rgba(157,218,203,0.5)]"
                       transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                     />
                   )}
 
                   <div className="font-mono text-xs text-neutral-300 self-center flex items-center gap-3 select-none">
                     <div className="relative flex flex-col items-center self-stretch">
-                      <span className={`mt-1 h-2.5 w-2.5 rounded-full border ${isActive ? 'bg-white border-white shadow-[0_0_10px_rgba(255,255,255,0.35)]' : 'bg-white/12 border-white/20'}`} />
+                      <span className={`mt-1 h-2.5 w-2.5 rounded-full border ${isActive ? 'bg-[#c3eee3] border-[#c3eee3] shadow-[0_0_10px_rgba(157,218,203,0.4)]' : 'bg-[#9ddacb]/12 border-[#9ddacb]/25'}`} />
                       <span className="mt-1 flex-1 w-px bg-white/[0.08]" />
                     </div>
                     {isLyric && (
                       <motion.span
                         animate={{ y: [0, -2, 0], scale: [1, 1.05, 1] }}
                         transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-                        className="inline-flex select-none text-[#e5e7eb]"
+                        className="inline-flex select-none text-[#9ddacb]"
                       >
                         <Music2 className="w-3 h-3" />
                       </motion.span>
@@ -173,7 +173,7 @@ export const SequenceList: React.FC = () => {
                               setEditingIndex(null);
                             }
                           }}
-                          className="bg-white/[0.02] border border-white/[0.08] text-sm font-medium leading-relaxed text-neutral-100 rounded-lg px-3 py-1.5 w-full outline-none focus:border-[#9ca3af]/50 focus:bg-white/[0.04] transition-all"
+                          className="bg-white/[0.02] border border-white/[0.08] text-sm font-medium leading-relaxed text-neutral-100 rounded-lg px-3 py-1.5 w-full outline-none focus:border-[#9ddacb]/55 focus:bg-[#9ddacb]/[0.04] transition-all"
                           placeholder="中文字幕文本"
                           autoFocus
                         />
@@ -190,14 +190,14 @@ export const SequenceList: React.FC = () => {
                                 setEditingIndex(null);
                               }
                             }}
-                            className="bg-white/[0.015] border border-white/[0.06] text-xs font-normal leading-relaxed text-[#e5e7eb]/90 rounded-lg px-3 py-1.5 w-full outline-none focus:border-[#9ca3af]/50 focus:bg-white/[0.035] transition-all"
+                            className="bg-white/[0.015] border border-white/[0.06] text-xs font-normal leading-relaxed text-[#e5e7eb]/90 rounded-lg px-3 py-1.5 w-full outline-none focus:border-[#9ddacb]/55 focus:bg-[#9ddacb]/[0.035] transition-all"
                             placeholder="英文字幕文本"
                           />
                         )}
                         <div className="flex justify-end gap-2 mt-1">
                           <button
                             type="button"
-                            className="px-3 py-1 bg-[#9ca3af]/15 hover:bg-[#9ca3af]/25 text-[#ffffff] border border-[#9ca3af]/25 rounded-lg text-xs font-bold transition cursor-pointer"
+                            className="px-3 py-1 bg-[#9ddacb]/15 hover:bg-[#9ddacb]/25 text-[#d9f5ef] border border-[#9ddacb]/30 rounded-lg text-xs font-bold transition cursor-pointer"
                             onClick={(e) => { e.stopPropagation(); setEditingIndex(null); }}
                           >
                             保存

@@ -38,9 +38,9 @@ const buildAreaPath = (linePath: string, width: number, height: number) => {
 };
 
 const FindingIcon = ({ severity }: { severity: SourceMatchFinding['severity'] }) => {
-  if (severity === 'ok') return <CheckCircle2 className="h-4 w-4 text-[#a8b7a3]" />;
+  if (severity === 'ok') return <CheckCircle2 className="h-4 w-4 text-[#9ddacb]" />;
   if (severity === 'severe') return <XCircle className="h-4 w-4 text-[#b98982]" />;
-  return <AlertTriangle className={`h-4 w-4 ${severity === 'warning' ? 'text-[#c0a89a]' : 'text-[#a8b7a3]'}`} />;
+  return <AlertTriangle className={`h-4 w-4 ${severity === 'warning' ? 'text-[#c0a89a]' : 'text-[#9ddacb]'}`} />;
 };
 
 const formatCount = (value: number) => new Intl.NumberFormat('zh-CN').format(value);
@@ -99,7 +99,7 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] text-neutral-100">
-                <Activity className="h-4 w-4 text-[#a8b7a3]" />
+                <Activity className="h-4 w-4 text-[#9ddacb]" />
                 {isMatchMode ? '片源匹配' : '字幕概览'}
               </div>
               <p className="mt-1 max-w-[28ch] text-[13px] leading-5 text-neutral-400">
@@ -109,7 +109,7 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-white/[0.09] bg-white/[0.035] px-3.5 py-2.5 text-[13px] font-medium text-neutral-200 transition hover:border-white/[0.16] hover:bg-white/[0.07] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a8b7a3]/70 active:translate-y-px cursor-pointer"
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[#9ddacb]/20 bg-[#9ddacb]/[0.045] px-3.5 py-2.5 text-[13px] font-medium text-[#d5f2ec] transition hover:border-[#9ddacb]/38 hover:bg-[#9ddacb]/[0.09] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9ddacb]/70 active:translate-y-px cursor-pointer"
             >
               <Upload className="h-3.5 w-3.5" />
               {isMatchMode ? '更换片源' : '加入片源'}
@@ -163,7 +163,7 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                     每分钟字幕行数，用于观察字幕分布是否异常。声音说明、歌词和画面文字也会影响这个指标。
                   </InfoHint>
                 </dt>
-                <dd className="mt-1.5 text-[18px] leading-none font-semibold tracking-[-0.02em] text-[#a8b7a3]">{report.stats.densityPerMinute}</dd>
+                <dd className="mt-1.5 text-[18px] leading-none font-semibold tracking-[-0.02em] text-[#9ddacb]">{report.stats.densityPerMinute}</dd>
               </div>
             </dl>
           )}
@@ -203,8 +203,8 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                   <stop offset="100%" stopColor="#f5f5f4" stopOpacity="0.01" />
                 </linearGradient>
                 <linearGradient id="subtitleArea" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#a8b7a3" stopOpacity="0.22" />
-                  <stop offset="100%" stopColor="#a8b7a3" stopOpacity="0.015" />
+                  <stop offset="0%" stopColor="#9ddacb" stopOpacity="0.24" />
+                  <stop offset="100%" stopColor="#9ddacb" stopOpacity="0.015" />
                 </linearGradient>
               </defs>
               {Array.from({ length: 7 }).map((_, index) => (
@@ -214,7 +214,7 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                   x2={(chartWidth / 6) * index}
                   y1="12"
                   y2={chartHeight - 8}
-                  stroke="rgba(255,255,255,0.045)"
+                  stroke="rgba(157,218,203,0.06)"
                   strokeWidth="1"
                 />
               ))}
@@ -224,7 +224,7 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                 <motion.path
                   d={sourcePath}
                   fill="none"
-                  stroke="rgba(245,245,244,0.68)"
+                  stroke="rgba(195,238,227,0.48)"
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   initial={{ pathLength: 0, opacity: 0 }}
@@ -235,7 +235,7 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
               <motion.path
                 d={subtitlePath}
                 fill="none"
-                stroke="#a8b7a3"
+                stroke="#9ddacb"
                 strokeWidth="2"
                 strokeLinecap="round"
                 initial={{ pathLength: 0, opacity: 0 }}
@@ -254,7 +254,7 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
             </div>
             <div className="relative h-2 rounded-full bg-white/[0.06] overflow-hidden">
               <motion.div
-                className="absolute top-0 bottom-0 rounded-full bg-[#a8b7a3]/70"
+                className="absolute top-0 bottom-0 rounded-full bg-[#9ddacb]/75"
                 initial={{ left: `${coverageStart * 100}%`, right: `${100 - coverageStart * 100}%` }}
                 animate={{ left: `${coverageStart * 100}%`, right: `${100 - coverageEnd * 100}%` }}
                 transition={{ duration: 0.6, ease: 'easeOut' }}

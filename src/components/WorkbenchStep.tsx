@@ -39,7 +39,7 @@ export const WorkbenchStep: React.FC = () => {
             <motion.button 
               whileHover={{ scale: 1.03, y: -0.5 }}
               whileTap={{ scale: 0.97 }}
-              className="p-2 glass-btn-ar rounded-lg flex items-center justify-center cursor-pointer text-neutral-400 hover:text-neutral-200"
+              className="p-2 glass-btn-ar rounded-lg flex items-center justify-center cursor-pointer text-[#9ddacb] hover:text-[#c3eee3]"
               onClick={handleBack}
               title="返回上传配对页面"
             >
@@ -98,7 +98,7 @@ export const WorkbenchStep: React.FC = () => {
             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
             title="样式配置选项"
           >
-            <Sliders className="w-3.5 h-3.5" />
+            <Sliders className="w-3.5 h-3.5 text-[#9ddacb]" />
             样式参数
           </motion.button>
 
@@ -112,7 +112,7 @@ export const WorkbenchStep: React.FC = () => {
             className="group py-2.5 px-5 rounded-xl bg-white text-black text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer border border-white/20 hover:bg-neutral-200 hover:scale-[1.01] shadow-[0_10px_26px_rgba(255,255,255,0.08)]"
             onClick={() => setWorkflowStep(3)}
           >
-            <Eye className="w-3.5 h-3.5 text-black/80" />
+            <Eye className="w-3.5 h-3.5 text-[#267c6e]" />
             下一步：放映厅预览
           </motion.button>
         </div>
