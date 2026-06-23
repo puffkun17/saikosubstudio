@@ -1111,7 +1111,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           activePreset: 'ass_native',
           customStyle: { ...get().customStyle, ...minedStyle } 
         });
-        get().addLog('✅ 已自动应用文件内嵌 ASS 样式', 'success');
+        get().addLog('已自动应用文件内嵌 ASS 样式', 'success');
       } else {
         set({ foundAssStyle: null, showAssHint: false });
       }

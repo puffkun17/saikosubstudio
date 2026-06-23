@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { MessageSquareText } from 'lucide-react';
 import { useStudioStore } from '@/store/useStudioStore';
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
@@ -155,6 +157,14 @@ export const SystemTray = () => {
 
       {/* ── Right: scale selector & clock ─────────────────────────────── */}
       <div className="flex items-center gap-3 shrink-0">
+        <Link
+          href="/feedback"
+          className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.018] px-3 text-sm font-medium text-white/62 transition-colors hover:border-[#b9ddd8]/35 hover:bg-[#b9ddd8]/[0.07] hover:text-white"
+          title="提交反馈"
+        >
+          <MessageSquareText className="h-5 w-5 stroke-[2.25] text-[#b9ddd8]" aria-hidden="true" />
+          <span className="hidden sm:inline">反馈</span>
+        </Link>
         <button
           onClick={cycleScale}
           className="px-4 py-2 rounded-xl glass-btn-ar text-sm font-mono text-neutral-300 hover:text-neutral-100 cursor-pointer select-none flex items-center gap-2"

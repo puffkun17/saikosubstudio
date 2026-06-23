@@ -1,0 +1,10 @@
+name = "soft-butterfly-d875"
+main = "worker.mjs"
+compatibility_date = "2026-06-23"
+workers_dev = false
+
+[[send_email]]
+name = "FEEDBACK_EMAIL"
+
+# Configure FEEDBACK_RECIPIENT and FEEDBACK_SENDER only as dashboard Secrets.
+# Never add their values to this file or commit them to the repository.

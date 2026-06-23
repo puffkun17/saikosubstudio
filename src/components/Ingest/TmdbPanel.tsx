@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useStudioStore, type TmdbSuggestion } from '@/store/useStudioStore';
-import { Search, SearchAlert, Film, Star, X, CheckCircle2, CircleAlert } from 'lucide-react';
+import { Search, SearchAlert, Film, Star, Sparkles, X, CheckCircle2, CircleAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const getRottenTomatoesScore = (title: string, voteAverage: number) => {
@@ -173,14 +173,14 @@ export const TmdbPanel: React.FC = () => {
                 {tmdbData.isAnime && (
                   <div className="mt-1 px-2.5 py-0.5 bg-[#9ca3af]/10 text-[#e5e7eb] border border-[#9ca3af]/20 rounded-md text-xs font-semibold w-max flex items-center gap-1.5 select-none">
                     <motion.span
-                      animate={{ rotate: 360, y: [0, -1.5, 0] }}
+                      animate={{ scale: [1, 1.12, 1], y: [0, -1.5, 0] }}
                       transition={{
-                        rotate: { duration: 6, repeat: Infinity, ease: "linear" },
+                        scale: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
                         y: { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
                       }}
-                      className="inline-block"
+                      className="inline-flex"
                     >
-                      ✨
+                      <Sparkles className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />
                     </motion.span>
                     动漫预设模板已激活
                   </div>
@@ -361,8 +361,9 @@ export const TmdbPanel: React.FC = () => {
                                   {mediaType}
                                 </span>
                                 {(s.vote_average ?? 0) > 0 && (
-                                  <span className="text-xs text-[#e5e7eb] font-mono flex items-center gap-0.5">
-                                    ★ {(s.vote_average ?? 0).toFixed(1)}
+                                  <span className="text-xs text-[#e5e7eb] font-mono flex items-center gap-1">
+                                    <Star className="h-3.5 w-3.5 fill-current stroke-[2]" aria-hidden="true" />
+                                    {(s.vote_average ?? 0).toFixed(1)}
                                   </span>
                                 )}
                               </div>
