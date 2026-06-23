@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
-import { Film, RefreshCw } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Captions, ChevronLeft, ChevronRight, Film, Ratio } from 'lucide-react';
 import type { StyleSettings } from '@/utils/subtitleCore';
 
 type Preset = {
@@ -14,175 +13,126 @@ type Preset = {
 };
 
 const PRESETS: Preset[] = [
-  {
-    id: 'netflix',
-    name: 'Netflix',
-    desc: '轻阴影',
-    styles: { zhFontSize: 22, enFontSize: 13, zhColor: '#FFFFFF', enColor: '#FFFFFF', zhOutline: '#000000', marginV: 25 }
-  },
-  {
-    id: 'classic',
-    name: '大银幕',
-    desc: '黄白配',
-    styles: { zhFontSize: 20, enFontSize: 12, zhColor: '#FFFFFF', enColor: '#B0B0B0', zhOutline: '#4B5563', marginV: 20 }
-  },
-  {
-    id: 'anime',
-    name: '动漫',
-    desc: '深描边',
-    styles: { zhFontSize: 24, enFontSize: 14, zhColor: '#FFFFFF', enColor: '#FFFFFF', zhOutline: '#6D4438', marginV: 30 }
-  }
+  { id: 'netflix', name: 'Netflix', desc: '轻阴影', styles: { zhFontSize: 22, enFontSize: 13, zhColor: '#FFFFFF', enColor: '#FFFFFF', zhOutline: '#000000', marginV: 25 } },
+  { id: 'classic', name: '大银幕', desc: '黄白配', styles: { zhFontSize: 20, enFontSize: 12, zhColor: '#FFFFFF', enColor: '#B0B0B0', zhOutline: '#4B5563', marginV: 20 } },
+  { id: 'anime', name: '动漫', desc: '深描边', styles: { zhFontSize: 24, enFontSize: 14, zhColor: '#FFFFFF', enColor: '#FFFFFF', zhOutline: '#6D4438', marginV: 30 } },
 ];
 
-const SCENES = [
-  { id: "cinema", name: "影院", desc: "经典电影院" },
-  { id: "nature", name: "自然", desc: "户外光影" },
-  { id: "night", name: "夜景", desc: "低光环境" }
+const ASPECT_RATIOS = [
+  { id: '4:3', label: '4:3', description: '标准画幅' },
+  { id: '16:9', label: '16:9', description: '宽屏' },
+  { id: '2.39:1', label: '2.39:1', description: '宽银幕' },
+  { id: '1.9:1', label: 'IMAX', description: '沉浸画幅' },
 ];
 
+const cycleIndex = (current: number, direction: -1 | 1, total: number) => (current + direction + total) % total;
+
+interface DialControlProps {
+  label: string;
+  value: string;
+  description: string;
+  icon: React.ReactNode;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  disabled?: boolean;
+}
+
+const DialControl = ({ label, value, description, icon, onPrevious, onNext, disabled = false }: DialControlProps) => (
+  <section className="flex min-w-[196px] items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.018] px-3 py-2.5">
+    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-white/[0.07] bg-black/20 text-[#b9ddd8]">
+      {icon}
+    </div>
+    <div className="min-w-0 flex-1">
+      <p className="text-xs font-medium text-white/42">{label}</p>
+      <p className="truncate text-sm font-semibold text-white/88" title={description}>{value}</p>
+    </div>
+    {(onPrevious || onNext) && (
+      <div className="flex shrink-0 overflow-hidden rounded-lg border border-white/[0.08] bg-black/20">
+        <button
+          type="button"
+          onClick={onPrevious}
+          disabled={disabled}
+          className="grid h-8 w-8 place-items-center text-white/58 transition-colors hover:bg-white/[0.07] hover:text-white disabled:cursor-default disabled:opacity-35"
+          aria-label={`上一项：${label}`}
+        >
+          <ChevronLeft className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={disabled}
+          className="grid h-8 w-8 place-items-center border-l border-white/[0.08] text-white/58 transition-colors hover:bg-white/[0.07] hover:text-white disabled:cursor-default disabled:opacity-35"
+          aria-label={`下一项：${label}`}
+        >
+          <ChevronRight className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />
+        </button>
+      </div>
+    )}
+  </section>
+);
 
 export const ControlDeck: React.FC = () => {
-  const { 
-    theaterAspect, 
-    setTheaterAspect, 
-    sceneBackground, 
-    setSceneBackground,
-    activePreset, 
-    setActivePreset, 
-    customStyle, 
+  const {
+    theaterAspect,
+    setTheaterAspect,
+    activePreset,
+    setActivePreset,
+    customStyle,
     setCustomStyle,
     tmdbBackdrop,
     tmdbBackdropList,
-    shuffleBackdrop
+    shuffleBackdrop,
   } = useStudioStore();
 
-  const handleApplyPreset = (preset: Preset) => {
+  const aspectIndex = Math.max(0, ASPECT_RATIOS.findIndex((item) => item.id === theaterAspect));
+  const activeAspect = ASPECT_RATIOS[aspectIndex];
+  const presetIndex = Math.max(0, PRESETS.findIndex((item) => item.id === activePreset));
+  const activeStylePreset = PRESETS[presetIndex];
+
+  const selectAspect = (direction: -1 | 1) => {
+    setTheaterAspect(ASPECT_RATIOS[cycleIndex(aspectIndex, direction, ASPECT_RATIOS.length)].id);
+  };
+
+  const applyPreset = (preset: Preset) => {
     setActivePreset(preset.id);
     const updated = { ...customStyle, ...preset.styles };
     setCustomStyle(updated);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('nexus_subtitle_styles_v4', JSON.stringify({
-        preset: preset.id,
-        style: updated,
-        templates: []
-      }));
+      localStorage.setItem('nexus_subtitle_styles_v4', JSON.stringify({ preset: preset.id, style: updated, templates: [] }));
     }
   };
 
-  const aspectRatios = [
-    { id: '4:3', label: '4:3', desc: 'TV' },
-    { id: '16:9', label: '16:9', desc: 'HD' },
-    { id: '2.39:1', label: '2.39:1', desc: 'Wide' },
-    { id: '1.9:1', label: 'IMAX', desc: 'IMAX' }
-  ];
+  const selectPreset = (direction: -1 | 1) => {
+    applyPreset(PRESETS[cycleIndex(presetIndex, direction, PRESETS.length)]);
+  };
 
   return (
-    <div className="flex flex-row flex-wrap items-center gap-2.5 2xl:gap-5 justify-start xl:justify-end w-full py-1">
-      {/* Aspect Ratio Cards */}
-      <div className="flex items-center gap-2">
-        <span className="hidden xl:inline text-sm text-neutral-400 font-medium whitespace-nowrap">画幅比例</span>
-        <div className="flex items-center gap-1.5">
-          {aspectRatios.map(ar => {
-            const isActive = theaterAspect === ar.id;
-            let boxW = 18;
-            let boxH = 10;
-            if (ar.id === '4:3') { boxW = 14; boxH = 10; }
-            else if (ar.id === '16:9') { boxW = 18; boxH = 10; }
-            else if (ar.id === '2.39:1') { boxW = 24; boxH = 9; }
-            else if (ar.id === '1.9:1') { boxW = 20; boxH = 10; }
-
-            return (
-              <button
-                key={ar.id}
-                type="button"
-                className={`py-2 px-3 2xl:py-2.5 2xl:px-4 flex items-center gap-1.5 text-sm font-medium cursor-pointer transition-all duration-205 rounded-xl border
-                  ${isActive 
-                    ? 'glass-btn-ar-active' 
-                    : 'glass-btn-ar text-neutral-400 hover:text-neutral-250 border-white/[0.04]'}`}
-                onClick={() => setTheaterAspect(ar.id)}
-              >
-                <div 
-                   className="border border-current rounded-sm opacity-60 flex-shrink-0" 
-                   style={{ width: `${boxW}px`, height: `${boxH}px` }}
-                />
-                <span>{ar.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="hidden 2xl:block w-[1px] h-6 bg-white/[0.06]" />
-
-      {/* Background Cards */}
-      <div className="flex items-center gap-2">
-        <span className="hidden xl:inline text-sm text-neutral-400 font-medium whitespace-nowrap">模拟场景</span>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {SCENES.map(scene => {
-            const isActive = sceneBackground === scene.id;
-            const isCinemaWithBackdrop = scene.id === 'cinema' && Boolean(tmdbBackdrop);
-
-            return (
-              <button
-                key={scene.id}
-                type="button"
-                className={`py-2 px-3 2xl:py-2.5 2xl:px-4 flex items-center gap-1.5 text-sm font-medium cursor-pointer transition-all duration-205 rounded-xl border
-                  ${isActive
-                    ? 'glass-btn-ar-active'
-                    : 'glass-btn-ar text-neutral-400 hover:text-neutral-250 border-white/[0.04]'}`}
-                onClick={() => setSceneBackground(scene.id)}
-                title={scene.desc}
-              >
-                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-[#e5e7eb] shadow-[0_0_8px_rgba(156,163,175,0.65)]' : 'bg-white/20'}`} />
-                {scene.id === 'cinema' && <Film className="w-4 h-4 text-[#e5e7eb]" />}
-                <span>{isCinemaWithBackdrop ? '剧照' : scene.name}</span>
-              </button>
-            );
-          })}
-          {tmdbBackdrop && tmdbBackdropList.length > 1 && (
-            <motion.button
-              whileHover={{ scale: 1.02, y: -0.5 }}
-              whileTap={{ scale: 0.98 }}
-              type="button"
-              className="py-2 px-3 2xl:py-2.5 2xl:px-4 flex items-center gap-1.5 text-sm font-medium cursor-pointer text-[#e5e7eb] hover:text-[#ffffff] border border-[#9ca3af]/20 bg-[#9ca3af]/5 hover:bg-[#9ca3af]/10 rounded-xl transition-all duration-205 ml-1 flex-shrink-0"
-              onClick={shuffleBackdrop}
-              title="更换背景图"
-            >
-              <RefreshCw className="w-3 h-3 text-[#e5e7eb] animate-hover-spin" />
-              <span>换张剧照</span>
-            </motion.button>
-          )}
-        </div>
-      </div>
-
-      <div className="hidden 2xl:block w-[1px] h-6 bg-white/[0.06]" />
-
-      {/* Preset Pills */}
-      <div className="flex items-center gap-2">
-        <span className="hidden xl:inline text-sm text-neutral-400 font-medium whitespace-nowrap">字幕预设</span>
-        <div className="flex items-center gap-1.5">
-          {PRESETS.map(p => {
-            const isActive = activePreset === p.id;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                className={`py-2 px-3 2xl:py-2.5 2xl:px-4 flex items-center gap-1.5 text-sm font-medium cursor-pointer transition-all duration-205 rounded-xl border
-                  ${isActive 
-                    ? 'glass-btn-ar-active' 
-                    : 'glass-btn-ar text-neutral-400 hover:text-neutral-250 border-white/[0.04]'}`}
-                onClick={() => handleApplyPreset(p)}
-              >
-                <div 
-                   className="w-2 h-2 rounded-full border border-black/30 flex-shrink-0 shadow-[0_0_4px_rgba(255,255,255,0.15)]" 
-                   style={{ backgroundColor: p.styles.zhColor }} 
-                />
-                <span>{p.name}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+    <div className="grid w-full gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      <DialControl
+        label="画幅比例"
+        value={activeAspect.label}
+        description={activeAspect.description}
+        icon={<Ratio className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />}
+        onPrevious={() => selectAspect(-1)}
+        onNext={() => selectAspect(1)}
+      />
+      <DialControl
+        label="预览画面"
+        value={tmdbBackdrop ? '片源剧照' : '影院默认画面'}
+        description={tmdbBackdrop ? '已关联片源剧照' : '默认影院画面'}
+        icon={<Film className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />}
+        onPrevious={tmdbBackdropList.length > 1 ? shuffleBackdrop : undefined}
+        onNext={tmdbBackdropList.length > 1 ? shuffleBackdrop : undefined}
+        disabled={tmdbBackdropList.length <= 1}
+      />
+      <DialControl
+        label="字幕预设"
+        value={activeStylePreset.name}
+        description={activeStylePreset.desc}
+        icon={<Captions className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />}
+        onPrevious={() => selectPreset(-1)}
+        onNext={() => selectPreset(1)}
+      />
     </div>
   );
 };

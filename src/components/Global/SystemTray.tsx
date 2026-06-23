@@ -182,10 +182,10 @@ export const SystemTray = () => {
         <Link
           href="/about"
           className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.018] px-3 text-sm font-medium text-white/62 transition-colors hover:border-[#b9ddd8]/35 hover:bg-[#b9ddd8]/[0.07] hover:text-white"
-          title="关于与隐私"
+          title="隐私与版权"
         >
           <ShieldCheck className="h-5 w-5 stroke-[2.25] text-[#b9ddd8]" aria-hidden="true" />
-          <span className="hidden lg:inline">关于与隐私</span>
+          <span className="hidden lg:inline">隐私与版权</span>
         </Link>
         <Link
           href="/feedback"
@@ -197,14 +197,14 @@ export const SystemTray = () => {
         </Link>
         <button
           onClick={cycleScale}
-          className="px-4 py-2 rounded-xl glass-btn-ar text-sm font-mono text-neutral-300 hover:text-neutral-100 cursor-pointer select-none flex items-center gap-2"
+          className="hidden lg:flex px-4 py-2 rounded-xl glass-btn-ar text-sm font-mono text-neutral-300 hover:text-neutral-100 cursor-pointer select-none items-center gap-2"
           title="调节网页整体缩放"
         >
           <span className="text-[13px] opacity-75 font-bold tracking-wide">A±</span>
           <span className="font-bold text-[#e5e7eb]" suppressHydrationWarning>{Math.round(scale * 100)}%</span>
         </button>
         <span
-          className="text-sm font-mono text-white/60 tabular-nums"
+          className="status-clock text-sm text-white/70 tabular-nums"
           aria-label="Current time"
         >
           {time}

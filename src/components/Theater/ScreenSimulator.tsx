@@ -23,7 +23,6 @@ interface ScreenSimulatorProps {
   previewIndex: number;
   theaterAspect: string;
   guides: { show: boolean; temp: boolean };
-  triggerTempGuides: () => void;
 }
 
 export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
@@ -33,7 +32,6 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
   previewIndex,
   theaterAspect,
   guides,
-  triggerTempGuides
 }) => {
   const activeSub = subtitle.status === 'ready' && subtitle.data ? subtitle.data[previewIndex] : null;
   
@@ -227,11 +225,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
   const isMagnetic = targetCqh > 0 && Math.abs(paddingBottomCqh - targetCqh) < 1.0;
 
   return (
-    <div 
-      className="flex-1 flex justify-center items-center bg-[#050507] w-full h-full overflow-hidden p-4 md:p-8 relative"
-      onMouseEnter={triggerTempGuides}
-      onMouseMove={triggerTempGuides}
-    >
+    <div className="relative flex h-full w-full flex-1 items-center justify-center overflow-hidden bg-[#050507] p-4 md:p-8">
       {/* 空间极光氛围呼吸光晕（家庭观影环境氛围） */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 select-none">
         <div className="absolute top-[20%] left-[20%] w-[55%] h-[55%] rounded-full bg-aurora-glow-purple" />
@@ -338,20 +332,24 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
             </div>
           )}
 
-          {/* Alignment Guide Lines */}
+          {/* Alignment guides stay explicit when enabled; temporary guides are used only while adjusting a related value. */}
           <div 
-            className="absolute left-0 right-0 z-40 transition-all duration-300 pointer-events-none flex items-center"
+            className="pointer-events-none absolute left-0 right-0 z-50 flex items-center border-b transition-all duration-300"
             style={{
               bottom: `${paddingBottomCqh}cqh`,
               opacity: (guides.show || guides.temp) ? 1 : 0,
-              borderBottom: `1px dashed ${isMagnetic ? '#9ca3af' : 'rgba(255,255,255,0.24)'}`,
-              boxShadow: isMagnetic ? '0 0 10px #10b981, 0 0 4px #10b981' : 'none',
-              transform: 'scaleY(0.5)',
-              transformOrigin: 'bottom'
+              borderColor: isMagnetic ? '#b9ddd8' : 'rgba(185,221,216,0.72)',
+              borderStyle: isMagnetic ? 'solid' : 'dashed',
+              boxShadow: isMagnetic ? '0 0 14px rgba(185,221,216,0.72)' : '0 0 10px rgba(185,221,216,0.28)',
             }}
           >
+            <span className="absolute left-3 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.08em] text-[#c9ebe5]">
+              字幕基线
+            </span>
+            <span className="absolute -left-px -top-1 h-2 w-px bg-[#c9ebe5]" />
+            <span className="absolute -right-px -top-1 h-2 w-px bg-[#c9ebe5]" />
             {isMagnetic && (
-               <div className="absolute right-4 -top-4 text-xs text-[#10b981]/90 font-medium bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-md shadow-[0_0_8px_rgba(16,185,129,0.35)] scale-y-200">
+               <div className="absolute right-4 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-[10px] font-semibold text-[#c9ebe5]">
                  已贴合参考线
                </div>
             )}
@@ -360,15 +358,14 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
           {/* Target Black Bar Center Line */}
           {targetCqh > 0 && (
             <div 
-              className="absolute left-0 right-0 z-30 transition-all duration-300 pointer-events-none"
-              style={{
-                bottom: `${targetCqh}cqh`,
-                opacity: (guides.show || guides.temp) && !isMagnetic ? 1 : 0,
-                borderBottom: '1px solid rgba(255,255,255,0.08)',
-                transform: 'scaleY(0.5)',
-                transformOrigin: 'bottom'
-              }}
-            />
+            className="pointer-events-none absolute left-0 right-0 z-40 border-b border-dashed border-white/35 transition-all duration-300"
+            style={{
+              bottom: `${targetCqh}cqh`,
+              opacity: (guides.show || guides.temp) && !isMagnetic ? 1 : 0,
+            }}
+          >
+            <span className="absolute right-3 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-[10px] font-medium text-white/58">画幅参考线</span>
+          </div>
           )}
         </div>
       </div>

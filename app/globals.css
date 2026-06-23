@@ -101,6 +101,14 @@ body {
   letter-spacing: 0.01em;
 }
 
+.status-clock {
+  font-family: "SFMono-Regular", "Cascadia Mono", "Roboto Mono", "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 12px rgba(185, 221, 216, 0.12);
+}
+
 /* Global button push feedback */
 button:active {
   transform: scale(0.97);

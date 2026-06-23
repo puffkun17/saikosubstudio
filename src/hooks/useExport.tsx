@@ -87,7 +87,7 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-1.5 glass-panel-ar rounded-xl overflow-hidden shadow-2xl z-50 min-w-[140px] animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute top-full right-0 z-[110] mt-1.5 min-w-[140px] overflow-hidden rounded-xl glass-panel-ar shadow-2xl animate-in fade-in slide-in-from-top-1 duration-150">
           <button
             className="w-full py-3 px-4 text-xs font-semibold hover:bg-white/5 text-left border-b border-white/[0.06] transition text-white/80 hover:text-white flex items-center gap-2 cursor-pointer"
             onClick={() => { handleDownload('ass'); setOpen(false); }}

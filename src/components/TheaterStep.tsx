@@ -28,7 +28,6 @@ export const TheaterStep: React.FC = () => {
     theaterAspect,
     showGuides,
     tempShowGuides,
-    triggerTempGuides,
   } = useStudioStore();
 
   const safePreviewIndex = processedSubs && processedSubs.length > 0
@@ -43,9 +42,9 @@ export const TheaterStep: React.FC = () => {
     }
   };
 
-  // 确保默认场景
+  // 放映厅只保留片源剧照 / 默认影院画面，旧场景配置统一回退到影院模式。
   useEffect(() => {
-    if (!sceneBackground || sceneBackground === 'solid') {
+    if (sceneBackground !== 'cinema') {
       setSceneBackground('cinema');
     }
   }, [sceneBackground, setSceneBackground]);
@@ -56,21 +55,20 @@ export const TheaterStep: React.FC = () => {
     : { status: 'idle' };
 
   let backdropSlot: BackdropSlot;
-  if (sceneBackground === 'cinema' && tmdbBackdrop) {
+  if (tmdbBackdrop) {
     backdropSlot = { type: 'tmdb', backdropUrl: tmdbBackdrop };
-  } else if (sceneBackground === 'cinema' || sceneBackground === 'nature' || sceneBackground === 'night') {
-    backdropSlot = { type: 'preset', name: sceneBackground };
   } else {
-    backdropSlot = { type: 'solid', color: '#0c0c10' };
+    backdropSlot = { type: 'preset', name: sceneBackground };
   }
 
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden relative bg-[#050507]">
       
       {/* 顶部导航栏 */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center px-5 md:px-8 py-4 min-h-[68px] bg-[#020203]/72 backdrop-blur-md border-b border-white/[0.07] z-50 flex-shrink-0 gap-3">
-        <div className="flex items-center gap-4">
-          <motion.button 
+      <div className="relative z-[70] flex flex-col gap-3 border-b border-white/[0.07] bg-[#020203]/72 px-5 py-4 backdrop-blur-md md:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-4">
+            <motion.button
             whileHover={{ scale: 1.03, y: -0.5 }}
             whileTap={{ scale: 0.97 }}
             className="p-2 glass-btn-ar rounded-lg flex items-center justify-center cursor-pointer text-neutral-400 hover:text-neutral-200"
@@ -79,28 +77,25 @@ export const TheaterStep: React.FC = () => {
             <ChevronLeft className="w-4 h-4" />
           </motion.button>
           
-          <div>
-            <h2 className="text-xl font-semibold text-neutral-100 tracking-tight">放映厅预览</h2>
-            <p className="text-sm text-[#e5e7eb] mt-0.5">
-              {theaterAspect} · {sceneBackground === 'cinema' ? '影院' : sceneBackground === 'nature' ? '自然光' : sceneBackground === 'night' ? '暗夜' : sceneBackground}
-            </p>
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight text-neutral-100">放映厅预览</h2>
+              <p className="mt-0.5 text-sm text-[#e5e7eb]">{theaterAspect} · {tmdbBackdrop ? '片源剧照' : '影院默认画面'}</p>
+            </div>
+          </div>
+
+          <div className="relative z-[90] flex items-center gap-2">
+            <button
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+              className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-all cursor-pointer
+                ${isSettingsOpen ? 'glass-btn-ar-active' : 'glass-btn-ar text-neutral-350 hover:text-white'}`}
+            >
+              <SlidersHorizontal className="h-4 w-4 stroke-[2.25]" />
+              样式
+            </button>
+            <ExportDropdown variant="ghost" />
           </div>
         </div>
-
-        <div className="flex items-center justify-start xl:justify-end gap-2.5 flex-wrap w-full xl:w-auto">
-          <ControlDeck />
-          
-          <button 
-            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-            className={`py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer
-              ${isSettingsOpen ? 'glass-btn-ar-active' : 'glass-btn-ar text-neutral-350 hover:text-white'}`}
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            样式
-          </button>
-
-          <ExportDropdown variant="ghost" />
-        </div>
+        <ControlDeck />
       </div>
 
       {/* 主体内容 */}
@@ -119,7 +114,6 @@ export const TheaterStep: React.FC = () => {
                 previewIndex={safePreviewIndex}
                 theaterAspect={theaterAspect}
                 guides={{ show: showGuides, temp: tempShowGuides }}
-                triggerTempGuides={triggerTempGuides}
               />
             </SimulatorBoundary>
           </div>
@@ -133,7 +127,7 @@ export const TheaterStep: React.FC = () => {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: 360, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="absolute right-4 md:right-6 top-4 md:top-6 bottom-4 md:bottom-6 w-[min(380px,calc(100vw-2rem))] z-50 glass-panel-ar rounded-2xl overflow-hidden flex flex-col"
+              className="absolute right-4 top-4 bottom-4 z-40 flex w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl glass-panel-ar md:right-6 md:top-6 md:bottom-6"
             >
               <StyleSidebar />
             </motion.div>

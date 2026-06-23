@@ -23,7 +23,7 @@ export const IngestStep: React.FC = () => {
       <div className="flex items-center gap-2 mb-3 select-none z-20 flex-shrink-0">
         <span className="w-1.5 h-1.5 rounded-full bg-[#9ca3af]/85" />
         <span className="text-sm font-medium text-[#e5e7eb]/86">
-          字幕导入 · 轨道整理 · 片源匹配
+          本地处理 · 片源关联
         </span>
       </div>
 
@@ -36,7 +36,7 @@ export const IngestStep: React.FC = () => {
             </span>
           </h1>
           <p className="text-base text-neutral-300 max-w-2xl">
-            导入字幕包，整理轨道、样式与片源信息。
+            导入、整理并输出适配片源的双语字幕。
           </p>
         </div>
         

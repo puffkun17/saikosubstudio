@@ -631,9 +631,12 @@ export const DragZone: React.FC = () => {
       >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[url('/Background.jpg')] bg-cover bg-center opacity-[0.28] contrast-125 grayscale"
+          className="pointer-events-none absolute inset-0 bg-[url('/Background.jpg')] bg-cover bg-[position:72%_50%] opacity-[0.52] contrast-110 grayscale"
         />
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-black/68" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(3,3,4,0.16)_0%,rgba(3,3,4,0.38)_20%,rgba(3,3,4,0.92)_39%,rgba(3,3,4,0.94)_61%,rgba(3,3,4,0.38)_80%,rgba(3,3,4,0.16)_100%)]"
+        />
         <div className="absolute inset-0 bg-[linear-gradient(120deg,transparent_0%,rgba(255,255,255,0.025)_48%,transparent_58%)] opacity-50 pointer-events-none" />
         <div className="absolute inset-x-10 top-7 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         <div className="absolute inset-x-10 bottom-7 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent" />

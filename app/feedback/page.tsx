@@ -73,8 +73,8 @@ export default function FeedbackPage() {
           </div>
           <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white md:text-3xl">提交反馈</h1>
           <p className="mt-1 text-sm font-medium tracking-[0.04em] text-white/46">Send feedback</p>
-          <p className="mt-4 text-sm leading-7 text-white/62 md:text-base">你的意见会直接送达开发者。这里仅提交你主动填写的文字内容。</p>
-          <p className="mt-1 text-sm leading-6 text-white/38">Your message is delivered directly to the developer. Only the text you enter is submitted.</p>
+          <p className="mt-4 text-sm leading-7 text-white/62 md:text-base">反馈内容会直接送达开发者。本页面仅提交表单中主动填写的文字。</p>
+          <p className="mt-1 text-sm leading-6 text-white/38">Submitted text is delivered directly to the developer. Only form content is transmitted.</p>
         </header>
 
         <form onSubmit={submitFeedback} className="mt-10 space-y-8">
@@ -107,7 +107,7 @@ export default function FeedbackPage() {
           </fieldset>
 
           <div>
-            <label htmlFor="feedback-message" className="text-base font-semibold text-white">想告诉我们什么？ <span className="ml-2 text-sm font-medium text-white/38">Your message</span></label>
+            <label htmlFor="feedback-message" className="text-base font-semibold text-white">反馈内容 <span className="ml-2 text-sm font-medium text-white/38">Message</span></label>
             <textarea
               id="feedback-message"
               value={message}
@@ -120,7 +120,7 @@ export default function FeedbackPage() {
               maxLength={3000}
               required
               rows={9}
-              placeholder="请描述你遇到的情况，或你希望它怎样变得更好。"
+              placeholder="请描述遇到的情况，或希望改进的方向。"
               className="mt-3 w-full resize-y rounded-xl border border-white/[0.1] bg-[#090a0c] px-4 py-3.5 text-base leading-7 text-white outline-none transition-colors placeholder:text-white/32 focus:border-[#b9ddd8]/55 focus:bg-[#b9ddd8]/[0.025]"
             />
             <p className="mt-2 text-sm text-white/42">{message.length} / 3000</p>
@@ -163,7 +163,7 @@ export default function FeedbackPage() {
             {state === 'sent' && (
               <p className="inline-flex items-center gap-2 text-sm font-medium text-[#b9ddd8]" role="status">
                 <CheckCircle2 className="h-5 w-5 stroke-[2.25]" aria-hidden="true" />
-                已送达，感谢你的反馈。
+                反馈已送达，感谢参与。
               </p>
             )}
             {state === 'error' && <p className="text-sm font-medium text-rose-300" role="alert">{error}</p>}
