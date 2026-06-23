@@ -47,10 +47,6 @@
   --foreground: #ffffff;
 }
 
-h1 {
-  font-size: var(--text-h1);
-  line-height: 1.1;
-}
 h4 {
   font-size: var(--text-h4);
   line-height: 1.2;

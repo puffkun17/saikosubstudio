@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { ArrowLeft, FileLock2, ShieldCheck } from 'lucide-react';
+import { FileLock2, ShieldCheck } from 'lucide-react';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section className="border-t border-white/[0.08] py-7 first:border-t-0 first:pt-0">
@@ -12,15 +11,7 @@ export default function AboutPage() {
   return (
     <main className="flex-1 overflow-y-auto bg-[#050507] px-5 py-8 md:px-10 md:py-12">
       <div className="mx-auto w-full max-w-3xl pb-10 pt-3">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm font-medium text-[#b9ddd8] transition-colors hover:text-white"
-        >
-          <ArrowLeft className="h-5 w-5 stroke-[2.25]" aria-hidden="true" />
-          返回字幕工作台 <span className="text-white/35">/ Back to workspace</span>
-        </Link>
-
-        <div className="mt-9 flex items-start gap-4">
+        <div className="mt-3 flex items-start gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#b9ddd8]/20 bg-[#b9ddd8]/10 text-[#b9ddd8]">
             <ShieldCheck className="h-5 w-5 stroke-[2.25]" aria-hidden="true" />
           </div>

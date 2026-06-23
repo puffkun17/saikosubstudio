@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { FormEvent, useRef, useState, useSyncExternalStore } from 'react';
-import { ArrowLeft, Bug, CheckCircle2, Lightbulb, LoaderCircle, MessageSquareText, Send, ThumbsUp } from 'lucide-react';
+import { Bug, CheckCircle2, Lightbulb, LoaderCircle, MessageSquareText, Send, ThumbsUp } from 'lucide-react';
 
 type FeedbackCategory = 'issue' | 'idea' | 'other';
 
@@ -67,15 +66,7 @@ export default function FeedbackPage() {
   return (
     <main className="flex-1 overflow-y-auto bg-[#050507] px-5 py-8 md:px-10 md:py-12">
       <div className="mx-auto w-full max-w-2xl pb-12 pt-3">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm font-medium text-[#b9ddd8] transition-colors hover:text-white"
-        >
-          <ArrowLeft className="h-5 w-5 stroke-[2.25]" aria-hidden="true" />
-          返回字幕工作台 <span className="text-white/35">/ Back to workspace</span>
-        </Link>
-
-        <header className="mt-10">
+        <header className="mt-3">
           <div className="flex items-center gap-3 text-[#b9ddd8]">
             <MessageSquareText className="h-7 w-7 stroke-[2.25]" aria-hidden="true" />
             <span className="text-xs font-semibold tracking-[0.12em]">SAIKOSUBSTUDIO / FEEDBACK</span>

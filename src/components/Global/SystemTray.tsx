@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FolderClock, MessageSquareText, ShieldCheck } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { ArrowLeft, FolderClock, MessageSquareText, ShieldCheck } from 'lucide-react';
 import { useStudioStore } from '@/store/useStudioStore';
 
 const STEP_LABEL: Record<number, string> = {
@@ -35,7 +36,9 @@ const getDefaultScale = () => {
 export const SystemTray = () => {
   const [time, setTime] = useState('');
   const [scale, setScale] = useState(getDefaultScale);
+  const pathname = usePathname();
   const { workflowStep, restartSystem, tasks, processedSubs, libraryList, setLibraryOpen, setWorkflowStep } = useStudioStore();
+  const isInfoPage = pathname === '/about' || pathname === '/feedback';
 
   const hasUploadData = tasks.length > 0;
   const hasWorkbenchData = Boolean(processedSubs?.length);
@@ -140,6 +143,18 @@ export const SystemTray = () => {
             );
           })}
         </div>
+
+        {isInfoPage && (
+          <Link
+            href="/"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#b9ddd8]/22 bg-[#b9ddd8]/[0.06] px-3 text-sm font-medium text-[#c9ebe5] transition-colors hover:border-[#b9ddd8]/45 hover:bg-[#b9ddd8]/[0.12]"
+            aria-label="返回字幕工作台"
+          >
+            <ArrowLeft className="h-5 w-5 stroke-[2.25]" aria-hidden="true" />
+            <span className="hidden lg:inline">返回工作台</span>
+            <span className="hidden xl:inline text-[#b9ddd8]/55">/ Workspace</span>
+          </Link>
+        )}
 
         <span className="md:hidden text-white/45 font-medium truncate">
           {STEP_LABEL[workflowStep]}
