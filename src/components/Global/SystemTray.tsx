@@ -2,18 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { FolderClock, MessageSquareText, ShieldCheck } from 'lucide-react';
 import { useStudioStore } from '@/store/useStudioStore';
-
-// ─── Icons ───────────────────────────────────────────────────────────────────
-
-const HomeIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-    <polyline points="9 22 9 12 15 12 15 22"/>
-  </svg>
-);
 
 const STEP_LABEL: Record<number, string> = {
   1: '上传',
@@ -120,10 +111,10 @@ export const SystemTray = () => {
         <button
           type="button"
           onClick={() => handleStepClick(1)}
-          className="flex items-center gap-1.5 transition-colors duration-150 shrink-0 font-semibold text-white/90 hover:text-white cursor-pointer"
+          className="flex items-center gap-2 transition-colors duration-150 shrink-0 font-semibold text-white/90 hover:text-white cursor-pointer"
           aria-label="返回上传入口"
         >
-          <HomeIcon />
+          <Image src="/favicon.svg" alt="" aria-hidden="true" width={20} height={20} className="h-5 w-5 rounded-[5px]" />
           <span>SubStudio</span>
         </button>
 

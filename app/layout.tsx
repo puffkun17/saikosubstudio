@@ -7,7 +7,12 @@ import { SystemTray } from "@/components/Global/SystemTray";
 export const metadata: Metadata = {
   title: "SaikoSubStudio",
   description: "Tool for aligning, merging and styling bilingual subtitles with cinema preview simulator.",
-  icons: { icon: "/favicon.ico" },
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

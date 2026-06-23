@@ -16,6 +16,7 @@ mkdirSync(outDir, { recursive: true });
 execFileSync('npx', [
   'tsc',
   'src/utils/subtitleCore.ts',
+  'src/utils/importSafety.ts',
   'src/store/useStudioStore.ts',
   '--target',
   'ES2020',
@@ -49,12 +50,20 @@ const {
   splitSingleBilingualText,
 } = require(join(outDir, 'utils/subtitleCore.js'));
 const { useStudioStore } = require(join(outDir, 'store/useStudioStore.js'));
+const { CLIENT_IMPORT_LIMITS, getClientFileIssue } = require(join(outDir, 'utils/importSafety.js'));
 
 const noopLog = () => {};
 
 const assertIncludes = (items, expected, message) => {
   assert.ok(items.includes(expected), `${message}\nExpected: ${expected}\nActual: ${items.join(' | ')}`);
 };
+
+{
+  const oversizedRar = { name: 'subtitle-pack.rar', size: CLIENT_IMPORT_LIMITS.maxArchiveBytes + 1 };
+  assert.match(getClientFileIssue(oversizedRar), /字幕包/, 'RAR packages should follow the same local size boundary as ZIP packages.');
+  const acceptable7z = { name: 'subtitle-pack.7z', size: CLIENT_IMPORT_LIMITS.maxArchiveBytes };
+  assert.equal(getClientFileIssue(acceptable7z), null, 'A 7z package at the stated boundary should remain eligible for local extraction.');
+}
 
 {
   const queries = buildTmdbSearchQueries('Down Cemetery Road XXX');

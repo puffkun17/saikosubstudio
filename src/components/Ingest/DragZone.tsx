@@ -7,6 +7,7 @@ import JSZip from 'jszip';
 import { FilePlus, FolderPlus, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { CLIENT_IMPORT_LIMITS, getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
+import { extractLocalArchiveSubtitles, LocalArchiveError } from '@/utils/localArchive';
 
 type ParseStatus = 'reading' | 'analyzing' | 'success' | 'warning' | 'skipped';
 
@@ -17,7 +18,7 @@ interface ParsingFileState {
   note?: string;
 }
 
-type PreflightKind = 'subtitle' | 'zip' | 'archive-unsupported' | 'too-large' | 'unsupported';
+type PreflightKind = 'subtitle' | 'zip' | 'archive' | 'archive-unsupported' | 'too-large' | 'unsupported';
 
 interface PreflightItem {
   file: File;
@@ -35,7 +36,7 @@ interface TrackSummary {
   lang: string;
   isBilingual: boolean;
   isCommentary: boolean;
-  source: 'file' | 'zip';
+  source: 'file' | 'zip' | 'archive';
 }
 
 type IngestPhase = 'idle' | 'reading' | 'parsing' | 'binding' | 'metadata' | 'ready' | 'needs_review' | 'error';
@@ -61,13 +62,13 @@ const PHASE_COPY: Record<IngestPhase, string> = {
 
 const WABI_FEATURES = [
   '识别 SRT / ASS 字幕轨',
-  '支持 ZIP 字幕包',
+  '支持本地字幕包',
   '区分单语 / 双语 / 导评',
   '整理输出文件名',
   '补全片源信息',
 ];
 
-const FORMAT_MARKS = ['SRT', 'ASS', 'ZIP'];
+const FORMAT_MARKS = ['SRT', 'ASS', 'ZIP', 'RAR', '7Z'];
 
 const getExtension = (name: string) => {
   const idx = name.lastIndexOf('.');
@@ -75,6 +76,7 @@ const getExtension = (name: string) => {
 };
 
 const isSubtitleExtension = (ext: string) => ext === 'srt' || ext === 'ass';
+const isMultipartArchiveName = (name: string) => /\.part\d+\.rar$|\.r\d{2}$|\.7z\.\d+$/i.test(name);
 
 const createPreflightItem = (file: File): PreflightItem => {
   const extension = getExtension(file.name);
@@ -112,7 +114,7 @@ const createPreflightItem = (file: File): PreflightItem => {
       note: '字幕包',
     };
   }
-  if (extension === '7z' || extension === 'rar') {
+  if (isMultipartArchiveName(file.name)) {
     return {
       file,
       name: file.name,
@@ -120,7 +122,18 @@ const createPreflightItem = (file: File): PreflightItem => {
       kind: 'archive-unsupported',
       label: extension.toUpperCase(),
       accepted: false,
-      note: '请先解包后导入',
+      note: '分卷压缩包请先在本地完整解压',
+    };
+  }
+  if (extension === '7z' || extension === 'rar') {
+    return {
+      file,
+      name: file.name,
+      extension,
+      kind: 'archive',
+      label: extension.toUpperCase(),
+      accepted: true,
+      note: '仅在本地提取 SRT / ASS',
     };
   }
   return {
@@ -189,14 +202,14 @@ export const DragZone: React.FC = () => {
     try {
       const zip = await JSZip.loadAsync(zipFile);
       const entries = Object.values(zip.files).filter(entry => !entry.dir);
-      if (entries.length > CLIENT_IMPORT_LIMITS.maxZipEntries) {
-        addLog(`字幕包条目过多，最多允许 ${CLIENT_IMPORT_LIMITS.maxZipEntries} 项：${zipFile.name}`, 'error');
+      if (entries.length > CLIENT_IMPORT_LIMITS.maxArchiveEntries) {
+        addLog(`字幕包条目过多，最多允许 ${CLIENT_IMPORT_LIMITS.maxArchiveEntries} 项：${zipFile.name}`, 'error');
         return 0;
       }
 
       const subtitleEntries = entries.filter(entry => isSubtitleExtension(getExtension(entry.name)));
-      if (subtitleEntries.length > CLIENT_IMPORT_LIMITS.maxZipSubtitleEntries) {
-        addLog(`字幕包内字幕轨过多，最多允许 ${CLIENT_IMPORT_LIMITS.maxZipSubtitleEntries} 条：${zipFile.name}`, 'error');
+      if (subtitleEntries.length > CLIENT_IMPORT_LIMITS.maxArchiveSubtitleEntries) {
+        addLog(`字幕包内字幕轨过多，最多允许 ${CLIENT_IMPORT_LIMITS.maxArchiveSubtitleEntries} 条：${zipFile.name}`, 'error');
         return 0;
       }
 
@@ -208,7 +221,7 @@ export const DragZone: React.FC = () => {
       for (const zipEntry of subtitleEntries) {
         const buffer = await zipEntry.async('arraybuffer');
         decodedBytes += buffer.byteLength;
-        if (buffer.byteLength > CLIENT_IMPORT_LIMITS.maxSubtitleBytes || decodedBytes > CLIENT_IMPORT_LIMITS.maxZipUncompressedBytes) {
+        if (buffer.byteLength > CLIENT_IMPORT_LIMITS.maxSubtitleBytes || decodedBytes > CLIENT_IMPORT_LIMITS.maxArchiveUncompressedBytes) {
           addLog(`字幕包解压后体积超出安全限制，已拒绝导入：${zipFile.name}`, 'error');
           return ignoredCount;
         }
@@ -253,6 +266,57 @@ export const DragZone: React.FC = () => {
     }
   };
 
+  const processLocalArchiveFile = async (archiveFile: File, detectedFiles: Subfile[], summaries: TrackSummary[]) => {
+    try {
+      const { files, ignoredEntries } = await extractLocalArchiveSubtitles(archiveFile, {
+        maxEntries: CLIENT_IMPORT_LIMITS.maxArchiveEntries,
+        maxSubtitleEntries: CLIENT_IMPORT_LIMITS.maxArchiveSubtitleEntries,
+        maxSubtitleBytes: CLIENT_IMPORT_LIMITS.maxSubtitleBytes,
+        maxUncompressedBytes: CLIENT_IMPORT_LIMITS.maxArchiveUncompressedBytes,
+      });
+
+      for (const extractedFile of files) {
+        const text = await readAndDecodeFile(extractedFile);
+        const isBilingual = checkIsBilingual(text);
+        const lang = isBilingual ? 'bilingual' : detectLanguageByContent(text);
+        const languagePair = isBilingual ? detectSubtitleLanguagePair(text) : undefined;
+        const ext = getExtension(extractedFile.name);
+        const subfile: Subfile = {
+          id: `archive_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          name: extractedFile.name,
+          text,
+          lang,
+          languagePair,
+          isBilingual,
+          isCommentary: /(commentary|comment|director|解说|导轨)/i.test(extractedFile.name),
+          size: extractedFile.size,
+        };
+        detectedFiles.push(subfile);
+        summaries.push({
+          name: subfile.name,
+          format: ext === 'ass' ? 'ASS' : 'SRT',
+          lang: describeTrack(subfile),
+          isBilingual,
+          isCommentary: subfile.isCommentary,
+          source: 'archive',
+        });
+      }
+
+      if (files.length === 0) addLog(`字幕包内未检测到可用字幕：${archiveFile.name}`, 'error');
+      return ignoredEntries;
+    } catch (error: unknown) {
+      const message = error instanceof LocalArchiveError
+        ? error.code === 'encrypted'
+          ? '压缩包已加密，请先在本地解压后导入'
+          : error.code === 'limits'
+            ? `压缩包超出本地导入安全限制：${error.message}`
+            : '压缩包无法读取，请先在本地解压后导入'
+        : '压缩包无法读取，请先在本地解压后导入';
+      addLog(`${message}：${archiveFile.name}`, 'error');
+      return 0;
+    }
+  };
+
   const handleFilesProcess = async (filesList: File[]) => {
     const batchIssue = getClientBatchIssue(filesList);
     if (batchIssue) {
@@ -274,7 +338,7 @@ export const DragZone: React.FC = () => {
       const tooLargeCount = rejectedItems.filter(item => item.kind === 'too-large').length;
       const unsupportedCount = rejectedItems.length - archiveCount - tooLargeCount;
       if (archiveCount > 0) {
-        addLog(`有 ${archiveCount} 个压缩格式需先解包后导入`, 'error');
+        addLog(`有 ${archiveCount} 个分卷压缩包需先在本地完整解压`, 'error');
       }
       if (tooLargeCount > 0) {
         addLog(`有 ${tooLargeCount} 个文件超过本地导入安全限制`, 'error');
@@ -301,7 +365,7 @@ export const DragZone: React.FC = () => {
 
     const detectedFiles: Subfile[] = [];
     const summaries: TrackSummary[] = [];
-    let ignoredInZipCount = 0;
+    let ignoredInArchiveCount = 0;
 
     setResultChips([`${filesList.length} 个文件`, `${validItems.length} 个可导入`]);
     await sleep(520);
@@ -311,7 +375,9 @@ export const DragZone: React.FC = () => {
     for (const item of validItems) {
       const file = item.file;
       if (item.kind === 'zip') {
-        ignoredInZipCount += await processZipFile(file, detectedFiles, summaries);
+        ignoredInArchiveCount += await processZipFile(file, detectedFiles, summaries);
+      } else if (item.kind === 'archive') {
+        ignoredInArchiveCount += await processLocalArchiveFile(file, detectedFiles, summaries);
       } else {
         try {
           const text = await readAndDecodeFile(file);
@@ -359,14 +425,14 @@ export const DragZone: React.FC = () => {
       const bilingualCount = summaries.filter(item => item.isBilingual).length;
       const assCount = summaries.filter(item => item.format === 'ASS').length;
       const srtCount = summaries.filter(item => item.format === 'SRT').length;
-      const sourceZipCount = preflight.filter(item => item.kind === 'zip').length;
+      const sourceArchiveCount = preflight.filter(item => item.kind === 'zip' || item.kind === 'archive').length;
       const chips = [
         `${detectedFiles.length} 条字幕轨`,
         assCount > 0 ? `${assCount} 条样式字幕轨` : '',
         srtCount > 0 ? `${srtCount} 条标准字幕轨` : '',
         bilingualCount > 0 ? `${bilingualCount} 条双语轨` : '',
-        sourceZipCount > 0 ? `${sourceZipCount} 个字幕包` : '',
-        ignoredInZipCount > 0 ? `已忽略 ${ignoredInZipCount} 个非字幕资源` : '',
+        sourceArchiveCount > 0 ? `${sourceArchiveCount} 个字幕包` : '',
+        ignoredInArchiveCount > 0 ? `已忽略 ${ignoredInArchiveCount} 个非字幕资源` : '',
       ].filter(Boolean);
       setResultChips(chips);
 
@@ -561,8 +627,13 @@ export const DragZone: React.FC = () => {
             : { scale: 1, boxShadow: 'inset 0 0 42px rgba(0,0,0,0.46), 0 18px 60px rgba(0,0,0,0.22)' }
         }
         transition={{ type: "spring", stiffness: 320, damping: 26 }}
-        className="relative z-10 mx-auto flex min-h-[336px] w-full max-w-[1120px] cursor-pointer select-none flex-col items-center justify-center overflow-hidden rounded-[18px] border border-white/[0.08] bg-[#080807]/70 px-8 backdrop-blur-sm"
+        className="relative z-10 mx-auto flex min-h-[336px] w-full max-w-[1120px] cursor-pointer select-none flex-col items-center justify-center overflow-hidden rounded-[18px] border border-white/[0.1] bg-[#080807] px-8"
       >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[url('/Background.jpg')] bg-cover bg-center opacity-[0.28] contrast-125 grayscale"
+        />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-black/68" />
         <div className="absolute inset-0 bg-[linear-gradient(120deg,transparent_0%,rgba(255,255,255,0.025)_48%,transparent_58%)] opacity-50 pointer-events-none" />
         <div className="absolute inset-x-10 top-7 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         <div className="absolute inset-x-10 bottom-7 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent" />
@@ -674,7 +745,7 @@ export const DragZone: React.FC = () => {
             text-black shadow-[0_12px_30px_rgba(0,0,0,0.28)] active:scale-[0.985]"
 	        >
 	          <FilePlus className="inline-block w-4 h-4 mr-2 align-[-2px] text-black/75" aria-hidden="true" />
-	          浏览文件 / ZIP
+          浏览文件 / 压缩包
 	        </button>
 
         <button

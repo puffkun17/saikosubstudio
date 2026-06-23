@@ -2,10 +2,10 @@ export const CLIENT_IMPORT_LIMITS = {
   maxFilesPerBatch: 40,
   maxTotalBytes: 80 * 1024 * 1024,
   maxSubtitleBytes: 12 * 1024 * 1024,
-  maxZipBytes: 64 * 1024 * 1024,
-  maxZipEntries: 320,
-  maxZipSubtitleEntries: 120,
-  maxZipUncompressedBytes: 96 * 1024 * 1024,
+  maxArchiveBytes: 64 * 1024 * 1024,
+  maxArchiveEntries: 320,
+  maxArchiveSubtitleEntries: 120,
+  maxArchiveUncompressedBytes: 96 * 1024 * 1024,
 } as const;
 
 const toMegabytes = (bytes: number) => Math.ceil(bytes / (1024 * 1024));
@@ -22,8 +22,8 @@ export const getClientFileIssue = (file: File): string | null => {
     return `单个字幕文件不能超过 ${toMegabytes(CLIENT_IMPORT_LIMITS.maxSubtitleBytes)} MB`;
   }
 
-  if (extension === 'zip' && file.size > CLIENT_IMPORT_LIMITS.maxZipBytes) {
-    return `单个 ZIP 字幕包不能超过 ${toMegabytes(CLIENT_IMPORT_LIMITS.maxZipBytes)} MB`;
+  if (['zip', 'rar', '7z'].includes(extension) && file.size > CLIENT_IMPORT_LIMITS.maxArchiveBytes) {
+    return `单个字幕包不能超过 ${toMegabytes(CLIENT_IMPORT_LIMITS.maxArchiveBytes)} MB`;
   }
 
   return null;
