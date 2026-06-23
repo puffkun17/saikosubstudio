@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { MessageSquareText } from 'lucide-react';
+import { FolderClock, MessageSquareText, ShieldCheck } from 'lucide-react';
 import { useStudioStore } from '@/store/useStudioStore';
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ const getDefaultScale = () => {
 export const SystemTray = () => {
   const [time, setTime] = useState('');
   const [scale, setScale] = useState(getDefaultScale);
-  const { workflowStep, restartSystem, tasks, processedSubs, setWorkflowStep } = useStudioStore();
+  const { workflowStep, restartSystem, tasks, processedSubs, libraryList, setLibraryOpen, setWorkflowStep } = useStudioStore();
 
   const hasUploadData = tasks.length > 0;
   const hasWorkbenchData = Boolean(processedSubs?.length);
@@ -156,7 +156,31 @@ export const SystemTray = () => {
       </div>
 
       {/* ── Right: scale selector & clock ─────────────────────────────── */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-2 shrink-0">
+        {workflowStep === 1 && (
+          <button
+            type="button"
+            onClick={() => setLibraryOpen(true)}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.018] px-3 text-sm font-medium text-white/62 transition-colors hover:border-[#b9ddd8]/35 hover:bg-[#b9ddd8]/[0.07] hover:text-white cursor-pointer"
+            title="历史存档字幕"
+          >
+            <FolderClock className="h-5 w-5 stroke-[2.25] text-[#b9ddd8]" aria-hidden="true" />
+            <span className="hidden lg:inline">历史存档</span>
+            {libraryList.length > 0 && (
+              <span className="hidden lg:inline-flex min-w-5 items-center justify-center rounded-md bg-[#b9ddd8]/12 px-1.5 py-0.5 text-xs font-semibold text-[#b9ddd8]">
+                {libraryList.length}
+              </span>
+            )}
+          </button>
+        )}
+        <Link
+          href="/about"
+          className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.018] px-3 text-sm font-medium text-white/62 transition-colors hover:border-[#b9ddd8]/35 hover:bg-[#b9ddd8]/[0.07] hover:text-white"
+          title="关于与隐私"
+        >
+          <ShieldCheck className="h-5 w-5 stroke-[2.25] text-[#b9ddd8]" aria-hidden="true" />
+          <span className="hidden lg:inline">关于与隐私</span>
+        </Link>
         <Link
           href="/feedback"
           className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.018] px-3 text-sm font-medium text-white/62 transition-colors hover:border-[#b9ddd8]/35 hover:bg-[#b9ddd8]/[0.07] hover:text-white"

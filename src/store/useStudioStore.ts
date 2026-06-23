@@ -130,6 +130,7 @@ export interface StudioState {
   tasks: TaskPair[];
   selectedTaskId: string | null;
   libraryList: LibraryItem[];
+  isLibraryOpen: boolean;
   tmdbData: TmdbMetadata | null;
   tmdbBackdrop: string | null;
   isSearchingTmdb: boolean;
@@ -168,6 +169,7 @@ export interface StudioState {
   setAlignmentMode: (mode: 'standard' | 'industrial') => void;
   setCreatorCredit: (credit: string) => void;
   setAppendCreatorCredit: (enabled: boolean) => void;
+  setLibraryOpen: (open: boolean) => void;
   setWorkflowStep: (step: number) => void;
   setLang: (lang: 'zh' | 'en') => void;
   addLog: (msg: string, type?: 'info' | 'success' | 'error') => void;
@@ -234,6 +236,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   tasks: [],
   selectedTaskId: null,
   libraryList: [],
+  isLibraryOpen: false,
   tmdbData: null,
   tmdbBackdrop: null,
   tmdbBackdropList: [],
@@ -276,6 +279,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setAlignmentMode: (alignmentMode) => set({ alignmentMode }),
   setCreatorCredit: (creatorCredit) => set({ creatorCredit }),
   setAppendCreatorCredit: (appendCreatorCredit) => set({ appendCreatorCredit }),
+  setLibraryOpen: (isLibraryOpen) => set({ isLibraryOpen }),
   setWorkflowStep: (step) => set({ workflowStep: step }),
   setLang: (lang) => set({ lang }),
   addLog: (msg, type = 'info') => {

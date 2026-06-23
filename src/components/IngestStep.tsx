@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { DragZone } from '@/components/Ingest/DragZone';
 import { TaskList } from '@/components/Ingest/TaskList';
 import { TmdbPanel } from '@/components/Ingest/TmdbPanel';
-import { Database, Trash2, Calendar, FolderClock, ShieldCheck, X } from 'lucide-react';
+import { Database, Trash2, Calendar, FolderClock, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const IngestStep: React.FC = () => {
@@ -13,10 +13,10 @@ export const IngestStep: React.FC = () => {
     tasks, 
     libraryList, 
     loadFromLibrary, 
-    deleteFromLibrary
+    deleteFromLibrary,
+    isLibraryOpen,
+    setLibraryOpen,
   } = useStudioStore();
-
-  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
   return (
     <div className="flex-1 w-full h-full flex flex-col p-5 md:p-8 lg:p-10 2xl:p-12 lg:overflow-hidden overflow-y-auto relative bg-[#020203] z-0">
@@ -40,25 +40,6 @@ export const IngestStep: React.FC = () => {
           </p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3 md:gap-4">
-          <a
-            href="/about"
-            className="px-4 py-3 text-sm text-neutral-400 hover:text-[#b9ddd8] flex items-center gap-2 transition-colors"
-          >
-            <ShieldCheck className="w-4 h-4" />
-            关于与隐私
-          </a>
-          <button 
-            className="px-5 py-3 glass-btn-ar rounded-xl text-sm text-neutral-300 hover:text-white flex items-center gap-2 cursor-pointer transition-all duration-300 group"
-            onClick={() => setIsLibraryOpen(true)}
-          >
-            <FolderClock className="w-4 h-4 text-[#e5e7eb]" />
-            历史存档字幕
-            {libraryList.length > 0 && (
-              <span className="bg-[#9ca3af]/12 text-[#e5e7eb] px-2 py-0.5 rounded-full text-xs ml-1 font-bold">{libraryList.length}</span>
-            )}
-          </button>
-        </div>
       </div>
 
       <AnimatePresence mode="wait">
@@ -102,7 +83,7 @@ export const IngestStep: React.FC = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/60 backdrop-blur-xl z-[2000] flex items-center justify-center p-4"
-            onClick={(e) => { if (e.target === e.currentTarget) setIsLibraryOpen(false); }}
+            onClick={(e) => { if (e.target === e.currentTarget) setLibraryOpen(false); }}
           >
             <motion.div 
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -118,7 +99,7 @@ export const IngestStep: React.FC = () => {
                 </div>
                 <button
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition cursor-pointer"
-                  onClick={() => setIsLibraryOpen(false)}
+                  onClick={() => setLibraryOpen(false)}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -136,7 +117,7 @@ export const IngestStep: React.FC = () => {
                           className="relative overflow-hidden p-6 bg-white/[0.015] hover:bg-white/[0.045] border border-white/5 hover:border-white/10 rounded-2xl cursor-pointer flex gap-5 transition-all duration-300 items-center justify-between group shadow-lg"
                           onClick={() => {
                             loadFromLibrary(item);
-                            setIsLibraryOpen(false);
+                            setLibraryOpen(false);
                           }}
                         >
                           {item.backdrop && (
