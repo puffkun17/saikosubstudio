@@ -2,10 +2,11 @@
 
 import React, { useRef, useState } from 'react';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
-import { decodeBuffer, detectLanguageByContent, checkIsBilingual, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
+import { decodeBuffer, detectLanguageByContent, detectSubtitleLanguagePair, checkIsBilingual, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
-import { UploadCloud, Folder, CheckCircle2 } from 'lucide-react';
+import { FilePlus, FolderPlus, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { CLIENT_IMPORT_LIMITS, getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
 
 type ParseStatus = 'reading' | 'analyzing' | 'success' | 'warning' | 'skipped';
 
@@ -16,7 +17,7 @@ interface ParsingFileState {
   note?: string;
 }
 
-type PreflightKind = 'subtitle' | 'zip' | 'archive-unsupported' | 'unsupported';
+type PreflightKind = 'subtitle' | 'zip' | 'archive-unsupported' | 'too-large' | 'unsupported';
 
 interface PreflightItem {
   file: File;
@@ -77,6 +78,18 @@ const isSubtitleExtension = (ext: string) => ext === 'srt' || ext === 'ass';
 
 const createPreflightItem = (file: File): PreflightItem => {
   const extension = getExtension(file.name);
+  const sizeIssue = getClientFileIssue(file);
+  if (sizeIssue) {
+    return {
+      file,
+      name: file.name,
+      extension: extension || 'unknown',
+      kind: 'too-large',
+      label: extension ? extension.toUpperCase() : '未知',
+      accepted: false,
+      note: sizeIssue,
+    };
+  }
   if (isSubtitleExtension(extension)) {
     return {
       file,
@@ -123,9 +136,13 @@ const createPreflightItem = (file: File): PreflightItem => {
 
 const describeTrack = (file: Subfile) => {
   if (file.isCommentary || file.lang === 'commentary') return '导评轨';
-  if (file.isBilingual || file.lang === 'bilingual') return '双语轨';
+  if (file.isBilingual || file.lang === 'bilingual') {
+    const labels: Record<string, string> = { 'zh-CN': '简中', 'zh-TW': '繁中', en: '英语', ja: '日语', ko: '韩语', fr: '法语', latin: '拉丁文字' };
+    const pair = file.languagePair;
+    return pair ? `${labels[pair.primary]} / ${labels[pair.secondary]} 双语轨` : '双语轨';
+  }
   if (file.lang === 'zh-CN' || file.lang === 'zh-TW') return '主字幕轨';
-  if (file.lang === 'en') return '副字幕轨';
+  if (['en', 'ja', 'ko', 'fr', 'latin'].includes(file.lang)) return '第二语言轨';
   return '待确认轨';
 };
 
@@ -171,44 +188,62 @@ export const DragZone: React.FC = () => {
   const processZipFile = async (zipFile: File, detectedFiles: Subfile[], summaries: TrackSummary[]) => {
     try {
       const zip = await JSZip.loadAsync(zipFile);
-      const promises: Promise<void>[] = [];
-      let ignoredCount = 0;
+      const entries = Object.values(zip.files).filter(entry => !entry.dir);
+      if (entries.length > CLIENT_IMPORT_LIMITS.maxZipEntries) {
+        addLog(`字幕包条目过多，最多允许 ${CLIENT_IMPORT_LIMITS.maxZipEntries} 项：${zipFile.name}`, 'error');
+        return 0;
+      }
 
-      zip.forEach((relativePath, zipEntry) => {
-        const ext = getExtension(zipEntry.name);
-        if (!zipEntry.dir && isSubtitleExtension(ext)) {
-          const promise = zipEntry.async('arraybuffer').then((buffer) => {
-            const decoded = decodeBuffer(buffer);
-            const isBilingual = checkIsBilingual(decoded.text);
-            const lang = isBilingual ? 'bilingual' : detectLanguageByContent(decoded.text);
-            const subfile: Subfile = {
-              id: `zip_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
-              name: zipEntry.name.split('/').pop() || zipEntry.name,
-              text: decoded.text,
-              lang,
-              isBilingual,
-              isCommentary: /(commentary|comment|director|解说|导轨)/i.test(zipEntry.name),
-              size: decoded.text.length
-            };
-            detectedFiles.push(subfile);
-            summaries.push({
-              name: subfile.name,
-              format: ext === 'ass' ? 'ASS' : 'SRT',
-              lang: describeTrack(subfile),
-              isBilingual,
-              isCommentary: subfile.isCommentary,
-              source: 'zip',
-            });
-          });
-          promises.push(promise);
-        } else if (!zipEntry.dir) {
-          ignoredCount += 1;
+      const subtitleEntries = entries.filter(entry => isSubtitleExtension(getExtension(entry.name)));
+      if (subtitleEntries.length > CLIENT_IMPORT_LIMITS.maxZipSubtitleEntries) {
+        addLog(`字幕包内字幕轨过多，最多允许 ${CLIENT_IMPORT_LIMITS.maxZipSubtitleEntries} 条：${zipFile.name}`, 'error');
+        return 0;
+      }
+
+      const zipDetectedFiles: Subfile[] = [];
+      const zipSummaries: TrackSummary[] = [];
+      let decodedBytes = 0;
+      const ignoredCount = entries.length - subtitleEntries.length;
+
+      for (const zipEntry of subtitleEntries) {
+        const buffer = await zipEntry.async('arraybuffer');
+        decodedBytes += buffer.byteLength;
+        if (buffer.byteLength > CLIENT_IMPORT_LIMITS.maxSubtitleBytes || decodedBytes > CLIENT_IMPORT_LIMITS.maxZipUncompressedBytes) {
+          addLog(`字幕包解压后体积超出安全限制，已拒绝导入：${zipFile.name}`, 'error');
+          return ignoredCount;
         }
-      });
 
-      await Promise.all(promises);
-      if (promises.length === 0) {
+        const decoded = decodeBuffer(buffer);
+        const isBilingual = checkIsBilingual(decoded.text);
+        const lang = isBilingual ? 'bilingual' : detectLanguageByContent(decoded.text);
+        const languagePair = isBilingual ? detectSubtitleLanguagePair(decoded.text) : undefined;
+        const ext = getExtension(zipEntry.name);
+        const subfile: Subfile = {
+          id: `zip_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
+          name: zipEntry.name.split('/').pop() || zipEntry.name,
+          text: decoded.text,
+          lang,
+          languagePair,
+          isBilingual,
+          isCommentary: /(commentary|comment|director|解说|导轨)/i.test(zipEntry.name),
+          size: decoded.text.length
+        };
+        zipDetectedFiles.push(subfile);
+        zipSummaries.push({
+          name: subfile.name,
+          format: ext === 'ass' ? 'ASS' : 'SRT',
+          lang: describeTrack(subfile),
+          isBilingual,
+          isCommentary: subfile.isCommentary,
+          source: 'zip',
+        });
+      }
+
+      if (subtitleEntries.length === 0) {
         addLog(`字幕包内未检测到可用字幕：${zipFile.name}`, 'error');
+      } else {
+        detectedFiles.push(...zipDetectedFiles);
+        summaries.push(...zipSummaries);
       }
       return ignoredCount;
     } catch (e: unknown) {
@@ -219,6 +254,13 @@ export const DragZone: React.FC = () => {
   };
 
   const handleFilesProcess = async (filesList: File[]) => {
+    const batchIssue = getClientBatchIssue(filesList);
+    if (batchIssue) {
+      setPhase('error', '本次导入超出安全限制');
+      addLog(batchIssue, 'error');
+      return;
+    }
+
     const preflight = filesList.map(createPreflightItem);
     setPreflightItems(preflight);
     setTrackSummaries([]);
@@ -229,9 +271,13 @@ export const DragZone: React.FC = () => {
 
     if (rejectedItems.length > 0) {
       const archiveCount = rejectedItems.filter(item => item.kind === 'archive-unsupported').length;
-      const unsupportedCount = rejectedItems.length - archiveCount;
+      const tooLargeCount = rejectedItems.filter(item => item.kind === 'too-large').length;
+      const unsupportedCount = rejectedItems.length - archiveCount - tooLargeCount;
       if (archiveCount > 0) {
         addLog(`有 ${archiveCount} 个压缩格式需先解包后导入`, 'error');
+      }
+      if (tooLargeCount > 0) {
+        addLog(`有 ${tooLargeCount} 个文件超过本地导入安全限制`, 'error');
       }
       if (unsupportedCount > 0) {
         addLog(`已忽略 ${unsupportedCount} 个非字幕资源`, 'info');
@@ -271,12 +317,14 @@ export const DragZone: React.FC = () => {
           const text = await readAndDecodeFile(file);
           const isBilingual = checkIsBilingual(text);
           const lang = isBilingual ? 'bilingual' : detectLanguageByContent(text);
+          const languagePair = isBilingual ? detectSubtitleLanguagePair(text) : undefined;
           const ext = getExtension(file.name);
           const subfile: Subfile = {
             id: `file_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
             name: file.name,
             text,
             lang,
+            languagePair,
             isBilingual,
             isCommentary: /(commentary|comment|director|解说|导轨)/i.test(file.name),
             size: text.length
@@ -625,7 +673,7 @@ export const DragZone: React.FC = () => {
             bg-neutral-100 hover:bg-white border border-white/[0.16]
             text-black shadow-[0_12px_30px_rgba(0,0,0,0.28)] active:scale-[0.985]"
 	        >
-	          <UploadCloud className="inline-block w-4 h-4 mr-2 align-[-2px] text-black/75" />
+	          <FilePlus className="inline-block w-4 h-4 mr-2 align-[-2px] text-black/75" aria-hidden="true" />
 	          浏览文件 / ZIP
 	        </button>
 
@@ -635,7 +683,7 @@ export const DragZone: React.FC = () => {
             bg-white/[0.012] hover:bg-white/[0.04] border border-white/[0.055] hover:border-white/16
             text-neutral-400 hover:text-neutral-100 shadow-[0_2px_8px_rgba(0,0,0,0.35)] active:scale-[0.985]"
 	        >
-	          <Folder className="inline-block w-4 h-4 mr-2 align-[-2px] text-neutral-300" />
+	          <FolderPlus className="inline-block w-4 h-4 mr-2 align-[-2px] text-neutral-300" aria-hidden="true" />
 	          扫描文件夹
 	        </button>
       </div>

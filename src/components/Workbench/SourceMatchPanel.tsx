@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useRef, useState } from 'react';
-import { Activity, AlertTriangle, CheckCircle2, FileVideo, Upload, XCircle } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle2, Clapperboard, HardDrive, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { SubRow } from '@/utils/subtitleCore';
 import { createSourceMatchReport, type SourceMatchFinding, type SourceMatchReport } from '@/utils/timeline/sourceMatch';
@@ -111,7 +111,7 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
               onClick={() => inputRef.current?.click()}
               className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[#9ddacb]/20 bg-[#9ddacb]/[0.045] px-3.5 py-2.5 text-[13px] font-medium text-[#d5f2ec] transition hover:border-[#9ddacb]/38 hover:bg-[#9ddacb]/[0.09] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9ddacb]/70 active:translate-y-px cursor-pointer"
             >
-              <Upload className="h-3.5 w-3.5" />
+              <Clapperboard className="h-3.5 w-3.5" />
               {isMatchMode ? '更换片源' : '加入片源'}
             </button>
             <input
@@ -174,7 +174,7 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
           </div>
 
           <div className="mt-4 flex items-center gap-2 text-xs text-neutral-500">
-            <FileVideo className="h-3.5 w-3.5 shrink-0 text-neutral-500" />
+            <HardDrive className="h-3.5 w-3.5 shrink-0 text-neutral-500" />
             <span className="min-w-0 truncate">
               {videoName ? `${videoName}${videoDurationMs ? ` · ${formatMsClock(videoDurationMs)}` : ''}` : '本地读取元数据，不上传文件'}
             </span>

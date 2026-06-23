@@ -1,11 +1,12 @@
 import { create } from 'zustand';
-import { SubRow, StyleSettings, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, autoSignature, extractStylesFromAss, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity } from '../utils/subtitleCore';
+import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, autoSignature, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity } from '../utils/subtitleCore';
 
 export interface Subfile {
   id: string;
   name: string;
   text: string;
   lang: string;
+  languagePair?: SubtitleLanguagePair;
   isBilingual: boolean;
   isCommentary: boolean;
   size: number;
@@ -159,9 +160,14 @@ export interface StudioState {
   refScreenshot: string | null;
   tmdbBackdropList: string[];
   alignmentMode: 'standard' | 'industrial';
+  detectedAttributions: SubtitleAttribution[];
+  creatorCredit: string;
+  appendCreatorCredit: boolean;
 
   // Actions
   setAlignmentMode: (mode: 'standard' | 'industrial') => void;
+  setCreatorCredit: (credit: string) => void;
+  setAppendCreatorCredit: (enabled: boolean) => void;
   setWorkflowStep: (step: number) => void;
   setLang: (lang: 'zh' | 'en') => void;
   addLog: (msg: string, type?: 'info' | 'success' | 'error') => void;
@@ -263,8 +269,13 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   refScreenshot: null,
   isSearchingTmdb: false,
   alignmentMode: 'standard',
+  detectedAttributions: [],
+  creatorCredit: '',
+  appendCreatorCredit: false,
 
   setAlignmentMode: (alignmentMode) => set({ alignmentMode }),
+  setCreatorCredit: (creatorCredit) => set({ creatorCredit }),
+  setAppendCreatorCredit: (appendCreatorCredit) => set({ appendCreatorCredit }),
   setWorkflowStep: (step) => set({ workflowStep: step }),
   setLang: (lang) => set({ lang }),
   addLog: (msg, type = 'info') => {
@@ -467,7 +478,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           message: '已保留季集信息，可在检索框补片名。',
           meta: episodeKey,
           action: 'openTmdbManual',
-          actionLabel: '打开检索',
+          actionLabel: '补充片名',
         });
         if (!silent) get().addLog(`已识别为 ${episodeKey}，请补充剧名以关联片源信息`, 'info');
       } else {
@@ -479,7 +490,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           message: '未找到可用于检索的片名，请输入片名后搜索。',
           meta: '片源线索不足',
           action: 'openTmdbManual',
-          actionLabel: '手动检索',
+          actionLabel: '补充片名',
         });
         if (!silent) get().addLog('文件名信息不足，请补充片名后再关联片源信息', 'info');
       }
@@ -1033,7 +1044,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       files: { zh: task.zh, en: task.en, commentary: task.commentary },
       tmdbData: task.tmdbData || null,
       tmdbBackdrop: task.tmdbBackdrop || null,
-      tmdbBackdropList: task.tmdbBackdropList || []
+      tmdbBackdropList: task.tmdbBackdropList || [],
+      detectedAttributions: task.files.flatMap(file => extractSubtitleAttributions(file.text)).filter((item, index, all) =>
+        all.findIndex(candidate => candidate.role === item.role && candidate.value.toLowerCase() === item.value.toLowerCase()) === index
+      )
     });
     
     const detectTitle = smartDetectTitle(
@@ -1214,7 +1228,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       showAssHint: false,
       foundAssStyle: null,
       isProcessing: false,
-      statusNotices: []
+      statusNotices: [],
+      detectedAttributions: []
     });
     get().addLog("已取消本次导入", "info");
   },
@@ -1340,7 +1355,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const normalFiles = files.filter(f => !commentaryFiles.includes(f));
 
         const zhFiles = normalFiles.filter(f => f.lang === 'zh' || f.lang === 'zh-CN' || f.lang === 'zh-TW');
-        const enFiles = normalFiles.filter(f => f.lang === 'en');
+        const foreignFiles = normalFiles.filter(f => ['en', 'ja', 'ko', 'fr', 'latin'].includes(f.lang));
         const bilingualFiles = normalFiles.filter(f => f.lang === 'bilingual');
 
         const getBestFile = (list: Subfile[]): Subfile | null => {
@@ -1354,15 +1369,15 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         };
 
         const bestZh = getBestFile(zhFiles);
-        const bestEn = getBestFile(enFiles);
+        const bestForeign = getBestFile(foreignFiles);
         const bestBilingual = getBestFile(bilingualFiles);
         const bestCommentary = getBestFile(commentaryFiles);
 
         task.commentary = bestCommentary;
 
-        if (bestZh && bestEn) {
+        if (bestZh && bestForeign) {
           task.zh = bestZh;
-          task.en = bestEn;
+          task.en = bestForeign;
           task.isBilingualSingle = false;
         } else if (bestBilingual) {
           task.zh = bestBilingual;
@@ -1372,9 +1387,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           task.zh = bestZh;
           task.en = null;
           task.isBilingualSingle = false;
-        } else if (bestEn) {
+        } else if (bestForeign) {
           task.zh = null;
-          task.en = bestEn;
+          task.en = bestForeign;
           task.isBilingualSingle = false;
         } else {
           const bestAny = getBestFile(normalFiles);
@@ -1383,7 +1398,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
               task.zh = bestAny;
               task.en = null;
               task.isBilingualSingle = true;
-            } else if (bestAny.lang === 'en') {
+            } else if (['en', 'ja', 'ko', 'fr', 'latin'].includes(bestAny.lang)) {
               task.zh = null;
               task.en = bestAny;
               task.isBilingualSingle = false;
@@ -1432,7 +1447,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         
         const finalSubs = autoSignature(parsed);
         set({ processedSubs: finalSubs, previewIndex: 0, workflowStep: 2 });
-        get().addLog(`已成功加载原生双语字幕，共包含 ${finalSubs.length} 行流数据，并自动完成中英拆轨`, 'success');
+        get().addLog(`已成功加载原生双语字幕，共包含 ${finalSubs.length} 行流数据，并自动完成双语拆轨`, 'success');
       } else {
         // Standard double merge
         const zhParsed = parseSubtitle(files.zh?.text || '');
@@ -1471,7 +1486,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       statusNotices: [],
       previewIndex: 0,
       processedSubs: null,
-      showAllSubs: false
+      showAllSubs: false,
+      detectedAttributions: []
     });
     get().addLog("已重启工作流，准备新导入", "info");
   }

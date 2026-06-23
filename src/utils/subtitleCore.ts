@@ -29,6 +29,32 @@ export interface DecodeResult {
   encoding: string;
 }
 
+export type SubtitleLanguage =
+  | 'zh-CN'
+  | 'zh-TW'
+  | 'en'
+  | 'ja'
+  | 'ko'
+  | 'fr'
+  | 'latin'
+  | 'bilingual'
+  | 'commentary'
+  | 'unknown';
+
+export interface SubtitleLanguagePair {
+  primary: 'zh-CN' | 'zh-TW';
+  secondary: 'en' | 'ja' | 'ko' | 'fr' | 'latin' | 'unknown';
+}
+
+export type SubtitleAttributionRole = 'publisher' | 'translator' | 'editor' | 'timing' | 'proofreader' | 'encoder' | 'website' | 'producer';
+
+export interface SubtitleAttribution {
+  role: SubtitleAttributionRole;
+  label: string;
+  value: string;
+  source: 'ass-header' | 'subtitle-cue';
+}
+
 export interface StyleSettings {
   zhFontSize: number;
   enFontSize: number;
@@ -88,8 +114,14 @@ export function decodeBuffer(buffer: ArrayBuffer): DecodeResult {
 /**
  * Determine language from text content.
  */
-export function detectLanguageByContent(text: string): 'zh-CN' | 'zh-TW' | 'en' | 'unknown' {
+export function detectLanguageByContent(text: string): SubtitleLanguage {
   if (!text) return "unknown";
+
+  const kanaCount = (text.match(/[\u3040-\u30ff\u31f0-\u31ff]/g) || []).length;
+  if (kanaCount >= 2) return 'ja';
+
+  const hangulCount = (text.match(/[\uac00-\ud7af\u1100-\u11ff]/g) || []).length;
+  if (hangulCount >= 2) return 'ko';
   
   const tcChars = text.match(/[門設計這說著會後個過嗎從來對]/g);
   const scChars = text.match(/[门设计这说着会后个过吗从来对]/g);
@@ -105,7 +137,19 @@ export function detectLanguageByContent(text: string): 'zh-CN' | 'zh-TW' | 'en' 
     }
     return "zh-CN";
   }
-  return "en";
+  const clean = text
+    .replace(/<[^>]*>|\{[^}]*\}/g, ' ')
+    .replace(/[^\p{L}\p{M}'’\s-]/gu, ' ')
+    .toLowerCase();
+  const frenchSignals = (clean.match(/\b(le|la|les|des|une|dans|avec|pour|mais|est|pas|nous|vous|qui|que)\b/g) || []).length;
+  const englishSignals = (clean.match(/\b(the|and|you|that|this|with|for|have|not|are|was|what|where|why|hello|yes|no)\b/g) || []).length;
+  const frenchAccents = (clean.match(/[àâçéèêëîïôùûüÿœæ]/g) || []).length;
+  const latinCount = (clean.match(/[a-z\u00c0-\u024f]/g) || []).length;
+
+  if (frenchAccents > 0 || frenchSignals >= 2) return 'fr';
+  if (englishSignals >= 1) return 'en';
+  if (latinCount >= 2) return 'latin';
+  return 'unknown';
 }
 
 /**
@@ -1223,6 +1267,97 @@ export function alignSubtitlesIndustrial(
   return result;
 }
 
+const ATTRIBUTION_PATTERNS: Array<{ role: SubtitleAttributionRole; label: string; pattern: RegExp }> = [
+  { role: 'publisher', label: '发布 / 字幕组', pattern: /^(?:发行(?:方)?|发布(?:者)?|字幕组|字幕(?:制作)?组|Publisher|Release(?:d)?\s*By)\s*[:：]\s*(.+)$/i },
+  { role: 'translator', label: '翻译', pattern: /^(?:翻译|译者|听译|Translator|Translation)\s*[:：]\s*(.+)$/i },
+  { role: 'editor', label: '编校', pattern: /^(?:编辑|编者|后期|润色|Editor|Editing)\s*[:：]\s*(.+)$/i },
+  { role: 'timing', label: '时间轴', pattern: /^(?:时间轴|校轴|轴(?:制)?|Timing|Sync(?:hronization)?)\s*[:：]\s*(.+)$/i },
+  { role: 'proofreader', label: '校对', pattern: /^(?:校对|校订|Proofread(?:er)?)\s*[:：]\s*(.+)$/i },
+  { role: 'encoder', label: '压制 / 合并', pattern: /^(?:压制|编码|合并|Encoder|Encode(?:d)?\s*By|Mux(?:ed)?\s*By)\s*[:：]\s*(.+)$/i },
+  { role: 'website', label: '来源', pattern: /^(?:网站|来源|主页|Website|Web|URL)\s*[:：]\s*(.+)$/i },
+  { role: 'producer', label: '制作', pattern: /^(?:制作(?:者)?|字幕制作|Produced\s*By|Author)\s*[:：]\s*(.+)$/i },
+];
+
+const cleanAttributionValue = (value: string) => value
+  .replace(/\{\\[^}]+\}/g, '')
+  .replace(/<[^>]+>/g, '')
+  .replace(/\\N/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+  .slice(0, 120);
+
+/**
+ * Extract production credits from ASS header fields and credit-like subtitle cues.
+ * It deliberately reads only the beginning and end of subtitle files to avoid
+ * interpreting ordinary dialogue that happens to mention a translator or publisher.
+ */
+export function extractSubtitleAttributions(text: string): SubtitleAttribution[] {
+  if (!text) return [];
+
+  const normalized = text.replace(/\r\n?/g, '\n');
+  const scriptInfo = normalized.match(/\[Script Info\]([\s\S]*?)(?=\n\[[^\]]+\]|$)/i)?.[1] || '';
+  const cueLines = normalized.split('\n');
+  const samples: Array<{ line: string; source: SubtitleAttribution['source'] }> = [
+    ...scriptInfo.split('\n').map(line => ({ line, source: 'ass-header' as const })),
+    ...cueLines.slice(0, 72).map(line => ({ line, source: 'subtitle-cue' as const })),
+    ...cueLines.slice(-72).map(line => ({ line, source: 'subtitle-cue' as const })),
+  ];
+  const collected: SubtitleAttribution[] = [];
+
+  for (const sample of samples) {
+    const line = cleanAttributionValue(sample.line.replace(/^Dialogue:[^,]*,(?:[^,]*,){8}/i, ''));
+    if (!line || /^\d+$/.test(line) || /^\d{1,2}:\d{2}:\d{2}[,.]\d{2,3}/.test(line)) continue;
+    for (const definition of ATTRIBUTION_PATTERNS) {
+      const match = line.match(definition.pattern);
+      if (!match) continue;
+      const value = cleanAttributionValue(match[1]);
+      if (!value) continue;
+      collected.push({ role: definition.role, label: definition.label, value, source: sample.source });
+      break;
+    }
+  }
+
+  return collected.filter((item, index) =>
+    collected.findIndex(candidate => candidate.role === item.role && candidate.value.toLowerCase() === item.value.toLowerCase()) === index
+  );
+}
+
+const timestampToMs = (timestamp: string) => {
+  const match = timestamp.trim().match(/(\d+):(\d{2}):(\d{2})[,.](\d{2,3})/);
+  if (!match) return 0;
+  const milliseconds = Number(match[4].padEnd(3, '0'));
+  return (Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3])) * 1000 + milliseconds;
+};
+
+const msToSrtTimestamp = (milliseconds: number) => {
+  const safe = Math.max(0, Math.floor(milliseconds));
+  const hours = Math.floor(safe / 3600000);
+  const minutes = Math.floor((safe % 3600000) / 60000);
+  const seconds = Math.floor((safe % 60000) / 1000);
+  const ms = safe % 1000;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
+};
+
+/** Create a non-mutating, optional end-credit cue for exported subtitle files. */
+export function appendCreatorCredit(subs: SubRow[], creatorCredit: string): SubRow[] {
+  const cleanCredit = cleanAttributionValue(creatorCredit);
+  if (!cleanCredit || subs.length === 0) return subs;
+
+  const displayText = /^(?:字幕制作|制作(?:者)?|Subtitles?\s*(?:by|制作))\s*[:：]/i.test(cleanCredit)
+    ? cleanCredit
+    : `字幕制作：${cleanCredit}`;
+  const lastEnd = Math.max(...subs.map(sub => timestampToMs(sub.ts.split(' --> ')[1] || sub.ts)));
+  const start = lastEnd + 1500;
+  const end = start + 5000;
+
+  return [...subs, {
+    index: Math.max(...subs.map(sub => sub.index), 0) + 1,
+    ts: `${msToSrtTimestamp(start)} --> ${msToSrtTimestamp(end)}`,
+    text: displayText,
+    type: 'credit',
+  }];
+}
+
 export function generateSrtContent(subs: SubRow[], styleSettings?: StyleSettings): string {
   const { lyricPosition = 'top', lyricItalic = true } = styleSettings || {};
   return subs.map(s => {
@@ -1334,6 +1469,7 @@ Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour,
 Style: Han,PingFang SC,${mZhFont},${assZhColor},&H00FF9C41,${assZhOutline},&H00000000,1,0,0,0,100,100,0,0,1,${mOutline},${mShadow},2,${mBaseMargin},${mBaseMargin},${mMarginV},1
 Style: EN,Helvetica Neue,${mEnFont},${assEnColor},&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,${enScale},${enScale},0,0,1,${mEnOutline},${mEnOutline},2,${mBaseMargin},${mBaseMargin},${Math.floor(mMarginV * 0.6)},1
 Style: Note,PingFang SC,${mNoteFont},&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,${mOutline},${mShadow},8,${mBaseMargin},${mBaseMargin},${mMarginV},1
+Style: Credit,PingFang SC,${mNoteFont},${assZhColor},&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,${mOutline},${mShadow},5,${mBaseMargin},${mBaseMargin},${mMarginV},1
 Style: Lyrics,PingFang SC,${mLyricFont},${assLyricColor},&H00000000,&H00000000,&H00000000,0,${lyricItalic ? 1 : 0},0,0,100,100,0,0,1,${mOutline},${mShadow},${lyricPosition === 'top' ? 8 : 2},${mBaseMargin},${mBaseMargin},${lyricPosition === 'top' ? Math.floor(mMarginV * 0.8) : mMarginV},1
 Style: Lyrics_EN,Helvetica Neue,${mLyricEnFont},${assLyricColor},&H00000000,&H00000000,&H00000000,0,${lyricItalic ? 1 : 0},0,0,100,100,0,0,1,${mEnOutline},${mEnOutline},${lyricPosition === 'top' ? 8 : 2},${mBaseMargin},${mBaseMargin},${lyricPosition === 'top' ? Math.floor(mMarginV * 0.5) : Math.floor(mMarginV * 0.6)},1
 
@@ -1350,7 +1486,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
   const events = subs.map(s => {
     const [start, end] = s.ts.split(" --> ").map(srtToAssTime);
     let style = "Han";
-    if (s.type === "lyrics") {
+    if (s.type === "credit") {
+      style = "Credit";
+    } else if (s.type === "lyrics") {
       style = /[一-龥]/.test(s.text) ? "Lyrics" : "Lyrics_EN";
     } else if (s.type === "note" || s.type === "commentary" || s.cueKind === 'screen_text' || /[翻译制作合并]/.test(s.text)) {
       style = "Note";
@@ -1418,7 +1556,7 @@ export function checkIsBilingual(text: string): boolean {
     if (!next) continue;
     const nextLang = detectCueLanguage(splitSingleBilingualText(next.text));
     const adjacentBilingualPair = areTimeRangesNearEqual(sub.ts, next.ts)
-      && ((lang === 'zh' && nextLang === 'en') || (lang === 'en' && nextLang === 'zh'));
+      && ((lang === 'zh' && nextLang === 'foreign') || (lang === 'foreign' && nextLang === 'zh'));
 
     if (adjacentBilingualPair) {
       bilingualSignals += 2;
@@ -1512,15 +1650,17 @@ export function splitSingleBilingualText(text: string): string {
   return text;
 }
 
-type CueLanguage = 'zh' | 'en' | 'mixed' | 'unknown';
+type CueLanguage = 'zh' | 'foreign' | 'mixed' | 'unknown';
 
 const detectCueLanguage = (text: string): CueLanguage => {
   const clean = cleanSubtitleContent(text).replace(/[♪♫♬]/g, '').trim();
-  const hasZh = /[一-龥]/.test(clean);
+  const hasKana = /[\u3040-\u30ff\u31f0-\u31ff]/.test(clean);
+  const hasHangul = /[\uac00-\ud7af\u1100-\u11ff]/.test(clean);
+  const hasZh = /[一-龥]/.test(clean) && !hasKana;
   const hasLatin = /[A-Za-z]/.test(clean);
-  if (hasZh && hasLatin) return 'mixed';
+  if (hasZh && (hasLatin || hasKana || hasHangul)) return 'mixed';
   if (hasZh) return 'zh';
-  if (hasLatin) return 'en';
+  if (hasLatin || hasKana || hasHangul) return 'foreign';
   return 'unknown';
 };
 
@@ -1555,14 +1695,14 @@ export function normalizeSingleBilingualRows(rows: RawSub[]): SubRow[] {
 
     const canFoldPair = next
       && areTimeRangesNearEqual(current.ts, next.ts)
-      && ((currentLang === 'zh' && nextLang === 'en') || (currentLang === 'en' && nextLang === 'zh'));
+      && ((currentLang === 'zh' && nextLang === 'foreign') || (currentLang === 'foreign' && nextLang === 'zh'));
 
     if (canFoldPair) {
       const zhText = currentLang === 'zh' ? currentText : nextText;
-      const enText = currentLang === 'en' ? currentText : nextText;
+      const foreignText = currentLang === 'foreign' ? currentText : nextText;
       result.push({
         ts: current.ts,
-        text: `${zhText}\n${enText}`,
+        text: `${zhText}\n${foreignText}`,
         type: 'merged',
         cueKind: combineRowCueKind(current.cueKind, next.cueKind),
         index: result.length + 1,
@@ -1582,4 +1722,29 @@ export function normalizeSingleBilingualRows(rows: RawSub[]): SubRow[] {
   }
 
   return result;
+}
+
+export function detectSubtitleLanguagePair(text: string): SubtitleLanguagePair | undefined {
+  const rows = parseSubtitle(text);
+  if (rows.length === 0) return undefined;
+
+  const counts = new Map<SubtitleLanguage, number>();
+  for (const row of rows.slice(0, 160)) {
+    const normalized = splitSingleBilingualText(row.text);
+    for (const line of normalized.split(/\\N|\\n|\r?\n/)) {
+      const language = detectLanguageByContent(line);
+      if (language === 'unknown' || language === 'bilingual' || language === 'commentary') continue;
+      counts.set(language, (counts.get(language) || 0) + 1);
+    }
+  }
+
+  const primary = (counts.get('zh-TW') || 0) > (counts.get('zh-CN') || 0) ? 'zh-TW' : 'zh-CN';
+  if ((counts.get('zh-CN') || 0) + (counts.get('zh-TW') || 0) === 0) return undefined;
+
+  const secondary = (['en', 'ja', 'ko', 'fr', 'latin'] as const)
+    .map(language => ({ language, count: counts.get(language) || 0 }))
+    .sort((a, b) => b.count - a.count)[0];
+
+  if (!secondary || secondary.count === 0) return undefined;
+  return { primary, secondary: secondary.language };
 }

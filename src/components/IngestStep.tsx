@@ -5,7 +5,7 @@ import { useStudioStore } from '@/store/useStudioStore';
 import { DragZone } from '@/components/Ingest/DragZone';
 import { TaskList } from '@/components/Ingest/TaskList';
 import { TmdbPanel } from '@/components/Ingest/TmdbPanel';
-import { Database, Trash2, Calendar, Clock, X } from 'lucide-react';
+import { Database, Trash2, Calendar, FolderClock, ShieldCheck, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const IngestStep: React.FC = () => {
@@ -41,11 +41,18 @@ export const IngestStep: React.FC = () => {
         </div>
         
         <div className="flex flex-wrap items-center gap-3 md:gap-4">
+          <a
+            href="/about"
+            className="px-4 py-3 text-sm text-neutral-400 hover:text-[#b9ddd8] flex items-center gap-2 transition-colors"
+          >
+            <ShieldCheck className="w-4 h-4" />
+            关于与隐私
+          </a>
           <button 
             className="px-5 py-3 glass-btn-ar rounded-xl text-sm text-neutral-300 hover:text-white flex items-center gap-2 cursor-pointer transition-all duration-300 group"
             onClick={() => setIsLibraryOpen(true)}
           >
-            <Clock className="w-4 h-4 text-[#e5e7eb]" />
+            <FolderClock className="w-4 h-4 text-[#e5e7eb]" />
             历史存档字幕
             {libraryList.length > 0 && (
               <span className="bg-[#9ca3af]/12 text-[#e5e7eb] px-2 py-0.5 rounded-full text-xs ml-1 font-bold">{libraryList.length}</span>
@@ -106,7 +113,7 @@ export const IngestStep: React.FC = () => {
             >
               <div className="flex justify-between items-center px-6 py-5 border-b border-white/5 flex-shrink-0">
                 <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-[#e5e7eb]" />
+                  <FolderClock className="w-5 h-5 text-[#e5e7eb]" />
                   <h4 className="text-base font-bold text-white tracking-wide">历史存档字幕</h4>
                 </div>
                 <button

@@ -8,7 +8,7 @@ import { ControlDeck } from '@/components/Theater/ControlDeck';
 import { TimelineControls } from '@/components/Workbench/TimelineControls';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
-import { ChevronLeft, Sliders } from 'lucide-react';
+import { ChevronLeft, SlidersHorizontal } from 'lucide-react';
 import { SubtitleDataSlot, BackdropSlot } from '@/types/subtitleTypes';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -95,7 +95,7 @@ export const TheaterStep: React.FC = () => {
             className={`py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer
               ${isSettingsOpen ? 'glass-btn-ar-active' : 'glass-btn-ar text-neutral-350 hover:text-white'}`}
           >
-            <Sliders className="w-3.5 h-3.5" />
+            <SlidersHorizontal className="w-3.5 h-3.5" />
             样式
           </button>
 

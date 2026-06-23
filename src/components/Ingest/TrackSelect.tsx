@@ -8,6 +8,7 @@ interface Option {
   name: string;
   count?: number;
   lang?: string;
+  languagePair?: { primary: string; secondary: string };
 }
 
 interface TrackSelectProps {
@@ -18,21 +19,28 @@ interface TrackSelectProps {
   countLabel?: number | null;
 }
 
-const getLangBadgeMini = (lang?: string) => {
+const getLangBadgeMini = (lang?: string, languagePair?: Option['languagePair']) => {
   if (!lang) return null;
   const map: Record<string, { label: string; color: string }> = {
     'zh-CN': { label: '简', color: 'text-sky-200 bg-sky-500/22 border border-sky-300/45' },
     'zh-TW': { label: '繁', color: 'text-cyan-200 bg-cyan-500/22 border border-cyan-300/45' },
     'zh': { label: '中', color: 'text-sky-200 bg-sky-500/22 border border-sky-300/45' },
     'en': { label: '英', color: 'text-emerald-200 bg-emerald-500/22 border border-emerald-300/45' },
+    'ja': { label: '日', color: 'text-rose-200 bg-rose-500/22 border border-rose-300/45' },
+    'ko': { label: '韩', color: 'text-violet-200 bg-violet-500/22 border border-violet-300/45' },
+    'fr': { label: '法', color: 'text-amber-200 bg-amber-500/22 border border-amber-300/45' },
+    'latin': { label: '拉', color: 'text-stone-200 bg-stone-500/22 border border-stone-300/45' },
     'bilingual': { label: '双', color: 'text-fuchsia-200 bg-fuchsia-500/22 border border-fuchsia-300/45' },
     'commentary': { label: '导', color: 'text-orange-200 bg-orange-500/22 border border-orange-300/45' },
   };
   const entry = map[lang];
   if (!entry) return null;
+  const pairLabel = languagePair
+    ? `${map[languagePair.primary]?.label || '中'} / ${map[languagePair.secondary]?.label || '双'}`
+    : entry.label;
   return (
     <span className={`text-xs font-semibold px-2 py-1 rounded-md flex-shrink-0 ${entry.color}`}>
-      {entry.label}
+      {pairLabel}
     </span>
   );
 };
@@ -102,7 +110,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
         <span className="flex-1 min-w-0 overflow-hidden">
           {selectedOption ? (
             <span className="flex items-center gap-1.5 min-w-0">
-              {getLangBadgeMini(selectedOption.lang)}
+              {getLangBadgeMini(selectedOption.lang, selectedOption.languagePair)}
               <FileNameText name={selectedOption.name} className="text-neutral-300 font-medium flex-1" />
             </span>
           ) : (
@@ -143,7 +151,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
                   ? <Check className="w-3 h-3 text-white/80 flex-shrink-0" />
                   : <span className="w-3 flex-shrink-0" />
                 }
-                {getLangBadgeMini(opt.lang)}
+                {getLangBadgeMini(opt.lang, opt.languagePair)}
                 <FileNameText name={truncateMiddle(opt.name, 120)} className="flex-1 font-mono text-base text-neutral-100" />
                 {opt.count != null && (
                   <span className="text-white/55 text-xs flex-shrink-0 font-mono tabular-nums">{opt.count}行</span>

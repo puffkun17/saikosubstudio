@@ -36,6 +36,11 @@ const {
   checkIsBilingual,
   cleanFilename,
   classifySubtitleCue,
+  detectLanguageByContent,
+  detectSubtitleLanguagePair,
+  appendCreatorCredit,
+  extractSubtitleAttributions,
+  generateAssContent,
   generateSrtContent,
   mergeSubtitles,
   normalizeSingleBilingualRows,
@@ -102,6 +107,34 @@ const assertIncludes = (items, expected, message) => {
   const identity = assessMediaIdentity(sample);
   assert.equal(identity.level, 'weak', 'Files without a media title should be treated as weak identity.');
   assert.equal(identity.shouldAutoSearchTmdb, false);
+}
+
+{
+  const credits = extractSubtitleAttributions(`[Script Info]
+Translator: Aster Lin
+Timing: Northbridge
+Website: subtitles.example
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`);
+  assert.deepEqual(credits.map(item => [item.role, item.value]), [
+    ['translator', 'Aster Lin'],
+    ['timing', 'Northbridge'],
+    ['website', 'subtitles.example'],
+  ], 'ASS header credits should be extracted into structured attributions.');
+}
+
+{
+  const withCredit = appendCreatorCredit([
+    { index: 1, ts: '00:01:00,000 --> 00:01:02,000', text: 'The end.' },
+  ], 'Nexus Studio');
+  assert.equal(withCredit.length, 2, 'Creator credit should append a new subtitle row without mutating the source count.');
+  assert.equal(withCredit[1].text, '字幕制作：Nexus Studio');
+  assert.equal(withCredit[1].ts, '00:01:03,500 --> 00:01:08,500');
+  assert.match(generateSrtContent(withCredit), /字幕制作：Nexus Studio/, 'Creator credit should be included in exported SRT content.');
+  const ass = generateAssContent(withCredit, { zhFontSize: 20, enFontSize: 12, zhColor: '#FFFFFF', enColor: '#B0B0B0', zhOutline: '#000000', enOutline: '#000000', enScale: 90, maxLenZh: 20, maxLenEn: 80, marginV: 20 });
+  assert.match(ass, /Style: Credit,/, 'ASS export should include a dedicated centered credit style.');
+  assert.match(ass, /Dialogue: 0,0:01:03\.50,0:01:08\.50,Credit,/, 'Creator credit should use the dedicated ASS style.');
 }
 
 {
@@ -199,6 +232,47 @@ What's wrong?
 00:00:04,000 --> 00:00:06,000
 然后回家。
 `), false, 'Incidental English words inside Chinese dialogue should not mark a file bilingual.');
+}
+
+{
+  const chineseJapaneseSrt = `1
+00:00:01,000 --> 00:00:03,000
+欢迎回来。
+
+2
+00:00:01,000 --> 00:00:03,000
+おかえりなさい。
+
+3
+00:00:04,000 --> 00:00:06,000
+我们开始吧。
+
+4
+00:00:04,000 --> 00:00:06,000
+始めましょう。`;
+  assert.equal(detectLanguageByContent('おかえりなさい。'), 'ja');
+  assert.equal(checkIsBilingual(chineseJapaneseSrt), true, 'Chinese/Japanese same-time cues should be treated as bilingual.');
+  const rows = normalizeSingleBilingualRows(parseSubtitle(chineseJapaneseSrt));
+  assert.equal(rows.length, 2, 'Chinese/Japanese same-time cues should fold into one timeline row.');
+  assert.deepEqual(detectSubtitleLanguagePair(chineseJapaneseSrt), { primary: 'zh-CN', secondary: 'ja' });
+}
+
+{
+  const chineseKoreanSrt = `1
+00:00:01,000 --> 00:00:03,000
+你还好吗？
+
+2
+00:00:01,000 --> 00:00:03,000
+괜찮아요?`;
+  assert.equal(detectLanguageByContent('괜찮아요?'), 'ko');
+  assert.equal(checkIsBilingual(chineseKoreanSrt), true, 'Chinese/Korean same-time cues should be treated as bilingual.');
+  assert.deepEqual(detectSubtitleLanguagePair(chineseKoreanSrt), { primary: 'zh-CN', secondary: 'ko' });
+}
+
+{
+  assert.equal(detectLanguageByContent('Bonjour, je suis avec vous.'), 'fr');
+  assert.equal(detectLanguageByContent('Hola mundo'), 'latin');
 }
 
 {

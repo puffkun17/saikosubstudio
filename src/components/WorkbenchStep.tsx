@@ -6,7 +6,7 @@ import { SequenceList } from '@/components/Workbench/SequenceList';
 import { SourceMatchPanel } from '@/components/Workbench/SourceMatchPanel';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
-import { ChevronLeft, Eye, Sliders } from 'lucide-react';
+import { ChevronLeft, MonitorCheck, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const WorkbenchStep: React.FC = () => {
@@ -98,7 +98,7 @@ export const WorkbenchStep: React.FC = () => {
             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
             title="样式配置选项"
           >
-            <Sliders className="w-3.5 h-3.5 text-[#9ddacb]" />
+            <SlidersHorizontal className="w-3.5 h-3.5 text-[#9ddacb]" />
             样式参数
           </motion.button>
 
@@ -112,7 +112,7 @@ export const WorkbenchStep: React.FC = () => {
             className="group py-2.5 px-5 rounded-xl bg-white text-black text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer border border-white/20 hover:bg-neutral-200 hover:scale-[1.01] shadow-[0_10px_26px_rgba(255,255,255,0.08)]"
             onClick={() => setWorkflowStep(3)}
           >
-            <Eye className="w-3.5 h-3.5 text-[#267c6e]" />
+            <MonitorCheck className="w-3.5 h-3.5 text-[#267c6e]" />
             下一步：放映厅预览
           </motion.button>
         </div>

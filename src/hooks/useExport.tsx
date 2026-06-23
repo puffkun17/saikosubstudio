@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { ChevronDown, SquareArrowRightExit } from 'lucide-react';
 import { useStudioStore } from '@/store/useStudioStore';
-import { generateSrtContent, generateAssContent } from '@/utils/subtitleCore';
+import { appendCreatorCredit as appendCreatorCreditCue, generateSrtContent, generateAssContent } from '@/utils/subtitleCore';
 
 /**
  * #16 — Shared export hook to avoid duplication in WorkbenchStep + TheaterStep
  */
 export const useExport = () => {
-  const { processedSubs, customFilename, customStyle, addLog } = useStudioStore();
+  const { processedSubs, customFilename, customStyle, creatorCredit, appendCreatorCredit, addLog } = useStudioStore();
 
   const handleDownload = (format: 'ass' | 'srt') => {
     if (!processedSubs || processedSubs.length === 0) return;
@@ -17,12 +18,16 @@ export const useExport = () => {
       let mimeType = 'text/plain';
       let extension = '';
 
+      const exportSubs = appendCreatorCredit
+        ? appendCreatorCreditCue(processedSubs, creatorCredit)
+        : processedSubs;
+
       if (format === 'srt') {
-        content = generateSrtContent(processedSubs);
+        content = generateSrtContent(exportSubs, customStyle);
         mimeType = 'text/srt';
         extension = 'srt';
       } else {
-        content = generateAssContent(processedSubs, customStyle, customFilename);
+        content = generateAssContent(exportSubs, customStyle, customFilename);
         mimeType = 'text/x-ass';
         extension = 'ass';
       }
@@ -76,13 +81,9 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
         className={variant === 'primary' ? primaryClass : ghostClass}
         onClick={() => setOpen(!open)}
       >
-        <svg className="w-3.5 h-3.5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-        </svg>
+        <SquareArrowRightExit className="w-3.5 h-3.5 text-white/70" aria-hidden="true" />
         导出
-        <svg className="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+        <ChevronDown className="w-3 h-3 opacity-60" aria-hidden="true" />
       </button>
 
       {open && (

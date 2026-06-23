@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 import type { StyleSettings } from '@/utils/subtitleCore';
-import { LayoutGrid, Eye, ChevronDown, ChevronUp, Save, Trash2 } from 'lucide-react';
+import { ALargeSmall, ChevronDown, ChevronUp, FileType, Paintbrush, Pipette, Save, SlidersHorizontal, SquareArrowRightExit, SquareCenterlineDashedHorizontal, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { InfoHint } from '@/components/ui/InfoHint';
 
@@ -130,15 +130,20 @@ const ColorPicker = ({
 const SettingSection = ({
   title,
   children,
-  action
+  action,
+  icon,
 }: {
   title: string;
   children: React.ReactNode;
   action?: React.ReactNode;
+  icon?: React.ReactNode;
 }) => (
   <section className="rounded-xl border border-white/[0.07] bg-white/[0.018] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
     <div className="flex items-center justify-between gap-3 mb-3">
-      <h4 className="text-sm font-semibold text-neutral-100 tracking-tight">{title}</h4>
+      <h4 className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-100 tracking-tight">
+        {icon}
+        {title}
+      </h4>
       {action}
     </div>
     <div className="flex flex-col gap-3">{children}</div>
@@ -279,7 +284,7 @@ export const StyleSidebar: React.FC = () => {
       <div className="mb-5 flex flex-shrink-0 items-start justify-between gap-4 border-b border-white/[0.07] pb-4">
         <div className="min-w-0 select-none">
           <div className="flex items-center gap-2">
-            <LayoutGrid className="h-4 w-4 text-neutral-200" />
+            <SlidersHorizontal className="h-4 w-4 text-neutral-200" />
             <h3 className="text-lg font-semibold tracking-tight text-neutral-50">
               样式参数
             </h3>
@@ -298,7 +303,7 @@ export const StyleSidebar: React.FC = () => {
           onClick={() => setShowGuides(!showGuides)}
           title="预览辅助线"
         >
-          <Eye className="h-3.5 w-3.5" />
+          <SquareCenterlineDashedHorizontal className="h-3.5 w-3.5" />
           辅助线
         </button>
       </div>
@@ -306,6 +311,7 @@ export const StyleSidebar: React.FC = () => {
       <div className="flex flex-1 flex-col gap-4">
         <SettingSection
           title="模板"
+          icon={<Paintbrush className="h-4 w-4 text-[#b9ddd8]" aria-hidden="true" />}
           action={
             <button
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-300 transition-colors hover:text-white cursor-pointer"
@@ -382,7 +388,7 @@ export const StyleSidebar: React.FC = () => {
           </div>
         </SettingSection>
 
-        <SettingSection title="文字尺寸">
+        <SettingSection title="文字尺寸" icon={<ALargeSmall className="h-4 w-4 text-[#b9ddd8]" aria-hidden="true" />}>
           <SliderControl
             label="整体缩放"
             value={customStyle.globalScale ?? 1}
@@ -402,7 +408,7 @@ export const StyleSidebar: React.FC = () => {
             onChange={value => handleStyleChange('zhFontSize', value)}
           />
           <SliderControl
-            label="英文字幕"
+            label="第二语言字幕"
             value={customStyle.enFontSize}
             min={8}
             max={24}
@@ -422,7 +428,7 @@ export const StyleSidebar: React.FC = () => {
           />
         </SettingSection>
 
-        <SettingSection title="字体">
+        <SettingSection title="字体" icon={<FileType className="h-4 w-4 text-[#b9ddd8]" aria-hidden="true" />}>
           <FontFamilySelect
             label="中文"
             value={customStyle.zhFontFamily || FONT_FAMILIES_ZH[0].value}
@@ -430,14 +436,14 @@ export const StyleSidebar: React.FC = () => {
             onChange={(v) => handleStyleChange('zhFontFamily', v)}
           />
           <FontFamilySelect
-            label="英文"
+            label="第二语言"
             value={customStyle.enFontFamily || FONT_FAMILIES_EN[0].value}
             options={FONT_FAMILIES_EN}
             onChange={(v) => handleStyleChange('enFontFamily', v)}
           />
         </SettingSection>
 
-        <SettingSection title="颜色">
+        <SettingSection title="颜色" icon={<Pipette className="h-4 w-4 text-[#b9ddd8]" aria-hidden="true" />}>
           <ColorPicker
             label="中文文字"
             value={customStyle.zhColor}
@@ -453,14 +459,14 @@ export const StyleSidebar: React.FC = () => {
             onChange={(c) => handleStyleChange('zhOutline', c)}
           />
           <ColorPicker
-            label="英文文字"
+            label="第二语言文字"
             value={customStyle.enColor}
             isOpen={openPicker === 'enColor'}
             onToggle={() => setOpenPicker(openPicker === 'enColor' ? null : 'enColor')}
             onChange={(c) => handleStyleChange('enColor', c)}
           />
           <ColorPicker
-            label="英文描边"
+            label="第二语言描边"
             value={customStyle.enOutline || '#000000'}
             isOpen={openPicker === 'enOutline'}
             onToggle={() => setOpenPicker(openPicker === 'enOutline' ? null : 'enOutline')}
@@ -468,7 +474,7 @@ export const StyleSidebar: React.FC = () => {
           />
         </SettingSection>
 
-        <SettingSection title="输出">
+        <SettingSection title="输出" icon={<SquareArrowRightExit className="h-4 w-4 text-[#b9ddd8]" aria-hidden="true" />}>
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm font-medium text-neutral-300 inline-flex items-center gap-1.5">
               画面规格

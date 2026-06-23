@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useStudioStore, type TmdbSuggestion } from '@/store/useStudioStore';
-import { Search, Film, Star, X, Database, CheckCircle2, CircleAlert } from 'lucide-react';
+import { Search, SearchAlert, Film, Star, X, CheckCircle2, CircleAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const getRottenTomatoesScore = (title: string, voteAverage: number) => {
@@ -204,7 +204,7 @@ export const TmdbPanel: React.FC = () => {
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-neutral-600 gap-4">
               <div className="relative p-4 rounded-xl bg-white/[0.012] border border-white/[0.06] shadow-[0_0_25px_rgba(0,0,0,0.08)] group-hover:border-[#9ca3af]/10 transition-colors">
-              <Database className="w-10 h-10 opacity-30 text-[#e5e7eb]" />
+              <SearchAlert className="w-10 h-10 opacity-35 text-[#e5e7eb]" />
             </div>
             <p className="text-base text-neutral-300 max-w-[28ch] leading-[1.65]">
               暂未匹配影视元数据<br/>

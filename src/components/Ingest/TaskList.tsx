@@ -3,11 +3,13 @@
 import React, { useRef, useState } from 'react';
 import { useStudioStore, TaskPair, Subfile } from '@/store/useStudioStore';
 import { CircleAlert, Play, Plus, RotateCcw, Search, X } from 'lucide-react';
-import { parseSrt, decodeBuffer, detectLanguageByContent, checkIsBilingual, StyleSettings } from '@/utils/subtitleCore';
+import { parseSrt, decodeBuffer, detectLanguageByContent, detectSubtitleLanguagePair, checkIsBilingual, StyleSettings } from '@/utils/subtitleCore';
 import { motion } from 'framer-motion';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
+import { CreditTool } from '@/components/Ingest/CreditTool';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { getSubtitleTermHint } from '@/utils/subtitleTerminology';
+import { getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
 
 export const TaskList: React.FC = () => {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -60,20 +62,32 @@ export const TaskList: React.FC = () => {
     if (filesList.length === 0) return;
     const detectedFiles: Subfile[] = [];
     const { processFiles, addLog } = useStudioStore.getState();
+    const batchIssue = getClientBatchIssue(filesList);
+    if (batchIssue) {
+      addLog(batchIssue, 'error');
+      return;
+    }
 
     for (const file of filesList) {
       const nameLower = file.name.toLowerCase();
       if (nameLower.endsWith('.srt') || nameLower.endsWith('.ass')) {
+        const fileIssue = getClientFileIssue(file);
+        if (fileIssue) {
+          addLog(`${file.name}：${fileIssue}`, 'error');
+          continue;
+        }
         try {
           const text = await readAndDecodeFile(file);
           const isBilingual = checkIsBilingual(text);
           const langDetect = isBilingual ? 'bilingual' : detectLanguageByContent(text);
+          const languagePair = isBilingual ? detectSubtitleLanguagePair(text) : undefined;
 
           detectedFiles.push({
             id: `file_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
             name: file.name,
             text,
             lang: langDetect,
+            languagePair,
             isBilingual,
             isCommentary: /(commentary|comment|director|解说|导轨)/i.test(file.name),
             size: text.length
@@ -319,7 +333,7 @@ export const TaskList: React.FC = () => {
                 字幕文件匹配
               </h4>
               <InfoHint label="字幕文件匹配说明">
-                选择要进入处理流程的字幕轨。单个已含中英双语的文件会作为双语字幕处理；分开的中英文件会按时间轴合并。
+                选择要进入处理流程的字幕轨。单个已含双语内容的文件会作为双语字幕处理；分开的中文字幕与第二语言字幕会按时间轴合并。
               </InfoHint>
             </div>
             <div className="flex flex-col gap-3 bg-black/20 p-4 rounded-lg overflow-visible relative">
@@ -328,12 +342,12 @@ export const TaskList: React.FC = () => {
                 <span className="w-28 text-sm text-neutral-200 font-semibold shrink-0 text-left inline-flex items-center gap-1.5">
                   主字幕
                   <InfoHint label="主字幕说明" side="right">
-                    主字幕优先承载中文或双语内容。若文件已识别为双语，系统会自动折叠同时间窗的中英字幕行。
+                    主字幕优先承载中文或双语内容。若文件已识别为双语，系统会自动折叠同时间窗的对应字幕行。
                   </InfoHint>
                 </span>
                 <TrackSelect
                   value={activeTask.zh?.id || ''}
-                  options={uploadedFiles.map(f => ({ id: f.id, name: f.name, count: getSubTitleCount(f), lang: f.lang }))}
+                  options={uploadedFiles.map(f => ({ id: f.id, name: f.name, count: getSubTitleCount(f), lang: f.lang, languagePair: f.languagePair }))}
                   onChange={(id) => bindTrack(activeTask.id, 'zh', id)}
                   countLabel={activeTask.zh ? getSubTitleCount(activeTask.zh) : null}
                   placeholder="选择中文或双语字幕"
@@ -345,14 +359,14 @@ export const TaskList: React.FC = () => {
                   {/* English binding */}
                   <div className="flex flex-row items-center gap-2 overflow-visible">
                     <span className="w-28 text-sm text-neutral-200 font-semibold shrink-0 text-left">
-                      英文字幕
+                      第二语言字幕
                     </span>
                     <TrackSelect
                       value={activeTask.en?.id || ''}
-                      options={uploadedFiles.map(f => ({ id: f.id, name: f.name, count: getSubTitleCount(f), lang: f.lang }))}
+                      options={uploadedFiles.map(f => ({ id: f.id, name: f.name, count: getSubTitleCount(f), lang: f.lang, languagePair: f.languagePair }))}
                       onChange={(id) => bindTrack(activeTask.id, 'en', id)}
                       countLabel={activeTask.en ? getSubTitleCount(activeTask.en) : null}
-                      placeholder="选择英文字幕（可选）"
+                      placeholder="选择英语、日语、韩语或其他语言字幕（可选）"
                     />
                   </div>
 
@@ -394,7 +408,7 @@ export const TaskList: React.FC = () => {
               >
                 <div className="text-xs md:text-sm text-neutral-200">
                   <span className="text-[#e5e7eb] font-bold">检测到字幕样式:</span>
-                  {' '}中文 {foundAssStyle.zhFontSize}像素 / 英文 {foundAssStyle.enFontSize}像素
+                  {' '}中文 {foundAssStyle.zhFontSize}像素 / 第二语言 {foundAssStyle.enFontSize}像素
                 </div>
                 <div className="flex gap-1.5">
                   <button
@@ -457,7 +471,7 @@ export const TaskList: React.FC = () => {
                   <label className="text-sm text-neutral-200 font-semibold select-none inline-flex items-center gap-1.5">
                     对齐方式
                     <InfoHint label="对齐方式说明" side="left">
-                      智能模式适合常规中英轨合并；细致模式会尝试处理插入、删减或断句不一致，但耗时略高。
+                      智能模式适合常规双语轨合并；细致模式会尝试处理插入、删减或断句不一致，但耗时略高。
                     </InfoHint>
                   </label>
                   <div className="grid grid-cols-2 gap-0.5 p-0.5 rounded-xl bg-[#020204] border border-white/[0.07] relative shadow-[inset_0_2px_4px_rgba(0,0,0,0.85)] h-12 items-center">
@@ -514,6 +528,8 @@ export const TaskList: React.FC = () => {
               </div>
 
             </div>
+
+            <CreditTool />
           </div>
 
         </div>

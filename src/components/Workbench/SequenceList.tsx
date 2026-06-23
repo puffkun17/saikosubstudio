@@ -191,7 +191,7 @@ export const SequenceList: React.FC = () => {
                               }
                             }}
                             className="bg-white/[0.015] border border-white/[0.06] text-xs font-normal leading-relaxed text-[#e5e7eb]/90 rounded-lg px-3 py-1.5 w-full outline-none focus:border-[#9ddacb]/55 focus:bg-[#9ddacb]/[0.035] transition-all"
-                            placeholder="英文字幕文本"
+                            placeholder="第二语言字幕文本"
                           />
                         )}
                         <div className="flex justify-end gap-2 mt-1">
