@@ -113,6 +113,7 @@ export const SequenceList: React.FC = () => {
               const zhText = parts[0] || '';
               const enText = parts[1] || '';
               const isLyric = isLyricText(sub.text);
+              const isExpandedDialogue = sub.alignment === 'expanded-dialogue';
 
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
               const endTime = sub.ts.split(' --> ')[1]?.replace(',', '.').trim() || '';
@@ -206,6 +207,11 @@ export const SequenceList: React.FC = () => {
                       </div>
                     ) : (
                       <>
+                        {isExpandedDialogue && (
+                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[#9ddacb]/20 bg-[#9ddacb]/[0.055] px-2 py-0.5 text-[11px] font-medium text-[#cdece5]">
+                            对话组
+                          </span>
+                        )}
                         {sub.cueKind === 'screen_text' && (
                           <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[#a8b7a3]/20 bg-[#a8b7a3]/[0.055] px-2 py-0.5 text-[11px] font-medium text-[#cbd6c7]">
                             画面文字

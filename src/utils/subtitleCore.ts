@@ -9,11 +9,27 @@ export interface CueClassification {
   placement?: 'top' | 'positioned' | 'bottom';
 }
 
+export interface AlignmentSourceRef {
+  cueIndex: number;
+  ts: string;
+  text: string;
+}
+
+export interface AlignmentProvenance {
+  method: 'expanded-dialogue' | 'single-track';
+  timingSource: 'primary' | 'secondary';
+  groupId?: string;
+  primary?: AlignmentSourceRef;
+  secondary?: AlignmentSourceRef;
+}
+
 export interface SubRow {
   ts: string;
   text: string;
   type?: string;
   cueKind?: CueKind;
+  alignment?: 'expanded-dialogue';
+  provenance?: AlignmentProvenance;
   index: number;
 }
 
@@ -1000,31 +1016,35 @@ interface PreprocessedRow {
   text: string;
   type: 'note' | 'dialogue';
   cueKind?: CueKind;
+  sourceIndex: number;
+  // 保留原始来源
+  sourceText?: string;
 }
 
 function preprocessMixedContent(subs: RawSub[]): PreprocessedRow[] {
   const processed: PreprocessedRow[] = [];
-  for (const sub of subs) {
+  for (const [sourceOffset, sub] of subs.entries()) {
     const { ts, text } = sub;
+    const sourceIndex = sourceOffset + 1;
     const cueKind = resolveCueKind(text, sub.cueKind);
     const ex = extractDialogueAndNotes(text);
     if (ex.notes && !ex.dialogue) {
       if (isLyricText(ex.notes)) {
-        processed.push({ ts, text: ex.notes, type: "dialogue", cueKind: 'lyrics' });
+        processed.push({ ts, text: ex.notes, type: "dialogue", cueKind: 'lyrics', sourceIndex, sourceText: text });
       } else {
-        processed.push({ ts, text: ex.notes, type: "note", cueKind: cueKind === 'screen_text' ? 'screen_text' : 'narration' });
+        processed.push({ ts, text: ex.notes, type: "note", cueKind: cueKind === 'screen_text' ? 'screen_text' : 'narration', sourceIndex, sourceText: text });
       }
     } else if (ex.dialogue && !ex.notes) {
-      processed.push({ ts, text: ex.dialogue, type: "dialogue", cueKind });
+      processed.push({ ts, text: ex.dialogue, type: "dialogue", cueKind, sourceIndex, sourceText: text });
     } else if (ex.dialogue && ex.notes) {
       if (isLyricText(ex.notes)) {
-        processed.push({ ts, text: ex.notes, type: "dialogue", cueKind: 'lyrics' });
+        processed.push({ ts, text: ex.notes, type: "dialogue", cueKind: 'lyrics', sourceIndex, sourceText: text });
       } else {
-        processed.push({ ts, text: ex.notes, type: "note", cueKind: cueKind === 'screen_text' ? 'screen_text' : 'narration' });
+        processed.push({ ts, text: ex.notes, type: "note", cueKind: cueKind === 'screen_text' ? 'screen_text' : 'narration', sourceIndex, sourceText: text });
       }
-      processed.push({ ts, text: ex.dialogue, type: "dialogue", cueKind });
+      processed.push({ ts, text: ex.dialogue, type: "dialogue", cueKind, sourceIndex, sourceText: text });
     } else {
-      processed.push({ ts, text, type: "dialogue", cueKind });
+      processed.push({ ts, text, type: "dialogue", cueKind, sourceIndex, sourceText: text });
     }
   }
   return processed;
@@ -1039,6 +1059,163 @@ function calculateOverlapRatio(s1: number, e1: number, s2: number, e2: number): 
     return tD > 0 ? oD / tD : 0;
   }
   return 0;
+}
+
+interface AlignmentStep {
+  zhIdx: number | null;
+  enIdx: number | null;
+}
+
+interface ExpandedDialogueRow {
+  ts: string;
+  text: string;
+  type: 'merged';
+  cueKind?: CueKind;
+  alignment: 'expanded-dialogue';
+  provenance: AlignmentProvenance;
+}
+
+const PACKED_DIALOGUE_TURN = /(^|\n|[。！？!?…][”’」』】）\]]*\s*)[-—–]\s*/g;
+
+/**
+ * Split only explicit multi-speaker dialogue markers. Ordinary visual line wraps
+ * are intentionally left untouched, so a wrapped French sentence never becomes
+ * two invented subtitle turns.
+ */
+function splitPackedDialogueTurns(sourceText?: string): string[] | null {
+  if (!sourceText) return null;
+
+  const raw = sourceText
+    .replace(/\{[^}]*\}/g, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\\N/gi, '\n')
+    .trim();
+
+  if (!raw) return null;
+
+  let markerCount = 0;
+  const separated = raw.replace(PACKED_DIALOGUE_TURN, (match, prefix: string) => {
+    markerCount += 1;
+    return `${prefix}\u0000`;
+  });
+
+  if (markerCount !== 2) return null;
+
+  const turns = separated
+    .split('\u0000')
+    .map(turn => cleanSubtitleContent(turn))
+    .filter(Boolean);
+
+  return turns.length === 2 ? turns : null;
+}
+
+function canExpandPackedDialogue(
+  packed: PreprocessedRow,
+  firstCounterpart: PreprocessedRow,
+  secondCounterpart: PreprocessedRow,
+): boolean {
+  // 时间包络校验
+  const turns = splitPackedDialogueTurns(packed.sourceText);
+  if (!turns) return false;
+
+  const [packedStart, packedEnd] = packed.ts.split(' --> ').map(timeToMs);
+  const [firstStart, firstEnd] = firstCounterpart.ts.split(' --> ').map(timeToMs);
+  const [secondStart, secondEnd] = secondCounterpart.ts.split(' --> ').map(timeToMs);
+  if ([packedStart, packedEnd, firstStart, firstEnd, secondStart, secondEnd].some(Number.isNaN)) return false;
+
+  const envelopeToleranceMs = 1200;
+  const maxInterCueGapMs = 1400;
+  const isWithinPackedEnvelope = firstStart >= packedStart - envelopeToleranceMs
+    && secondEnd <= packedEnd + envelopeToleranceMs;
+  const isContinuous = firstStart <= secondStart
+    && secondStart - firstEnd <= maxInterCueGapMs;
+
+  return isWithinPackedEnvelope && isContinuous;
+}
+
+const createSourceRef = (row: PreprocessedRow): AlignmentSourceRef => ({
+  cueIndex: row.sourceIndex,
+  ts: row.ts,
+  text: row.sourceText || row.text,
+});
+
+const createSingleTrackRow = (row: PreprocessedRow, timingSource: 'primary' | 'secondary') => ({
+  ts: row.ts,
+  text: row.text,
+  type: 'dialogue',
+  cueKind: row.cueKind,
+  provenance: {
+    method: 'single-track' as const,
+    timingSource,
+    [timingSource]: createSourceRef(row),
+  },
+});
+
+function buildExpandedDialogueRows(
+  packed: PreprocessedRow,
+  firstCounterpart: PreprocessedRow,
+  secondCounterpart: PreprocessedRow,
+  packedIsZh: boolean,
+): ExpandedDialogueRow[] | null {
+  if (!canExpandPackedDialogue(packed, firstCounterpart, secondCounterpart)) return null;
+  const turns = splitPackedDialogueTurns(packed.sourceText);
+  if (!turns) return null;
+
+  const primarySource = packedIsZh ? packed : firstCounterpart;
+  const groupId = `dialogue-${packed.sourceIndex}-${firstCounterpart.sourceIndex}-${secondCounterpart.sourceIndex}`;
+
+  const makeRow = (turn: string, counterpart: PreprocessedRow): ExpandedDialogueRow => ({
+    // 以副轨细分
+    ts: counterpart.ts,
+    text: packedIsZh ? `${turn}\n${counterpart.text}` : `${counterpart.text}\n${turn}`,
+    type: 'merged',
+    cueKind: combineCueKind(packed.cueKind, counterpart.cueKind),
+    alignment: 'expanded-dialogue',
+    provenance: {
+      method: 'expanded-dialogue',
+      timingSource: packedIsZh ? 'secondary' : 'primary',
+      groupId,
+      primary: createSourceRef(primarySource),
+      secondary: createSourceRef(packedIsZh ? counterpart : packed),
+    },
+  });
+
+  return [
+    makeRow(turns[0], firstCounterpart),
+    makeRow(turns[1], secondCounterpart),
+  ];
+}
+
+function getExpandedDialogueRows(
+  path: AlignmentStep[],
+  pathIndex: number,
+  zhDialogues: PreprocessedRow[],
+  enDialogues: PreprocessedRow[],
+): ExpandedDialogueRow[] | null {
+  // 只拆安全组合
+  const current = path[pathIndex];
+  const next = path[pathIndex + 1];
+  if (!current || !next || current.zhIdx === null || current.enIdx === null) return null;
+
+  if (next.zhIdx === null && next.enIdx !== null) {
+    return buildExpandedDialogueRows(
+      zhDialogues[current.zhIdx],
+      enDialogues[current.enIdx],
+      enDialogues[next.enIdx],
+      true,
+    );
+  }
+
+  if (next.enIdx === null && next.zhIdx !== null) {
+    return buildExpandedDialogueRows(
+      enDialogues[current.enIdx],
+      zhDialogues[current.zhIdx],
+      zhDialogues[next.zhIdx],
+      false,
+    );
+  }
+
+  return null;
 }
 
 /**
@@ -1063,7 +1240,7 @@ export function mergeSubtitles(
     cueKind: 'commentary' as CueKind
   }));
   
-  const mergedDialogues: { ts: string; text: string; type: string; cueKind?: CueKind }[] = [];
+  const mergedDialogues: Array<{ ts: string; text: string; type: string; cueKind?: CueKind; alignment?: 'expanded-dialogue'; provenance?: AlignmentProvenance }> = [];
   let i = 0, j = 0;
   while (i < zhDialogues.length && j < enDialogues.length) {
     const zh = zhDialogues[i];
@@ -1074,6 +1251,26 @@ export function mergeSubtitles(
     const diff = Math.abs(zhS - enS);
     
     if (overlap > 0.5 || diff < 300 || (overlap > 0.2 && diff < 1500)) {
+      const expandedZh = enDialogues[j + 1]
+        ? buildExpandedDialogueRows(zh, en, enDialogues[j + 1], true)
+        : null;
+      if (expandedZh) {
+        mergedDialogues.push(...expandedZh);
+        i += 1;
+        j += 2;
+        continue;
+      }
+
+      const expandedForeign = zhDialogues[i + 1]
+        ? buildExpandedDialogueRows(en, zh, zhDialogues[i + 1], false)
+        : null;
+      if (expandedForeign) {
+        mergedDialogues.push(...expandedForeign);
+        i += 2;
+        j += 1;
+        continue;
+      }
+
       mergedDialogues.push({
         ts: `${msToTime(Math.min(zhS, enS))} --> ${msToTime(Math.max(zhE, enE))}`,
         text: `${zh.text}\n${en.text}`,
@@ -1082,17 +1279,17 @@ export function mergeSubtitles(
       });
       i++; j++;
     } else if (zhS <= enS) {
-      mergedDialogues.push({ ts: zh.ts, text: zh.text, type: "dialogue", cueKind: zh.cueKind }); i++;
+      mergedDialogues.push(createSingleTrackRow(zh, 'primary')); i++;
     } else {
-      mergedDialogues.push({ ts: en.ts, text: en.text, type: "dialogue", cueKind: en.cueKind }); j++;
+      mergedDialogues.push(createSingleTrackRow(en, 'secondary')); j++;
     }
   }
   while (i < zhDialogues.length) {
-    mergedDialogues.push({ ts: zhDialogues[i].ts, text: zhDialogues[i].text, type: "dialogue", cueKind: zhDialogues[i].cueKind });
+    mergedDialogues.push(createSingleTrackRow(zhDialogues[i], 'primary'));
     i++;
   }
   while (j < enDialogues.length) {
-    mergedDialogues.push({ ts: enDialogues[j].ts, text: enDialogues[j].text, type: "dialogue", cueKind: enDialogues[j].cueKind });
+    mergedDialogues.push(createSingleTrackRow(enDialogues[j], 'secondary'));
     j++;
   }
   
@@ -1184,7 +1381,7 @@ export function alignSubtitlesIndustrial(
   }
   
   // Backtracking path extraction
-  const path: { zhIdx: number | null; enIdx: number | null }[] = [];
+  const path: AlignmentStep[] = [];
   let i = M;
   let j = N;
   
@@ -1219,9 +1416,18 @@ export function alignSubtitlesIndustrial(
   
   path.reverse();
   
-  const mergedDialogues: { ts: string; text: string; type: string; cueKind?: CueKind }[] = [];
+  const mergedDialogues: Array<{ ts: string; text: string; type: string; cueKind?: CueKind; alignment?: 'expanded-dialogue'; provenance?: AlignmentProvenance }> = [];
   
-  for (const step of path) {
+  for (let pathIndex = 0; pathIndex < path.length; pathIndex++) {
+    const step = path[pathIndex];
+
+    const expandedRows = getExpandedDialogueRows(path, pathIndex, zhDialogues, enDialogues);
+    if (expandedRows) {
+      mergedDialogues.push(...expandedRows);
+      pathIndex += 1;
+      continue;
+    }
+
     if (step.zhIdx !== null && step.enIdx !== null) {
       const zh = zhDialogues[step.zhIdx];
       const en = enDialogues[step.enIdx];
@@ -1242,15 +1448,15 @@ export function alignSubtitlesIndustrial(
       } else {
         // Aligned globally by sequence DP, but too far to merge (e.g. ad insertion on one track).
         // Separate as individual tracks to avoid mismatch.
-        mergedDialogues.push({ ts: zh.ts, text: zh.text, type: "dialogue", cueKind: zh.cueKind });
-        mergedDialogues.push({ ts: en.ts, text: en.text, type: "dialogue", cueKind: en.cueKind });
+        mergedDialogues.push(createSingleTrackRow(zh, 'primary'));
+        mergedDialogues.push(createSingleTrackRow(en, 'secondary'));
       }
     } else if (step.zhIdx !== null) {
       const zh = zhDialogues[step.zhIdx];
-      mergedDialogues.push({ ts: zh.ts, text: zh.text, type: "dialogue", cueKind: zh.cueKind });
+      mergedDialogues.push(createSingleTrackRow(zh, 'primary'));
     } else if (step.enIdx !== null) {
       const en = enDialogues[step.enIdx];
-      mergedDialogues.push({ ts: en.ts, text: en.text, type: "dialogue", cueKind: en.cueKind });
+      mergedDialogues.push(createSingleTrackRow(en, 'secondary'));
     }
   }
   

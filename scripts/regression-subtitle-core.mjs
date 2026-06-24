@@ -17,6 +17,7 @@ execFileSync('npx', [
   'tsc',
   'src/utils/subtitleCore.ts',
   'src/utils/importSafety.ts',
+  'src/utils/timeline/alignmentDiff.ts',
   'src/store/useStudioStore.ts',
   '--target',
   'ES2020',
@@ -49,6 +50,7 @@ const {
   parseSubtitle,
   splitSingleBilingualText,
 } = require(join(outDir, 'utils/subtitleCore.js'));
+const { analyzeAlignmentDiff } = require(join(outDir, 'utils/timeline/alignmentDiff.js'));
 const { useStudioStore } = require(join(outDir, 'store/useStudioStore.js'));
 const { CLIENT_IMPORT_LIMITS, getClientFileIssue } = require(join(outDir, 'utils/importSafety.js'));
 
@@ -189,6 +191,105 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
   assert.ok(aligned.some(row => row.text === '你好\nHello'), 'Industrial align should pair the first matching cue.');
   assert.ok(aligned.some(row => row.text === '再见\nBye'), 'Industrial align should recover after an inserted cue.');
   assert.ok(aligned.some(row => row.text === '插入中文'), 'Inserted unpaired cues should be preserved.');
+}
+
+{
+  const aligned = alignSubtitlesIndustrial(
+    [
+      { ts: '01:03:43,988 --> 01:03:47,574', text: '-这是你所期望走的路吗?-正是' },
+    ],
+    [
+      { ts: '01:03:44,533 --> 01:03:47,077', text: 'Alors Mathieu, ça se passe\ncomme vous voulez ?' },
+      { ts: '01:03:47,411 --> 01:03:48,329', text: "Je l'espère." },
+    ],
+    [],
+    noopLog,
+  );
+  assert.equal(aligned.length, 2, 'A packed two-speaker cue should expand only when two counterpart cues fit its timing envelope.');
+  assert.deepEqual(aligned.map(row => [row.ts, row.text, row.alignment]), [
+    ['01:03:44,533 --> 01:03:47,077', '这是你所期望走的路吗?\nAlors Mathieu, ça se passe comme vous voulez ?', 'expanded-dialogue'],
+    ['01:03:47,411 --> 01:03:48,329', "正是\nJe l'espère.", 'expanded-dialogue'],
+  ]);
+  assert.equal(aligned[0].provenance?.timingSource, 'secondary', 'Expanded dialogue should preserve which track supplies the derived timestamps.');
+  assert.equal(aligned[0].provenance?.primary?.text, '-这是你所期望走的路吗?-正是', 'Expanded dialogue should keep the original packed cue for review.');
+  assert.equal(aligned[1].provenance?.secondary?.cueIndex, 2, 'Each expanded row should point to its own counterpart cue.');
+}
+
+{
+  const merged = mergeSubtitles(
+    [{ ts: '01:03:43,988 --> 01:03:47,574', text: '-这是你所期望走的路吗?-正是' }],
+    [
+      { ts: '01:03:44,533 --> 01:03:47,077', text: 'Alors Mathieu, ça se passe\ncomme vous voulez ?' },
+      { ts: '01:03:47,411 --> 01:03:48,329', text: "Je l'espère." },
+    ],
+    [],
+    noopLog,
+  );
+  assert.deepEqual(merged.map(row => row.text), [
+    '这是你所期望走的路吗?\nAlors Mathieu, ça se passe comme vous voulez ?',
+    "正是\nJe l'espère.",
+  ], 'Fast merge must retain the same conservative dialogue expansion as industrial alignment.');
+}
+
+{
+  const aligned = alignSubtitlesIndustrial(
+    [{ ts: '00:00:01,000 --> 00:00:05,000', text: '这是普通的换行\n并不是两人对话' }],
+    [
+      { ts: '00:00:01,100 --> 00:00:03,000', text: 'This is just a wrapped sentence.' },
+      { ts: '00:00:03,200 --> 00:00:04,900', text: 'It must remain separate.' },
+    ],
+    [],
+    noopLog,
+  );
+  assert.equal(aligned.some(row => row.alignment === 'expanded-dialogue'), false, 'Ordinary visual line breaks must not be mistaken for two-speaker dialogue.');
+}
+
+{
+  const summary = analyzeAlignmentDiff([
+    { index: 1, ts: '00:00:01,000 --> 00:00:02,000', text: '你好\nHello', type: 'merged' },
+    {
+      index: 2,
+      ts: '00:00:03,000 --> 00:00:04,000',
+      text: '你好吗？\nHow are you?',
+      type: 'merged',
+      alignment: 'expanded-dialogue',
+      provenance: {
+        method: 'expanded-dialogue',
+        timingSource: 'secondary',
+        primary: { cueIndex: 2, ts: '00:00:03,000 --> 00:00:05,000', text: '-你好吗？-很好。' },
+        secondary: { cueIndex: 2, ts: '00:00:03,000 --> 00:00:04,000', text: 'How are you?' },
+      },
+    },
+    {
+      index: 3,
+      ts: '00:02:00,000 --> 00:02:01,000',
+      text: '只有这一轨',
+      type: 'dialogue',
+      provenance: { method: 'single-track', timingSource: 'primary', primary: { cueIndex: 3, ts: '00:02:00,000 --> 00:02:01,000', text: '只有这一轨' } },
+    },
+    {
+      index: 4,
+      ts: '00:02:01,500 --> 00:02:02,400',
+      text: '仍然只有这一轨',
+      type: 'dialogue',
+      provenance: { method: 'single-track', timingSource: 'primary', primary: { cueIndex: 4, ts: '00:02:01,500 --> 00:02:02,400', text: '仍然只有这一轨' } },
+    },
+  ]);
+  assert.equal(summary.directPairCount, 1, 'Direct bilingual rows should stay out of the review queue.');
+  assert.equal(summary.expandedDialogueCount, 1, 'Expanded dialogue rows should remain reviewable.');
+  assert.equal(summary.singleTrackCount, 2, 'Unpaired dialogue should be surfaced without being deleted.');
+  assert.equal(summary.entries[1].kind, 'single-track');
+  assert.deepEqual(summary.entries[1].rowIndexes, [3, 4], 'Continuous single-track cues should be grouped for review.');
+  assert.equal(summary.entries[0].provenance[0].primary?.text, '-你好吗？-很好。', 'The diff view should retain source text for expanded dialogue review.');
+}
+
+{
+  const summary = analyzeAlignmentDiff([
+    { index: 1, ts: '00:10:00,000 --> 00:10:01,000', text: '单轨一', type: 'dialogue' },
+    { index: 2, ts: '00:10:02,000 --> 00:10:03,000', text: '配对\nPaired', type: 'merged' },
+    { index: 3, ts: '00:10:04,000 --> 00:10:05,000', text: '单轨二', type: 'dialogue' },
+  ]);
+  assert.deepEqual(summary.entries[0].rowIndexes, [1, 3], 'Nearby single-track cues should form one review range even when direct pairs appear between them.');
 }
 
 {

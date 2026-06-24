@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { SequenceList } from '@/components/Workbench/SequenceList';
+import { AlignmentDiffPanel } from '@/components/Workbench/AlignmentDiffPanel';
 import { SourceMatchPanel } from '@/components/Workbench/SourceMatchPanel';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
@@ -125,6 +126,9 @@ export const WorkbenchStep: React.FC = () => {
           <div className="max-w-6xl w-full flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
             {processedSubs && processedSubs.length > 0 && (
               <SourceMatchPanel rows={processedSubs} />
+            )}
+            {processedSubs && processedSubs.length > 0 && (
+              <AlignmentDiffPanel rows={processedSubs} />
             )}
             <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white/[0.012] border border-white/[0.075] rounded-xl">
               <SequenceList />
