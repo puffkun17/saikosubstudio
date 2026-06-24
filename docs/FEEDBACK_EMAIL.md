@@ -5,7 +5,7 @@
 ## Cloudflare 配置
 
 1. 在 Email Service 中为 `feedback@dualsubs.quest` 保留已启用的邮件路由。
-2. 在 Worker `soft-butterfly-d875` 中创建 Email Service 绑定 `FEEDBACK_EMAIL`。
+2. 在 Worker `saikosubstudio-feedback-mailer` 中创建 Email Service 绑定 `FEEDBACK_EMAIL`。
 3. 在同一 Worker 的 Variables and Secrets 中配置两个 Secret：
    - `FEEDBACK_RECIPIENT`：真实收件邮箱。
    - `FEEDBACK_SENDER`：`feedback@dualsubs.quest`。

@@ -5,7 +5,7 @@ pages_build_output_dir = ".vercel/output/static"
 
 [[services]]
 binding = "FEEDBACK_MAILER"
-service = "soft-butterfly-d875"
+service = "saikosubstudio-feedback-mailer"
 
 # nodejs_compat is required for @cloudflare/next-on-pages
 # because the adapter and some dependencies (jszip, etc.) use Node.js APIs.
