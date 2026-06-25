@@ -506,8 +506,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     
     try {
       const yearMatch = isEpisodeQuery ? null : searchStr.match(/\b(19\d\d|20\d\d)\b/);
-      const year = yearMatch ? yearMatch[1] : '';
-      const searchQueries = buildTmdbSearchQueries(searchStr, 12);
+      const year = !isEpisodeQuery ? (parsed.year || fallbackParsed?.year || yearMatch?.[1] || '') : '';
+      const querySource = parsed.hasUsableTitle ? rawSearchStr : (searchTitle || searchStr);
+      const searchQueries = buildTmdbSearchQueries(querySource, 12);
       let cleanQuery = searchQueries[0] || searchStr;
       if (year) {
         cleanQuery = cleanQuery.replace(year, '');
@@ -521,8 +522,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       const chnPart = chnMatch ? chnMatch.join(' ') : '';
       const engPart = engMatch ? engMatch.join(' ') : '';
 
-      const runSearch = async (q: string, endpoint: 'multi' | 'tv' | 'movie' = 'multi') => {
-        const url = `/api/tmdb/search/${endpoint}?query=${encodeURIComponent(q)}&language=zh-CN`;
+      const runSearch = async (
+        q: string,
+        endpoint: 'multi' | 'tv' | 'movie' = 'multi',
+      ) => {
+        const yearParam = endpoint === 'movie' && year ? `&year=${year}` : '';
+        const url = `/api/tmdb/search/${endpoint}?query=${encodeURIComponent(q)}&language=zh-CN${yearParam}`;
         const res = await fetch(url);
         if (!res.ok) return [];
         const data = await res.json() as { results?: TmdbSuggestion[] };
@@ -534,7 +539,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       const candidateQueries = [...searchQueries, cleanQuery, chnPart, engPart]
         .map(q => q.trim())
         .filter((q, index, arr) => q.length >= 2 && arr.indexOf(q) === index);
-      const scoringQueries = candidateQueries.length > 0 ? candidateQueries : [cleanQuery];
+      const scoringQueries = [
+        parsed.hasUsableTitle ? parsed.title : '',
+        fallbackParsed?.hasUsableTitle ? fallbackParsed.title : '',
+        searchTitle,
+        cleanQuery,
+      ]
+        .map(q => q.trim())
+        .filter((q, index, arr) => q.length >= 2 && arr.indexOf(q) === index);
 
       const mergeResults = (target: TmdbSuggestion[], incoming: TmdbSuggestion[]) => {
         const keys = new Set(target.map(item => `${item.media_type}:${item.id}`));
@@ -554,8 +566,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           mergeResults(results, await runSearch(q, 'tv'));
           mergeResults(results, await runSearch(q, 'multi'));
         } else {
-          mergeResults(results, await runSearch(q, 'multi'));
+          if (year) mergeResults(results, await runSearch(q, 'movie'));
+          if (!year || results.length === previousCount) {
+            mergeResults(results, await runSearch(q, 'multi'));
+          }
         }
+        if (!isEpisodeQuery && year && q === candidateQueries[0] && results.length > previousCount) break;
         if (q !== candidateQueries[0] && results.length > previousCount) break;
         if (results.length >= 8) break;
       }
@@ -573,6 +589,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         }
         if (year && itemYear === year) {
           score += 100;
+        } else if (year && itemYear && itemYear !== year) {
+          score -= 120;
         }
         const normTitle = normalize(item.title || item.name || '');
         const normOrigTitle = normalize(item.original_title || item.original_name || '');
@@ -637,6 +655,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         }
         if (year && itemYear === year) {
           score += 100;
+        } else if (year && itemYear && itemYear !== year) {
+          score -= 120;
         }
         
         const normTitle = normalize(item.title || item.name || '');

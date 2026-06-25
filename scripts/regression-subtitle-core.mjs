@@ -596,4 +596,66 @@ const createTmdbImages = () => ({
   assert.equal(useStudioStore.getState().tmdbBackdrop, 'https://image.tmdb.org/t/p/w1280/existing.jpg', 'Failed automatic search must not clear existing backdrop.');
 }
 
+{
+  resetStoreForTmdb();
+  const calls = [];
+  const algeriaSuggestion = {
+    id: 17295,
+    media_type: 'movie',
+    title: '阿尔及尔之战',
+    original_title: 'La battaglia di Algeri',
+    release_date: '1966-09-08',
+    backdrop_path: '/algiers.jpg',
+    poster_path: '/algiers-poster.jpg',
+    popularity: 6,
+  };
+  const wrongBattleSuggestion = {
+    id: 841755,
+    media_type: 'movie',
+    title: '真人快打传奇：天下之战',
+    original_title: 'Mortal Kombat Legends: Battle of the Realms',
+    release_date: '2021-08-30',
+    backdrop_path: '/mk.jpg',
+    poster_path: '/mk-poster.jpg',
+    popularity: 80,
+  };
+
+  global.fetch = async (url) => {
+    calls.push(String(url));
+    const target = String(url);
+    if (target.includes('/api/tmdb/search/movie')) {
+      const parsedUrl = new URL(`http://local${target}`);
+      const query = decodeURIComponent(parsedUrl.searchParams.get('query') || '');
+      const year = parsedUrl.searchParams.get('year');
+      if (query === 'The Battle Of Algiers' && year === '1966') return createTmdbSearchResult(algeriaSuggestion);
+      return createTmdbSearchResult(null);
+    }
+    if (target.includes('/api/tmdb/search/multi')) {
+      const query = decodeURIComponent(new URL(`http://local${target}`).searchParams.get('query') || '');
+      return createTmdbSearchResult(query === 'Battle Of' ? wrongBattleSuggestion : null);
+    }
+    if (target.includes('/api/tmdb/movie/17295/images')) return createTmdbImages();
+    if (target.includes('/api/tmdb/movie/17295')) {
+      return createTmdbDetails({
+        id: 17295,
+        title: '阿尔及尔之战',
+        original_title: 'La battaglia di Algeri',
+        release_date: '1966-09-08',
+        genres: [{ name: '剧情' }],
+        overview: 'A film about the Algerian War.',
+        vote_average: 8.1,
+        alternative_titles: { titles: [{ iso_3166_1: 'CN', title: '阿尔及尔之战' }] },
+      });
+    }
+    throw new Error(`Unexpected fetch: ${target}`);
+  };
+
+  await useStudioStore.getState().searchTmdb('The_Battle_Of_Algiers_1966_BluRay_Criterion_Collection_1080p_AVC.srt', { silent: true });
+  assert.ok(
+    calls.some(url => url.includes('/api/tmdb/search/movie') && url.includes('query=The%20Battle%20Of%20Algiers') && url.includes('year=1966')),
+    'Movie filename search should use the parsed title plus release year before loose fallback fragments.',
+  );
+  assert.equal(useStudioStore.getState().tmdbData?.title, '阿尔及尔之战', 'Exact movie-year match must outrank popular loose Battle candidates.');
+}
+
 console.log('Core subtitle regression checks passed.');
