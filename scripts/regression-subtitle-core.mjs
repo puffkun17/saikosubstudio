@@ -121,6 +121,43 @@ const assertIncludes = (items, expected, message) => {
 }
 
 {
+  const sample = 'The_Battle_Of_Algiers_1966_BluRay_Criterion_Collection_1080p_AVC.srt';
+  const parsed = parseMediaFilename(sample);
+  assert.equal(parsed.title, 'The Battle Of Algiers', 'Publisher and edition tags after a movie year should not pollute the title.');
+  assert.equal(parsed.year, '1966');
+  assert.ok(parsed.releaseProfile.publisher.includes('Criterion'), 'Publisher tags should be retained as release profile markers.');
+  assert.ok(parsed.releaseProfile.source.includes('BluRay'), 'Source tags should be retained as release profile markers.');
+  assert.equal(buildTmdbSearchQueries(sample)[0], 'The Battle Of Algiers');
+}
+
+{
+  const sample = 'The_Battle_of_Algiers_1966_REMASTERED_CUSTOM_MULTi_VFF_1080p_BluRay.srt';
+  const parsed = parseMediaFilename(sample);
+  assert.equal(parsed.title, 'The Battle of Algiers', 'Scene edition, region, and quality tags should be stripped after the movie year.');
+  assert.equal(parsed.year, '1966');
+  assert.ok(parsed.releaseProfile.edition.includes('REMASTERED'), 'Edition markers should survive title cleanup.');
+  assert.ok(parsed.releaseProfile.region.includes('MULTi'), 'Region markers should survive title cleanup.');
+  assert.ok(parsed.releaseProfile.region.includes('VFF'), 'Language-region markers should survive title cleanup.');
+}
+
+{
+  const sample = 'Blade.Runner.2049.2017.2160p.UHD.BluRay.REMUX.HDR10Plus.TrueHD.Atmos.7.1-FLUX.srt';
+  const parsed = parseMediaFilename(sample);
+  assert.equal(parsed.title, 'Blade Runner 2049', 'A numeric title suffix should survive even when later release specs are present.');
+  assert.equal(parsed.year, '2017');
+  assert.ok(parsed.releaseProfile.source.includes('REMUX'), 'Release profile should retain carrier/source markers.');
+  assert.ok(parsed.releaseProfile.hdr.includes('HDR10Plus'), 'Release profile should retain HDR markers.');
+  assert.equal(parsed.releaseProfile.group, 'FLUX');
+}
+
+{
+  const sample = 'Some.Movie.2024.2160p.AMZN.WEB-DL.DDP5.1.Atmos.H.264-playWEB.ass';
+  const parsed = parseMediaFilename(sample);
+  assert.equal(parsed.title, 'Some Movie', 'Platform, source, audio, video, and release-group tags should be stripped.');
+  assert.equal(parsed.year, '2024');
+}
+
+{
   const credits = extractSubtitleAttributions(`[Script Info]
 Translator: Aster Lin
 Timing: Northbridge

@@ -1,4 +1,13 @@
 // Subtitle Processing Core Engine in TypeScript
+import {
+  type ReleaseNamingProfile,
+  RELEASE_NAMING_TAGS,
+  createReleaseTagPattern,
+  extractReleaseNamingProfile,
+  isReleaseNoiseToken,
+  normalizeReleaseToken,
+  stripContextualReleaseTail,
+} from './releaseNamingRules';
 
 export type CueKind = 'dialogue' | 'screen_text' | 'narration' | 'lyrics' | 'commentary' | 'unknown';
 
@@ -278,6 +287,49 @@ const stripSourceBracketTags = (value: string): string => value.replace(
   ' '
 );
 
+const RELEASE_TAG_PATTERN = createReleaseTagPattern(RELEASE_NAMING_TAGS);
+const RELEASE_TAG_BOUNDARY = '[\\s.\\-_/&+_(（\\[【]+';
+const RELEASE_TAG_LOOKAHEAD = '(?=[\\s.\\-_/&+_)）\\]】]|$)';
+const RELEASE_SPEC_AFTER_YEAR_PATTERN = new RegExp(
+  `^[\\s.\\-_(【\\[]*(?:${RELEASE_TAG_PATTERN})${RELEASE_TAG_LOOKAHEAD}`,
+  'i',
+);
+
+const NUMERIC_TITLE_SUFFIXES = new Set(['1917', '1984', '2001', '2012', '2046', '2049']);
+
+const shouldKeepNumericTitleSuffix = (beforeYear: string, yearToken: string): boolean =>
+  NUMERIC_TITLE_SUFFIXES.has(yearToken)
+  && beforeYear.split(/[\s.\-_/\\:+&]+/).filter(Boolean).length >= 1;
+
+const RELEASE_YEAR_TOKEN_PATTERN = /(^|[\s._\-_(【\[])(19\d{2}|20\d{2})(?=$|[\s._\-_)）\]】])/gi;
+
+const findReleaseYearAnchor = (value: string): { year: string; start: number } | null => {
+  RELEASE_YEAR_TOKEN_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = RELEASE_YEAR_TOKEN_PATTERN.exec(value)) !== null) {
+    const separator = match[1] || '';
+    const yearToken = match[2];
+    const yearStart = match.index + separator.length;
+    const afterYear = value.slice(yearStart + yearToken.length);
+    const beforeYear = value.slice(0, yearStart);
+    if (RELEASE_SPEC_AFTER_YEAR_PATTERN.test(afterYear) && !shouldKeepNumericTitleSuffix(beforeYear, yearToken)) {
+      return { year: yearToken, start: yearStart };
+    }
+  }
+  return null;
+};
+
+const stripReleaseTags = (value: string): string => {
+  const tagRegex = new RegExp(`${RELEASE_TAG_BOUNDARY}(?:${RELEASE_TAG_PATTERN})${RELEASE_TAG_LOOKAHEAD}`, 'gi');
+  let clean = value;
+  let prev = '';
+  while (clean !== prev) {
+    prev = clean;
+    clean = clean.replace(tagRegex, ' ');
+  }
+  return stripContextualReleaseTail(clean);
+};
+
 export function cleanFilename(n: string): string {
   if (!n) return '';
   let title = n.replace(/_merged_\d{8}_\d{6}/gi, '');
@@ -289,15 +341,8 @@ export function cleanFilename(n: string): string {
   // Movie year match. Episode filenames often include documentary/source years
   // before SxxExx; those should not become part of the searchable series title.
   if (!hasEpisodeKey) {
-    const yearTagMatch = title.match(/^(.*?)(?:\b(19\d{2}|20\d{2})\b)(.*)$/i);
-    if (yearTagMatch) {
-      const beforeYear = yearTagMatch[1];
-      const year = yearTagMatch[2];
-      const afterYear = yearTagMatch[3];
-      if (/[\s.\-_(【\[]*(1080p|720p|2160p|4k|web|bluray|hevc|x265|x264|eng|chs|cht|gbk|utf8|中英)/i.test(afterYear)) {
-          title = beforeYear + year;
-      }
-    }
+    const yearAnchor = findReleaseYearAnchor(title);
+    if (yearAnchor) title = title.slice(0, yearAnchor.start) + yearAnchor.year;
   }
 
   // TV Show episode match (S01E01, S01, EP01)
@@ -314,23 +359,7 @@ export function cleanFilename(n: string): string {
       title = title.replace(/\b(19\d{2}|20\d{2})\b/g, ' ');
   }
 
-  const tags = [
-    '1080p', '4k', '2160p', '720p', 'web-dl', 'webdl', 'webrip', 'web', 'atmos', 'x264', 'h264', 'x265', 'h265', 'hevc', '10bit', '8bit',
-    'ac3', 'eac3',
-    'ddp5\\.1', 'ddp5[\\s._-]*1', 'dd5\\.1', 'dd5[\\s._-]*1', '5\\.1', '7\\.1', '6ch', 'bluray', 'brrip', 'bdrip', 'hdrip', 'dvdrip', 'psa', 'rarbg', 'yts', 'tgx', 'yify', 'cakes',
-    'amzn', 'nf', 'dsnp', 'hulu', 'max', 'aptv', 'playweb', 'ethel', 'successfulcrab',
-    'director', 'commentary', 'comment', '解说', '导轨',
-    '简体', '繁体', '中英特效字幕', '中英双语字幕', '中英字幕', '双语字幕', '中文字幕', '英文字幕', '特效字幕', '中英双语', '官译双语', '中英', '双语', '双语种', '特效', '字幕',
-    'zh-cn', 'zh_cn', 'zh-tw', 'zh-hk', 'chs', 'cht', 'gbk', 'utf8', 'eng', 'en', 'zh', 'cn', 'kr', 'jp',
-    '英文', '中字', '英字', 'h\\.264', 'h[\\s._-]*264', 'h\\.265', 'h[\\s._-]*265', 'atvp', 'flux'
-  ];
-  
-  const tagRegex = new RegExp(`[\\s.\\-_/&+_(（\\[【]+(?:${tags.join('|')})(?=[\\s.\\-_/&+_)）\\]】]|$)`, 'gi');
-  let prev = '';
-  while (title !== prev) {
-    prev = title;
-    title = title.replace(tagRegex, ' ');
-  }
+  title = stripReleaseTags(title);
   
   // Strip trailing release group e.g. -SuccessfulCrab
   title = title.replace(/-[a-zA-Z0-9]+$/g, '');
@@ -390,28 +419,13 @@ const normalizeEpisodeKey = (season: number | null, episode: number | null) => {
 };
 
 const stripKnownMediaTags = (value: string) => {
-  const tags = [
-    '1080p', '4k', '2160p', '720p', 'web-dl', 'webdl', 'webrip', 'web', 'atmos', 'x264', 'h264', 'x265', 'h265', 'hevc', '10bit', '8bit',
-    'ddp5\\.1', 'ddp5[\\s._-]*1', 'dd5\\.1', 'dd5[\\s._-]*1', '5\\.1', '7\\.1', '6ch', 'bluray', 'brrip', 'bdrip', 'hdrip', 'dvdrip', 'psa', 'rarbg', 'yts', 'tgx', 'yify',
-    'amzn', 'nf', 'dsnp', 'hulu', 'max', 'aptv', 'playweb', 'ethel', 'successfulcrab',
-    'director', 'commentary', 'comment', '解说', '导轨',
-    '简体', '繁体', '中英特效字幕', '中英双语字幕', '中英字幕', '双语字幕', '中文字幕', '英文字幕', '特效字幕', '中英双语', '官译双语', '中英', '双语', '双语种', '特效', '字幕',
-    'zh-cn', 'zh_cn', 'zh-tw', 'zh-hk', 'chs', 'cht', 'gbk', 'utf8', 'eng', 'en', 'zh', 'cn', 'kr', 'jp',
-    '英文', '中字', '英字', 'h\\.264', 'h[\\s._-]*264', 'h\\.265', 'h[\\s._-]*265', 'atvp', 'flux'
-  ];
-  const tagRegex = new RegExp(`[\\s.\\-_/&+_(（\\[【]+(?:${tags.join('|')})(?=[\\s.\\-_/&+_)）\\]】]|$)`, 'gi');
-  let clean = value;
-  let prev = '';
-  while (clean !== prev) {
-    prev = clean;
-    clean = clean.replace(tagRegex, ' ');
-  }
-  return clean;
+  return stripReleaseTags(value);
 };
 
 export type ParsedMediaFilename = {
   rawBase: string;
   title: string;
+  releaseProfile: ReleaseNamingProfile;
   episodeKey?: string;
   season?: number;
   episode?: number;
@@ -437,16 +451,9 @@ const normalizeSearchText = (value: string): string => value
   .trim();
 
 const isLikelySearchNoiseToken = (token: string): boolean => {
-  const normalized = token.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '');
+  const normalized = normalizeReleaseToken(token);
   if (!normalized) return true;
-  return [
-    'xxx', 'proper', 'repack', 'rerip', 'internal', 'extended', 'uncut',
-    'web', 'webdl', 'webrip', 'bluray', 'bdrip', 'brrip', 'hdtv',
-    'nf', 'amzn', 'atvp', 'dsnp', 'hulu', 'max', 'aptv',
-    'h264', 'h265', 'x264', 'x265', 'hevc', 'av1',
-    'ddp', 'dd', 'ac3', 'eac3', 'atmos', 'aac', 'dts', 'hdr', 'dv', 'sdr',
-    'playweb', 'ethel', 'successfulcrab', 'flux', 'cakes',
-  ].includes(normalized) || /^\d{3,4}p$/.test(normalized) || /^\d+(?:bit|ch)$/.test(normalized);
+  return normalized === 'xxx' || isReleaseNoiseToken(token);
 };
 
 const meaningfulTokenCount = (value: string): number => value
@@ -458,7 +465,9 @@ export function buildTmdbSearchQueries(input: string, maxQueries = 10): string[]
   const base = normalizeSearchText(cleanFilename(input));
   if (!base) return [];
 
-  const parsed = parseMediaFilename(base);
+  const rawParsed = parseMediaFilename(input);
+  const baseParsed = parseMediaFilename(base);
+  const parsed = rawParsed.mediaHint === 'movie' && rawParsed.hasUsableTitle ? rawParsed : baseParsed;
   if (!parsed.hasUsableTitle) return [];
 
   const candidates: string[] = [];
@@ -509,6 +518,7 @@ export function parseMediaFilename(name: string): ParsedMediaFilename {
     .replace(/_merged_\d{8}_\d{6}/gi, '')
     .replace(/\.(srt|ass|txt|zip|rar|7z|vtt)$/i, '')
     .trim();
+  const releaseProfile = extractReleaseNamingProfile(rawBase);
 
   let working = stripSourceBracketTags(rawBase);
   let season: number | null = null;
@@ -561,10 +571,10 @@ export function parseMediaFilename(name: string): ParsedMediaFilename {
   const episodeKey = normalizeEpisodeKey(season, episode);
   const isEpisode = Boolean(episodeKey);
   let year = '';
-  const yearMatch = !isEpisode ? working.match(/\b(19\d{2}|20\d{2})\b/) : null;
-  if (yearMatch) {
-    year = yearMatch[1];
-    working = working.replace(yearMatch[0], ' ');
+  const yearAnchor = !isEpisode ? findReleaseYearAnchor(working) : null;
+  if (yearAnchor) {
+    year = yearAnchor.year;
+    working = working.slice(0, yearAnchor.start);
   } else if (isEpisode) {
     working = working.replace(/\b(19\d{2}|20\d{2})\b/g, ' ');
   }
@@ -590,6 +600,7 @@ export function parseMediaFilename(name: string): ParsedMediaFilename {
   return {
     rawBase,
     title,
+    releaseProfile,
     episodeKey,
     season: season || undefined,
     episode: episode || undefined,
