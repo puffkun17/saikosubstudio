@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { isLyricText } from '@/utils/subtitleCore';
 import type { SubRow } from '@/utils/subtitleCore';
-import { ChevronDown, Music2 } from 'lucide-react';
+import { Captions, ChevronDown, Music2, Volume2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TimelineControls } from '@/components/Workbench/TimelineControls';
 
@@ -114,6 +114,8 @@ export const SequenceList: React.FC = () => {
               const enText = parts[1] || '';
               const isLyric = isLyricText(sub.text);
               const isExpandedDialogue = sub.alignment === 'expanded-dialogue';
+              const isSoundCaption = sub.cueKind === 'sound_caption' || sub.auxiliary?.category === 'ambient_sdh';
+              const isAuxiliarySemantic = sub.auxiliary?.category === 'semantic_sdh' || sub.auxiliary?.category === 'speech_context';
 
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
               const endTime = sub.ts.split(' --> ')[1]?.replace(',', '.').trim() || '';
@@ -214,7 +216,20 @@ export const SequenceList: React.FC = () => {
                         )}
                         {sub.cueKind === 'screen_text' && (
                           <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[#a8b7a3]/20 bg-[#a8b7a3]/[0.055] px-2 py-0.5 text-[11px] font-medium text-[#cbd6c7]">
+                            <Captions className="mr-1 h-3 w-3" />
                             画面文字
+                          </span>
+                        )}
+                        {isSoundCaption && (
+                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-white/[0.08] bg-white/[0.025] px-2 py-0.5 text-[11px] font-medium text-neutral-400">
+                            <Volume2 className="mr-1 h-3 w-3" />
+                            声音说明
+                          </span>
+                        )}
+                        {isAuxiliarySemantic && (
+                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[#b9ddd8]/20 bg-[#b9ddd8]/[0.055] px-2 py-0.5 text-[11px] font-medium text-[#cdece5]">
+                            <Captions className="mr-1 h-3 w-3" />
+                            辅助信息
                           </span>
                         )}
                         <div className={`text-[15px] font-medium leading-6 break-words ${isActive ? 'text-white' : 'text-neutral-200'}`}>

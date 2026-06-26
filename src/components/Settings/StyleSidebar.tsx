@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
-import type { StyleSettings } from '@/utils/subtitleCore';
+import { applyAuxiliarySubtitleMode, type StyleSettings } from '@/utils/subtitleCore';
 import { ALargeSmall, ChevronDown, ChevronUp, FileType, Paintbrush, Pipette, Save, SlidersHorizontal, SquareArrowRightExit, SquareCenterlineDashedHorizontal, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { InfoHint } from '@/components/ui/InfoHint';
@@ -217,6 +217,8 @@ export const StyleSidebar: React.FC = () => {
     if (!sub.text) return false;
     return /[♪♫♬♩🎵🎶]/.test(sub.text);
   });
+  const auxiliaryCount = processedSubs?.filter(sub => sub.auxiliary || sub.cueKind === 'sound_caption' || sub.cueKind === 'screen_text').length ?? 0;
+  const smartHiddenCount = processedSubs ? processedSubs.length - applyAuxiliarySubtitleMode(processedSubs, 'smart').length : 0;
 
 
   const handleApplyPreset = (preset: { id: string; styles: Partial<StyleSettings> }) => {
@@ -248,6 +250,7 @@ export const StyleSidebar: React.FC = () => {
       resolution: '1080p' as const,
       aspectRatio: '16:9' as const,
       globalScale: 1.0,
+      auxiliaryMode: 'keep' as const,
       // 阅片环境字体协调默认值
       zhFontFamily: 'system-ui, "PingFang SC", "Noto Sans SC", sans-serif',
       enFontFamily: 'Helvetica Neue, Arial, "Inter", sans-serif'
@@ -475,6 +478,43 @@ export const StyleSidebar: React.FC = () => {
         </SettingSection>
 
         <SettingSection title="输出" icon={<SquareArrowRightExit className="h-4 w-4 text-[#b9ddd8]" aria-hidden="true" />}>
+          <div className="flex flex-col gap-2.5">
+            <span className="text-sm font-medium text-neutral-300 inline-flex items-center gap-1.5">
+              辅助字幕策略
+              <InfoHint label="辅助字幕说明" side="left">
+                指声音说明、画面文字、歌词或非对白表达。完整保留最安全；智能精简会隐藏明确低价值环境音；清洁对白更适合普通观影导出。
+              </InfoHint>
+            </span>
+            <div className="grid grid-cols-3 gap-1 rounded-xl border border-white/[0.07] bg-black/25 p-1">
+              {([
+                { value: 'keep', label: '完整', desc: '全保留' },
+                { value: 'smart', label: '智能', desc: '隐去环境音' },
+                { value: 'clean', label: '清洁', desc: '对白优先' },
+              ] as const).map(item => (
+                <button
+                  key={item.value}
+                  type="button"
+                  aria-pressed={(customStyle.auxiliaryMode || 'keep') === item.value}
+                  className={`min-h-11 rounded-lg px-1.5 py-1.5 text-left transition-all cursor-pointer
+                    ${(customStyle.auxiliaryMode || 'keep') === item.value
+                      ? 'bg-[#b9ddd8] text-black shadow-[0_0_18px_rgba(185,221,216,0.14)]'
+                      : 'text-neutral-500 hover:bg-white/[0.05] hover:text-neutral-200'}`}
+                  onClick={() => handleStyleChange('auxiliaryMode', item.value)}
+                >
+                  <span className="block text-center text-xs font-semibold leading-tight">{item.label}</span>
+                  <span className={`mt-0.5 block text-center text-[10px] leading-tight ${(customStyle.auxiliaryMode || 'keep') === item.value ? 'text-black/55' : 'text-neutral-600'}`}>
+                    {item.desc}
+                  </span>
+                </button>
+              ))}
+            </div>
+            {auxiliaryCount > 0 && (
+              <p className="text-xs leading-relaxed text-neutral-500">
+                检测到 {auxiliaryCount} 条辅助内容；智能精简预计隐去 {smartHiddenCount} 条环境音说明。
+              </p>
+            )}
+          </div>
+
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm font-medium text-neutral-300 inline-flex items-center gap-1.5">
               画面规格

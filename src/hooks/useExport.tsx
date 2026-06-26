@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, SquareArrowRightExit } from 'lucide-react';
 import { useStudioStore } from '@/store/useStudioStore';
-import { appendCreatorCredit as appendCreatorCreditCue, generateSrtContent, generateAssContent } from '@/utils/subtitleCore';
+import { appendCreatorCredit as appendCreatorCreditCue, applyAuxiliarySubtitleMode, generateSrtContent, generateAssContent } from '@/utils/subtitleCore';
 
 /**
  * #16 — Shared export hook to avoid duplication in WorkbenchStep + TheaterStep
@@ -21,13 +21,17 @@ export const useExport = () => {
       const exportSubs = appendCreatorCredit
         ? appendCreatorCreditCue(processedSubs, creatorCredit)
         : processedSubs;
+      const auxiliaryMode = customStyle.auxiliaryMode || 'keep';
+      const filteredExportSubs = applyAuxiliarySubtitleMode(exportSubs, auxiliaryMode);
+      const hiddenAuxiliaryCount = exportSubs.length - filteredExportSubs.length;
+      const exportStyle = { ...customStyle, auxiliaryMode: 'keep' as const };
 
       if (format === 'srt') {
-        content = generateSrtContent(exportSubs, customStyle);
+        content = generateSrtContent(filteredExportSubs, exportStyle);
         mimeType = 'text/srt';
         extension = 'srt';
       } else {
-        content = generateAssContent(exportSubs, customStyle, customFilename);
+        content = generateAssContent(filteredExportSubs, exportStyle, customFilename);
         mimeType = 'text/x-ass';
         extension = 'ass';
       }
@@ -42,7 +46,12 @@ export const useExport = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      addLog(`导出成功: ${format.toUpperCase()} 格式`, 'success');
+      addLog(
+        hiddenAuxiliaryCount > 0
+          ? `导出成功: ${format.toUpperCase()} 格式，已按辅助字幕策略隐藏 ${hiddenAuxiliaryCount} 行`
+          : `导出成功: ${format.toUpperCase()} 格式`,
+        'success',
+      );
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       addLog(`导出失败: ${msg}`, 'error');

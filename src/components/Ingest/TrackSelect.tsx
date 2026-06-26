@@ -29,6 +29,7 @@ const getLangBadgeMini = (lang?: string, languagePair?: Option['languagePair']) 
     'ja': { label: '日', color: 'text-rose-200 bg-rose-500/22 border border-rose-300/45' },
     'ko': { label: '韩', color: 'text-violet-200 bg-violet-500/22 border border-violet-300/45' },
     'fr': { label: '法', color: 'text-amber-200 bg-amber-500/22 border border-amber-300/45' },
+    'es': { label: '西', color: 'text-lime-200 bg-lime-500/22 border border-lime-300/45' },
     'latin': { label: '拉', color: 'text-stone-200 bg-stone-500/22 border border-stone-300/45' },
     'bilingual': { label: '双', color: 'text-fuchsia-200 bg-fuchsia-500/22 border border-fuchsia-300/45' },
     'commentary': { label: '导', color: 'text-orange-200 bg-orange-500/22 border border-orange-300/45' },

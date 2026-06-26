@@ -38,12 +38,16 @@ const {
   checkIsBilingual,
   cleanFilename,
   classifySubtitleCue,
+  classifyAuxiliaryCue,
   detectLanguageByContent,
+  detectLanguageByFilename,
+  detectSubtitleLanguage,
   detectSubtitleLanguagePair,
   appendCreatorCredit,
   extractSubtitleAttributions,
   generateAssContent,
   generateSrtContent,
+  applyAuxiliarySubtitleMode,
   mergeSubtitles,
   normalizeSingleBilingualRows,
   parseMediaFilename,
@@ -281,6 +285,48 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
   assert.equal(aligned.some(row => row.alignment === 'expanded-dialogue'), false, 'Ordinary visual line breaks must not be mistaken for two-speaker dialogue.');
 }
 
+const makeRegressionTs = (startMs) => {
+  const pad = (n, size = 2) => String(n).padStart(size, '0');
+  const format = (value) => {
+    const h = Math.floor(value / 3600000);
+    const m = Math.floor((value % 3600000) / 60000);
+    const s = Math.floor((value % 60000) / 1000);
+    const ms = value % 1000;
+    return `${pad(h)}:${pad(m)}:${pad(s)},${pad(ms, 3)}`;
+  };
+  return `${format(startMs)} --> ${format(startMs + 900)}`;
+};
+
+{
+  const primary = Array.from({ length: 30 }, (_, index) => ({
+    ts: makeRegressionTs(10_000 + index * 2200),
+    text: `中文 ${index + 1}`,
+  }));
+  const secondary = Array.from({ length: 30 }, (_, index) => ({
+    ts: makeRegressionTs(14_000 + index * 2200),
+    text: `Line ${index + 1}`,
+  }));
+  const aligned = alignSubtitlesIndustrial(primary, secondary, [], noopLog);
+  assert.equal(aligned.length, 30, 'Stable whole-track offset should not explode into single-track rows.');
+  assert.equal(aligned[0].alignment, 'shifted-match');
+  assert.equal(aligned[0].provenance?.method, 'shifted-match');
+  assert.equal(aligned[0].provenance?.offsetMs, 4000);
+  assert.equal(aligned[0].ts, primary[0].ts, 'Shifted merge should keep the corrected primary timeline.');
+}
+
+{
+  const primary = Array.from({ length: 30 }, (_, index) => ({
+    ts: makeRegressionTs(10_000 + index * 2200),
+    text: `中文 ${index + 1}`,
+  }));
+  const secondary = Array.from({ length: 30 }, (_, index) => ({
+    ts: makeRegressionTs(10_000 + index * 2200 + (index < 15 ? 3500 : 9000)),
+    text: `Line ${index + 1}`,
+  }));
+  const aligned = alignSubtitlesIndustrial(primary, secondary, [], noopLog);
+  assert.equal(aligned.some(row => row.alignment === 'shifted-match'), false, 'Unstable segmented drift should not be auto-applied as a global shift.');
+}
+
 {
   const summary = analyzeAlignmentDiff([
     { index: 1, ts: '00:00:01,000 --> 00:00:02,000', text: '你好\nHello', type: 'merged' },
@@ -419,14 +465,85 @@ What's wrong?
 
 {
   assert.equal(detectLanguageByContent('Bonjour, je suis avec vous.'), 'fr');
+  assert.equal(detectLanguageByContent('Movimiento ocular detectado.'), 'es');
   assert.equal(detectLanguageByContent('Hola mundo'), 'latin');
+  assert.equal(detectLanguageByFilename('Project.Hail.Mary.2026.1080p.WEBRip.x265-KONTRAST.Chinese.Traditional.srt'), 'zh-TW');
+  assert.equal(detectLanguageByFilename('Project.Hail.Mary.2026.1080p.WEBRip.x265-KONTRAST.Spanish.srt'), 'es');
+}
+
+{
+  const chineseSpanishSrt = `1
+00:00:01,000 --> 00:00:03,000
+偵測到眼球運動
+
+2
+00:00:01,000 --> 00:00:03,000
+這裡偵測到眼球運動
+
+3
+00:00:01,000 --> 00:00:03,000
+Movimiento ocular detectado.`;
+  assert.equal(checkIsBilingual(chineseSpanishSrt), true, 'Chinese/Spanish same-time cues should be treated as bilingual.');
+  assert.deepEqual(detectSubtitleLanguagePair(chineseSpanishSrt, 'Project.Hail.Mary.2026.Chinese.Traditional.Spanish.srt'), { primary: 'zh-TW', secondary: 'es' });
+  assert.deepEqual(
+    detectSubtitleLanguage('Project.Hail.Mary.2026.Chinese.Traditional.Spanish.srt', chineseSpanishSrt),
+    { lang: 'bilingual', isBilingual: true, languagePair: { primary: 'zh-TW', secondary: 'es' } },
+  );
 }
 
 {
   assert.equal(classifySubtitleCue('{\\an8}禁止入内').kind, 'screen_text');
   assert.equal(classifySubtitleCue('POLICE DEPARTMENT').kind, 'screen_text');
   assert.equal(classifySubtitleCue('我们今天去吃 KFC。').kind, 'dialogue');
-  assert.equal(classifySubtitleCue('（脚步声）').kind, 'narration');
+  assert.equal(classifySubtitleCue('（脚步声）').kind, 'sound_caption');
+  assert.equal(classifySubtitleCue('[faint beeping]').kind, 'sound_caption');
+  assert.equal(classifyAuxiliaryCue('[speaking alien language]').category, 'semantic_sdh');
+}
+
+{
+  const primary = [
+    { ts: '00:00:01,000 --> 00:00:02,000', text: '开始', cueKind: 'dialogue' },
+  ];
+  const secondary = [
+    { ts: '00:00:01,000 --> 00:00:02,000', text: '[faint beeping]', cueKind: 'sound_caption' },
+  ];
+  const aligned = alignSubtitlesIndustrial(primary, secondary, [], noopLog);
+  assert.equal(aligned.some(row => row.type === 'merged'), false, 'Ambient SDH must not be merged into a dialogue row.');
+  assert.equal(aligned.some(row => row.cueKind === 'sound_caption'), true, 'Ambient SDH should be preserved as auxiliary content.');
+}
+
+{
+  const primary = [
+    { ts: '00:00:10,000 --> 00:00:12,000', text: '我们得走了。', cueKind: 'dialogue' },
+  ];
+  const secondary = [
+    { ts: '00:00:10,000 --> 00:00:12,000', text: '[Rocky chirps]', cueKind: 'narration', auxiliary: classifyAuxiliaryCue('[Rocky chirps]') },
+  ];
+  const aligned = alignSubtitlesIndustrial(primary, secondary, [], noopLog);
+  assert.equal(aligned.some(row => row.type === 'merged'), false, 'Semantic SDH must not be merged into ordinary dialogue.');
+}
+
+{
+  const primary = [
+    { ts: '00:00:10,000 --> 00:00:12,000', text: '[外星语]', cueKind: 'narration', auxiliary: classifyAuxiliaryCue('[外星语]') },
+  ];
+  const secondary = [
+    { ts: '00:00:10,000 --> 00:00:12,000', text: '[speaking alien language]', cueKind: 'narration', auxiliary: classifyAuxiliaryCue('[speaking alien language]') },
+  ];
+  const aligned = alignSubtitlesIndustrial(primary, secondary, [], noopLog);
+  assert.equal(aligned.filter(row => row.auxiliary?.category === 'semantic_sdh').length, 2, 'Semantic auxiliary cues should be preserved for export-mode decisions.');
+}
+
+{
+  const rows = [
+    { index: 1, ts: '00:00:01,000 --> 00:00:02,000', text: '[faint beeping]', type: 'note', cueKind: 'sound_caption', auxiliary: classifyAuxiliaryCue('[faint beeping]') },
+    { index: 2, ts: '00:00:03,000 --> 00:00:04,000', text: '[speaking alien language]', type: 'note', cueKind: 'narration', auxiliary: classifyAuxiliaryCue('[speaking alien language]') },
+    { index: 3, ts: '00:00:05,000 --> 00:00:06,000', text: '你好', type: 'dialogue', cueKind: 'dialogue' },
+  ];
+  const smartRows = applyAuxiliarySubtitleMode(rows, 'smart');
+  assert.equal(smartRows.length, 2, 'Smart auxiliary mode should hide low-value ambient SDH.');
+  assert.equal(smartRows.some(row => row.text.includes('alien')), true, 'Smart auxiliary mode should keep semantic auxiliary cues.');
+  assert.equal(applyAuxiliarySubtitleMode(rows, 'keep').length, 3);
 }
 
 {

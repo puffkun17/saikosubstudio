@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
-import { decodeBuffer, detectLanguageByContent, detectSubtitleLanguagePair, checkIsBilingual, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
+import { decodeBuffer, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
 import { FilePlus, FolderPlus, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -150,12 +150,12 @@ const createPreflightItem = (file: File): PreflightItem => {
 const describeTrack = (file: Subfile) => {
   if (file.isCommentary || file.lang === 'commentary') return '导评轨';
   if (file.isBilingual || file.lang === 'bilingual') {
-    const labels: Record<string, string> = { 'zh-CN': '简中', 'zh-TW': '繁中', en: '英语', ja: '日语', ko: '韩语', fr: '法语', latin: '拉丁文字' };
+    const labels: Record<string, string> = { 'zh-CN': '简中', 'zh-TW': '繁中', en: '英语', ja: '日语', ko: '韩语', fr: '法语', es: '西语', latin: '拉丁文字' };
     const pair = file.languagePair;
     return pair ? `${labels[pair.primary]} / ${labels[pair.secondary]} 双语轨` : '双语轨';
   }
   if (file.lang === 'zh-CN' || file.lang === 'zh-TW') return '主字幕轨';
-  if (['en', 'ja', 'ko', 'fr', 'latin'].includes(file.lang)) return '第二语言轨';
+  if (['en', 'ja', 'ko', 'fr', 'es', 'latin'].includes(file.lang)) return '第二语言轨';
   return '待确认轨';
 };
 
@@ -227,17 +227,15 @@ export const DragZone: React.FC = () => {
         }
 
         const decoded = decodeBuffer(buffer);
-        const isBilingual = checkIsBilingual(decoded.text);
-        const lang = isBilingual ? 'bilingual' : detectLanguageByContent(decoded.text);
-        const languagePair = isBilingual ? detectSubtitleLanguagePair(decoded.text) : undefined;
+        const detected = detectSubtitleLanguage(zipEntry.name, decoded.text);
         const ext = getExtension(zipEntry.name);
         const subfile: Subfile = {
           id: `zip_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
           name: zipEntry.name.split('/').pop() || zipEntry.name,
           text: decoded.text,
-          lang,
-          languagePair,
-          isBilingual,
+          lang: detected.lang,
+          languagePair: detected.languagePair,
+          isBilingual: detected.isBilingual,
           isCommentary: /(commentary|comment|director|解说|导轨)/i.test(zipEntry.name),
           size: decoded.text.length
         };
@@ -246,7 +244,7 @@ export const DragZone: React.FC = () => {
           name: subfile.name,
           format: ext === 'ass' ? 'ASS' : 'SRT',
           lang: describeTrack(subfile),
-          isBilingual,
+          isBilingual: detected.isBilingual,
           isCommentary: subfile.isCommentary,
           source: 'zip',
         });
@@ -277,17 +275,15 @@ export const DragZone: React.FC = () => {
 
       for (const extractedFile of files) {
         const text = await readAndDecodeFile(extractedFile);
-        const isBilingual = checkIsBilingual(text);
-        const lang = isBilingual ? 'bilingual' : detectLanguageByContent(text);
-        const languagePair = isBilingual ? detectSubtitleLanguagePair(text) : undefined;
+        const detected = detectSubtitleLanguage(extractedFile.name, text);
         const ext = getExtension(extractedFile.name);
         const subfile: Subfile = {
           id: `archive_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
           name: extractedFile.name,
           text,
-          lang,
-          languagePair,
-          isBilingual,
+          lang: detected.lang,
+          languagePair: detected.languagePair,
+          isBilingual: detected.isBilingual,
           isCommentary: /(commentary|comment|director|解说|导轨)/i.test(extractedFile.name),
           size: extractedFile.size,
         };
@@ -296,7 +292,7 @@ export const DragZone: React.FC = () => {
           name: subfile.name,
           format: ext === 'ass' ? 'ASS' : 'SRT',
           lang: describeTrack(subfile),
-          isBilingual,
+          isBilingual: detected.isBilingual,
           isCommentary: subfile.isCommentary,
           source: 'archive',
         });
@@ -381,17 +377,15 @@ export const DragZone: React.FC = () => {
       } else {
         try {
           const text = await readAndDecodeFile(file);
-          const isBilingual = checkIsBilingual(text);
-          const lang = isBilingual ? 'bilingual' : detectLanguageByContent(text);
-          const languagePair = isBilingual ? detectSubtitleLanguagePair(text) : undefined;
+          const detected = detectSubtitleLanguage(file.name, text);
           const ext = getExtension(file.name);
           const subfile: Subfile = {
             id: `file_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
             name: file.name,
             text,
-            lang,
-            languagePair,
-            isBilingual,
+            lang: detected.lang,
+            languagePair: detected.languagePair,
+            isBilingual: detected.isBilingual,
             isCommentary: /(commentary|comment|director|解说|导轨)/i.test(file.name),
             size: text.length
           };
@@ -400,7 +394,7 @@ export const DragZone: React.FC = () => {
             name: file.name,
             format: ext === 'ass' ? 'ASS' : 'SRT',
             lang: describeTrack(subfile),
-            isBilingual,
+            isBilingual: detected.isBilingual,
             isCommentary: subfile.isCommentary,
             source: 'file',
           });

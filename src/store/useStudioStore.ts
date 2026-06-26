@@ -242,7 +242,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   tmdbBackdropList: [],
   isTemplateLab: false,
   customStyle: {
-    zhFontSize: 20, enFontSize: 12, zhColor: '#FFFFFF', enColor: '#B0B0B0', zhOutline: '#4B5563', enOutline: '#000000', enScale: 90, maxLenZh: 20, maxLenEn: 80, marginV: 20, resolution: '1080p', aspectRatio: '16:9', globalScale: 1.0, lyricFontSize: 16, lyricColor: '#E6E6FA', lyricItalic: true, lyricPosition: 'top',
+    zhFontSize: 20, enFontSize: 12, zhColor: '#FFFFFF', enColor: '#B0B0B0', zhOutline: '#4B5563', enOutline: '#000000', enScale: 90, maxLenZh: 20, maxLenEn: 80, marginV: 20, resolution: '1080p', aspectRatio: '16:9', globalScale: 1.0, lyricFontSize: 16, lyricColor: '#E6E6FA', lyricItalic: true, lyricPosition: 'top', auxiliaryMode: 'keep',
     // 字体家族默认（系统级，跨平台较稳）
     zhFontFamily: 'system-ui, sans-serif',
     enFontFamily: 'Helvetica Neue, Arial, sans-serif'
@@ -1379,7 +1379,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const normalFiles = files.filter(f => !commentaryFiles.includes(f));
 
         const zhFiles = normalFiles.filter(f => f.lang === 'zh' || f.lang === 'zh-CN' || f.lang === 'zh-TW');
-        const foreignFiles = normalFiles.filter(f => ['en', 'ja', 'ko', 'fr', 'latin'].includes(f.lang));
+        const foreignFiles = normalFiles.filter(f => ['en', 'ja', 'ko', 'fr', 'es', 'latin'].includes(f.lang));
         const bilingualFiles = normalFiles.filter(f => f.lang === 'bilingual');
 
         const getBestFile = (list: Subfile[]): Subfile | null => {
@@ -1422,7 +1422,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
               task.zh = bestAny;
               task.en = null;
               task.isBilingualSingle = true;
-            } else if (['en', 'ja', 'ko', 'fr', 'latin'].includes(bestAny.lang)) {
+            } else if (['en', 'ja', 'ko', 'fr', 'es', 'latin'].includes(bestAny.lang)) {
               task.zh = null;
               task.en = bestAny;
               task.isBilingualSingle = false;

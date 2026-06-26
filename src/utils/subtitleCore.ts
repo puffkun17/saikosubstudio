@@ -9,13 +9,24 @@ import {
   stripContextualReleaseTail,
 } from './releaseNamingRules';
 
-export type CueKind = 'dialogue' | 'screen_text' | 'narration' | 'lyrics' | 'commentary' | 'unknown';
+export type CueKind = 'dialogue' | 'screen_text' | 'sound_caption' | 'narration' | 'lyrics' | 'commentary' | 'unknown';
+export type AuxiliaryCueCategory = 'ambient_sdh' | 'semantic_sdh' | 'screen_text' | 'music' | 'speech_context' | 'unknown';
+export type AuxiliaryCueAction = 'hide_by_default' | 'keep_auxiliary' | 'keep_visible';
+export type AuxiliarySubtitleMode = 'smart' | 'keep' | 'clean';
+
+export interface AuxiliaryCueClassification {
+  category: AuxiliaryCueCategory;
+  confidence: number;
+  action: AuxiliaryCueAction;
+  reasons: string[];
+}
 
 export interface CueClassification {
   kind: CueKind;
   confidence: number;
   reasons: string[];
   placement?: 'top' | 'positioned' | 'bottom';
+  auxiliary?: AuxiliaryCueClassification;
 }
 
 export interface AlignmentSourceRef {
@@ -25,9 +36,11 @@ export interface AlignmentSourceRef {
 }
 
 export interface AlignmentProvenance {
-  method: 'expanded-dialogue' | 'single-track';
+  method: 'exact-match' | 'shifted-match' | 'expanded-dialogue' | 'single-track';
   timingSource: 'primary' | 'secondary';
   groupId?: string;
+  confidence?: number;
+  offsetMs?: number;
   primary?: AlignmentSourceRef;
   secondary?: AlignmentSourceRef;
 }
@@ -37,7 +50,8 @@ export interface SubRow {
   text: string;
   type?: string;
   cueKind?: CueKind;
-  alignment?: 'expanded-dialogue';
+  auxiliary?: AuxiliaryCueClassification;
+  alignment?: 'expanded-dialogue' | 'shifted-match';
   provenance?: AlignmentProvenance;
   index: number;
 }
@@ -47,6 +61,7 @@ export interface RawSub {
   text: string;
   cueKind?: CueKind;
   cueMeta?: CueClassification;
+  auxiliary?: AuxiliaryCueClassification;
 }
 
 export interface DecodeResult {
@@ -61,6 +76,7 @@ export type SubtitleLanguage =
   | 'ja'
   | 'ko'
   | 'fr'
+  | 'es'
   | 'latin'
   | 'bilingual'
   | 'commentary'
@@ -68,7 +84,13 @@ export type SubtitleLanguage =
 
 export interface SubtitleLanguagePair {
   primary: 'zh-CN' | 'zh-TW';
-  secondary: 'en' | 'ja' | 'ko' | 'fr' | 'latin' | 'unknown';
+  secondary: 'en' | 'ja' | 'ko' | 'fr' | 'es' | 'latin' | 'unknown';
+}
+
+export interface SubtitleLanguageDetection {
+  lang: SubtitleLanguage;
+  isBilingual: boolean;
+  languagePair?: SubtitleLanguagePair;
 }
 
 export type SubtitleAttributionRole = 'publisher' | 'translator' | 'editor' | 'timing' | 'proofreader' | 'encoder' | 'website' | 'producer';
@@ -98,6 +120,7 @@ export interface StyleSettings {
   lyricColor?: string;
   lyricItalic?: boolean;
   lyricPosition?: 'top' | 'bottom';
+  auxiliaryMode?: AuxiliarySubtitleMode;
   // 新增：字体家族选择（支持阅片环境下的专业 CJK 协调）
   zhFontFamily?: string;
   enFontFamily?: string;
@@ -167,14 +190,62 @@ export function detectLanguageByContent(text: string): SubtitleLanguage {
     .replace(/[^\p{L}\p{M}'’\s-]/gu, ' ')
     .toLowerCase();
   const frenchSignals = (clean.match(/\b(le|la|les|des|une|dans|avec|pour|mais|est|pas|nous|vous|qui|que)\b/g) || []).length;
+  const spanishSignals = (clean.match(/\b(el|la|los|las|un|una|unos|unas|de|del|con|por|para|pero|está|esta|que|qué|soy|eres|somos|usted|ustedes|gracias|hola|movimiento|detectado|supervisión|creativa|señor|señora)\b/g) || []).length;
   const englishSignals = (clean.match(/\b(the|and|you|that|this|with|for|have|not|are|was|what|where|why|hello|yes|no)\b/g) || []).length;
   const frenchAccents = (clean.match(/[àâçéèêëîïôùûüÿœæ]/g) || []).length;
+  const spanishMarks = (clean.match(/[áíóñ¿¡]/g) || []).length;
   const latinCount = (clean.match(/[a-z\u00c0-\u024f]/g) || []).length;
 
+  if (spanishMarks > 0 || spanishSignals >= 2) return 'es';
   if (frenchAccents > 0 || frenchSignals >= 2) return 'fr';
   if (englishSignals >= 1) return 'en';
   if (latinCount >= 2) return 'latin';
   return 'unknown';
+}
+
+const hasFilenameToken = (name: string, tokens: string[]): boolean => {
+  const normalized = name
+    .toLowerCase()
+    .replace(/\.[a-z0-9]{2,5}$/i, '')
+    .replace(/[._()[\]{}+]+/g, ' ');
+  return tokens.some(token => new RegExp(`(^|\\s|-)${token}(\\s|-|$)`, 'i').test(normalized));
+};
+
+const isSecondarySubtitleLanguage = (language: SubtitleLanguage): language is SubtitleLanguagePair['secondary'] => (
+  language === 'en'
+  || language === 'ja'
+  || language === 'ko'
+  || language === 'fr'
+  || language === 'es'
+  || language === 'latin'
+);
+
+export function detectLanguageByFilename(name: string): SubtitleLanguage {
+  const normalized = name.toLowerCase();
+  if (/(commentary|comment|director|解说|導評|导轨)/i.test(name)) return 'commentary';
+  if (/(双语|雙語|中英|中日|中韩|中韓|中法|中西|bilingual|dual[-_.\s]?sub)/i.test(name)) return 'bilingual';
+  if (/(chinese[._\s-]*traditional|traditional[._\s-]*chinese|zh[-_.\s]?tw|繁體|繁体|繁中|big5)/i.test(name) || hasFilenameToken(normalized, ['cht', 'tc'])) return 'zh-TW';
+  if (/(chinese[._\s-]*simplified|simplified[._\s-]*chinese|zh[-_.\s]?cn|简体|簡體|简中|簡中|gbk|gb2312|gb18030)/i.test(name) || hasFilenameToken(normalized, ['chs', 'sc'])) return 'zh-CN';
+  if (/(english|英语|英語|英文)/i.test(name) || hasFilenameToken(normalized, ['eng', 'en'])) return 'en';
+  if (/(japanese|日本語|日语|日語|日文)/i.test(name) || hasFilenameToken(normalized, ['jpn', 'ja'])) return 'ja';
+  if (/(korean|한국어|韩语|韓語|韩文|韓文)/i.test(name) || hasFilenameToken(normalized, ['kor', 'ko'])) return 'ko';
+  if (/(french|français|francais|法语|法語|法文)/i.test(name) || hasFilenameToken(normalized, ['fre', 'fra', 'fr', 'vff', 'vfq'])) return 'fr';
+  if (/(spanish|español|espanol|castellano|西班牙语|西班牙語|西语|西語)/i.test(name) || hasFilenameToken(normalized, ['spa', 'esp', 'es'])) return 'es';
+  return 'unknown';
+}
+
+export function detectSubtitleLanguage(name: string, text: string): SubtitleLanguageDetection {
+  const filenameLang = detectLanguageByFilename(name);
+  const contentBilingual = checkIsBilingual(text);
+  const isBilingual = contentBilingual || filenameLang === 'bilingual';
+  const languagePair = isBilingual ? detectSubtitleLanguagePair(text, name) : undefined;
+  const lang = isBilingual
+    ? 'bilingual'
+    : filenameLang !== 'unknown'
+      ? filenameLang
+      : detectLanguageByContent(text);
+
+  return { lang, isBilingual, languagePair };
 }
 
 /**
@@ -729,6 +800,61 @@ const stripSubtitleInlineTags = (text: string): string => text
   .replace(/\s+/g, ' ')
   .trim();
 
+const stripWrappingBrackets = (text: string): string => text
+  .trim()
+  .replace(/^\s*[\[(（【]\s*/, '')
+  .replace(/\s*[\])）】]\s*$/, '')
+  .trim();
+
+export function classifyAuxiliaryCue(text: string): AuxiliaryCueClassification {
+  const rawText = text || '';
+  const cleanText = stripSubtitleInlineTags(rawText);
+  const innerText = stripWrappingBrackets(cleanText);
+  const reasons: string[] = [];
+  let category: AuxiliaryCueCategory = 'unknown';
+  let confidence = 38;
+  let action: AuxiliaryCueAction = 'keep_auxiliary';
+
+  if (isLyricText(rawText) || /\b(song|singing|lyrics?)\b/i.test(innerText) || /(歌词|歌声|唱歌|哼唱)/.test(innerText)) {
+    category = 'music';
+    confidence = 78;
+    action = 'keep_auxiliary';
+    reasons.push('music-or-lyric');
+  }
+
+  if (/(ON SCREEN|SCREEN TEXT|TEXT|SIGN|TITLE CARD|CAPTION|SUBTITLE|sign reads|text reads|牌匾|招牌|标识|路牌|屏幕|短信|邮件|标题|告示|字幕显示)/i.test(innerText)) {
+    category = 'screen_text';
+    confidence = 86;
+    action = 'keep_visible';
+    reasons.push('screen-text');
+  }
+
+  if (/\b(speaking|speaks|language|alien|robot|machine|computer|ai|voice|radio|intercom|announcer|broadcast|chatter|chirps?|responds?|whispers?|murmurs?)\b/i.test(innerText)
+    || /(外星|语言|語言|机器|機器|人工智能|广播|廣播|电台|電台|对讲机|對講機|播报|播報|说话|說話|低语|低語)/i.test(innerText)) {
+    category = 'semantic_sdh';
+    confidence = Math.max(confidence, 82);
+    action = 'keep_auxiliary';
+    reasons.push('semantic-speech-context');
+  }
+
+  if (/(wind|rain|thunder|music|beep|beeping|door|footsteps?|steps?|creak|creaking|knock|ringing|phone|siren|engine|laughs?|laughter|applause|breathing|sighs?|groans?|crying|wind howling|风声|風聲|雨声|雨聲|雷声|雷聲|音乐|音樂|铃声|鈴聲|脚步声|腳步聲|敲门|敲門|开门|開門|关门|關門|笑声|笑聲|掌声|掌聲|呼吸|叹息|嘆息|哭声|哭聲|引擎|警笛)/i.test(innerText)) {
+    if (category === 'unknown' || category === 'music') {
+      category = /\b(music|song|singing)\b/i.test(innerText) || /(音乐|音樂|歌声|歌聲)/.test(innerText) ? 'music' : 'ambient_sdh';
+      confidence = Math.max(confidence, 76);
+      action = 'hide_by_default';
+      reasons.push('ambient-sound');
+    }
+  }
+
+  if (category === 'unknown' && (/^[\[(（【].*[\])）】]$/.test(cleanText) || /^<.*>$/.test(cleanText))) {
+    confidence = 58;
+    action = 'keep_auxiliary';
+    reasons.push('bracket-auxiliary');
+  }
+
+  return { category, confidence, action, reasons };
+}
+
 export function classifySubtitleCue(
   text: string,
   context: { timingLine?: string; assStyle?: string } = {}
@@ -744,6 +870,33 @@ export function classifySubtitleCue(
 
   if (isLyricText(rawText)) {
     return { kind: 'lyrics', confidence: 92, reasons: ['lyric-symbol'] };
+  }
+
+  const auxiliary = classifyAuxiliaryCue(rawText);
+  if (auxiliary.category === 'screen_text') {
+    return {
+      kind: 'screen_text',
+      confidence: auxiliary.confidence,
+      reasons: auxiliary.reasons,
+      placement: auxiliary.action === 'keep_visible' ? 'top' : undefined,
+      auxiliary,
+    };
+  }
+  if (auxiliary.category === 'ambient_sdh' || auxiliary.category === 'music') {
+    return {
+      kind: 'sound_caption',
+      confidence: auxiliary.confidence,
+      reasons: auxiliary.reasons,
+      auxiliary,
+    };
+  }
+  if (auxiliary.category === 'semantic_sdh' || auxiliary.category === 'speech_context') {
+    return {
+      kind: 'narration',
+      confidence: auxiliary.confidence,
+      reasons: auxiliary.reasons,
+      auxiliary,
+    };
   }
 
   if (/\\an[789]\b/i.test(rawText) || /\balign\s*:\s*top\b/i.test(timingLine) || /\bline\s*:\s*(?:[0-2]?\d%?|top)\b/i.test(timingLine)) {
@@ -797,6 +950,7 @@ export function classifySubtitleCue(
       confidence: Math.min(96, 52 + screenScore),
       reasons,
       placement,
+      auxiliary: auxiliary.category !== 'unknown' ? auxiliary : undefined,
     };
   }
 
@@ -806,6 +960,7 @@ export function classifySubtitleCue(
       confidence: Math.min(92, 48 + narrationScore),
       reasons,
       placement,
+      auxiliary,
     };
   }
 
@@ -894,7 +1049,7 @@ export function parseSrt(text: string): RawSub[] {
       if (contentLines.length > 0) {
         const cueText = contentLines.join(" ");
         const cueMeta = classifySubtitleCue(cueText, { timingLine: line });
-        subtitles.push({ ts: timestamp, text: cueText, cueKind: cueMeta.kind, cueMeta });
+        subtitles.push({ ts: timestamp, text: cueText, cueKind: cueMeta.kind, cueMeta, auxiliary: cueMeta.auxiliary });
       }
     } else {
       i++;
@@ -929,7 +1084,7 @@ export function parseSubtitle(text: string): RawSub[] {
           const rawDiag = parts.slice(textIdx).join(',');
           const cleanDiag = rawDiag.replace(/\\N/g, '\n').replace(/\{[^}]*\}/g, '').trim();
           const cueMeta = classifySubtitleCue(rawDiag, { assStyle: parts[styleIdx] || '' });
-          parsed.push({ ts, text: cleanDiag, cueKind: cueMeta.kind, cueMeta });
+          parsed.push({ ts, text: cleanDiag, cueKind: cueMeta.kind, cueMeta, auxiliary: cueMeta.auxiliary });
         }
       }
     });
@@ -1017,9 +1172,18 @@ const combineCueKind = (...kinds: Array<CueKind | undefined>): CueKind | undefin
   const known = kinds.filter(Boolean) as CueKind[];
   if (known.includes('lyrics')) return 'lyrics';
   if (known.length > 0 && known.every(kind => kind === 'screen_text')) return 'screen_text';
+  if (known.length > 0 && known.every(kind => kind === 'sound_caption')) return 'sound_caption';
   if (known.length > 0 && known.every(kind => kind === 'narration')) return 'narration';
   if (known.includes('commentary')) return 'commentary';
   return known.length > 0 ? 'dialogue' : undefined;
+};
+
+const combineAuxiliaryCue = (...items: Array<AuxiliaryCueClassification | undefined>): AuxiliaryCueClassification | undefined => {
+  const known = items.filter(Boolean) as AuxiliaryCueClassification[];
+  if (known.length === 0) return undefined;
+  const priority: AuxiliaryCueCategory[] = ['screen_text', 'semantic_sdh', 'speech_context', 'unknown', 'music', 'ambient_sdh'];
+  const selected = [...known].sort((a, b) => priority.indexOf(a.category) - priority.indexOf(b.category))[0];
+  return selected.category === 'unknown' && selected.confidence < 50 ? undefined : selected;
 };
 
 interface PreprocessedRow {
@@ -1027,6 +1191,7 @@ interface PreprocessedRow {
   text: string;
   type: 'note' | 'dialogue';
   cueKind?: CueKind;
+  auxiliary?: AuxiliaryCueClassification;
   sourceIndex: number;
   // 保留原始来源
   sourceText?: string;
@@ -1038,24 +1203,33 @@ function preprocessMixedContent(subs: RawSub[]): PreprocessedRow[] {
     const { ts, text } = sub;
     const sourceIndex = sourceOffset + 1;
     const cueKind = resolveCueKind(text, sub.cueKind);
+    const auxiliary = sub.auxiliary || sub.cueMeta?.auxiliary || classifyAuxiliaryCue(text);
     const ex = extractDialogueAndNotes(text);
     if (ex.notes && !ex.dialogue) {
       if (isLyricText(ex.notes)) {
-        processed.push({ ts, text: ex.notes, type: "dialogue", cueKind: 'lyrics', sourceIndex, sourceText: text });
+        processed.push({ ts, text: ex.notes, type: "dialogue", cueKind: 'lyrics', auxiliary, sourceIndex, sourceText: text });
       } else {
-        processed.push({ ts, text: ex.notes, type: "note", cueKind: cueKind === 'screen_text' ? 'screen_text' : 'narration', sourceIndex, sourceText: text });
+        const noteMeta = classifySubtitleCue(ex.notes);
+        const noteKind = noteMeta.kind === 'dialogue'
+          ? (cueKind === 'screen_text' || cueKind === 'sound_caption' || cueKind === 'narration' ? cueKind : 'narration')
+          : noteMeta.kind;
+        processed.push({ ts, text: ex.notes, type: "note", cueKind: noteKind, auxiliary: noteMeta.auxiliary || auxiliary, sourceIndex, sourceText: text });
       }
     } else if (ex.dialogue && !ex.notes) {
-      processed.push({ ts, text: ex.dialogue, type: "dialogue", cueKind, sourceIndex, sourceText: text });
+      processed.push({ ts, text: ex.dialogue, type: "dialogue", cueKind, auxiliary, sourceIndex, sourceText: text });
     } else if (ex.dialogue && ex.notes) {
       if (isLyricText(ex.notes)) {
-        processed.push({ ts, text: ex.notes, type: "dialogue", cueKind: 'lyrics', sourceIndex, sourceText: text });
+        processed.push({ ts, text: ex.notes, type: "dialogue", cueKind: 'lyrics', auxiliary, sourceIndex, sourceText: text });
       } else {
-        processed.push({ ts, text: ex.notes, type: "note", cueKind: cueKind === 'screen_text' ? 'screen_text' : 'narration', sourceIndex, sourceText: text });
+        const noteMeta = classifySubtitleCue(ex.notes);
+        const noteKind = noteMeta.kind === 'dialogue'
+          ? (cueKind === 'screen_text' || cueKind === 'sound_caption' || cueKind === 'narration' ? cueKind : 'narration')
+          : noteMeta.kind;
+        processed.push({ ts, text: ex.notes, type: "note", cueKind: noteKind, auxiliary: noteMeta.auxiliary || auxiliary, sourceIndex, sourceText: text });
       }
-      processed.push({ ts, text: ex.dialogue, type: "dialogue", cueKind, sourceIndex, sourceText: text });
+      processed.push({ ts, text: ex.dialogue, type: "dialogue", cueKind, auxiliary, sourceIndex, sourceText: text });
     } else {
-      processed.push({ ts, text, type: "dialogue", cueKind, sourceIndex, sourceText: text });
+      processed.push({ ts, text, type: "dialogue", cueKind, auxiliary, sourceIndex, sourceText: text });
     }
   }
   return processed;
@@ -1072,6 +1246,114 @@ function calculateOverlapRatio(s1: number, e1: number, s2: number, e2: number): 
   return 0;
 }
 
+const isStructuralCueKind = (kind?: CueKind): boolean => (
+  kind === 'screen_text'
+  || kind === 'sound_caption'
+  || kind === 'narration'
+  || kind === 'lyrics'
+  || kind === 'commentary'
+);
+
+interface CueMergeCompatibility {
+  canMerge: boolean;
+  scoreAdjustment: number;
+}
+
+const getAuxiliaryCategory = (row: PreprocessedRow): AuxiliaryCueCategory | undefined => {
+  const category = row.auxiliary?.category;
+  return category && category !== 'unknown' ? category : undefined;
+};
+
+const getCueMergeCompatibility = (primary: PreprocessedRow, secondary: PreprocessedRow): CueMergeCompatibility => {
+  const primaryKind = primary.cueKind || 'dialogue';
+  const secondaryKind = secondary.cueKind || 'dialogue';
+  if (!isStructuralCueKind(primaryKind) && !isStructuralCueKind(secondaryKind)) {
+    return { canMerge: true, scoreAdjustment: 0 };
+  }
+  // 辅助信息不混对白
+  if (primaryKind !== secondaryKind) return { canMerge: false, scoreAdjustment: -40 };
+
+  const primaryCategory = getAuxiliaryCategory(primary);
+  const secondaryCategory = getAuxiliaryCategory(secondary);
+  if (primaryCategory && secondaryCategory && primaryCategory !== secondaryCategory) {
+    return { canMerge: false, scoreAdjustment: -36 };
+  }
+  if (primaryKind === 'screen_text') return { canMerge: true, scoreAdjustment: 2 };
+  if (primaryCategory === 'semantic_sdh' || primaryCategory === 'speech_context') return { canMerge: true, scoreAdjustment: 1 };
+  if (primaryCategory === 'ambient_sdh' || primaryCategory === 'music') return { canMerge: true, scoreAdjustment: -4 };
+  if (primaryKind === 'lyrics') return { canMerge: true, scoreAdjustment: -2 };
+  return { canMerge: true, scoreAdjustment: -1 };
+};
+
+const shouldAttemptCueMerge = (primary: PreprocessedRow, secondary: PreprocessedRow): boolean => (
+  getCueMergeCompatibility(primary, secondary).canMerge
+);
+
+interface GlobalOffsetDiagnosis {
+  offsetMs: number;
+  confidence: number;
+  sampleCount: number;
+  medianDeviationMs: number;
+  shouldApply: boolean;
+  reason: string;
+}
+
+const medianNumber = (values: number[]): number => {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+};
+
+const getStartMs = (row: PreprocessedRow): number => timeToMs(row.ts.split(' --> ')[0] || '');
+
+const estimateGlobalOffset = (primaryRows: PreprocessedRow[], secondaryRows: PreprocessedRow[]): GlobalOffsetDiagnosis => {
+  const minCount = Math.min(primaryRows.length, secondaryRows.length);
+  const ratio = minCount > 0 ? Math.max(primaryRows.length, secondaryRows.length) / minCount : Infinity;
+  if (minCount < 20) {
+    return { offsetMs: 0, confidence: 0, sampleCount: minCount, medianDeviationMs: 0, shouldApply: false, reason: '样本不足' };
+  }
+  if (ratio > 1.35) {
+    return { offsetMs: 0, confidence: 0, sampleCount: minCount, medianDeviationMs: 0, shouldApply: false, reason: '行数差异较大' };
+  }
+
+  const sampleCount = Math.min(120, minCount);
+  const deltas: number[] = [];
+  for (let index = 0; index < sampleCount; index += 1) {
+    const primaryIndex = Math.round((index / Math.max(1, sampleCount - 1)) * (primaryRows.length - 1));
+    const secondaryIndex = Math.round((index / Math.max(1, sampleCount - 1)) * (secondaryRows.length - 1));
+    const primaryStart = getStartMs(primaryRows[primaryIndex]);
+    const secondaryStart = getStartMs(secondaryRows[secondaryIndex]);
+    if (!Number.isNaN(primaryStart) && !Number.isNaN(secondaryStart)) {
+      deltas.push(secondaryStart - primaryStart);
+    }
+  }
+
+  if (deltas.length < 20) {
+    return { offsetMs: 0, confidence: 0, sampleCount: deltas.length, medianDeviationMs: 0, shouldApply: false, reason: '有效样本不足' };
+  }
+
+  const offsetMs = Math.round(medianNumber(deltas));
+  const deviations = deltas.map(delta => Math.abs(delta - offsetMs));
+  const medianDeviationMs = Math.round(medianNumber(deviations));
+  const stableCount = deviations.filter(value => value <= 650).length;
+  const confidence = Math.round((stableCount / deltas.length) * 100) / 100;
+  const absOffset = Math.abs(offsetMs);
+  const shouldApply = absOffset >= 1200
+    && absOffset <= 30_000
+    && medianDeviationMs <= 650
+    && confidence >= 0.72;
+
+  return {
+    offsetMs,
+    confidence,
+    sampleCount: deltas.length,
+    medianDeviationMs,
+    shouldApply,
+    reason: shouldApply ? '稳定整体偏移' : '偏移不稳定或超出自动范围',
+  };
+};
+
 interface AlignmentStep {
   zhIdx: number | null;
   enIdx: number | null;
@@ -1082,8 +1364,14 @@ interface ExpandedDialogueRow {
   text: string;
   type: 'merged';
   cueKind?: CueKind;
+  auxiliary?: AuxiliaryCueClassification;
   alignment: 'expanded-dialogue';
   provenance: AlignmentProvenance;
+}
+
+interface DialogueTiming {
+  start: number;
+  end: number;
 }
 
 const PACKED_DIALOGUE_TURN = /(^|\n|[。！？!?…][”’」』】）\]]*\s*)[-—–]\s*/g;
@@ -1126,6 +1414,7 @@ function canExpandPackedDialogue(
   secondCounterpart: PreprocessedRow,
 ): boolean {
   // 时间包络校验
+  if (!shouldAttemptCueMerge(packed, firstCounterpart) || !shouldAttemptCueMerge(packed, secondCounterpart)) return false;
   const turns = splitPackedDialogueTurns(packed.sourceText);
   if (!turns) return false;
 
@@ -1155,12 +1444,44 @@ const createSingleTrackRow = (row: PreprocessedRow, timingSource: 'primary' | 's
   text: row.text,
   type: 'dialogue',
   cueKind: row.cueKind,
+  auxiliary: row.auxiliary?.category === 'unknown' && row.auxiliary.confidence < 50 ? undefined : row.auxiliary,
   provenance: {
     method: 'single-track' as const,
     timingSource,
     [timingSource]: createSourceRef(row),
   },
 });
+
+const getRowTiming = (row: PreprocessedRow, offsetMs = 0): DialogueTiming => {
+  const [start, end] = row.ts.split(' --> ').map(timeToMs);
+  return { start: start - offsetMs, end: end - offsetMs };
+};
+
+const createMergedRow = (
+  primary: PreprocessedRow,
+  secondary: PreprocessedRow,
+  primaryTiming: DialogueTiming,
+  secondaryTiming: DialogueTiming,
+  diagnosis?: GlobalOffsetDiagnosis,
+) => {
+  const shifted = Boolean(diagnosis?.shouldApply);
+  return {
+    ts: `${msToTime(Math.min(primaryTiming.start, secondaryTiming.start))} --> ${msToTime(Math.max(primaryTiming.end, secondaryTiming.end))}`,
+    text: `${primary.text}\n${secondary.text}`,
+    type: 'merged',
+    cueKind: combineCueKind(primary.cueKind, secondary.cueKind),
+    auxiliary: combineAuxiliaryCue(primary.auxiliary, secondary.auxiliary),
+    alignment: shifted ? 'shifted-match' as const : undefined,
+    provenance: {
+      method: shifted ? 'shifted-match' as const : 'exact-match' as const,
+      timingSource: 'primary' as const,
+      confidence: diagnosis?.confidence ?? 1,
+      offsetMs: diagnosis?.shouldApply ? diagnosis.offsetMs : undefined,
+      primary: createSourceRef(primary),
+      secondary: createSourceRef(secondary),
+    },
+  };
+};
 
 function buildExpandedDialogueRows(
   packed: PreprocessedRow,
@@ -1181,6 +1502,7 @@ function buildExpandedDialogueRows(
     text: packedIsZh ? `${turn}\n${counterpart.text}` : `${counterpart.text}\n${turn}`,
     type: 'merged',
     cueKind: combineCueKind(packed.cueKind, counterpart.cueKind),
+    auxiliary: combineAuxiliaryCue(packed.auxiliary, counterpart.auxiliary),
     alignment: 'expanded-dialogue',
     provenance: {
       method: 'expanded-dialogue',
@@ -1251,7 +1573,7 @@ export function mergeSubtitles(
     cueKind: 'commentary' as CueKind
   }));
   
-  const mergedDialogues: Array<{ ts: string; text: string; type: string; cueKind?: CueKind; alignment?: 'expanded-dialogue'; provenance?: AlignmentProvenance }> = [];
+  const mergedDialogues: Array<{ ts: string; text: string; type: string; cueKind?: CueKind; auxiliary?: AuxiliaryCueClassification; alignment?: SubRow['alignment']; provenance?: AlignmentProvenance }> = [];
   let i = 0, j = 0;
   while (i < zhDialogues.length && j < enDialogues.length) {
     const zh = zhDialogues[i];
@@ -1260,8 +1582,9 @@ export function mergeSubtitles(
     const [enS, enE] = en.ts.split(" --> ").map(timeToMs);
     const overlap = calculateOverlapRatio(zhS, zhE, enS, enE);
     const diff = Math.abs(zhS - enS);
+    const compatibleCueKinds = shouldAttemptCueMerge(zh, en);
     
-    if (overlap > 0.5 || diff < 300 || (overlap > 0.2 && diff < 1500)) {
+    if (compatibleCueKinds && (overlap > 0.5 || diff < 300 || (overlap > 0.2 && diff < 1500))) {
       const expandedZh = enDialogues[j + 1]
         ? buildExpandedDialogueRows(zh, en, enDialogues[j + 1], true)
         : null;
@@ -1282,12 +1605,12 @@ export function mergeSubtitles(
         continue;
       }
 
-      mergedDialogues.push({
-        ts: `${msToTime(Math.min(zhS, enS))} --> ${msToTime(Math.max(zhE, enE))}`,
-        text: `${zh.text}\n${en.text}`,
-        type: "merged",
-        cueKind: combineCueKind(zh.cueKind, en.cueKind)
-      });
+      mergedDialogues.push(createMergedRow(
+        zh,
+        en,
+        { start: zhS, end: zhE },
+        { start: enS, end: enE },
+      ));
       i++; j++;
     } else if (zhS <= enS) {
       mergedDialogues.push(createSingleTrackRow(zh, 'primary')); i++;
@@ -1343,11 +1666,21 @@ export function alignSubtitlesIndustrial(
 
   const M = zhDialogues.length;
   const N = enDialogues.length;
+  const offsetDiagnosis = estimateGlobalOffset(zhDialogues, enDialogues);
+  const secondaryOffsetMs = offsetDiagnosis.shouldApply ? offsetDiagnosis.offsetMs : 0;
   
   const ALIGN_THRESHOLD = 2000;
   if (M > ALIGN_THRESHOLD || N > ALIGN_THRESHOLD) {
     addLog(`[工业级合并] 数据量 (中: ${M} 行, 英: ${N} 行) 超过 ${ALIGN_THRESHOLD} 行阈值，自动降级为快速合并模式`, 'info');
     return mergeSubtitles(zhSubs, enSubs, commSubs, addLog);
+  }
+  if (Math.abs(offsetDiagnosis.offsetMs) >= 1200) {
+    addLog(
+      offsetDiagnosis.shouldApply
+        ? `[时间轴诊断] 检测到稳定整体偏移 ${offsetDiagnosis.offsetMs}ms，已用于对齐判断`
+        : `[时间轴诊断] 发现疑似偏移 ${offsetDiagnosis.offsetMs}ms，但${offsetDiagnosis.reason}，未自动平移`,
+      'info',
+    );
   }
   
   // DP Table for Needleman-Wunsch sequence alignment
@@ -1364,19 +1697,21 @@ export function alignSubtitlesIndustrial(
   const getPairScore = (zhIdx: number, enIdx: number) => {
     const zh = zhDialogues[zhIdx];
     const en = enDialogues[enIdx];
-    const [zhS, zhE] = zh.ts.split(" --> ").map(timeToMs);
-    const [enS, enE] = en.ts.split(" --> ").map(timeToMs);
-    const overlap = calculateOverlapRatio(zhS, zhE, enS, enE);
-    const diff = Math.abs(zhS - enS);
+    const compatibility = getCueMergeCompatibility(zh, en);
+    if (!compatibility.canMerge) return mismatchPenalty - 25;
+    const zhTiming = getRowTiming(zh);
+    const enTiming = getRowTiming(en, secondaryOffsetMs);
+    const overlap = calculateOverlapRatio(zhTiming.start, zhTiming.end, enTiming.start, enTiming.end);
+    const diff = Math.abs(zhTiming.start - enTiming.start);
     
     const isMatch = (overlap > 0.5 || diff < 300 || (overlap > 0.2 && diff < 1500));
     if (isMatch) {
       // Optimal alignment bonus based on similarity and time proximity
-      return 15 + overlap * 10 - (diff / 1500) * 5;
+      return 15 + overlap * 10 - (diff / 1500) * 5 + compatibility.scoreAdjustment;
     }
     // Moderate penalty if they are relatively close (within 3s) but don't overlap
     if (diff < 3000) {
-      return -2 - (diff / 3000) * 4;
+      return -2 - (diff / 3000) * 4 + Math.min(0, compatibility.scoreAdjustment);
     }
     return mismatchPenalty;
   };
@@ -1427,7 +1762,7 @@ export function alignSubtitlesIndustrial(
   
   path.reverse();
   
-  const mergedDialogues: Array<{ ts: string; text: string; type: string; cueKind?: CueKind; alignment?: 'expanded-dialogue'; provenance?: AlignmentProvenance }> = [];
+  const mergedDialogues: Array<{ ts: string; text: string; type: string; cueKind?: CueKind; auxiliary?: AuxiliaryCueClassification; alignment?: SubRow['alignment']; provenance?: AlignmentProvenance }> = [];
   
   for (let pathIndex = 0; pathIndex < path.length; pathIndex++) {
     const step = path[pathIndex];
@@ -1442,20 +1777,21 @@ export function alignSubtitlesIndustrial(
     if (step.zhIdx !== null && step.enIdx !== null) {
       const zh = zhDialogues[step.zhIdx];
       const en = enDialogues[step.enIdx];
-      const [zhS, zhE] = zh.ts.split(" --> ").map(timeToMs);
-      const [enS, enE] = en.ts.split(" --> ").map(timeToMs);
-      const overlap = calculateOverlapRatio(zhS, zhE, enS, enE);
-      const diff = Math.abs(zhS - enS);
-      const isMatch = (overlap > 0.5 || diff < 300 || (overlap > 0.2 && diff < 1500));
+      const zhTiming = getRowTiming(zh);
+      const enTiming = getRowTiming(en, secondaryOffsetMs);
+      const overlap = calculateOverlapRatio(zhTiming.start, zhTiming.end, enTiming.start, enTiming.end);
+      const diff = Math.abs(zhTiming.start - enTiming.start);
+      const compatibility = getCueMergeCompatibility(zh, en);
+      const isMatch = compatibility.canMerge && (overlap > 0.5 || diff < 300 || (overlap > 0.2 && diff < 1500));
       
       if (isMatch) {
-        // Genuinely matching timelines, merge into bilingual row
-        mergedDialogues.push({
-          ts: `${msToTime(Math.min(zhS, enS))} --> ${msToTime(Math.max(zhE, enE))}`,
-          text: `${zh.text}\n${en.text}`,
-          type: "merged",
-          cueKind: combineCueKind(zh.cueKind, en.cueKind)
-        });
+        mergedDialogues.push(createMergedRow(
+          zh,
+          en,
+          zhTiming,
+          enTiming,
+          offsetDiagnosis.shouldApply ? offsetDiagnosis : undefined,
+        ));
       } else {
         // Aligned globally by sequence DP, but too far to merge (e.g. ad insertion on one track).
         // Separate as individual tracks to avoid mismatch.
@@ -1575,9 +1911,28 @@ export function appendCreatorCredit(subs: SubRow[], creatorCredit: string): SubR
   }];
 }
 
+const shouldKeepSubtitleForAuxiliaryMode = (sub: SubRow, mode: AuxiliarySubtitleMode): boolean => {
+  if (mode === 'keep') return true;
+  const category = sub.auxiliary?.category;
+  if (!category) return true;
+  if (mode === 'clean') {
+    return category === 'screen_text' || category === 'semantic_sdh' || category === 'speech_context';
+  }
+  if (mode === 'smart') {
+    return category !== 'ambient_sdh' && category !== 'music';
+  }
+  return true;
+};
+
+export function applyAuxiliarySubtitleMode(subs: SubRow[], mode: AuxiliarySubtitleMode = 'keep'): SubRow[] {
+  return subs
+    .filter(sub => shouldKeepSubtitleForAuxiliaryMode(sub, mode))
+    .map((sub, index) => ({ ...sub, index: index + 1 }));
+}
+
 export function generateSrtContent(subs: SubRow[], styleSettings?: StyleSettings): string {
-  const { lyricPosition = 'top', lyricItalic = true } = styleSettings || {};
-  return subs.map(s => {
+  const { lyricPosition = 'top', lyricItalic = true, auxiliaryMode = 'keep' } = styleSettings || {};
+  return applyAuxiliarySubtitleMode(subs, auxiliaryMode).map(s => {
     let text = s.text;
     if (s.type === 'note' || s.type === 'commentary' || s.cueKind === 'screen_text') {
       if (!text.startsWith("{\\an8}")) {
@@ -1617,7 +1972,8 @@ export function generateAssContent(subs: SubRow[], styleSettings: StyleSettings,
     lyricFontSize = 16,
     lyricColor = '#E6E6FA',
     lyricItalic = true,
-    lyricPosition = 'top'
+    lyricPosition = 'top',
+    auxiliaryMode = 'keep'
   } = styleSettings || {};
 
   let resY = 1080;
@@ -1700,7 +2056,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     return `${parseInt(h)}:${m}:${s}.${Math.floor(parseInt(ms) / 10).toString().padStart(2, '0')}`;
   };
 
-  const events = subs.map(s => {
+  const events = applyAuxiliarySubtitleMode(subs, auxiliaryMode).map(s => {
     const [start, end] = s.ts.split(" --> ").map(srtToAssTime);
     let style = "Han";
     if (s.type === "credit") {
@@ -1941,7 +2297,7 @@ export function normalizeSingleBilingualRows(rows: RawSub[]): SubRow[] {
   return result;
 }
 
-export function detectSubtitleLanguagePair(text: string): SubtitleLanguagePair | undefined {
+export function detectSubtitleLanguagePair(text: string, name = ''): SubtitleLanguagePair | undefined {
   const rows = parseSubtitle(text);
   if (rows.length === 0) return undefined;
 
@@ -1955,13 +2311,19 @@ export function detectSubtitleLanguagePair(text: string): SubtitleLanguagePair |
     }
   }
 
-  const primary = (counts.get('zh-TW') || 0) > (counts.get('zh-CN') || 0) ? 'zh-TW' : 'zh-CN';
+  const filenameLang = name ? detectLanguageByFilename(name) : 'unknown';
+  const primary = filenameLang === 'zh-TW' || filenameLang === 'zh-CN'
+    ? filenameLang
+    : (counts.get('zh-TW') || 0) > (counts.get('zh-CN') || 0) ? 'zh-TW' : 'zh-CN';
   if ((counts.get('zh-CN') || 0) + (counts.get('zh-TW') || 0) === 0) return undefined;
 
-  const secondary = (['en', 'ja', 'ko', 'fr', 'latin'] as const)
+  const secondary = (['en', 'ja', 'ko', 'fr', 'es', 'latin'] as const)
     .map(language => ({ language, count: counts.get(language) || 0 }))
     .sort((a, b) => b.count - a.count)[0];
 
+  if (isSecondarySubtitleLanguage(filenameLang)) {
+    return { primary, secondary: filenameLang };
+  }
   if (!secondary || secondary.count === 0) return undefined;
   return { primary, secondary: secondary.language };
 }

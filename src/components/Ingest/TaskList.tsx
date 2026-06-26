@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { useStudioStore, TaskPair, Subfile } from '@/store/useStudioStore';
 import { CircleAlert, Play, Plus, RotateCcw, Search, X } from 'lucide-react';
-import { parseSrt, decodeBuffer, detectLanguageByContent, detectSubtitleLanguagePair, checkIsBilingual, StyleSettings } from '@/utils/subtitleCore';
+import { parseSrt, decodeBuffer, detectSubtitleLanguage, StyleSettings } from '@/utils/subtitleCore';
 import { motion } from 'framer-motion';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
 import { CreditTool } from '@/components/Ingest/CreditTool';
@@ -78,17 +78,15 @@ export const TaskList: React.FC = () => {
         }
         try {
           const text = await readAndDecodeFile(file);
-          const isBilingual = checkIsBilingual(text);
-          const langDetect = isBilingual ? 'bilingual' : detectLanguageByContent(text);
-          const languagePair = isBilingual ? detectSubtitleLanguagePair(text) : undefined;
+          const detected = detectSubtitleLanguage(file.name, text);
 
           detectedFiles.push({
             id: `file_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
             name: file.name,
             text,
-            lang: langDetect,
-            languagePair,
-            isBilingual,
+            lang: detected.lang,
+            languagePair: detected.languagePair,
+            isBilingual: detected.isBilingual,
             isCommentary: /(commentary|comment|director|解说|导轨)/i.test(file.name),
             size: text.length
           });
