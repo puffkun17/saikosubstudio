@@ -736,6 +736,58 @@ const createTmdbImages = () => ({
     poster_path: '/mk-poster.jpg',
     popularity: 80,
   };
+  const wrongAlgiersDocumentarySuggestion = {
+    id: 998877,
+    media_type: 'movie',
+    title: 'Marxist Poetry: The Making of The Battle of Algiers',
+    original_title: 'Marxist Poetry: The Making of The Battle of Algiers',
+    release_date: '2004-01-01',
+    backdrop_path: '/marxist.jpg',
+    poster_path: '/marxist-poster.jpg',
+    popularity: 40,
+  };
+  const sameYearAncillarySuggestion = {
+    id: 998878,
+    media_type: 'movie',
+    title: 'The Battle of Algiers: Behind the Scenes',
+    original_title: 'The Battle of Algiers: Behind the Scenes',
+    release_date: '1966-01-01',
+    genre_ids: [99],
+    backdrop_path: '/behind.jpg',
+    poster_path: '/behind-poster.jpg',
+    popularity: 60,
+  };
+  const sameYearContainsOnlySuggestion = {
+    id: 998880,
+    media_type: 'movie',
+    title: 'The Battle of Algiers Revisited',
+    original_title: 'The Battle of Algiers Revisited',
+    release_date: '1966-01-01',
+    backdrop_path: '/revisited.jpg',
+    poster_path: '/revisited-poster.jpg',
+    popularity: 65,
+  };
+  const chineseAncillarySuggestion = {
+    id: 998881,
+    media_type: 'movie',
+    title: '阿尔及尔之战幕后纪录片',
+    original_title: 'The Battle of Algiers Documentary',
+    release_date: '1966-01-01',
+    genre_ids: [99],
+    backdrop_path: '/cn-doc.jpg',
+    poster_path: '/cn-doc-poster.jpg',
+    popularity: 66,
+  };
+  const wrongTypeSuggestion = {
+    id: 998879,
+    media_type: 'tv',
+    name: 'The Battle of Algiers',
+    original_name: 'The Battle of Algiers',
+    first_air_date: '1966-01-01',
+    backdrop_path: '/tv.jpg',
+    poster_path: '/tv-poster.jpg',
+    popularity: 70,
+  };
 
   global.fetch = async (url) => {
     calls.push(String(url));
@@ -744,7 +796,7 @@ const createTmdbImages = () => ({
       const parsedUrl = new URL(`http://local${target}`);
       const query = decodeURIComponent(parsedUrl.searchParams.get('query') || '');
       const year = parsedUrl.searchParams.get('year');
-      if (query === 'The Battle Of Algiers' && year === '1966') return createTmdbSearchResult(algeriaSuggestion);
+      if (query.toLowerCase() === 'the battle of algiers' && year === '1966') return createTmdbSearchResult(algeriaSuggestion);
       return createTmdbSearchResult(null);
     }
     if (target.includes('/api/tmdb/search/multi')) {
@@ -773,6 +825,70 @@ const createTmdbImages = () => ({
     'Movie filename search should use the parsed title plus release year before loose fallback fragments.',
   );
   assert.equal(useStudioStore.getState().tmdbData?.title, '阿尔及尔之战', 'Exact movie-year match must outrank popular loose Battle candidates.');
+
+  resetStoreForTmdb();
+  await useStudioStore.getState().searchTmdb('The_Battle_of_Algiers_1966_REMASTERED_CUSTOM_MULTi_VFF_1080p_BluRay.srt', { silent: true });
+  assert.equal(useStudioStore.getState().tmdbData?.title, '阿尔及尔之战', 'Remastered release filename must resolve to the 1966 feature, not a making-of documentary.');
+
+  resetStoreForTmdb();
+  global.fetch = async (url) => {
+    const target = String(url);
+    if (target.includes('/api/tmdb/search/movie') || target.includes('/api/tmdb/search/multi')) {
+      return createTmdbSearchResult(wrongAlgiersDocumentarySuggestion);
+    }
+    throw new Error(`Weak candidate should not be auto-selected: ${target}`);
+  };
+  await useStudioStore.getState().searchTmdb('The_Battle_Of_Algiers_1966_BluRay_Criterion_Collection_1080p_AVC.srt', { silent: true });
+  assert.equal(useStudioStore.getState().tmdbData, null, 'Weak title-containing but year-mismatched candidates must not be auto-applied.');
+  assert.equal(useStudioStore.getState().tmdbSuggestions[0]?.id, wrongAlgiersDocumentarySuggestion.id, 'Weak candidates may remain visible for manual confirmation.');
+
+  resetStoreForTmdb();
+  global.fetch = async (url) => {
+    const target = String(url);
+    if (target.includes('/api/tmdb/search/movie') || target.includes('/api/tmdb/search/multi')) {
+      return createTmdbSearchResult(sameYearAncillarySuggestion);
+    }
+    throw new Error(`Ancillary candidate should not be auto-selected: ${target}`);
+  };
+  await useStudioStore.getState().searchTmdb('The_Battle_Of_Algiers_1966_BluRay_Criterion_Collection_1080p_AVC.srt', { silent: true });
+  assert.equal(useStudioStore.getState().tmdbData, null, 'Same-year documentary or making-of candidates must still require confirmation.');
+  assert.equal(useStudioStore.getState().tmdbSuggestions[0]?.id, sameYearAncillarySuggestion.id, 'Ancillary candidates may remain visible for manual confirmation.');
+
+  resetStoreForTmdb();
+  global.fetch = async (url) => {
+    const target = String(url);
+    if (target.includes('/api/tmdb/search/movie') || target.includes('/api/tmdb/search/multi')) {
+      return createTmdbSearchResult(sameYearContainsOnlySuggestion);
+    }
+    throw new Error(`Contains-only candidate should not be auto-selected: ${target}`);
+  };
+  await useStudioStore.getState().searchTmdb('The_Battle_Of_Algiers_1966_BluRay_Criterion_Collection_1080p_AVC.srt', { silent: true });
+  assert.equal(useStudioStore.getState().tmdbData, null, 'Same-year title-containing candidates without exact title match must require confirmation.');
+  assert.equal(useStudioStore.getState().tmdbSuggestions[0]?.id, sameYearContainsOnlySuggestion.id, 'Contains-only candidates may remain visible for manual confirmation.');
+
+  resetStoreForTmdb();
+  global.fetch = async (url) => {
+    const target = String(url);
+    if (target.includes('/api/tmdb/search/movie') || target.includes('/api/tmdb/search/multi')) {
+      return createTmdbSearchResult(chineseAncillarySuggestion);
+    }
+    throw new Error(`Chinese ancillary candidate should not be auto-selected: ${target}`);
+  };
+  await useStudioStore.getState().searchTmdb('阿尔及尔之战.1966.srt', { silent: true });
+  assert.equal(useStudioStore.getState().tmdbData, null, 'Chinese documentary or making-of candidates must not be auto-applied in cross-language lookup.');
+  assert.equal(useStudioStore.getState().tmdbSuggestions[0]?.id, chineseAncillarySuggestion.id, 'Cross-language ancillary candidates may remain visible for manual confirmation.');
+
+  resetStoreForTmdb();
+  global.fetch = async (url) => {
+    const target = String(url);
+    if (target.includes('/api/tmdb/search/movie') || target.includes('/api/tmdb/search/multi')) {
+      return createTmdbSearchResult(wrongTypeSuggestion);
+    }
+    throw new Error(`Wrong media type should not be auto-selected: ${target}`);
+  };
+  await useStudioStore.getState().searchTmdb('The_Battle_Of_Algiers_1966_BluRay_Criterion_Collection_1080p_AVC.srt', { silent: true });
+  assert.equal(useStudioStore.getState().tmdbData, null, 'Movie filenames must not auto-apply TV candidates.');
+  assert.equal(useStudioStore.getState().tmdbSuggestions[0]?.id, wrongTypeSuggestion.id, 'Wrong-type candidates may remain visible for manual confirmation.');
 }
 
 console.log('Core subtitle regression checks passed.');

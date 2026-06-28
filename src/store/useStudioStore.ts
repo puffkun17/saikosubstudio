@@ -83,6 +83,9 @@ export type TmdbSuggestion = {
   original_name?: string;
   release_date?: string;
   first_air_date?: string;
+  genre_ids?: number[];
+  overview?: string;
+  known_for_department?: string;
   poster_path?: string | null;
   backdrop_path?: string | null;
   popularity?: number;
@@ -114,6 +117,13 @@ type TmdbImages = {
 
 type TmdbManualInput = { title: string; year: string; type: TmdbMediaType; season: string; episode: string };
 type FilenameSource = 'auto' | 'tmdb' | 'manual' | 'library' | 'unknown';
+type TmdbConfirmationAction = 'auto_apply' | 'require_confirmation' | 'reject';
+
+type TmdbConfirmationDecision = {
+  action: TmdbConfirmationAction;
+  score: number;
+  reasons: string[];
+};
 
 type CustomTemplate = {
   id: string;
@@ -578,19 +588,41 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
       const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
       const normalizeLoose = (str: string) => str.toLowerCase().replace(/[\s._\-:：'"“”‘’（）()[\]【】]/g, '');
+      const expectedMediaType: TmdbMediaType | undefined = isEpisodeQuery
+        ? 'tv'
+        : year || parsed.mediaHint === 'movie' || fallbackParsed?.mediaHint === 'movie'
+          ? 'movie'
+          : undefined;
+      const isAncillaryMovieCandidate = (item: TmdbSuggestion): boolean => {
+        const textBlob = `${item.title || ''} ${item.name || ''} ${item.original_title || ''} ${item.original_name || ''} ${item.overview || ''} ${item.known_for_department || ''}`;
+        return /\b(making[-\s]?of|behind\s+the\s+scenes|documentary|docu|featurette|interview|special)\b/i.test(textBlob)
+          || /(纪录片|紀錄片|幕后|幕後|花絮|特别篇|特別篇|特辑|特輯|访谈|訪談|采访|採訪|制作特辑|製作特輯)/.test(textBlob)
+          || (item.genre_ids || []).includes(99);
+      };
 
-      // Helper function to calculate score for a single item
-      const calculateItemScore = (item: TmdbSuggestion) => {
+      const evaluateCandidate = (item: TmdbSuggestion): TmdbConfirmationDecision => {
         let score = 0;
+        const reasons: string[] = [];
+        let titleMatchStrength = 0;
         const relDate = item.release_date || item.first_air_date || '';
         const itemYear = relDate.substring(0, 4);
         if (isEpisodeQuery) {
-          score += item.media_type === 'tv' ? 180 : -180;
+          if (item.media_type === 'tv') {
+            score += 180;
+            reasons.push('type:tv');
+          } else {
+            score -= 180;
+            reasons.push('type-mismatch');
+          }
         }
         if (year && itemYear === year) {
           score += 100;
+          reasons.push('year:match');
         } else if (year && itemYear && itemYear !== year) {
           score -= 120;
+          reasons.push('year:mismatch');
+        } else if (year && !itemYear) {
+          reasons.push('year:missing');
         }
         const normTitle = normalize(item.title || item.name || '');
         const normOrigTitle = normalize(item.original_title || item.original_name || '');
@@ -600,24 +632,68 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           const normQ = normalize(query);
           const looseQ = normalizeLoose(query);
           if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) {
+            reasons.push('title:exact');
+            titleMatchStrength = 2;
             return isEpisodeQuery ? 180 : 60;
           }
           if (looseQ && (looseTitle === looseQ || looseOrigTitle === looseQ)) {
+            reasons.push('title:loose-exact');
+            titleMatchStrength = 2;
             return isEpisodeQuery ? 170 : 55;
           }
           if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) {
+            reasons.push('title:contains');
+            if (titleMatchStrength === 0) titleMatchStrength = 1;
             return 20;
           }
           if (looseQ && (looseTitle.includes(looseQ) || looseOrigTitle.includes(looseQ) || looseQ.includes(looseTitle) || looseQ.includes(looseOrigTitle))) {
+            reasons.push('title:loose-contains');
+            if (titleMatchStrength === 0) titleMatchStrength = 1;
             return 24;
           }
           return 0;
         });
         score += Math.max(0, ...queryScores);
-        return score;
+
+        const autoConfirmThreshold = isEpisodeQuery ? 100 : year ? 80 : 50;
+        const vetoes: string[] = [];
+        if (expectedMediaType && item.media_type && item.media_type !== expectedMediaType) {
+          vetoes.push('veto:type');
+        }
+        if (year && itemYear && itemYear !== year) {
+          vetoes.push('veto:year');
+        }
+        if (!isEpisodeQuery && isAncillaryMovieCandidate(item)) {
+          vetoes.push('veto:ancillary');
+        }
+        if (year && titleMatchStrength === 1) {
+          vetoes.push('veto:title-contains-only');
+        }
+        if (vetoes.includes('veto:type')) {
+          return { action: 'reject', score, reasons: [...reasons, ...vetoes] };
+        }
+        if (vetoes.includes('veto:year') && (vetoes.includes('veto:ancillary') || Math.abs(Number(itemYear) - Number(year)) >= 30)) {
+          return { action: 'reject', score, reasons: [...reasons, ...vetoes] };
+        }
+        if (vetoes.length > 0) {
+          return { action: 'require_confirmation', score, reasons: [...reasons, ...vetoes] };
+        }
+        if (score < autoConfirmThreshold) {
+          return { action: 'require_confirmation', score, reasons: [...reasons, 'below-threshold'] };
+        }
+        return { action: 'auto_apply', score, reasons };
       };
 
-      const hasExactMatch = results.some((item) => calculateItemScore(item) >= 50);
+      const hasExactMatch = results.some((item) => evaluateCandidate(item).score >= 50);
+
+      const getConfirmationMessage = (decision: TmdbConfirmationDecision | undefined): string => {
+        const reasons = decision?.reasons || [];
+        if (reasons.includes('veto:type')) return '候选媒体类型与文件名判断不一致，请确认后应用。';
+        if (reasons.includes('veto:year')) return '候选年份与文件名年份不一致，请确认后应用。';
+        if (reasons.includes('veto:ancillary')) return '候选可能是纪录片、花絮或特别内容，请确认是否为正片。';
+        if (reasons.includes('veto:title-contains-only')) return '候选标题仅部分包含片名，请确认后应用。';
+        return '已找到相近片源，但片名或年份不够吻合，请确认后应用。';
+      };
 
       // Multi-split colon search fallback
       if (!hasExactMatch && cleanQuery.includes(' ') && !cleanQuery.includes(':')) {
@@ -647,60 +723,41 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       }
 
       const scored = results.map((item) => {
-        let score = 0;
+        const decision = evaluateCandidate(item);
         const relDate = item.release_date || item.first_air_date || '';
         const itemYear = relDate.substring(0, 4);
-        if (isEpisodeQuery) {
-          score += item.media_type === 'tv' ? 180 : -180;
-        }
-        if (year && itemYear === year) {
-          score += 100;
-        } else if (year && itemYear && itemYear !== year) {
-          score -= 120;
-        }
-        
-        const normTitle = normalize(item.title || item.name || '');
-        const normOrigTitle = normalize(item.original_title || item.original_name || '');
-        const looseTitle = normalizeLoose(item.title || item.name || '');
-        const looseOrigTitle = normalizeLoose(item.original_title || item.original_name || '');
-        const queryScores = scoringQueries.map((query) => {
-          const normQ = normalize(query);
-          const looseQ = normalizeLoose(query);
-          if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) {
-            return isEpisodeQuery ? 180 : 60;
-          }
-          if (looseQ && (looseTitle === looseQ || looseOrigTitle === looseQ)) {
-            return isEpisodeQuery ? 170 : 55;
-          }
-          if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) {
-            return 20;
-          }
-          if (looseQ && (looseTitle.includes(looseQ) || looseOrigTitle.includes(looseQ) || looseQ.includes(looseTitle) || looseQ.includes(looseOrigTitle))) {
-            return 24;
-          }
-          return 0;
-        });
-        score += Math.max(0, ...queryScores);
-
-        if (isEpisodeQuery && item.media_type !== 'tv') {
-          score -= 120;
-        }
-        
         const displayTitle = item.title || item.name || '';
         const displayYear = itemYear ? ` (${itemYear})` : '';
         if (!silent) get().addLog(`[候选] ${displayTitle}${displayYear}`, 'info');
         
-        return { item, score };
+        return { item, score: decision.score, decision };
       });
 
-      scored.sort((a: { item: TmdbSuggestion; score: number }, b: { item: TmdbSuggestion; score: number }) => b.score - a.score || (b.item.popularity || 0) - (a.item.popularity || 0));
-      const sortedResults = scored.map((s: { item: TmdbSuggestion; score: number }) => s.item).slice(0, 5);
+      scored.sort((a, b) => b.score - a.score || (b.item.popularity || 0) - (a.item.popularity || 0));
+      const sortedResults = scored.map((s) => s.item).slice(0, 5);
+      const bestScored = scored[0];
 
       set({ tmdbSuggestions: sortedResults });
 
       if (sortedResults.length > 0) {
-        if (!silent) get().addLog(`已找到候选片源，正在选择最匹配项`, "success");
         const best = sortedResults[0];
+        const decision = bestScored?.decision;
+        if (!decision || decision.action !== 'auto_apply') {
+          if (!silent) get().addLog(`已找到候选片源，但匹配置信度不足，需手动确认`, 'info');
+          get().setStatusNotice({
+            id: 'media-match',
+            tone: 'notice',
+            title: '候选需要确认',
+            message: getConfirmationMessage(decision),
+            meta: best.title || best.name || searchStr,
+            action: 'openTmdbManual',
+            actionLabel: '查看候选',
+          });
+          set({ tmdbManualOpen: !silent });
+          return;
+        }
+
+        if (!silent) get().addLog(`已找到候选片源，正在选择最匹配项`, "success");
         if (isEpisodeQuery && best.media_type !== 'tv') {
           if (!silent) get().addLog(`已识别为剧集片源，需手动确认候选`, 'info');
           get().setStatusNotice({
