@@ -101,7 +101,7 @@ export const SequenceList: React.FC = () => {
       <div ref={listRef} className="flex-1 overflow-y-auto">
         {visibleSubs.length > 0 ? (
           <div className="flex flex-col relative">
-            <div className="sticky top-0 z-20 grid grid-cols-[170px_minmax(0,1fr)_96px] items-center border-b border-white/[0.055] bg-[#08080a]/95 backdrop-blur-md px-7 py-2.5 text-xs font-medium text-white/42 select-none">
+            <div className="sticky top-0 z-20 grid grid-cols-[7.25rem_minmax(0,1fr)_3.5rem] md:grid-cols-[170px_minmax(0,1fr)_96px] items-center border-b border-white/[0.055] bg-[#08080a]/95 backdrop-blur-md px-4 md:px-7 py-2.5 text-xs font-medium text-white/42 select-none">
               <div className="pl-2">时间轴</div>
               <div>字幕内容</div>
               <div className="text-right pr-2">行号</div>
@@ -120,10 +120,11 @@ export const SequenceList: React.FC = () => {
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
               const endTime = sub.ts.split(' --> ')[1]?.replace(',', '.').trim() || '';
 
-              const rowClass = `relative grid grid-cols-[170px_minmax(0,1fr)_96px] gap-5 py-4 px-7 border-b border-white/[0.04] cursor-pointer text-left overflow-hidden transition-all duration-400
+              const rowClass = `relative grid grid-cols-[7.25rem_minmax(0,1fr)_3.5rem] md:grid-cols-[170px_minmax(0,1fr)_96px] gap-3 md:gap-5 py-4 px-4 md:px-7 border-b border-white/[0.04] cursor-pointer text-left overflow-hidden transition-colors duration-200
                 ${isActive ? 'glass-lens-active' : 'bg-transparent hover:bg-white/[0.015]'}
                 ${(!isActive && hasActiveRow) ? 'glass-blur-inactive' : ''}
-                ${isLyric && !isActive ? 'bg-[#9ca3af]/[0.01]' : ''}`;
+                ${isLyric && !isActive ? 'bg-[#9ca3af]/[0.01]' : ''}
+                ${sub.index > 30 ? 'timeline-row-deferred' : ''}`;
 
               return (
                 <div
@@ -147,13 +148,9 @@ export const SequenceList: React.FC = () => {
                       <span className="mt-1 flex-1 w-px bg-white/[0.08]" />
                     </div>
                     {isLyric && (
-                      <motion.span
-                        animate={{ y: [0, -2, 0], scale: [1, 1.05, 1] }}
-                        transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-                        className="inline-flex select-none text-[#9ddacb]"
-                      >
+                      <span className="inline-flex select-none text-[#9ddacb]">
                         <Music2 className="w-3 h-3" />
-                      </motion.span>
+                      </span>
                     )}
                     <div className={`flex flex-col leading-tight tabular-nums ${isActive ? 'text-[#e5e7eb] font-semibold' : 'text-neutral-500'}`}>
                       <span>{startTime}</span>

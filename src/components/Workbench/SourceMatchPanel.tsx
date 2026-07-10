@@ -9,10 +9,10 @@ import { formatMsClock } from '@/utils/timeline/timecode';
 import { InfoHint } from '@/components/ui/InfoHint';
 
 const GRADE_META: Record<SourceMatchReport['grade'], { label: string; tone: string; action: string }> = {
-  matched: { label: '匹配良好', tone: 'text-neutral-100', action: '继续制作字幕' },
-  fixable: { label: '可继续制作', tone: 'text-[#a8b7a3]', action: '进入预览校准' },
-  complex: { label: '存在版本风险', tone: 'text-[#c0a89a]', action: '查看风险时间线' },
-  poor: { label: '不建议处理', tone: 'text-[#b98982]', action: '更换字幕' },
+  matched: { label: '覆盖完整', tone: 'text-neutral-100', action: '继续检查字幕' },
+  fixable: { label: '需要试听', tone: 'text-[#a8b7a3]', action: '检查关键位置' },
+  complex: { label: '覆盖有风险', tone: 'text-[#c0a89a]', action: '查看风险时间线' },
+  poor: { label: '差异明显', tone: 'text-[#b98982]', action: '考虑更换字幕' },
 };
 
 const severityClass: Record<SourceMatchFinding['severity'], string> = {
@@ -58,15 +58,8 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
 
   const chartWidth = 620;
   const chartHeight = 142;
-  const sourceCurve = report.activityCurve.map((value, index, arr) => {
-    const prev = arr[index - 1] ?? value;
-    const next = arr[index + 1] ?? value;
-    return Math.max(0.08, (prev + value + next) / 3 * 0.64 + 0.18);
-  });
   const subtitlePath = getChartPath(report.activityCurve, chartWidth, chartHeight);
-  const sourcePath = getChartPath(sourceCurve, chartWidth, chartHeight, -10);
   const subtitleArea = buildAreaPath(subtitlePath, chartWidth, chartHeight);
-  const sourceArea = buildAreaPath(sourcePath, chartWidth, chartHeight);
   const coverageStart = report.videoDurationMs ? Math.max(0, Math.min(1, report.subtitleStartMs / report.videoDurationMs)) : 0;
   const coverageEnd = report.videoDurationMs ? Math.max(0, Math.min(1, report.subtitleEndMs / report.videoDurationMs)) : 1;
   const meta = GRADE_META[report.grade];
@@ -100,10 +93,10 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
             <div className="min-w-0">
               <div className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] text-neutral-100">
                 <Activity className="h-4 w-4 text-[#9ddacb]" />
-                {isMatchMode ? '片源匹配' : '字幕概览'}
+                {isMatchMode ? '片源时长参照' : '字幕概览'}
               </div>
               <p className="mt-1 max-w-[28ch] text-[13px] leading-5 text-neutral-400">
-                {isMatchMode ? '已加入本地片源参照，正在给出结构判断。' : '先确认字幕规模与分布，再加入本地片源判断合轴。'}
+                {isMatchMode ? '已读取片源时长，用于检查字幕覆盖范围。' : '先确认字幕规模与分布，再加入本地片源检查时长覆盖。'}
               </p>
             </div>
             <button
@@ -127,23 +120,23 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
             <div className="mt-5 flex items-end justify-between gap-4 border-y border-white/[0.055] py-4">
               <div>
                 <motion.div
-                  key={report.score}
+                  key={report.coverageRatio}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={`text-[46px] leading-none font-semibold tracking-[-0.04em] ${meta.tone}`}
                 >
-                  {report.score}
+                  {report.coverageRatio ? `${Math.round(report.coverageRatio * 100)}%` : '--'}
                 </motion.div>
                 <div className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-[0.12em] text-neutral-500">
-                  match score
-                  <InfoHint label="匹配分数说明">
-                    匹配分数综合字幕跨度、片源时长、活动分布和风险提示。它是版本匹配参考，不等同于字幕翻译质量评分。
+                  时间覆盖
+                  <InfoHint label="时间覆盖说明">
+                    这里只比较字幕起止范围与片源总时长，不读取音频，也不能判断对白是否合轴。
                   </InfoHint>
                 </div>
               </div>
               <div className="text-right">
                 <div className={`text-[15px] font-semibold ${meta.tone}`}>{meta.label}</div>
-                <div className="mt-1 text-xs text-neutral-500">可信度 {report.confidence}%</div>
+                <div className="mt-1 text-xs text-neutral-500">依据：时长与字幕时间轴</div>
               </div>
             </div>
           ) : (
@@ -187,9 +180,9 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
             <figcaption className="flex items-start justify-between gap-3 pb-2 text-xs text-neutral-500">
               <div>
                 <div className="text-[13px] font-medium text-neutral-300 inline-flex items-center gap-1.5">
-                  {isMatchMode ? '片源覆盖与字幕活动' : '字幕时间分布'}
+                  {isMatchMode ? '片源时长内的字幕分布' : '字幕时间分布'}
                   <InfoHint label="字幕分布图说明">
-                    曲线展示字幕活动在全片中的分布。加入本地片源后，会额外显示片源覆盖范围，用来辅助判断是否存在片头、删减或版本差异。
+                    曲线只展示字幕事件在时间轴中的分布。加入片源后，横轴按片源总时长计算，可用于发现明显越界或覆盖不足。
                   </InfoHint>
                 </div>
                 <div className="mt-0.5 text-[12px] text-neutral-500">{report.stats.distributionLabel} · {formatCount(report.stats.lineCount)} 行</div>
@@ -198,10 +191,6 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
             </figcaption>
             <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label={isMatchMode ? '片源覆盖与字幕活动图' : '字幕时间分布图'} className="w-full h-[142px] overflow-visible">
               <defs>
-                <linearGradient id="sourceArea" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#f5f5f4" stopOpacity="0.18" />
-                  <stop offset="100%" stopColor="#f5f5f4" stopOpacity="0.01" />
-                </linearGradient>
                 <linearGradient id="subtitleArea" x1="0" x2="0" y1="0" y2="1">
                   <stop offset="0%" stopColor="#9ddacb" stopOpacity="0.24" />
                   <stop offset="100%" stopColor="#9ddacb" stopOpacity="0.015" />
@@ -218,20 +207,7 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                   strokeWidth="1"
                 />
               ))}
-              {isMatchMode && <path d={sourceArea} fill="url(#sourceArea)" />}
               <path d={subtitleArea} fill="url(#subtitleArea)" />
-              {isMatchMode && (
-                <motion.path
-                  d={sourcePath}
-                  fill="none"
-                  stroke="rgba(195,238,227,0.48)"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 1 }}
-                  transition={{ duration: 0.9, ease: 'easeOut' }}
-                />
-              )}
               <motion.path
                 d={subtitlePath}
                 fill="none"
@@ -278,7 +254,7 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
             </div>
           ) : (
             <p className="mt-3 text-xs leading-5 text-neutral-500">
-              这张图只描述字幕自身的时间分布。要判断是否合轴，请加入本地片源作为参照。
+              这张图只描述字幕自身的时间分布。加入片源后也只检查时长覆盖，不会分析声音。
             </p>
           )}
         </div>

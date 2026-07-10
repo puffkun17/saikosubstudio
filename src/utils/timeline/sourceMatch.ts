@@ -14,7 +14,6 @@ export type SourceMatchFinding = {
 
 export type SourceMatchReport = {
   score: number;
-  confidence: number;
   mode: 'profile' | 'match';
   grade: SourceMatchGrade;
   title: string;
@@ -49,7 +48,6 @@ export const createSourceMatchReport = (
   if (ranges.length === 0) {
     return {
       score: 0,
-      confidence: 0,
       mode: videoDurationMs ? 'match' : 'profile',
       grade: 'poor',
       title: '无法生成体检报告',
@@ -115,12 +113,11 @@ export const createSourceMatchReport = (
   }, 0);
 
   if (overlapCount > 0) {
-    score -= Math.min(24, overlapCount * 4);
     findings.push({
       id: 'overlap',
-      label: '时间轴重叠',
-      detail: `检测到 ${overlapCount} 处字幕时间重叠，导出前建议修正。`,
-      severity: overlapCount > 5 ? 'warning' : 'notice',
+      label: '存在并行字幕',
+      detail: `检测到 ${overlapCount} 处时间重叠，可能来自画面文字、声音说明或多角色排版，不直接判定为错误。`,
+      severity: 'notice',
     });
   } else {
     findings.push({
@@ -205,7 +202,7 @@ export const createSourceMatchReport = (
     findings.push({
       id: 'no-video',
       label: '可加入片源参照',
-      detail: '当前只展示字幕自身结构；选择本地视频后，再判断是否合轴。',
+      detail: '当前只展示字幕自身结构；选择本地视频后，可进一步检查时间覆盖范围。',
       severity: 'notice',
     });
   }
@@ -213,11 +210,10 @@ export const createSourceMatchReport = (
   const normalizedScore = clamp(Math.round(score), 0, 100);
   const severeCount = findings.filter(item => item.severity === 'severe').length;
   const warningCount = findings.filter(item => item.severity === 'warning').length;
-  const confidence = videoDurationMs ? clamp(62 + ranges.length / 12 - warningCount * 6, 42, 88) : 0;
 
   let grade: SourceMatchGrade = 'matched';
-  let title = '匹配结构良好';
-  let summary = '当前字幕时间轴结构稳定，可继续进行样式与导出。';
+  let title = '字幕结构可继续检查';
+  let summary = '当前仅根据字幕时间轴给出结构概览。';
   let recommendedAction: SourceMatchReport['recommendedAction'] = 'continue';
 
   if (!videoDurationMs) {
@@ -226,24 +222,26 @@ export const createSourceMatchReport = (
     recommendedAction = 'continue';
   } else if (normalizedScore < 45 || severeCount > 0) {
     grade = 'poor';
-    title = '不建议继续处理';
-    summary = '字幕与片源结构差异较大，继续修复成本可能高于重新寻找更匹配字幕。';
+    title = '时长覆盖差异明显';
+    summary = '字幕时间范围与片源时长差异较大，建议先试听关键位置，必要时更换字幕。';
     recommendedAction = 'replace';
   } else if (normalizedScore < 68 || warningCount > 0) {
     grade = 'complex';
-    title = '存在版本风险';
-    summary = '当前字幕可继续检查，但建议先查看风险时间线，确认是否值得分段修复。';
+    title = '时长覆盖存在风险';
+    summary = '字幕时间范围与片源时长存在差异，只能提示版本风险，不能据此判断声音是否合轴。';
     recommendedAction = 'review';
   } else if (normalizedScore < 84 || findings.some(item => item.severity === 'notice')) {
     grade = 'fixable';
-    title = '可继续制作';
-    summary = '未发现严重结构问题，若播放时出现整体快慢，可进入校准工具微调。';
-    recommendedAction = 'auto-fix';
+    title = '时长覆盖可继续检查';
+    summary = '字幕时间范围未见明显越界；仍需通过实际播放确认整体偏移或中途漂移。';
+    recommendedAction = 'review';
+  } else if (videoDurationMs) {
+    title = '时长覆盖未见明显异常';
+    summary = '字幕起止范围与片源总时长基本协调；这不等同于声音对齐结论。';
   }
 
   return {
     score: normalizedScore,
-    confidence: Math.round(confidence),
     mode: videoDurationMs ? 'match' : 'profile',
     grade,
     title,

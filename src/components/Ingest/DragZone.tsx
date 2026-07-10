@@ -160,7 +160,7 @@ const describeTrack = (file: Subfile) => {
 };
 
 export const DragZone: React.FC = () => {
-  const { isDragging, setIsDragging, processFiles, addLog, searchTmdb } = useStudioStore();
+  const { isDragging, setIsDragging, processFiles, addLog } = useStudioStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
@@ -435,7 +435,6 @@ export const DragZone: React.FC = () => {
 
       setPhase('metadata');
       let displayTitle = '影视数据';
-      let metadataLinked = false;
       if (validItems[0]) {
         const parsedCandidates = validItems.map(item => parseMediaFilename(item.name));
         const titleCandidate = parsedCandidates.find(item => item.hasUsableTitle);
@@ -444,14 +443,12 @@ export const DragZone: React.FC = () => {
         const identity = assessMediaIdentity(guess);
         if (identity.shouldAutoSearchTmdb) {
           displayTitle = identity.title.length > 42 ? identity.title.slice(0, 40) + '…' : identity.title;
-          setIngestMessage('正在匹配片源信息');
-          await searchTmdb(guess, { silent: true }).catch(() => {});
-          metadataLinked = Boolean(useStudioStore.getState().tmdbData);
+          setIngestMessage(`已识别片源线索：${displayTitle}`);
         } else {
           setIngestMessage(identity.episodeKey ? '已识别集数，请补充片名以关联片源信息' : '文件名信息不足，先建立字幕工作台');
         }
       }
-      await sleep(820);
+      await sleep(420);
 
       setPhase('ready');
       setParsingFiles(preflight.map(item => ({
@@ -460,18 +457,11 @@ export const DragZone: React.FC = () => {
         status: item.accepted ? 'success' : 'skipped',
         note: item.note,
       })));
-      setIngestMessage(metadataLinked ? `已关联片源：${displayTitle}` : '字幕工作台已准备完成');
-      setResultChips(prev => [...prev.slice(0, 5), metadataLinked ? '片源已关联' : '片源待确认']);
-      await sleep(850);
+      setIngestMessage('字幕工作台已准备完成');
+      setResultChips(prev => [...prev.slice(0, 5), displayTitle === '影视数据' ? '片源待确认' : '片源线索已识别']);
+      await sleep(420);
 
       processFiles(detectedFiles);
-      await sleep(90);
-      try {
-        const s = useStudioStore.getState();
-        if (s.tmdbSuggestions && s.tmdbSuggestions.length > 0 && s.selectedTaskId) {
-          await s.selectTmdbSuggestion(s.tmdbSuggestions[0], { silent: true }).catch(() => {});
-        }
-      } catch {}
 
       setIsParsing(false);
       addLog("已建立字幕工作台", "success");
@@ -621,7 +611,7 @@ export const DragZone: React.FC = () => {
             : { scale: 1, boxShadow: 'inset 0 0 42px rgba(0,0,0,0.46), 0 18px 60px rgba(0,0,0,0.22)' }
         }
         transition={{ type: "spring", stiffness: 320, damping: 26 }}
-        className="relative z-10 mx-auto flex min-h-[336px] w-full max-w-[1120px] cursor-pointer select-none flex-col items-center justify-center overflow-hidden rounded-[18px] border border-white/[0.1] bg-[#080807] px-8"
+        className="relative z-10 mx-auto flex min-h-[260px] md:min-h-[300px] lg:min-h-[clamp(280px,36vh,336px)] w-full max-w-[1120px] cursor-pointer select-none flex-col items-center justify-center overflow-hidden rounded-[18px] border border-white/[0.1] bg-[#080807] px-5 md:px-8"
       >
         <div
           aria-hidden="true"

@@ -26,7 +26,7 @@ export default function AboutPage() {
 
         <div className="mt-10 rounded-2xl border border-white/[0.08] bg-white/[0.018] px-6 py-7 md:px-8">
           <Section title="本地文件处理 / Local files">
-            <p>字幕、ZIP 字幕包与作为参照的本地媒体文件均由浏览器在当前设备读取和处理。SaikoSubStudio 不会将这些文件上传到本站服务器，也不会保存其中的字幕正文。</p>
+            <p>字幕、ZIP、7Z、RAR 字幕包与作为参照的本地媒体文件均由浏览器在当前设备读取和处理，不会上传到本站服务器。主动使用“历史存档”时，处理结果和样式会保存在当前浏览器的本地存储中，可随时删除；清除浏览器数据也会移除这些记录。</p>
             <p className="flex items-start gap-2 text-white/50"><FileLock2 className="mt-1 h-4 w-4 shrink-0 text-[#b9ddd8]" />导入限制用于降低异常文件对浏览器内存的过度占用，不会改变原始文件。</p>
           </Section>
 
@@ -36,7 +36,7 @@ export default function AboutPage() {
           </Section>
 
           <Section title="服务日志与分析 / Service logs">
-            <p>部署平台可能处理维持服务稳定所需的基础请求信息，例如请求时间、错误状态和安全限流事件。本站不以字幕内容、文件名或本地路径作为产品分析数据。</p>
+            <p>部署平台可能处理维持服务稳定所需的基础请求信息，例如请求时间、错误状态和安全限流事件。本站不主动将字幕内容、文件名或本地路径发送为产品分析数据。</p>
           </Section>
 
           <Section title="版权与使用责任 / Copyright">

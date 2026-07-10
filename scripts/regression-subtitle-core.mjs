@@ -44,6 +44,7 @@ const {
   detectSubtitleLanguage,
   detectSubtitleLanguagePair,
   appendCreatorCredit,
+  extractStylesFromAss,
   extractSubtitleAttributions,
   generateAssContent,
   generateSrtContent,
@@ -190,6 +191,83 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
 }
 
 {
+  const rows = [
+    { index: 1, ts: '00:00:01,000 --> 00:00:03,000', text: '{\\an8}画面文字', cueKind: 'screen_text' },
+    { index: 2, ts: '00:00:04,000 --> 00:00:06,000', text: 'Sing along', type: 'lyrics' },
+  ];
+  const srt = generateSrtContent(rows, { lyricItalic: true });
+  assert.doesNotMatch(srt, /\{\\an\d\}/, 'SRT export must not leak ASS-only positioning overrides.');
+  assert.match(srt, /<i>Sing along<\/i>/, 'Portable SRT italics should remain available for lyrics.');
+
+  const ass = generateAssContent(rows, {
+    zhFontSize: 20,
+    enFontSize: 12,
+    zhColor: '#FFFFFF',
+    enColor: '#DDEEFF',
+    zhOutline: '#112233',
+    enOutline: '#445566',
+    enScale: 90,
+    maxLenZh: 20,
+    maxLenEn: 80,
+    marginV: 20,
+    zhFontFamily: '"Source Han Sans SC", sans-serif',
+    enFontFamily: 'Inter, sans-serif',
+  }, 'Safe\nTitle');
+  assert.match(ass, /Title: Safe Title/, 'ASS title must remain on one header line.');
+  assert.match(ass, /Style: Han,Source Han Sans SC,/, 'ASS export should honor the selected Chinese font face.');
+  assert.match(ass, /Style: EN,Inter,/, 'ASS export should honor the selected secondary-language font face.');
+  assert.match(ass, /Style: EN,[^\n]*&H00665544/, 'ASS export should honor the selected secondary outline color.');
+}
+
+{
+  const imported = extractStylesFromAss('[Script Info]\r\nPlayResX: 1920\r\nPlayResY: 1080\r\n\r\n[V4+ Styles]\r\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\r\nStyle: Han,Source Han Sans SC,75,&H00FFFFFF,&H00000000,&H00332211,&H00000000,1,0,0,0,100,100,0,0,1,4,1,2,20,20,75,1\r\nStyle: EN,Inter,45,&H00FFEEDD,&H00000000,&H00665544,&H00000000,1,0,0,0,100,100,0,0,1,3,1,2,20,20,45,1\r\n\r\n[Events]\r\n');
+  assert.equal(imported?.zhFontFamily, 'Source Han Sans SC', 'CRLF ASS files should expose the Chinese font.');
+  assert.equal(imported?.enFontFamily, 'Inter', 'A dedicated secondary style should be imported independently.');
+  assert.equal(imported?.zhFontSize, 20, 'ASS font sizes should scale from PlayResY instead of a fixed 1080p divisor.');
+  assert.equal(imported?.enFontSize, 12);
+  assert.equal(imported?.enColor, '#DDEEFF');
+  assert.equal(imported?.enOutline, '#445566');
+}
+
+{
+  const initialStyle = useStudioStore.getState().customStyle;
+  useStudioStore.getState().setTheaterAspect('2.39:1');
+  assert.equal(useStudioStore.getState().customStyle.aspectRatio, '2.39:1', 'Theater aspect changes should also update the exported ASS canvas.');
+  useStudioStore.setState({ customStyle: initialStyle, theaterAspect: '16:9' });
+
+  const bilingualFile = {
+    id: 'bilingual-regression',
+    name: 'sample.zh-en.srt',
+    text: '1\n00:00:01,000 --> 00:00:03,000\n你好\nHello\n',
+    lang: 'bilingual',
+    isBilingual: true,
+    isCommentary: false,
+    size: 64,
+  };
+  useStudioStore.setState({
+    files: { zh: bilingualFile, en: null, commentary: null },
+    selectedTaskId: 'bilingual-task',
+    tasks: [{
+      id: 'bilingual-task',
+      title: 'Sample',
+      zh: bilingualFile,
+      en: null,
+      commentary: null,
+      status: 'paired',
+      isBilingualSingle: true,
+      files: [bilingualFile],
+    }],
+  });
+  useStudioStore.getState().runSubtitleMerge();
+  assert.ok(useStudioStore.getState().processedSubs?.length, 'Native bilingual subtitles should enter the workbench.');
+  assert.equal(
+    useStudioStore.getState().processedSubs?.some(row => /SubStudioX|双语合并：/.test(row.text)),
+    false,
+    'Core processing must not insert an unsolicited signature cue.',
+  );
+}
+
+{
   const identity = assessMediaIdentity('Alien_Earth_S01E02_1080p_DSNP_WEB-DL_DDP5_1_H_264_zh-CN.ass');
   assert.equal(identity.level, 'strong', 'Series title plus episode should be a strong media identity.');
   assert.equal(identity.title, 'Alien Earth');
@@ -213,6 +291,21 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
   assert.equal(merged.length, 2);
   assert.equal(merged[0].text, '你好\nHello');
   assert.equal(merged[1].text, '再见\nBye');
+}
+
+{
+  const logs = [];
+  const primary = Array.from({ length: 2001 }, (_, index) => ({
+    ts: `00:${String(Math.floor(index / 60)).padStart(2, '0')}:${String(index % 60).padStart(2, '0')},000 --> 00:${String(Math.floor(index / 60)).padStart(2, '0')}:${String(index % 60).padStart(2, '0')},700`,
+    text: `字幕 ${index + 1}`,
+  }));
+  const secondary = [
+    { ts: '00:00:00,050 --> 00:00:00,750', text: 'Line one' },
+    { ts: '00:00:01,050 --> 00:00:01,750', text: 'Line two' },
+  ];
+  const aligned = alignSubtitlesIndustrial(primary, secondary, [], message => logs.push(message));
+  assert.ok(aligned.length >= primary.length, 'A long primary track should retain every cue during industrial alignment.');
+  assert.equal(logs.some(message => /低内存快速合并/.test(message)), false, 'Line count alone should not force a low-quality fallback when the alignment matrix is small.');
 }
 
 {
@@ -579,7 +672,8 @@ Dialogue: 0,0:00:04.00,0:00:06.00,Default,,0,0,0,,Hello
   );
   assert.equal(merged[0].cueKind, 'screen_text');
   const exported = generateSrtContent(merged);
-  assert.ok(exported.includes('{\\an8}EXIT'), 'Screen text should keep top placement when exported to SRT.');
+  assert.ok(exported.includes('EXIT'), 'Screen text content should survive SRT export.');
+  assert.doesNotMatch(exported, /\{\\an8\}/, 'SRT cannot portably preserve ASS positioning overrides.');
 }
 
 const resetStoreForTmdb = () => {
@@ -639,6 +733,48 @@ const createTmdbImages = () => ({
   status: 200,
   json: async () => ({ backdrops: [{ file_path: '/fallback.jpg' }], stills: [{ file_path: '/still.jpg' }] }),
 });
+
+{
+  resetStoreForTmdb();
+  const episodeOne = { id: 'ep1', name: 'Example.Show.2025.S01E01.zh.srt', text: '', lang: 'zh-CN', isBilingual: false, isCommentary: false, size: 10 };
+  const episodeTwo = { id: 'ep2', name: 'Example.Show.2025.S01E02.zh.srt', text: '', lang: 'zh-CN', isBilingual: false, isCommentary: false, size: 10 };
+  const sharedMetadata = { id: 909, title: '示例剧', originalTitle: 'Example Show', year: '2025', type: 'tv', overview: '', posterUrl: null, backdropUrl: '/example.jpg', genres: [], rating: 0, isAnime: false };
+  useStudioStore.setState({
+    tasks: [
+      { id: 'task-1', title: 'Example Show', epKey: 'S01E01', zh: episodeOne, en: null, commentary: null, status: 'paired', files: [episodeOne], tmdbData: sharedMetadata, tmdbBackdrop: '/example.jpg', tmdbBackdropList: ['/example.jpg'] },
+      { id: 'task-2', title: 'Example Show', epKey: 'S01E02', zh: episodeTwo, en: null, commentary: null, status: 'paired', files: [episodeTwo] },
+    ],
+  });
+  useStudioStore.getState().selectTask('task-2');
+  assert.equal(useStudioStore.getState().tmdbData?.id, sharedMetadata.id, 'Sibling episodes from the same title and year should reuse confirmed metadata.');
+  assert.equal(useStudioStore.getState().customFilename, '示例剧.2025.S01E02', 'Reused series metadata should preserve the selected episode number.');
+}
+
+{
+  resetStoreForTmdb();
+  let releaseFirstSearch;
+  const firstSearchGate = new Promise(resolve => { releaseFirstSearch = resolve; });
+  const alpha = { id: 101, media_type: 'movie', title: 'Alpha Film', original_title: 'Alpha Film', release_date: '2020-01-01', popularity: 1 };
+  const beta = { id: 202, media_type: 'movie', title: 'Beta Film', original_title: 'Beta Film', release_date: '2021-01-01', popularity: 1 };
+  let delayedAlpha = true;
+  global.fetch = async (url) => {
+    const target = String(url);
+    const query = decodeURIComponent(new URL(`http://local${target}`).searchParams.get('query') || '');
+    if (query.includes('Alpha') && delayedAlpha) {
+      delayedAlpha = false;
+      await firstSearchGate;
+    }
+    return createTmdbSearchResult(query.includes('Beta') ? beta : query.includes('Alpha') ? alpha : null);
+  };
+
+  const firstSearch = useStudioStore.getState().searchTmdbManual('Alpha Film', 'movie', '2020');
+  await Promise.resolve();
+  const secondSearch = useStudioStore.getState().searchTmdbManual('Beta Film', 'movie', '2021');
+  await secondSearch;
+  releaseFirstSearch();
+  await firstSearch;
+  assert.equal(useStudioStore.getState().tmdbSuggestions[0]?.id, beta.id, 'A stale TMDB response must not overwrite the latest manual search.');
+}
 
 {
   resetStoreForTmdb();

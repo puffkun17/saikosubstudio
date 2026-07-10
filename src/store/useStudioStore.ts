@@ -1,5 +1,17 @@
 import { create } from 'zustand';
-import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, autoSignature, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity } from '../utils/subtitleCore';
+import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity } from '../utils/subtitleCore';
+import { estimateJsonBytes, readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
+
+const LIBRARY_STORAGE_KEY = 'nexus_subtitle_library';
+const STYLE_STORAGE_KEY = 'nexus_subtitle_styles_v4';
+const MAX_LIBRARY_ITEMS = 12;
+const MAX_LIBRARY_BYTES = 4_000_000;
+
+const fitLibraryToStorageBudget = (items: LibraryItem[]): LibraryItem[] => {
+  const limited = items.slice(0, MAX_LIBRARY_ITEMS);
+  while (limited.length > 1 && estimateJsonBytes(limited) > MAX_LIBRARY_BYTES) limited.pop();
+  return limited;
+};
 
 export interface Subfile {
   id: string;
@@ -236,6 +248,19 @@ export interface StudioState {
 }
 
 let tempShowTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let tmdbSearchRequestId = 0;
+let tmdbSelectionRequestId = 0;
+
+const TMDB_CLIENT_CACHE_TTL_MS = 5 * 60_000;
+const tmdbClientCache = new Map<string, { expiresAt: number; results: TmdbSuggestion[] }>();
+
+const normalizeMediaIdentityTitle = (value: string) => cleanFilename(value).toLowerCase().replace(/\s+/g, ' ').trim();
+
+const formatTmdbOutputName = (meta: TmdbMetadata, episodeKey?: string) => {
+  const parts = [meta.title, meta.year].filter(Boolean);
+  if (episodeKey) parts.push(episodeKey.toUpperCase());
+  return parts.join('.');
+};
 
 export const useStudioStore = create<StudioState>((set, get) => ({
   workflowStep: 1,
@@ -353,23 +378,31 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     const newTemplate = { id: `tpl_${Date.now()}`, name, styles: state.customStyle };
     const newTemplates = [...state.customTemplates, newTemplate];
     if (typeof window !== 'undefined') {
-      const stored = JSON.parse(localStorage.getItem('nexus_subtitle_styles_v4') || '{}');
-      localStorage.setItem('nexus_subtitle_styles_v4', JSON.stringify({ ...stored, templates: newTemplates }));
+      const stored = readJsonStorage<Record<string, unknown>>(STYLE_STORAGE_KEY, {});
+      writeJsonStorage(STYLE_STORAGE_KEY, { ...stored, templates: newTemplates });
     }
     return { customTemplates: newTemplates, activePreset: newTemplate.id };
   }),
   deleteCustomTemplate: (id) => set((state) => {
     const newTemplates = state.customTemplates.filter(t => t.id !== id);
     if (typeof window !== 'undefined') {
-      const stored = JSON.parse(localStorage.getItem('nexus_subtitle_styles_v4') || '{}');
-      localStorage.setItem('nexus_subtitle_styles_v4', JSON.stringify({ ...stored, templates: newTemplates }));
+      const stored = readJsonStorage<Record<string, unknown>>(STYLE_STORAGE_KEY, {});
+      writeJsonStorage(STYLE_STORAGE_KEY, { ...stored, templates: newTemplates });
     }
     return { customTemplates: newTemplates, activePreset: state.activePreset === id ? 'classic' : state.activePreset };
   }),
   setActivePreset: (activePreset) => set({ activePreset }),
   setPreviewIndex: (previewIndex) => set({ previewIndex }),
   setSceneBackground: (sceneBackground) => set({ sceneBackground }),
-  setTheaterAspect: (theaterAspect) => set({ theaterAspect }),
+  setTheaterAspect: (theaterAspect) => set((state) => ({
+    theaterAspect,
+    customStyle: {
+      ...state.customStyle,
+      aspectRatio: theaterAspect === '4:3' || theaterAspect === '2.39:1' || theaterAspect === '1.9:1'
+        ? theaterAspect
+        : '16:9',
+    },
+  })),
   setShowGuides: (showGuides) => set({ showGuides }),
   setTempShowGuides: (tempShowGuides) => set({ tempShowGuides }),
   setJumpLineVal: (jumpLineVal) => set({ jumpLineVal }),
@@ -449,6 +482,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   },
 
   searchTmdb: async (query, options) => {
+    const requestId = ++tmdbSearchRequestId;
+    const taskIdAtStart = get().selectedTaskId;
+    const isCurrentRequest = () => requestId === tmdbSearchRequestId && get().selectedTaskId === taskIdAtStart;
     const silent = options?.silent ?? false;
     const rawSearchStr = query.trim();
     if (!rawSearchStr) return;
@@ -538,12 +574,18 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       ) => {
         const yearParam = endpoint === 'movie' && year ? `&year=${year}` : '';
         const url = `/api/tmdb/search/${endpoint}?query=${encodeURIComponent(q)}&language=zh-CN${yearParam}`;
+        const cached = typeof window !== 'undefined' ? tmdbClientCache.get(url) : undefined;
+        if (cached && cached.expiresAt > Date.now()) return cached.results;
         const res = await fetch(url);
         if (!res.ok) return [];
         const data = await res.json() as { results?: TmdbSuggestion[] };
-        return (data.results || [])
+        const searchResults = (data.results || [])
           .map((item) => ({ ...item, media_type: item.media_type || (endpoint === 'multi' ? item.media_type : endpoint) }))
           .filter((item) => item.media_type === 'movie' || item.media_type === 'tv');
+        if (typeof window !== 'undefined') {
+          tmdbClientCache.set(url, { expiresAt: Date.now() + TMDB_CLIENT_CACHE_TTL_MS, results: searchResults });
+        }
+        return searchResults;
       };
 
       const candidateQueries = [...searchQueries, cleanQuery, chnPart, engPart]
@@ -737,6 +779,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       const sortedResults = scored.map((s) => s.item).slice(0, 5);
       const bestScored = scored[0];
 
+      if (!isCurrentRequest()) return;
       set({ tmdbSuggestions: sortedResults });
 
       if (sortedResults.length > 0) {
@@ -790,6 +833,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         if (!silent) get().addLog("暂未自动确认片源，可手动选择候选", "error");
       }
     } catch (e: unknown) {
+      if (!isCurrentRequest()) return;
       const message = e instanceof Error ? e.message : String(e);
       get().setStatusNotice({
         id: 'media-match',
@@ -802,11 +846,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       });
       if (!silent) get().addLog(`片源匹配异常: ${message}`, "error");
     } finally {
-      set({ isSearchingTmdb: false });
+      if (isCurrentRequest()) set({ isSearchingTmdb: false });
     }
   },
 
   searchTmdbManual: async (query, type, year) => {
+    const requestId = ++tmdbSearchRequestId;
+    const taskIdAtStart = get().selectedTaskId;
+    const isCurrentRequest = () => requestId === tmdbSearchRequestId && get().selectedTaskId === taskIdAtStart;
     const rawSearchStr = query.trim();
     if (!rawSearchStr) return;
     
@@ -819,10 +866,16 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     try {
       const runSearchManual = async (q: string) => {
         const url = `/api/tmdb/search/${type}?query=${encodeURIComponent(q)}&language=zh-CN${year ? `&year=${year}` : ''}`;
+        const cached = typeof window !== 'undefined' ? tmdbClientCache.get(url) : undefined;
+        if (cached && cached.expiresAt > Date.now()) return cached.results;
         const res = await fetch(url);
         if (!res.ok) return [];
         const data = await res.json() as { results?: TmdbSuggestion[] };
-        return data.results || [];
+        const searchResults = data.results || [];
+        if (typeof window !== 'undefined') {
+          tmdbClientCache.set(url, { expiresAt: Date.now() + TMDB_CLIENT_CACHE_TTL_MS, results: searchResults });
+        }
+        return searchResults;
       };
 
       const candidateQueries = buildTmdbSearchQueries(searchStr, 12);
@@ -909,6 +962,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
       scored.sort((a: { item: TmdbSuggestion; score: number }, b: { item: TmdbSuggestion; score: number }) => b.score - a.score || (b.item.popularity || 0) - (a.item.popularity || 0));
       const sortedResults = scored.map((s: { item: TmdbSuggestion; score: number }) => s.item).slice(0, 10);
+      if (!isCurrentRequest()) return;
       set({ tmdbSuggestions: sortedResults });
       
       sortedResults.forEach((item) => {
@@ -943,6 +997,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         get().addLog("未找到任何匹配候选！", "error");
       }
     } catch (e: unknown) {
+      if (!isCurrentRequest()) return;
       const message = e instanceof Error ? e.message : String(e);
       get().setStatusNotice({
         id: 'media-match',
@@ -955,14 +1010,16 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       });
       get().addLog(`手动搜索异常: ${message}`, "error");
     } finally {
-      set({ isSearchingTmdb: false });
+      if (isCurrentRequest()) set({ isSearchingTmdb: false });
     }
   },
 
   selectTmdbSuggestion: async (s, options) => {
+    const requestId = ++tmdbSelectionRequestId;
     const silent = options?.silent ?? false;
     set({ selectedSuggestion: s });
     const { selectedTaskId, tmdbManualInput } = get();
+    const isCurrentSelection = () => requestId === tmdbSelectionRequestId && get().selectedTaskId === selectedTaskId;
     if (!silent) get().addLog(`正在补全片源资料`, 'info');
     try {
       let type = s.media_type;
@@ -974,6 +1031,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       );
       if (!detailRes.ok) throw new Error("获取详情失败");
       const details = await detailRes.json() as TmdbDetails;
+      if (!isCurrentSelection()) return;
 
       const genres = (details.genres || []).map((g) => g.name);
       const backdropUrl = s.backdrop_path ? `https://image.tmdb.org/t/p/w1280${s.backdrop_path}` : null;
@@ -1002,6 +1060,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           }
         }
         const imgRes = await fetch(imagesUrl);
+        if (!isCurrentSelection()) return;
         if (imgRes.ok) {
           const imgData = await imgRes.json() as TmdbImages;
           const hasEpisodeStills = type === 'tv' && activeTaskForEp?.epKey;
@@ -1039,33 +1098,15 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         isAnime: genres.includes('动画') || genres.includes('Animation')
       };
 
+      if (!isCurrentSelection()) return;
       set({ tmdbData: meta, tmdbBackdrop: chosenBackdrop, tmdbBackdropList: backdrops });
-
-      let formattedName = meta.title;
-      if (meta.year) {
-        formattedName += `.${meta.year}`;
-      }
 
       const activeTask = get().tasks.find(t => t.id === selectedTaskId);
       const epKey = activeTask?.epKey;
-
-      if (type === 'tv' || epKey) {
-        let seasonStr = String(tmdbManualInput.season).padStart(2, '0');
-        let episodeStr = String(tmdbManualInput.episode).padStart(2, '0');
-        if (epKey) {
-          const match = epKey.match(/S(\d+)E(\d+)/i);
-          if (match) {
-            seasonStr = match[1];
-            episodeStr = match[2];
-          } else {
-            const epMatch = epKey.match(/E(\d+)/i);
-            if (epMatch) {
-              episodeStr = epMatch[1];
-            }
-          }
-        }
-        formattedName += `.S${seasonStr}E${episodeStr}`;
-      }
+      const manualEpisodeKey = type === 'tv' && !epKey
+        ? `S${String(tmdbManualInput.season).padStart(2, '0')}E${String(tmdbManualInput.episode).padStart(2, '0')}`
+        : undefined;
+      const formattedName = formatTmdbOutputName(meta, epKey || manualEpisodeKey);
       set({ customFilename: formattedName, filenameSource: 'tmdb' });
 
       if (selectedTaskId) {
@@ -1100,32 +1141,50 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   initializeLibrary: () => {
     if (typeof window === 'undefined') return;
-    const savedLib = localStorage.getItem('nexus_subtitle_library');
-    if (savedLib) {
-      try { set({ libraryList: JSON.parse(savedLib) }); } catch {}
-    }
-    const savedStyles = localStorage.getItem('nexus_subtitle_styles_v4');
-    if (savedStyles) {
-      try {
-        const { preset, style, templates } = JSON.parse(savedStyles);
-        if (preset) set({ activePreset: preset });
-        if (style) set({ customStyle: { resolution: '1080p', aspectRatio: '16:9', globalScale: 1.0, lyricFontSize: 16, lyricColor: '#E6E6FA', lyricItalic: true, lyricPosition: 'top', ...style } });
-        if (templates) set({ customTemplates: templates });
-      } catch {}
-    }
+    const savedLibrary = readJsonStorage<unknown>(LIBRARY_STORAGE_KEY, []);
+    if (Array.isArray(savedLibrary)) set({ libraryList: fitLibraryToStorageBudget(savedLibrary as LibraryItem[]) });
+    const savedStyles = readJsonStorage<{ preset?: string; style?: Partial<StyleSettings>; templates?: CustomTemplate[] }>(STYLE_STORAGE_KEY, {});
+    if (savedStyles.preset) set({ activePreset: savedStyles.preset });
+    if (savedStyles.style) set({ customStyle: { resolution: '1080p', aspectRatio: '16:9', globalScale: 1.0, lyricFontSize: 16, lyricColor: '#E6E6FA', lyricItalic: true, lyricPosition: 'top', ...savedStyles.style } as StyleSettings });
+    if (Array.isArray(savedStyles.templates)) set({ customTemplates: savedStyles.templates });
     // TMDB key is now handled server-side via /api/tmdb proxy (no client-side key required).
     // Old localStorage key 'saiko_tmdb_api_key' is no longer used.
   },
 
   selectTask: (taskId) => {
+    tmdbSelectionRequestId += 1;
     const task = get().tasks.find(t => t.id === taskId);
     if (!task) return;
+    const taskIdentityFile = task.files.find(file => assessMediaIdentity(file.name).shouldAutoSearchTmdb);
+    const taskIdentity = taskIdentityFile ? assessMediaIdentity(taskIdentityFile.name) : null;
+    const taskRelease = taskIdentityFile ? parseMediaFilename(taskIdentityFile.name) : null;
+    const reusableTask = !task.tmdbData && taskIdentity?.title
+      ? get().tasks.find(candidate => candidate.id !== task.id
+        && candidate.tmdbData
+        && candidate.files.some(file => {
+          const candidateIdentity = assessMediaIdentity(file.name);
+          const candidateRelease = parseMediaFilename(file.name);
+          const sameTitle = normalizeMediaIdentityTitle(candidateIdentity.title) === normalizeMediaIdentityTitle(taskIdentity.title);
+          const compatibleYear = !taskRelease?.year || !candidateRelease.year || taskRelease.year === candidateRelease.year;
+          return sameTitle && compatibleYear;
+        }))
+      : undefined;
+    const inheritedMetadata = reusableTask?.tmdbData || null;
+    const inheritedBackdrop = reusableTask?.tmdbBackdrop || inheritedMetadata?.backdropUrl || null;
+    const inheritedBackdrops = reusableTask?.tmdbBackdropList || (inheritedBackdrop ? [inheritedBackdrop] : []);
+    if (inheritedMetadata) {
+      set(state => ({
+        tasks: state.tasks.map(candidate => candidate.id === taskId
+          ? { ...candidate, tmdbData: inheritedMetadata, tmdbBackdrop: inheritedBackdrop, tmdbBackdropList: inheritedBackdrops }
+          : candidate),
+      }));
+    }
     set({
       selectedTaskId: taskId,
       files: { zh: task.zh, en: task.en, commentary: task.commentary },
-      tmdbData: task.tmdbData || null,
-      tmdbBackdrop: task.tmdbBackdrop || null,
-      tmdbBackdropList: task.tmdbBackdropList || [],
+      tmdbData: task.tmdbData || inheritedMetadata,
+      tmdbBackdrop: task.tmdbBackdrop || inheritedBackdrop,
+      tmdbBackdropList: task.tmdbBackdropList || inheritedBackdrops,
       detectedAttributions: task.files.flatMap(file => extractSubtitleAttributions(file.text)).filter((item, index, all) =>
         all.findIndex(candidate => candidate.role === item.role && candidate.value.toLowerCase() === item.value.toLowerCase()) === index
       )
@@ -1141,7 +1200,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     const parsedTitle = fileIdentities.find(item => item.shouldAutoSearchTmdb);
     const detectedIdentity = detectTitle ? assessMediaIdentity(detectTitle) : null;
     const detectedTitle = detectedIdentity?.shouldAutoSearchTmdb ? detectedIdentity.title : '';
-    const displayTitle = parsedTitle?.title || detectedTitle || task.title;
+    const displayTitle = inheritedMetadata
+      ? formatTmdbOutputName(inheritedMetadata, task.epKey)
+      : parsedTitle?.title || detectedTitle || task.title;
     set({ customFilename: displayTitle, filenameSource: 'auto' });
 
     const cleanName = (parsedTitle?.title || detectedTitle).replace(/\.[^/.]+$/, "").trim();
@@ -1170,7 +1231,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       }
     }));
 
-    if (!task.tmdbData && !get().tmdbData) {
+    if (!task.tmdbData && !inheritedMetadata && !get().tmdbData) {
       setTimeout(() => {
         if (cleanName) {
           get().searchTmdb(`${cleanName} ${task.epKey || ''}`.trim(), { fallbackTitle: task.title });
@@ -1288,6 +1349,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   },
 
   cancelCurrentUpload: () => {
+    tmdbSearchRequestId += 1;
+    tmdbSelectionRequestId += 1;
     set({
       workflowStep: 1,
       files: { zh: null, en: null, commentary: null },
@@ -1328,11 +1391,17 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       backdropList: tmdbBackdropList,
       customStyle: customStyle
     };
-    const updatedLib = [newItem, ...libraryList];
-    set({ libraryList: updatedLib });
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('nexus_subtitle_library', JSON.stringify(updatedLib));
+    const updatedLib = fitLibraryToStorageBudget([newItem, ...libraryList]);
+    if (estimateJsonBytes(updatedLib) > MAX_LIBRARY_BYTES) {
+      get().addLog('当前字幕体积超过本地存档容量，请直接导出文件保存', 'error');
+      return;
     }
+    const persisted = writeJsonStorage(LIBRARY_STORAGE_KEY, updatedLib);
+    if ('error' in persisted) {
+      get().addLog(`本地存档失败: ${persisted.error}`, 'error');
+      return;
+    }
+    set({ libraryList: updatedLib });
     get().addLog(`[存入] 已成功存入系统字幕库: ${name}`, "success");
   },
 
@@ -1340,7 +1409,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set(state => {
       const updatedLib = state.libraryList.filter(item => item.id !== id);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('nexus_subtitle_library', JSON.stringify(updatedLib));
+        writeJsonStorage(LIBRARY_STORAGE_KEY, updatedLib);
       }
       get().addLog("已从系统字幕库中删除记录", "info");
       return { libraryList: updatedLib };
@@ -1526,9 +1595,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const rawParsed = parseSubtitle(files.zh.text);
         const parsed: SubRow[] = normalizeSingleBilingualRows(rawParsed);
         
-        const finalSubs = autoSignature(parsed);
-        set({ processedSubs: finalSubs, previewIndex: 0, workflowStep: 2 });
-        get().addLog(`已成功加载原生双语字幕，共包含 ${finalSubs.length} 行流数据，并自动完成双语拆轨`, 'success');
+        set({ processedSubs: parsed, previewIndex: 0, workflowStep: 2 });
+        get().addLog(`已成功加载原生双语字幕，共包含 ${parsed.length} 行流数据，并自动完成双语拆轨`, 'success');
       } else {
         // Standard double merge
         const zhParsed = parseSubtitle(files.zh?.text || '');
@@ -1539,8 +1607,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const merged = alignmentMode === 'industrial'
           ? alignSubtitlesIndustrial(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t))
           : mergeSubtitles(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t));
-        const finalSubs = autoSignature(merged);
-        set({ processedSubs: finalSubs, previewIndex: 0, workflowStep: 2 });
+        set({ processedSubs: merged, previewIndex: 0, workflowStep: 2 });
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -1551,6 +1618,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   },
 
   restartSystem: () => {
+    tmdbSearchRequestId += 1;
+    tmdbSelectionRequestId += 1;
     set({
       workflowStep: 1,
       files: { zh: null, en: null, commentary: null },

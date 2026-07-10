@@ -118,7 +118,7 @@ export const SystemTray = () => {
           aria-label="返回上传入口"
         >
           <Image src="/favicon.svg" alt="" aria-hidden="true" width={20} height={20} className="h-5 w-5 rounded-[5px]" />
-          <span>SubStudio</span>
+          <span className="hidden sm:inline">SubStudio</span>
         </button>
 
         <div className="hidden md:flex items-center gap-1 rounded-xl border border-white/[0.07] bg-white/[0.018] p-1">
@@ -130,6 +130,7 @@ export const SystemTray = () => {
                 key={step.id}
                 type="button"
                 onClick={() => handleStepClick(step.id)}
+                disabled={disabled}
                   className={`px-3.5 py-2 rounded-lg text-[15px] font-medium transition-all cursor-pointer
                   ${isActive
                     ? 'bg-white/[0.10] text-white border border-white/[0.08]'
@@ -137,6 +138,7 @@ export const SystemTray = () => {
                       ? 'text-white/28 cursor-not-allowed'
                       : 'text-white/58 hover:text-white hover:bg-white/[0.045]'}`}
                 aria-current={isActive ? 'step' : undefined}
+                aria-disabled={disabled}
               >
                 {step.label}
               </button>
@@ -204,8 +206,8 @@ export const SystemTray = () => {
           <span className="font-bold text-[#e5e7eb]" suppressHydrationWarning>{Math.round(scale * 100)}%</span>
         </button>
         <span
-          className="status-clock text-sm text-white/70 tabular-nums"
-          aria-label="Current time"
+          className="status-clock hidden md:inline text-sm text-white/70 tabular-nums"
+          aria-label="当前时间"
         >
           {time}
         </span>

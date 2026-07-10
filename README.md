@@ -4,14 +4,14 @@ Standalone bilingual subtitle alignment, merging, styling, and preview tool.
 
 SaikoSubStudio focuses on three steps:
 
-- **Ingest**: load SRT / ASS / ZIP files, classify tracks, and bind subtitle sources.
+- **Ingest**: load SRT / ASS files or ZIP / 7Z / RAR packages, classify tracks, and bind subtitle sources.
 - **Workbench**: review aligned subtitle lines, edit text, tune styles, and export ASS / SRT.
 - **Theater**: preview subtitles in a cinema-style simulator with scene backdrops, TV masks, aspect ratio controls, and guide overlays.
 
 ## Key Features
 
-- Drag and drop SRT / ASS, folders, and ZIP archives.
-- Preflight hints for single-language subtitles, existing bilingual subtitles, ASS/SRT formats, unsupported files, and RAR/7Z archives.
+- Drag and drop SRT / ASS, folders, and locally extracted ZIP / 7Z / RAR archives.
+- Preflight hints for single-language subtitles, existing bilingual subtitles, supported formats, and unsafe or oversized imports.
 - Automatic language detection, bilingual track handling, commentary track support, and ASS style extraction.
 - TMDB metadata lookup through the server proxy route.
 - Timeline controls, line preview, style presets, custom templates, and local project history.
@@ -42,8 +42,8 @@ Set `TMDB_API_KEY` as a secret environment variable when metadata lookup is need
 ## Public Assets (Fixed for Preview)
 
 `public/` includes:
-- `scene_cinema.png`, `scene_nature.png`, `scene_night.png`
-- `tv-crt.png`, `tv-crt_v2.png`, `tv-modern.png`, `tv-modern_v2.png`
+- `Background.jpg`, `scene_nature.png`, `scene_night.png`, `scene_portrait.png`
+- `tv-crt_v2.png`, `tv-modern_v2.png`
 - `tmdb_logo_blue_square.svg`
 
 These assets keep Theater preview usable even without TMDB data.

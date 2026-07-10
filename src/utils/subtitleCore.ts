@@ -315,41 +315,66 @@ export function smartLineWrap(text: string, isChinese = true, maxChars = 20): st
  * Extract ASS styles.
  */
 export function extractStylesFromAss(text: string): Partial<StyleSettings> | null {
-  if (!text || !text.includes('[V4+ Styles]')) return null;
-  
-  const sections = text.split('\n\n');
-  const styleSection = sections.find(s => s.includes('[V4+ Styles]'));
-  if (!styleSection) return null;
+  if (!text) return null;
 
-  const lines = styleSection.split('\n').map(l => l.trim()).filter(Boolean);
-  const formatLine = lines.find(l => l.startsWith('Format:'));
-  const styleLines = lines.filter(l => l.startsWith('Style:'));
+  const normalizedText = text.replace(/\r\n?/g, '\n');
+  const lines = normalizedText.split('\n').map(line => line.trim());
+  const styleStart = lines.findIndex(line => line.toLowerCase() === '[v4+ styles]');
+  if (styleStart === -1) return null;
+  const styleEndOffset = lines.slice(styleStart + 1).findIndex(line => /^\[[^\]]+\]$/.test(line));
+  const styleEnd = styleEndOffset === -1 ? lines.length : styleStart + 1 + styleEndOffset;
+  const styleLinesInSection = lines.slice(styleStart + 1, styleEnd).filter(Boolean);
+  const scriptInfoEnd = lines.findIndex((line, index) => index > 0 && /^\[[^\]]+\]$/.test(line));
+  const scriptInfoLines = lines.slice(0, scriptInfoEnd === -1 ? styleStart : scriptInfoEnd);
+  const playResY = Number.parseFloat(
+    scriptInfoLines.find(line => /^PlayResY\s*:/i.test(line))?.split(':').slice(1).join(':').trim() || '288',
+  );
+  const baseScale = Number.isFinite(playResY) && playResY > 0 ? playResY / 288 : 1;
+
+  const formatLine = styleLinesInSection.find(line => /^Format:/i.test(line));
+  const styleLines = styleLinesInSection.filter(line => /^Style:/i.test(line));
   
   if (!formatLine || styleLines.length === 0) return null;
 
-  const targetStyle = styleLines.find(l => l.includes('Default') || l.includes('Han')) || styleLines[0];
-  const formatKeys = formatLine.replace('Format:', '').split(',').map(k => k.trim());
-  const styleValues = targetStyle.replace('Style:', '').split(',').map(v => v.trim());
+  const formatKeys = formatLine.replace(/^Format:/i, '').split(',').map(key => key.trim());
+  const parseStyle = (line: string) => line.replace(/^Style:/i, '').split(',').map(value => value.trim());
+  const styleName = (line: string) => parseStyle(line)[formatKeys.indexOf('Name')] || '';
+  const targetStyle = styleLines.find(line => /^(han|chinese|zh|chs|cht)$/i.test(styleName(line)))
+    || styleLines.find(line => /^default$/i.test(styleName(line)))
+    || styleLines[0];
+  const secondaryStyle = styleLines.find(line => /^(en|eng|english|latin)$/i.test(styleName(line)));
+  const styleValues = parseStyle(targetStyle);
+  const secondaryValues = secondaryStyle ? parseStyle(secondaryStyle) : null;
 
-  const getVal = (key: string): string | null => {
+  const getVal = (key: string, values = styleValues): string | null => {
     const idx = formatKeys.indexOf(key);
-    return idx !== -1 ? styleValues[idx] : null;
+    return idx !== -1 ? values[idx] : null;
   };
 
   const assToHex = (assColor: string | null): string => {
     if (!assColor) return '#FFFFFF';
-    const match = assColor.match(/&H[0-9a-fA-F]{2}([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})/);
-    if (match) return `#${match[3]}${match[2]}${match[1]}`.toUpperCase();
+    const digits = assColor.replace(/^&H/i, '').replace(/&$/, '');
+    const bgr = digits.length >= 6 ? digits.slice(-6) : '';
+    if (/^[0-9a-fA-F]{6}$/.test(bgr)) {
+      return `#${bgr.slice(4, 6)}${bgr.slice(2, 4)}${bgr.slice(0, 2)}`.toUpperCase();
+    }
     return '#FFFFFF';
   };
 
+  const zhFontSize = Number.parseFloat(getVal('Fontsize') || '22') / baseScale;
+  const enFontSize = Number.parseFloat(secondaryValues ? getVal('Fontsize', secondaryValues) || '' : '') / baseScale;
+  const marginV = Number.parseFloat(getVal('MarginV') || '20') / baseScale;
+
   return {
-    zhFontSize: Math.round(parseInt(getVal('Fontsize') || '22') / 3.75) || 22,
-    enFontSize: Math.round(parseInt(getVal('Fontsize') || '12') / 3.75 * 0.7) || 12,
+    zhFontSize: Math.round(zhFontSize) || 22,
+    enFontSize: Math.round(enFontSize) || Math.max(10, Math.round(zhFontSize * 0.7)) || 12,
     zhColor: assToHex(getVal('PrimaryColour')),
-    enColor: assToHex(getVal('SecondaryColour')),
+    enColor: assToHex(secondaryValues ? getVal('PrimaryColour', secondaryValues) : getVal('PrimaryColour')),
     zhOutline: assToHex(getVal('OutlineColour')),
-    marginV: Math.round(parseInt(getVal('MarginV') || '20') / 3.75) || 20
+    enOutline: assToHex(secondaryValues ? getVal('OutlineColour', secondaryValues) : getVal('OutlineColour')),
+    zhFontFamily: getVal('Fontname') || undefined,
+    enFontFamily: secondaryValues ? getVal('Fontname', secondaryValues) || undefined : undefined,
+    marginV: Math.round(marginV) || 20,
   };
 }
 
@@ -1669,9 +1694,10 @@ export function alignSubtitlesIndustrial(
   const offsetDiagnosis = estimateGlobalOffset(zhDialogues, enDialogues);
   const secondaryOffsetMs = offsetDiagnosis.shouldApply ? offsetDiagnosis.offsetMs : 0;
   
-  const ALIGN_THRESHOLD = 2000;
-  if (M > ALIGN_THRESHOLD || N > ALIGN_THRESHOLD) {
-    addLog(`[工业级合并] 数据量 (中: ${M} 行, 英: ${N} 行) 超过 ${ALIGN_THRESHOLD} 行阈值，自动降级为快速合并模式`, 'info');
+  const alignmentCells = M * N;
+  const MAX_ALIGNMENT_CELLS = 8_000_000;
+  if (alignmentCells > MAX_ALIGNMENT_CELLS) {
+    addLog(`[工业级合并] 对齐矩阵约 ${Math.round(alignmentCells / 1_000_000)}M 单元，已切换为低内存快速合并`, 'info');
     return mergeSubtitles(zhSubs, enSubs, commSubs, addLog);
   }
   if (Math.abs(offsetDiagnosis.offsetMs) >= 1200) {
@@ -1683,15 +1709,8 @@ export function alignSubtitlesIndustrial(
     );
   }
   
-  // DP Table for Needleman-Wunsch sequence alignment
-  const dp: number[][] = Array.from({ length: M + 1 }, () => new Array(N + 1).fill(0));
-  
   const gapPenalty = -6;
   const mismatchPenalty = -15;
-  
-  // Base cases initialization
-  for (let i = 0; i <= M; i++) dp[i][0] = i * gapPenalty;
-  for (let j = 0; j <= N; j++) dp[0][j] = j * gapPenalty;
   
   // Score matrix calculation between Chinese and English nodes
   const getPairScore = (zhIdx: number, enIdx: number) => {
@@ -1716,14 +1735,34 @@ export function alignSubtitlesIndustrial(
     return mismatchPenalty;
   };
   
-  // Fill DP Table
-  for (let i = 1; i <= M; i++) {
-    for (let j = 1; j <= N; j++) {
-      const scoreMatch = dp[i-1][j-1] + getPairScore(i-1, j-1);
-      const scoreGapZh = dp[i-1][j] + gapPenalty;
-      const scoreGapEn = dp[i][j-1] + gapPenalty;
-      dp[i][j] = Math.max(scoreMatch, scoreGapZh, scoreGapEn);
+  // 滚动分数，保留方向
+  let previousScores = new Float64Array(N + 1);
+  let currentScores = new Float64Array(N + 1);
+  const directions = new Int8Array((M + 1) * (N + 1));
+  for (let column = 1; column <= N; column += 1) {
+    previousScores[column] = column * gapPenalty;
+    directions[column] = 2;
+  }
+  for (let row = 1; row <= M; row += 1) {
+    currentScores[0] = row * gapPenalty;
+    directions[row * (N + 1)] = 1;
+    for (let column = 1; column <= N; column += 1) {
+      const scoreMatch = previousScores[column - 1] + getPairScore(row - 1, column - 1);
+      const scoreGapZh = previousScores[column] + gapPenalty;
+      const scoreGapEn = currentScores[column - 1] + gapPenalty;
+      const directionIndex = row * (N + 1) + column;
+      if (scoreMatch >= scoreGapZh && scoreMatch >= scoreGapEn) {
+        currentScores[column] = scoreMatch;
+        directions[directionIndex] = 0;
+      } else if (scoreGapZh >= scoreGapEn) {
+        currentScores[column] = scoreGapZh;
+        directions[directionIndex] = 1;
+      } else {
+        currentScores[column] = scoreGapEn;
+        directions[directionIndex] = 2;
+      }
     }
+    [previousScores, currentScores] = [currentScores, previousScores];
   }
   
   // Backtracking path extraction
@@ -1733,23 +1772,17 @@ export function alignSubtitlesIndustrial(
   
   while (i > 0 || j > 0) {
     if (i > 0 && j > 0) {
-      const scoreMatch = dp[i-1][j-1] + getPairScore(i-1, j-1);
-      const scoreGapZh = dp[i-1][j] + gapPenalty;
-      const scoreGapEn = dp[i][j-1] + gapPenalty;
-      const current = dp[i][j];
-      
-      if (current === scoreMatch) {
+      const direction = directions[i * (N + 1) + j];
+      if (direction === 0) {
         path.push({ zhIdx: i - 1, enIdx: j - 1 });
-        i--; j--;
-      } else if (current === scoreGapZh) {
+        i -= 1;
+        j -= 1;
+      } else if (direction === 1) {
         path.push({ zhIdx: i - 1, enIdx: null });
-        i--;
-      } else if (current === scoreGapEn) {
-        path.push({ zhIdx: null, enIdx: j - 1 });
-        j--;
+        i -= 1;
       } else {
         path.push({ zhIdx: null, enIdx: j - 1 });
-        j--;
+        j -= 1;
       }
     } else if (i > 0) {
       path.push({ zhIdx: i - 1, enIdx: null });
@@ -1931,24 +1964,13 @@ export function applyAuxiliarySubtitleMode(subs: SubRow[], mode: AuxiliarySubtit
 }
 
 export function generateSrtContent(subs: SubRow[], styleSettings?: StyleSettings): string {
-  const { lyricPosition = 'top', lyricItalic = true, auxiliaryMode = 'keep' } = styleSettings || {};
+  const { lyricItalic = true, auxiliaryMode = 'keep' } = styleSettings || {};
   return applyAuxiliarySubtitleMode(subs, auxiliaryMode).map(s => {
-    let text = s.text;
-    if (s.type === 'note' || s.type === 'commentary' || s.cueKind === 'screen_text') {
-      if (!text.startsWith("{\\an8}")) {
-        text = "{\\an8}" + text;
-      }
-    } else if (s.type === 'lyrics') {
-      if (lyricPosition === 'top' && !text.startsWith("{\\an8}")) {
-        text = "{\\an8}" + text;
-      }
+    let text = s.text.replace(/\{\\[^}]+\}/g, '');
+    if (s.type === 'lyrics') {
       if (lyricItalic) {
         const cleanText = text.replace(/<\/?i>/g, '');
-        if (text.startsWith("{\\an8}")) {
-          text = "{\\an8}<i>" + cleanText.slice(6) + "</i>";
-        } else {
-          text = `<i>${cleanText}</i>`;
-        }
+        text = `<i>${cleanText}</i>`;
       }
     }
     return `${s.index}\n${s.ts}\n${text}`;
@@ -1962,6 +1984,7 @@ export function generateAssContent(subs: SubRow[], styleSettings: StyleSettings,
     zhColor = '#FFFFFF',
     enColor = '#FFFFFF',
     zhOutline = '#000000',
+    enOutline = '#000000',
     enScale = 100,
     maxLenZh = 22,
     maxLenEn = 90,
@@ -1973,7 +1996,9 @@ export function generateAssContent(subs: SubRow[], styleSettings: StyleSettings,
     lyricColor = '#E6E6FA',
     lyricItalic = true,
     lyricPosition = 'top',
-    auxiliaryMode = 'keep'
+    auxiliaryMode = 'keep',
+    zhFontFamily = 'PingFang SC',
+    enFontFamily = 'Helvetica Neue',
   } = styleSettings || {};
 
   let resY = 1080;
@@ -2028,23 +2053,32 @@ export function generateAssContent(subs: SubRow[], styleSettings: StyleSettings,
   const assZhColor = hexToAss(zhColor);
   const assEnColor = hexToAss(enColor);
   const assZhOutline = hexToAss(zhOutline);
+  const assEnOutline = hexToAss(enOutline);
   const assLyricColor = hexToAss(lyricColor);
+  const toAssFontName = (fontFamily: string, fallback: string): string => {
+    const firstFamily = fontFamily.split(',')[0]?.trim().replace(/^['"]|['"]$/g, '');
+    if (!firstFamily || /^(system-ui|sans-serif|serif|monospace)$/i.test(firstFamily)) return fallback;
+    return firstFamily.replace(/[\r\n,]/g, ' ').trim() || fallback;
+  };
+  const assZhFont = toAssFontName(zhFontFamily, 'PingFang SC');
+  const assEnFont = toAssFontName(enFontFamily, 'Arial');
+  const safeTitle = title.replace(/[\r\n]/g, ' ').trim() || 'Bilingual Subtitles';
 
   const header = `[Script Info]
 PlayResX: ${resX}
 PlayResY: ${resY}
 ScaledBorderAndShadow: no
 ScriptType: v4.00+
-Title: ${title}
+Title: ${safeTitle}
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Han,PingFang SC,${mZhFont},${assZhColor},&H00FF9C41,${assZhOutline},&H00000000,1,0,0,0,100,100,0,0,1,${mOutline},${mShadow},2,${mBaseMargin},${mBaseMargin},${mMarginV},1
-Style: EN,Helvetica Neue,${mEnFont},${assEnColor},&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,${enScale},${enScale},0,0,1,${mEnOutline},${mEnOutline},2,${mBaseMargin},${mBaseMargin},${Math.floor(mMarginV * 0.6)},1
-Style: Note,PingFang SC,${mNoteFont},&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,${mOutline},${mShadow},8,${mBaseMargin},${mBaseMargin},${mMarginV},1
-Style: Credit,PingFang SC,${mNoteFont},${assZhColor},&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,${mOutline},${mShadow},5,${mBaseMargin},${mBaseMargin},${mMarginV},1
-Style: Lyrics,PingFang SC,${mLyricFont},${assLyricColor},&H00000000,&H00000000,&H00000000,0,${lyricItalic ? 1 : 0},0,0,100,100,0,0,1,${mOutline},${mShadow},${lyricPosition === 'top' ? 8 : 2},${mBaseMargin},${mBaseMargin},${lyricPosition === 'top' ? Math.floor(mMarginV * 0.8) : mMarginV},1
-Style: Lyrics_EN,Helvetica Neue,${mLyricEnFont},${assLyricColor},&H00000000,&H00000000,&H00000000,0,${lyricItalic ? 1 : 0},0,0,100,100,0,0,1,${mEnOutline},${mEnOutline},${lyricPosition === 'top' ? 8 : 2},${mBaseMargin},${mBaseMargin},${lyricPosition === 'top' ? Math.floor(mMarginV * 0.5) : Math.floor(mMarginV * 0.6)},1
+Style: Han,${assZhFont},${mZhFont},${assZhColor},&H00FF9C41,${assZhOutline},&H00000000,1,0,0,0,100,100,0,0,1,${mOutline},${mShadow},2,${mBaseMargin},${mBaseMargin},${mMarginV},1
+Style: EN,${assEnFont},${mEnFont},${assEnColor},&H00FFFFFF,${assEnOutline},&H00000000,1,0,0,0,${enScale},${enScale},0,0,1,${mEnOutline},${mEnOutline},2,${mBaseMargin},${mBaseMargin},${Math.floor(mMarginV * 0.6)},1
+Style: Note,${assZhFont},${mNoteFont},&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,${mOutline},${mShadow},8,${mBaseMargin},${mBaseMargin},${mMarginV},1
+Style: Credit,${assZhFont},${mNoteFont},${assZhColor},&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,${mOutline},${mShadow},5,${mBaseMargin},${mBaseMargin},${mMarginV},1
+Style: Lyrics,${assZhFont},${mLyricFont},${assLyricColor},&H00000000,&H00000000,&H00000000,0,${lyricItalic ? 1 : 0},0,0,100,100,0,0,1,${mOutline},${mShadow},${lyricPosition === 'top' ? 8 : 2},${mBaseMargin},${mBaseMargin},${lyricPosition === 'top' ? Math.floor(mMarginV * 0.8) : mMarginV},1
+Style: Lyrics_EN,${assEnFont},${mLyricEnFont},${assLyricColor},&H00000000,${assEnOutline},&H00000000,0,${lyricItalic ? 1 : 0},0,0,100,100,0,0,1,${mEnOutline},${mEnOutline},${lyricPosition === 'top' ? 8 : 2},${mBaseMargin},${mBaseMargin},${lyricPosition === 'top' ? Math.floor(mMarginV * 0.5) : Math.floor(mMarginV * 0.6)},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -2141,20 +2175,6 @@ export function checkIsBilingual(text: string): boolean {
   if (validCount === 0) return false;
   const ratio = bilingualSignals / validCount;
   return ratio >= 0.6;
-}
-
-export function autoSignature(subs: SubRow[]): SubRow[] {
-  if (subs.length === 0) return subs;
-  const clone = [...subs];
-  const END_SIG = "双语合并：SubStudioX V1.0";
-  const lastTime = clone[clone.length - 1].ts.split(" --> ")[1];
-  clone.push({
-    index: clone.length + 1,
-    ts: `${msToTime(timeToMs(lastTime) + 2000)} --> ${msToTime(timeToMs(lastTime) + 5000)}`,
-    text: END_SIG,
-    type: "note"
-  });
-  return clone;
 }
 
 export function safeParseSubtitle(text: unknown): RawSub[] {

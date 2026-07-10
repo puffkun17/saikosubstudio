@@ -19,7 +19,7 @@ export const IngestStep: React.FC = () => {
   } = useStudioStore();
 
   return (
-    <div className="flex-1 w-full h-full flex flex-col p-5 md:p-8 lg:p-10 2xl:p-12 lg:overflow-hidden overflow-y-auto relative bg-[#020203] z-0">
+    <div className="flex-1 w-full h-full flex flex-col p-5 md:p-8 lg:p-10 2xl:p-12 overflow-y-auto relative bg-[#020203] z-0">
       <div className="flex items-center gap-2 mb-3 select-none z-20 flex-shrink-0">
         <span className="w-1.5 h-1.5 rounded-full bg-[#9ca3af]/85" />
         <span className="text-sm font-medium text-[#e5e7eb]/86">
@@ -27,12 +27,12 @@ export const IngestStep: React.FC = () => {
         </span>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 md:mb-10 z-20 flex-shrink-0">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5 mb-6 md:mb-8 z-20 flex-shrink-0">
         <div className="flex flex-col gap-2 text-left">
-          <h1 className="!text-[clamp(3.2rem,5.6vw,6.75rem)] font-semibold tracking-tight text-white flex items-center flex-wrap font-sans leading-[0.96]">
-            SaikoSubStudio
-            <span className="text-xs text-[#e5e7eb] bg-[#9ca3af]/10 border border-[#9ca3af]/20 px-3 py-1 rounded-lg ml-4 font-mono font-semibold shadow-[0_0_15px_rgba(156,163,175,0.08)]">
-              v2.0.1
+          <h1 className="text-[clamp(2.35rem,7vw,6.25rem)] font-semibold tracking-tight text-white flex items-center flex-wrap gap-x-4 gap-y-2 font-sans leading-[0.98] break-words [overflow-wrap:anywhere]">
+            <span>SaikoSubStudio</span>
+            <span className="text-xs text-[#e5e7eb] bg-[#9ca3af]/10 border border-[#9ca3af]/20 px-3 py-1 rounded-lg font-mono font-semibold shadow-[0_0_15px_rgba(156,163,175,0.08)]">
+              v3.0.0
             </span>
           </h1>
           <p className="text-base text-neutral-300 max-w-2xl">
@@ -50,7 +50,7 @@ export const IngestStep: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, filter: "blur(4px)" }}
             transition={{ type: "spring", stiffness: 200, damping: 25 }}
-            className="flex-1 flex flex-col gap-8 max-w-7xl mx-auto w-full items-center justify-start py-2 md:py-5"
+            className="flex-1 flex flex-col gap-6 max-w-7xl mx-auto w-full items-center justify-start py-1 md:py-3"
           >
             <DragZone />
           </motion.div>
