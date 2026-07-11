@@ -27,28 +27,8 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
     const targetIdx = Math.max(0, Math.min(processedSubs.length - 1, lineNum - 1));
     setPreviewIndex(targetIdx);
 
-    const performScroll = () => {
-      setTimeout(() => {
-        const element = document.getElementById(`wb-row-${targetIdx}`);
-        if (element) {
-          // Scrolling is now centrally handled by SequenceList's useEffect.
-          // We only apply the highlight effect here.
-          // Trigger a highlight effect
-          const originalBg = element.style.background;
-          element.style.transition = 'background 0.3s ease';
-          element.style.background = 'rgba(255, 255, 255, 0.10)';
-          setTimeout(() => {
-            element.style.background = originalBg || 'transparent';
-          }, 2000);
-        }
-      }, 100);
-    };
-
     if (targetIdx >= 50 && !showAllSubs) {
       setShowAllSubs(true);
-      performScroll();
-    } else {
-      performScroll();
     }
   };
 
@@ -85,7 +65,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
 
   if (variant === 'theater') {
     return (
-      <div className="w-full bg-[#08080c]/78 border border-white/[0.07] px-4 py-3 rounded-2xl flex items-center gap-4 shadow-[0_12px_32px_rgba(0,0,0,0.28)] backdrop-blur-md">
+      <div className="w-full bg-[#08080c]/78 border border-white/[0.07] px-4 py-3 rounded-xl flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 shadow-[0_12px_32px_rgba(0,0,0,0.28)] backdrop-blur-md">
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs font-semibold text-neutral-300">预览进度</span>
           <span className="text-xs font-mono text-[#c3eee3] tabular-nums">
@@ -103,7 +83,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
           }}
           onMouseUp={() => handleJumpToLine()}
           onTouchEnd={() => handleJumpToLine()}
-          className="v9-timeline-dial-slider flex-1 min-w-[220px]"
+          className="v9-timeline-dial-slider w-full flex-1 min-w-0"
           aria-label="字幕预览进度"
         />
         <form onSubmit={handleJumpToLine} className="v9-dial-gauge flex items-center gap-2 shrink-0">
@@ -116,6 +96,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
             onChange={e => setJumpLineVal(e.target.value)}
             className="v9-dial-gauge-input no-spin"
             placeholder="1"
+            aria-label="跳转到字幕行"
           />
           <div className="w-[1px] h-3 bg-[#9ddacb]/25" />
           <span className="v9-dial-gauge-value text-[#c3eee3]">{jumpPercent}%</span>
@@ -127,7 +108,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
   return (
     <div className="v9-dial-slider-container w-full bg-white/[0.018] border border-white/[0.055] px-3 py-2.5 rounded-xl flex items-center justify-between gap-4">
       {/* Slider range input */}
-      <div className="v9-dial-slider-wrapper flex-1 flex items-center min-w-[280px]">
+      <div className="v9-dial-slider-wrapper flex-1 flex items-center min-w-0">
         <input 
           type="range" 
           min="1" 
@@ -155,6 +136,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({ variant = 'f
           onChange={e => setJumpLineVal(e.target.value)}
           className="v9-dial-gauge-input no-spin"
           placeholder="1"
+          aria-label="跳转到字幕行"
         />
         <div className="w-[1px] h-3 bg-[#9ddacb]/25" />
         <span className="v9-dial-gauge-value text-[#c3eee3]">{jumpPercent}%</span>

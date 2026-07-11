@@ -49,6 +49,15 @@ export const TheaterStep: React.FC = () => {
     }
   }, [sceneBackground, setSceneBackground]);
 
+  useEffect(() => {
+    if (!isSettingsOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsSettingsOpen(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isSettingsOpen, setIsSettingsOpen]);
+
   // 转换数据格式
   const subtitleSlot: SubtitleDataSlot = processedSubs
     ? { status: 'ready', data: processedSubs }
@@ -73,6 +82,7 @@ export const TheaterStep: React.FC = () => {
             whileTap={{ scale: 0.97 }}
             className="p-2 glass-btn-ar rounded-lg flex items-center justify-center cursor-pointer text-neutral-400 hover:text-neutral-200"
             onClick={handleBack}
+            aria-label="返回字幕工作台"
           >
             <ChevronLeft className="w-4 h-4" />
           </motion.button>
@@ -90,7 +100,7 @@ export const TheaterStep: React.FC = () => {
                 ${isSettingsOpen ? 'glass-btn-ar-active' : 'glass-btn-ar text-neutral-350 hover:text-white'}`}
             >
               <SlidersHorizontal className="h-4 w-4 stroke-[2.25]" />
-              样式
+              样式参数
             </button>
             <ExportDropdown variant="ghost" />
           </div>
@@ -101,7 +111,7 @@ export const TheaterStep: React.FC = () => {
       {/* 主体内容 */}
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* Theater 预览区域 */}
-        <div className={`flex-1 flex flex-col items-center justify-center gap-3 p-3 md:p-5 xl:p-6 relative min-w-0 transition-[padding] duration-500 ease-out ${isSettingsOpen ? 'xl:pr-[390px]' : ''}`}>
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 p-3 md:p-5 xl:p-6 relative min-w-0">
           <div className="w-full max-w-[1080px] shrink-0 px-1">
             <TimelineControls variant="theater" />
           </div>
@@ -122,15 +132,27 @@ export const TheaterStep: React.FC = () => {
         {/* 样式侧边栏 */}
         <AnimatePresence>
           {isSettingsOpen && (
-            <motion.div
-              initial={{ x: 360, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 360, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="absolute right-4 top-4 bottom-4 z-40 flex w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl glass-panel-ar md:right-6 md:top-6 md:bottom-6"
-            >
-              <StyleSidebar />
-            </motion.div>
+            <>
+              <motion.button
+                type="button"
+                aria-label="关闭样式参数"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-30 bg-black/55 xl:hidden"
+                onClick={() => setIsSettingsOpen(false)}
+              />
+              <motion.aside
+                aria-label="样式参数"
+                initial={{ x: 360, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 360, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="absolute inset-y-4 right-4 z-40 flex w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl glass-panel-ar xl:relative xl:inset-auto xl:z-20 xl:my-5 xl:mr-5 xl:w-[380px] xl:shrink-0"
+              >
+                <StyleSidebar />
+              </motion.aside>
+            </>
           )}
         </AnimatePresence>
       </div>

@@ -74,6 +74,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const listId = React.useId();
 
   const selectedOption = options.find(o => o.id === value) || null;
 
@@ -107,6 +108,8 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
         className={`w-full flex items-center gap-2 rounded-xl py-3 px-3.5 text-base outline-none transition-all duration-200 cursor-pointer text-left bg-[#020204] shadow-[inset_0_2px_4px_rgba(0,0,0,0.85)]
           ${open ? 'border-white/30 text-white' : 'border-white/[0.07] hover:border-white/[0.14] text-white/85'}`}
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-controls={listId}
       >
         <span className="flex-1 min-w-0 overflow-hidden">
           {selectedOption ? (
@@ -126,7 +129,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
 
       {/* Outset Layered Dropdown Board */}
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 z-[200] bg-[#0c0d10] border border-neutral-900 rounded-xl overflow-hidden shadow-[0_12px_36px_rgba(0,0,0,0.85),_inset_0_1px_0_rgba(255,255,255,0.05)] max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-white/[0.08]">
+        <div id={listId} className="absolute top-full left-0 right-0 mt-1.5 z-[200] bg-[#0c0d10] border border-neutral-800 rounded-xl overflow-hidden shadow-[0_12px_36px_rgba(0,0,0,0.85),_inset_0_1px_0_rgba(255,255,255,0.05)] max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-white/[0.08]">
           {/* Unbound option */}
           <button
             className={`w-full flex items-center gap-2 px-3.5 py-3 text-base hover:bg-white/[0.03] transition text-left cursor-pointer active:bg-white/[0.01]

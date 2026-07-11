@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStudioStore, type TmdbSuggestion } from '@/store/useStudioStore';
 import { Search, SearchAlert, Film, Star, Sparkles, X, CheckCircle2, CircleAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,12 +32,14 @@ export const TmdbPanel: React.FC = () => {
   } = useStudioStore();
 
   const [pendingSuggestion, setPendingSuggestion] = useState<TmdbSuggestion | null>(null);
+  const [isApplyingSuggestion, setIsApplyingSuggestion] = useState(false);
   const rtScore = tmdbData ? getRottenTomatoesScore(tmdbData.title, tmdbData.voteAverage) : null;
   const activeTask = tasks.find((task) => task.id === selectedTaskId) || tasks[0];
   const needsTitleInput = Boolean(activeTask?.title.includes('待补充片名'));
   const shouldHighlightSearch = needsTitleInput && tmdbSuggestions.length === 0;
 
-  const handleManualSearch = async () => {
+  const handleManualSearch = async (event?: React.FormEvent) => {
+    event?.preventDefault();
     const searchStr = tmdbManualInput.title.trim();
     if (!searchStr) return;
     setPendingSuggestion(null);
@@ -47,11 +49,16 @@ export const TmdbPanel: React.FC = () => {
   };
 
   const handleApplySuggestion = async (suggestion: TmdbSuggestion) => {
-    setPendingSuggestion(suggestion);
-    await selectTmdbSuggestion(suggestion);
-    setPendingSuggestion(null);
-    setTmdbSuggestions([]);
-    setTmdbManualOpen(false);
+    setIsApplyingSuggestion(true);
+    try {
+      setPendingSuggestion(suggestion);
+      await selectTmdbSuggestion(suggestion);
+      setPendingSuggestion(null);
+      setTmdbSuggestions([]);
+      setTmdbManualOpen(false);
+    } finally {
+      setIsApplyingSuggestion(false);
+    }
   };
 
   const handleClose = () => {
@@ -59,6 +66,19 @@ export const TmdbPanel: React.FC = () => {
     setTmdbSuggestions([]);
     setTmdbManualOpen(false);
   };
+
+  useEffect(() => {
+    if (!tmdbManualOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isApplyingSuggestion) {
+        setPendingSuggestion(null);
+        setTmdbSuggestions([]);
+        setTmdbManualOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isApplyingSuggestion, setTmdbManualOpen, setTmdbSuggestions, tmdbManualOpen]);
 
   return (
     <div className={`flex flex-col gap-5 glass-panel-ar p-5 md:p-6 xl:p-7 rounded-xl desktop-panel-fit-hidden relative shadow-xl group transition-all duration-300
@@ -235,38 +255,51 @@ export const TmdbPanel: React.FC = () => {
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="glass-panel-ar rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col gap-0 max-h-[85vh] overflow-hidden"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="tmdb-search-title"
+              aria-describedby={needsTitleInput ? 'tmdb-search-description' : undefined}
             >
               {/* Modal Header */}
               <div className="flex justify-between items-center px-6 py-5 border-b border-white/5">
                 <div>
-                  <h4 className="text-xl font-semibold text-white tracking-tight">{needsTitleInput ? '补充片名' : '手动检索'}</h4>
-                  {needsTitleInput && <p className="mt-1 text-sm text-[#b9d8d3]">确认后将用于片源资料与导出命名。</p>}
+                  <h2 id="tmdb-search-title" className="text-xl font-semibold text-white tracking-tight">{needsTitleInput ? '补充片名' : '手动检索'}</h2>
+                  {needsTitleInput && <p id="tmdb-search-description" className="mt-1 text-sm text-[#b9d8d3]">确认后将用于片源资料与导出命名。</p>}
                 </div>
                 <button
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition cursor-pointer"
                   onClick={handleClose}
+                  type="button"
+                  aria-label="关闭片源检索"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
+              <form onSubmit={handleManualSearch} className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
                 <div className="flex flex-col gap-4">
-                  <div className="relative">
+                  <label htmlFor="tmdb-title-input" className="flex flex-col gap-2 text-sm font-medium text-white/78">
+                    片名
+                    <span className="relative">
                     <input
+                      id="tmdb-title-input"
                       type="text"
                       className={`w-full bg-white/[0.02] border rounded-xl py-4 pl-12 pr-4 text-white text-base outline-none transition-all ${needsTitleInput ? 'border-[#8ebcb5]/35 focus:bg-[#8ebcb5]/[0.04] focus:border-[#b9ddd8]' : 'border-white/[0.07] focus:bg-white/[0.04] focus:border-[#9ca3af]/35'}`}
                       value={tmdbManualInput.title}
                       onChange={e => setTmdbManualInput({ ...tmdbManualInput, title: e.target.value })}
-                      onKeyDown={e => e.key === 'Enter' && handleManualSearch()}
-                      placeholder="输入电影或剧集名称..."
+                      placeholder="输入电影或剧集名称"
+                      required
                       autoFocus
                     />
-                    <Search className="w-5 h-5 text-white/40 absolute left-4 top-1/2 -translate-y-1/2" />
-                  </div>
+                    <Search className="w-5 h-5 text-white/40 absolute left-4 top-1/2 -translate-y-1/2" aria-hidden="true" />
+                    </span>
+                  </label>
 
-                  <div className="flex gap-3">
+                  <div className="grid grid-cols-[minmax(0,1fr)_minmax(8rem,0.55fr)] gap-3">
+                    <label htmlFor="tmdb-type-input" className="flex min-w-0 flex-col gap-2 text-sm font-medium text-white/78">
+                      类型
                     <select
+                      id="tmdb-type-input"
                       className="bg-white/[0.02] border border-white/[0.07] focus:border-[#9ca3af]/35 focus:bg-white/[0.04] rounded-xl py-3.5 px-4 text-white text-base outline-none transition-all cursor-pointer flex-1"
                       value={tmdbManualInput.type}
                       onChange={e => setTmdbManualInput({ ...tmdbManualInput, type: e.target.value as 'movie' | 'tv' })}
@@ -274,38 +307,66 @@ export const TmdbPanel: React.FC = () => {
                       <option value="movie" className="bg-[#0b0b12] text-white">电影</option>
                       <option value="tv" className="bg-[#0b0b12] text-white">剧集</option>
                     </select>
+                    </label>
+                    <label htmlFor="tmdb-year-input" className="flex min-w-0 flex-col gap-2 text-sm font-medium text-white/78">
+                      年份 <span className="sr-only">可选</span>
                     <input
+                      id="tmdb-year-input"
                       type="number"
-                      className="w-1/3 bg-white/[0.02] border border-white/[0.07] focus:border-[#9ca3af]/35 focus:bg-white/[0.04] rounded-xl py-3.5 px-4 text-white text-base font-mono tabular-nums outline-none transition-all placeholder:text-white/20"
+                      min="1888"
+                      max="2100"
+                      inputMode="numeric"
+                      className="w-full bg-white/[0.02] border border-white/[0.07] focus:border-[#9ca3af]/35 focus:bg-white/[0.04] rounded-xl py-3.5 px-4 text-white text-base font-mono tabular-nums outline-none transition-all placeholder:text-white/28"
                       value={tmdbManualInput.year}
                       onChange={e => setTmdbManualInput({ ...tmdbManualInput, year: e.target.value })}
                       placeholder="年份"
                     />
+                    </label>
                   </div>
 
                   {tmdbManualInput.type === 'tv' && (
-                    <div className="flex gap-3">
-                      <input
-                        type="number" min="1"
-                        className="flex-1 bg-white/[0.02] border border-white/[0.07] focus:border-[#9ca3af]/35 focus:bg-white/[0.04] rounded-xl py-3.5 px-4 text-white text-base font-mono tabular-nums outline-none transition-all placeholder:text-white/20"
-                        value={tmdbManualInput.season || ''}
-                        onChange={e => setTmdbManualInput({ ...tmdbManualInput, season: e.target.value })}
-                        placeholder="季"
-                      />
-                      <input
-                        type="number" min="1"
-                        className="flex-1 bg-white/[0.02] border border-white/[0.07] focus:border-[#9ca3af]/35 focus:bg-white/[0.04] rounded-xl py-3.5 px-4 text-white text-base font-mono tabular-nums outline-none transition-all placeholder:text-white/20"
-                        value={tmdbManualInput.episode || ''}
-                        onChange={e => setTmdbManualInput({ ...tmdbManualInput, episode: e.target.value })}
-                        placeholder="集"
-                      />
+                    <div className="rounded-xl border border-white/[0.07] bg-white/[0.012] p-3.5" role="group" aria-labelledby="episode-location-label">
+                      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                        <span id="episode-location-label" className="text-sm font-medium text-white/78">集数定位</span>
+                        <span className="text-xs text-white/38">用于单集剧照与导出命名</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className="group flex min-w-0 items-center rounded-lg border border-white/[0.075] bg-black/20 transition-colors focus-within:border-[#9ddacb]/48 focus-within:bg-[#9ddacb]/[0.035]">
+                          <span className="shrink-0 pl-3.5 text-sm text-white/48">第</span>
+                          <input
+                            type="number"
+                            min="1"
+                            max="999"
+                            inputMode="numeric"
+                            aria-label="季数"
+                            className="no-spin min-w-0 flex-1 bg-transparent px-2 py-3 text-center font-mono text-base font-semibold tabular-nums text-white outline-none"
+                            value={tmdbManualInput.season || ''}
+                            onChange={e => setTmdbManualInput({ ...tmdbManualInput, season: e.target.value })}
+                          />
+                          <span className="shrink-0 border-l border-white/[0.06] px-3.5 py-1 text-sm font-medium text-[#b9ddd8]">季</span>
+                        </label>
+                        <label className="group flex min-w-0 items-center rounded-lg border border-white/[0.075] bg-black/20 transition-colors focus-within:border-[#9ddacb]/48 focus-within:bg-[#9ddacb]/[0.035]">
+                          <span className="shrink-0 pl-3.5 text-sm text-white/48">第</span>
+                          <input
+                            type="number"
+                            min="1"
+                            max="9999"
+                            inputMode="numeric"
+                            aria-label="集数"
+                            className="no-spin min-w-0 flex-1 bg-transparent px-2 py-3 text-center font-mono text-base font-semibold tabular-nums text-white outline-none"
+                            value={tmdbManualInput.episode || ''}
+                            onChange={e => setTmdbManualInput({ ...tmdbManualInput, episode: e.target.value })}
+                          />
+                          <span className="shrink-0 border-l border-white/[0.06] px-3.5 py-1 text-sm font-medium text-[#b9ddd8]">集</span>
+                        </label>
+                      </div>
                     </div>
                   )}
 
                   <button
+                    type="submit"
                     className={`w-full py-4 font-semibold text-base rounded-xl transition-all hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer ${shouldHighlightSearch ? 'action-required-button' : 'bg-[#e5e7eb] hover:bg-[#ffffff] text-black shadow-[0_4px_20px_rgba(156,163,175,0.16)]'}`}
-                    onClick={handleManualSearch}
-                    disabled={isSearchingTmdb}
+                    disabled={isSearchingTmdb || isApplyingSuggestion || !tmdbManualInput.title.trim()}
                   >
                     {isSearchingTmdb ? (
                       <span className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
@@ -331,8 +392,10 @@ export const TmdbPanel: React.FC = () => {
                         const posterUrl = s.poster_path ? `https://image.tmdb.org/t/p/w92${s.poster_path}` : null;
 
                         return (
-                          <div
+                          <button
                             key={s.id}
+                            type="button"
+                            aria-pressed={isChosen}
                             className={`w-full p-3 rounded-xl flex items-center gap-4 text-left transition-all border cursor-pointer
                             ${isChosen
                                 ? 'border-[#8ebcb5]/45 bg-[#8ebcb5]/[0.07] shadow-[inset_3px_0_0_#8ebcb5]'
@@ -369,51 +432,45 @@ export const TmdbPanel: React.FC = () => {
                               </div>
                             </div>
 
-                            <button
-                              type="button"
-                              className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition active:translate-y-[1px]
-                                ${isChosen
-                                ? 'action-required-button'
-                                  : 'border border-white/[0.08] bg-white/[0.035] text-white/58 hover:bg-white/[0.07] hover:text-white'}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (isChosen) {
-                                  void handleApplySuggestion(s);
-                                } else {
-                                  setPendingSuggestion(s);
-                                }
-                              }}
-                            >
-                              {isChosen ? (
-                                <span className="inline-flex items-center gap-1.5">
-                                  <CheckCircle2 className="h-3.5 w-3.5" />
-                                  确认
-                                </span>
-                              ) : '选择'}
-                            </button>
-                          </div>
+                            <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border ${isChosen ? 'border-[#9ddacb]/55 bg-[#9ddacb]/15 text-[#c5eee5]' : 'border-white/[0.09] text-transparent'}`}>
+                              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                            </span>
+                          </button>
                         );
                       })}
                     </div>
                   </div>
                 )}
-              </div>
+              </form>
 
               {/* Modal Footer */}
-              <div className="flex justify-between items-center px-6 py-5 border-t border-white/5 bg-black/25">
-                <div className="text-sm text-white/50">
+              <div className="flex flex-col gap-3 border-t border-white/5 bg-[#070708]/95 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 text-sm text-white/50">
                   {pendingSuggestion ? (
-                    <span className="text-white">已选择 <strong className="text-[#b9ddd8]">{pendingSuggestion.title || pendingSuggestion.name}</strong>，请点击右侧确认</span>
+                    <span className="block truncate text-white">已选择 <strong className="text-[#b9ddd8]">{pendingSuggestion.title || pendingSuggestion.name}</strong></span>
                   ) : (
                     '请选择匹配项'
                   )}
                 </div>
-                <button
-                  className="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl transition text-sm font-bold cursor-pointer"
-                  onClick={handleClose}
-                >
-                  取消
-                </button>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white/72 hover:text-white rounded-xl transition text-sm font-semibold cursor-pointer"
+                    onClick={handleClose}
+                    disabled={isApplyingSuggestion}
+                  >
+                    取消
+                  </button>
+                  <button
+                    type="button"
+                    className="action-required-button inline-flex min-w-36 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-35"
+                    onClick={() => pendingSuggestion && void handleApplySuggestion(pendingSuggestion)}
+                    disabled={!pendingSuggestion || isApplyingSuggestion}
+                  >
+                    {isApplyingSuggestion ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black" /> : <CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
+                    {isApplyingSuggestion ? '正在应用' : '应用所选片名'}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

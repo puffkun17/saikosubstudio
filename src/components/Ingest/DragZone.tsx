@@ -594,7 +594,7 @@ export const DragZone: React.FC = () => {
 
   return (
     <div
-      className="w-full flex flex-col items-center group/outer py-2 md:py-4"
+      className="ingest-drop-zone w-full flex flex-col items-center group/outer py-2 md:py-4"
       onMouseEnter={() => setIsZoneActive(true)}
       onMouseLeave={() => setIsZoneActive(false)}
       onDragOver={handleDragOver}
@@ -602,7 +602,8 @@ export const DragZone: React.FC = () => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <motion.div
+      <motion.button
+        type="button"
         onClick={() => fileInputRef.current?.click()}
         animate={isDragging
           ? { scale: 0.988, boxShadow: 'inset 0 0 90px rgba(0,0,0,0.82), 0 20px 80px rgba(168,183,163,0.08)' }
@@ -611,7 +612,8 @@ export const DragZone: React.FC = () => {
             : { scale: 1, boxShadow: 'inset 0 0 42px rgba(0,0,0,0.46), 0 18px 60px rgba(0,0,0,0.22)' }
         }
         transition={{ type: "spring", stiffness: 320, damping: 26 }}
-        className="relative z-10 mx-auto flex min-h-[260px] md:min-h-[300px] lg:min-h-[clamp(280px,36vh,336px)] w-full max-w-[1120px] cursor-pointer select-none flex-col items-center justify-center overflow-hidden rounded-[18px] border border-white/[0.1] bg-[#080807] px-5 md:px-8"
+        className="ingest-drop-stage relative z-10 mx-auto flex min-h-[260px] md:min-h-[300px] lg:min-h-[clamp(280px,36vh,336px)] w-full max-w-[1120px] cursor-pointer select-none flex-col items-center justify-center overflow-hidden rounded-[18px] border border-white/[0.1] bg-[#080807] px-5 md:px-8 text-left outline-none focus-visible:border-[#b9ddd8]/55 focus-visible:ring-2 focus-visible:ring-[#b9ddd8]/25"
+        aria-label="选择字幕文件或压缩包，也可将文件拖放到此区域"
       >
         <div
           aria-hidden="true"
@@ -637,7 +639,7 @@ export const DragZone: React.FC = () => {
             <span className="text-2xl font-semibold tracking-tight text-neutral-50">松手导入字幕</span>
           </div>
         ) : (
-          <div className="relative z-20 flex max-w-[760px] flex-col items-center gap-7 text-center">
+          <div className="ingest-drop-content relative z-20 flex max-w-[760px] flex-col items-center gap-7 text-center">
             <div className="flex flex-col items-center gap-3">
               <motion.span
                 animate={{ opacity: isZoneActive ? [0.55, 1, 0.55] : 0.62 }}
@@ -667,9 +669,9 @@ export const DragZone: React.FC = () => {
             </div>
           </div>
         )}
-      </motion.div>
+      </motion.button>
 
-      <div className="mt-5 w-full max-w-[1120px] px-4 z-20">
+      <div className="ingest-feature-strip mt-5 w-full max-w-[1120px] px-4 z-20">
         <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-[14px] border border-white/[0.055] bg-white/[0.012] px-5 py-4 text-sm text-neutral-400">
           {WABI_FEATURES.map((feature, index) => (
             <motion.span
@@ -724,8 +726,9 @@ export const DragZone: React.FC = () => {
 	        </div>
 	      )}
 
-	      <div className="flex flex-col sm:flex-row gap-4 justify-center mt-9 w-full sm:w-auto px-4 z-20">
+	      <div className="ingest-actions flex flex-col sm:flex-row gap-4 justify-center mt-9 w-full sm:w-auto px-4 z-20">
         <button
+          type="button"
           onClick={() => fileInputRef.current?.click()}
           className="group w-full sm:w-auto px-10 py-4 rounded-xl text-base font-semibold cursor-pointer transition-all duration-200
             bg-neutral-100 hover:bg-white border border-white/[0.16]
@@ -736,6 +739,7 @@ export const DragZone: React.FC = () => {
 	        </button>
 
         <button
+          type="button"
           onClick={() => folderInputRef.current?.click()}
           className="group w-full sm:w-auto px-10 py-4 rounded-xl text-base font-semibold cursor-pointer transition-all duration-200
             bg-white/[0.012] hover:bg-white/[0.04] border border-white/[0.055] hover:border-white/16

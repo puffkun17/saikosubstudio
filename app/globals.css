@@ -138,6 +138,51 @@ body::before {
   contain-intrinsic-size: auto 78px;
 }
 
+@media (min-width: 768px) and (max-height: 800px) {
+  .ingest-shell {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .ingest-heading {
+    margin-bottom: 1rem;
+  }
+
+  .ingest-heading h1 {
+    font-size: clamp(3rem, 5vw, 4.75rem);
+  }
+
+  .ingest-empty,
+  .ingest-drop-zone {
+    gap: 0.75rem;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .ingest-drop-stage {
+    min-height: 220px;
+  }
+
+  .ingest-drop-content {
+    gap: 1rem;
+  }
+
+  .ingest-feature-strip,
+  .ingest-actions {
+    margin-top: 0.75rem;
+  }
+
+  .ingest-feature-strip > div {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .ingest-actions button {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+}
+
 /* Keyframe animations */
 @keyframes fadeInUp {
   from {

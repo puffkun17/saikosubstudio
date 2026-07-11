@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { applyAuxiliarySubtitleMode, type StyleSettings } from '@/utils/subtitleCore';
-import { ALargeSmall, ChevronDown, ChevronUp, FileType, Paintbrush, Pipette, Save, SlidersHorizontal, SquareArrowRightExit, SquareCenterlineDashedHorizontal, Trash2 } from 'lucide-react';
+import { ALargeSmall, ChevronDown, ChevronUp, FileType, Paintbrush, Pipette, Save, SlidersHorizontal, SquareArrowRightExit, SquareCenterlineDashedHorizontal, Trash2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { InfoHint } from '@/components/ui/InfoHint';
 
@@ -68,9 +68,11 @@ const ColorPicker = ({
 }) => {
   return (
     <div className="flex flex-col py-2">
-      <div
-        className="flex items-center justify-between cursor-pointer select-none group"
+      <button
+        type="button"
+        className="flex w-full items-center justify-between cursor-pointer select-none group"
         onClick={onToggle}
+        aria-expanded={isOpen}
       >
         <span className="text-sm text-neutral-300 font-medium">{label}</span>
         <div className="flex items-center gap-2">
@@ -86,7 +88,7 @@ const ColorPicker = ({
             )}
           </div>
         </div>
-      </div>
+      </button>
 
       <AnimatePresence initial={false}>
         {isOpen && (
@@ -138,7 +140,7 @@ const SettingSection = ({
   action?: React.ReactNode;
   icon?: React.ReactNode;
 }) => (
-  <section className="rounded-xl border border-white/[0.07] bg-white/[0.018] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+  <section className="border-t border-white/[0.07] pt-4 first:border-t-0 first:pt-0">
     <div className="flex items-center justify-between gap-3 mb-3">
       <h4 className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-100 tracking-tight">
         {icon}
@@ -172,13 +174,9 @@ const SliderControl = ({
   <div className="flex flex-col gap-1.5">
     <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
       <span>{label}</span>
-      <motion.span
-        animate={{ scale: [1, 1.035, 1] }}
-        key={`${label}-${value}`}
-        className="font-mono text-neutral-100 font-semibold text-xs tabular-nums"
-      >
+      <span className="font-mono text-neutral-100 font-semibold text-xs tabular-nums">
         {suffix === 'x' ? value.toFixed(2) : value}{suffix}
-      </motion.span>
+      </span>
     </div>
     <input
       type="range"
@@ -188,6 +186,7 @@ const SliderControl = ({
       value={value}
       onChange={e => onChange(Number(e.target.value))}
       className="w-full glass-slider-input"
+      aria-label={label}
     />
     {hint && <div className="text-xs text-neutral-500 leading-relaxed">{hint}</div>}
   </div>
@@ -205,7 +204,8 @@ export const StyleSidebar: React.FC = () => {
     triggerTempGuides,
     customTemplates,
     saveCustomTemplate,
-    deleteCustomTemplate
+    deleteCustomTemplate,
+    setIsSettingsOpen,
   } = useStudioStore();
 
   const [showTemplateSave, setShowTemplateSave] = useState(false);
@@ -297,18 +297,28 @@ export const StyleSidebar: React.FC = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-all cursor-pointer
-            ${showGuides
-              ? 'border-white/15 bg-white/[0.08] text-neutral-100'
-              : 'border-white/[0.07] bg-white/[0.02] text-neutral-500 hover:text-neutral-200 hover:bg-white/[0.05]'}`}
-          onClick={() => setShowGuides(!showGuides)}
-          title="预览辅助线"
-        >
-          <SquareCenterlineDashedHorizontal className="h-3.5 w-3.5" />
-          辅助线
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-all cursor-pointer
+              ${showGuides
+                ? 'border-white/15 bg-white/[0.08] text-neutral-100'
+                : 'border-white/[0.07] bg-white/[0.02] text-neutral-500 hover:text-neutral-200 hover:bg-white/[0.05]'}`}
+            onClick={() => setShowGuides(!showGuides)}
+            aria-pressed={showGuides}
+          >
+            <SquareCenterlineDashedHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
+            辅助线
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsSettingsOpen(false)}
+            className="grid h-9 w-9 place-items-center rounded-lg border border-white/[0.07] bg-white/[0.02] text-neutral-500 transition-colors hover:bg-white/[0.06] hover:text-white"
+            aria-label="关闭样式参数"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-4">

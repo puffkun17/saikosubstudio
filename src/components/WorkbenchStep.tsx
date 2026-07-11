@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { SequenceList } from '@/components/Workbench/SequenceList';
 import { AlignmentDiffPanel } from '@/components/Workbench/AlignmentDiffPanel';
@@ -30,53 +30,33 @@ export const WorkbenchStep: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (showBackConfirm) setShowBackConfirm(false);
+      else if (isSettingsOpen) setIsSettingsOpen(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isSettingsOpen, setIsSettingsOpen, showBackConfirm]);
+
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#050507]">
       {/* Top Navbar */}
-      <div className="flex flex-col md:flex-row justify-between items-center px-6 md:px-8 py-5 border-b border-white/[0.07] bg-[#020203]/72 backdrop-blur-md gap-4 z-50 flex-shrink-0">
+      <div className="flex flex-col md:flex-row justify-between items-center px-6 md:px-8 py-5 border-b border-white/[0.07] bg-[#020203]/72 backdrop-blur-md gap-4 z-[70] flex-shrink-0">
         <div className="flex items-center gap-4 text-left shrink-0">
-          <div className="relative">
+          <div>
             {/* Bounce back button */}
             <motion.button 
               whileHover={{ scale: 1.03, y: -0.5 }}
               whileTap={{ scale: 0.97 }}
               className="p-2 glass-btn-ar rounded-lg flex items-center justify-center cursor-pointer text-[#9ddacb] hover:text-[#c3eee3]"
               onClick={handleBack}
-              title="返回上传配对页面"
+              aria-label="返回字幕配对"
             >
               <ChevronLeft className="w-4 h-4" />
             </motion.button>
 
-            {/* Inline back confirm dialog */}
-            <AnimatePresence>
-              {showBackConfirm && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  className="absolute top-full left-0 mt-2 z-50 glass-panel-ar rounded-xl p-4 w-64 shadow-2xl"
-                >
-                  <p className="text-sm text-neutral-300 leading-relaxed mb-3">
-                    返回将<span className="text-rose-400 font-bold"> 清除当前对齐数据</span>，确认？
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      className="flex-1 py-2 text-sm font-medium glass-btn-ar rounded-lg cursor-pointer"
-                      onClick={() => setShowBackConfirm(false)}
-                    >
-                      取消
-                    </button>
-                    <button
-                      className="flex-1 py-2 text-sm font-semibold bg-rose-500/80 hover:bg-rose-500 text-white rounded-lg cursor-pointer transition-colors duration-200"
-                      onClick={() => { setShowBackConfirm(false); setProcessedSubs(null); setWorkflowStep(1); }}
-                    >
-                      确认返回
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
           
           <div className="min-w-0 max-w-[720px]">
@@ -122,7 +102,7 @@ export const WorkbenchStep: React.FC = () => {
       {/* Main Split stage */}
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* Center Panel: Subtitle sequence list */}
-        <div className={`flex-1 p-6 min-h-0 overflow-hidden flex flex-col items-center z-10 transition-all duration-300 ${isSettingsOpen ? 'lg:pr-[396px]' : 'pr-0'}`}>
+        <div className="flex-1 p-4 md:p-6 min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
           <div className="max-w-6xl w-full flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
             {processedSubs && processedSubs.length > 0 && (
               <SourceMatchPanel rows={processedSubs} />
@@ -139,23 +119,66 @@ export const WorkbenchStep: React.FC = () => {
         {/* Floating Style Drawer */}
         <AnimatePresence>
           {isSettingsOpen && (
-            <motion.div
-              initial={{ x: 360, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 360, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="absolute right-6 top-6 bottom-6 w-[390px] z-50 glass-panel-ar rounded-2xl overflow-hidden flex flex-col"
-            >
-              <StyleSidebar />
-            </motion.div>
+            <>
+              <motion.button
+                type="button"
+                aria-label="关闭样式参数"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-40 bg-black/55 lg:hidden"
+                onClick={() => setIsSettingsOpen(false)}
+              />
+              <motion.aside
+                aria-label="样式参数"
+                initial={{ x: 360, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 360, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="absolute inset-y-4 right-4 z-50 flex w-[min(390px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl glass-panel-ar lg:relative lg:inset-auto lg:z-20 lg:my-6 lg:mr-6 lg:w-[390px] lg:shrink-0"
+              >
+                <StyleSidebar />
+              </motion.aside>
+            </>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Click-outside helper overlay for back confirm */}
-      {showBackConfirm && (
-        <div className="fixed inset-0 z-10" onClick={() => setShowBackConfirm(false)} />
-      )}
+      <AnimatePresence>
+        {showBackConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] grid place-items-center bg-black/65 p-4 backdrop-blur-sm"
+            onClick={(event) => { if (event.target === event.currentTarget) setShowBackConfirm(false); }}
+          >
+            <motion.div
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="workbench-back-title"
+              aria-describedby="workbench-back-description"
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#0b0b0d] p-5 shadow-2xl"
+            >
+              <h3 id="workbench-back-title" className="text-lg font-semibold text-white">返回字幕配对</h3>
+              <p id="workbench-back-description" className="mt-2 text-sm leading-6 text-neutral-400">
+                已导入文件和轨道选择会保留；再次进入工作台时将重新生成当前预览结果。
+              </p>
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <button type="button" className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-neutral-300 hover:bg-white/[0.07] hover:text-white" onClick={() => setShowBackConfirm(false)}>
+                  继续编辑
+                </button>
+                <button type="button" className="rounded-xl border border-[#9ddacb]/25 bg-[#9ddacb]/10 px-4 py-2.5 text-sm font-semibold text-[#d6f2eb] hover:bg-[#9ddacb]/16" onClick={() => { setShowBackConfirm(false); setProcessedSubs(null); setWorkflowStep(1); }}>
+                  返回配对
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

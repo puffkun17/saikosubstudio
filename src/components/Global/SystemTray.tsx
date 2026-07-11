@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { ArrowLeft, FolderClock, MessageSquareText, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, FolderClock, MessageSquareText, RotateCcw, ShieldCheck } from 'lucide-react';
 import { useStudioStore } from '@/store/useStudioStore';
 
 const STEP_LABEL: Record<number, string> = {
@@ -36,8 +36,9 @@ const getDefaultScale = () => {
 export const SystemTray = () => {
   const [time, setTime] = useState('');
   const [scale, setScale] = useState(getDefaultScale);
+  const [pendingReset, setPendingReset] = useState(false);
   const pathname = usePathname();
-  const { workflowStep, restartSystem, tasks, processedSubs, libraryList, setLibraryOpen, setWorkflowStep } = useStudioStore();
+  const { workflowStep, restartSystem, tasks, processedSubs, libraryList, setLibraryOpen, setWorkflowStep, setStatusNotice } = useStudioStore();
   const isInfoPage = pathname === '/about' || pathname === '/feedback';
 
   const hasUploadData = tasks.length > 0;
@@ -48,9 +49,7 @@ export const SystemTray = () => {
 
     if (targetStep === 1) {
       if (hasUploadData || hasWorkbenchData) {
-        const confirmReset = window.confirm('返回上传入口会清空当前字幕任务。确认重新开始吗？');
-        if (!confirmReset) return;
-        restartSystem();
+        setPendingReset(true);
         return;
       }
       setWorkflowStep(1);
@@ -59,7 +58,7 @@ export const SystemTray = () => {
 
     if (targetStep === 2) {
       if (!hasUploadData && !hasWorkbenchData) {
-        window.alert('请先导入字幕文件，再进入工作台。');
+        setStatusNotice({ id: 'workflow-guard', tone: 'notice', title: '请先导入字幕文件' });
         return;
       }
       setWorkflowStep(2);
@@ -68,7 +67,7 @@ export const SystemTray = () => {
 
     if (targetStep === 3) {
       if (!hasWorkbenchData) {
-        window.alert('请先完成字幕导入或合并，再进入放映厅预览。');
+        setStatusNotice({ id: 'workflow-guard', tone: 'notice', title: '请先准备字幕预览' });
         return;
       }
       setWorkflowStep(3);
@@ -102,6 +101,15 @@ export const SystemTray = () => {
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    if (!pendingReset) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPendingReset(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [pendingReset]);
+
   return (
     <nav
       aria-label="System tray"
@@ -121,7 +129,7 @@ export const SystemTray = () => {
           <span className="hidden sm:inline">SubStudio</span>
         </button>
 
-        <div className="hidden md:flex items-center gap-1 rounded-xl border border-white/[0.07] bg-white/[0.018] p-1">
+        {!isInfoPage && <div className="hidden md:flex items-center gap-1 rounded-xl border border-white/[0.07] bg-white/[0.018] p-1">
           {WORKFLOW_STEPS.map(step => {
             const isActive = workflowStep === step.id;
             const disabled = (step.id === 2 && !hasUploadData && !hasWorkbenchData) || (step.id === 3 && !hasWorkbenchData);
@@ -130,12 +138,11 @@ export const SystemTray = () => {
                 key={step.id}
                 type="button"
                 onClick={() => handleStepClick(step.id)}
-                disabled={disabled}
                   className={`px-3.5 py-2 rounded-lg text-[15px] font-medium transition-all cursor-pointer
                   ${isActive
                     ? 'bg-white/[0.10] text-white border border-white/[0.08]'
                     : disabled
-                      ? 'text-white/28 cursor-not-allowed'
+                      ? 'text-white/32 cursor-help'
                       : 'text-white/58 hover:text-white hover:bg-white/[0.045]'}`}
                 aria-current={isActive ? 'step' : undefined}
                 aria-disabled={disabled}
@@ -144,7 +151,7 @@ export const SystemTray = () => {
               </button>
             );
           })}
-        </div>
+        </div>}
 
         {isInfoPage && (
           <Link
@@ -158,9 +165,9 @@ export const SystemTray = () => {
           </Link>
         )}
 
-        <span className="md:hidden text-white/45 font-medium truncate">
+        {!isInfoPage && <span className="md:hidden text-white/45 font-medium truncate">
           {STEP_LABEL[workflowStep]}
-        </span>
+        </span>}
       </div>
 
       {/* ── Right: scale selector & clock ─────────────────────────────── */}
@@ -212,6 +219,28 @@ export const SystemTray = () => {
           {time}
         </span>
       </div>
+      {pendingReset && (
+        <div
+          className="fixed inset-0 z-[130] grid place-items-center bg-black/65 p-4 backdrop-blur-sm"
+          onClick={(event) => { if (event.target === event.currentTarget) setPendingReset(false); }}
+        >
+          <div role="alertdialog" aria-modal="true" aria-labelledby="restart-title" aria-describedby="restart-description" className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#0b0b0d] p-5 text-left shadow-2xl">
+            <div className="flex items-start gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[#c0a89a]/20 bg-[#c0a89a]/[0.08] text-[#dfc9bc]">
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 id="restart-title" className="text-lg font-semibold text-white">重新开始</h2>
+                <p id="restart-description" className="mt-1.5 text-sm leading-6 text-neutral-400">当前导入文件、轨道配对和预览结果都将清除。已保存的历史存档不受影响。</p>
+              </div>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button type="button" className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-neutral-300 hover:bg-white/[0.07] hover:text-white" onClick={() => setPendingReset(false)}>保留当前任务</button>
+              <button type="button" className="rounded-xl border border-[#b07b7d]/25 bg-[#b07b7d]/10 px-4 py-2.5 text-sm font-semibold text-[#efd5d6] hover:bg-[#b07b7d]/18" onClick={() => { setPendingReset(false); restartSystem(); }}>清除并重新开始</button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

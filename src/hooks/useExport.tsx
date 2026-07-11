@@ -81,14 +81,26 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open]);
+
   const primaryClass = 'py-1.5 px-3 md:py-2 md:px-4 glass-btn-ar text-white font-bold text-xs md:text-sm flex items-center gap-1.5 transition-all cursor-pointer';
   const ghostClass = 'py-1.5 px-3.5 glass-btn-ar text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer';
 
   return (
     <div className="relative" ref={ref}>
       <button
+        type="button"
         className={variant === 'primary' ? primaryClass : ghostClass}
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="true"
       >
         <SquareArrowRightExit className="w-3.5 h-3.5 text-white/70" aria-hidden="true" />
         导出
@@ -102,14 +114,14 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
             onClick={() => { handleDownload('ass'); setOpen(false); }}
           >
             <span className="font-mono text-[#e6dfe6] text-[0.625rem] bg-[#998aa0]/18 border border-[#b9a7b5]/20 px-1.5 py-0.5 rounded">ASS</span>
-            ASS 格式 (.ass)
+            导出 ASS
           </button>
           <button
             className="w-full py-3 px-4 text-xs font-semibold hover:bg-white/5 text-left transition text-white/80 hover:text-white flex items-center gap-2 cursor-pointer"
             onClick={() => { handleDownload('srt'); setOpen(false); }}
           >
             <span className="font-mono text-white/50 text-[0.625rem] bg-white/5 px-1.5 py-0.5 rounded">SRT</span>
-            SRT 格式 (.srt)
+            导出 SRT
           </button>
         </div>
       )}

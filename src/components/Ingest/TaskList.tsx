@@ -198,14 +198,14 @@ export const TaskList: React.FC = () => {
                 className="px-3.5 py-2.5 rounded-xl text-xs font-semibold text-rose-300 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/18 transition cursor-pointer"
                 onClick={() => { cancelCurrentUpload(); setPendingCancelUpload(false); }}
               >
-                确认取消
+                清空本次导入
               </button>
               <button
                 type="button"
                 className="px-3.5 py-2.5 rounded-xl text-xs font-semibold text-neutral-400 bg-white/[0.025] border border-white/[0.06] hover:text-white hover:bg-white/[0.05] transition cursor-pointer"
                 onClick={() => setPendingCancelUpload(false)}
               >
-                保留
+                返回
               </button>
             </div>
           ) : (
@@ -278,10 +278,8 @@ export const TaskList: React.FC = () => {
               </>
             ) : (
               <>
-                <motion.span
-                  animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }}
-                  transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
-                  className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-300
+                <span
+                  className={`w-1.5 h-1.5 rounded-full flex-shrink-0
                     ${(activeTask.zh && activeTask.en)
                       ? 'bg-[#e5e7eb] shadow-[0_0_10px_rgba(156,163,175,0.65)]'
                       : (activeTask.zh || activeTask.en)
@@ -301,13 +299,13 @@ export const TaskList: React.FC = () => {
                 className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-600/20 text-rose-300 hover:bg-rose-600/40 border border-rose-500/15 active:translate-y-[1px] transition-colors cursor-pointer"
                 onClick={(e) => { e.stopPropagation(); deleteTask(activeTask.id); setPendingDeleteId(null); }}
               >
-                确认
+                删除任务
               </button>
               <button
                 className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/5 text-neutral-300 hover:bg-white/10 hover:text-neutral-100 border border-white/5 active:translate-y-[1px] transition-colors cursor-pointer"
                 onClick={(e) => { e.stopPropagation(); setPendingDeleteId(null); }}
               >
-                取消
+                保留任务
               </button>
             </div>
           ) : (
@@ -418,13 +416,13 @@ export const TaskList: React.FC = () => {
                       addLog("已应用 ASS 文件自带的字体参数", 'success');
                     }}
                   >
-                    应用
+                    采用此样式
                   </button>
                   <button
                     className="px-3 py-1.5 bg-white/5 text-neutral-400 border border-white/5 text-xs rounded-lg hover:bg-white/10 cursor-pointer"
                     onClick={() => setShowAssHint(false)}
                   >
-                    忽略
+                    保持当前
                   </button>
                 </div>
               </motion.div>
