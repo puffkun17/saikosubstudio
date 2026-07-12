@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
 import { decodeBuffer, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
-import { ArrowDown, CheckCircle2, FilePlus, FolderPlus } from 'lucide-react';
+import { CheckCircle2, FilePlus, FolderPlus } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { CLIENT_IMPORT_LIMITS, getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
 import { extractLocalArchiveSubtitles, LocalArchiveError } from '@/utils/localArchive';
@@ -59,8 +59,6 @@ const PHASE_COPY: Record<IngestPhase, string> = {
   needs_review: '需要手动确认片源',
   error: '部分内容需要处理',
 };
-
-const INGEST_STEPS = ['本地读取', '识别字幕轨', '建立工作台'];
 
 const FORMAT_MARKS = ['SRT', 'ASS', 'ZIP', 'RAR', '7Z'];
 
@@ -597,51 +595,44 @@ export const DragZone: React.FC = () => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <motion.button
-        type="button"
-        onClick={() => fileInputRef.current?.click()}
-        animate={isDragging
-          ? { scale: 0.988, boxShadow: 'inset 0 0 90px rgba(0,0,0,0.82), 0 20px 80px rgba(168,183,163,0.08)' }
-          : isZoneActive
-            ? { scale: 1.002, boxShadow: 'inset 0 0 54px rgba(0,0,0,0.42), 0 24px 72px rgba(0,0,0,0.32)' }
-            : { scale: 1, boxShadow: 'inset 0 0 42px rgba(0,0,0,0.46), 0 18px 60px rgba(0,0,0,0.22)' }
+      <motion.div
+        animate={shouldReduceMotion
+          ? { scale: 1, boxShadow: 'inset 0 0 42px rgba(0,0,0,0.46), 0 18px 60px rgba(0,0,0,0.22)' }
+          : isDragging
+            ? { scale: 0.988, boxShadow: 'inset 0 0 90px rgba(0,0,0,0.82), 0 20px 80px rgba(168,183,163,0.08)' }
+            : isZoneActive
+              ? { scale: 1.002, boxShadow: 'inset 0 0 54px rgba(0,0,0,0.42), 0 24px 72px rgba(0,0,0,0.32)' }
+              : { scale: 1, boxShadow: 'inset 0 0 42px rgba(0,0,0,0.46), 0 18px 60px rgba(0,0,0,0.22)' }
         }
-        transition={{ type: "spring", stiffness: 320, damping: 26 }}
-        className={`ingest-drop-stage relative z-10 mx-auto flex min-h-[300px] md:min-h-[340px] lg:min-h-[clamp(320px,40vh,390px)] w-full max-w-[1120px] cursor-pointer select-none flex-col items-center justify-center overflow-hidden rounded-[18px] bg-[#080807] px-5 md:px-8 text-left outline-none transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-[#b9ddd8]/35 ${isDragging ? 'border border-[#b9ddd8]/65' : 'border border-white/[0.12] focus-visible:border-[#b9ddd8]/60'}`}
-        aria-label="选择字幕文件或压缩包，也可将文件拖放到此区域"
+        transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 320, damping: 26 }}
+        className={`ingest-drop-stage relative z-10 mx-auto min-h-[340px] md:min-h-[380px] lg:min-h-[clamp(360px,44vh,430px)] w-full max-w-[1120px] select-none overflow-hidden rounded-[18px] bg-[#080807] transition-colors duration-300 ${isDragging ? 'border border-[#b9ddd8]/55' : 'border border-white/[0.08]'}`}
       >
         <div
           aria-hidden="true"
-          className={`pointer-events-none absolute inset-0 bg-[url('/Background.jpg')] bg-cover bg-center grayscale transition-all duration-700 ${isDragging ? 'scale-[1.035] opacity-[0.82] brightness-[0.72] contrast-125' : isZoneActive ? 'scale-[1.015] opacity-[0.74] brightness-[0.66] contrast-125' : 'opacity-[0.68] brightness-[0.58] contrast-125'}`}
+          className={`pointer-events-none absolute inset-0 bg-[url('/Background.jpg')] bg-cover bg-center grayscale transition-all duration-700 ${shouldReduceMotion
+            ? isDragging
+              ? 'opacity-[0.82] brightness-[0.72] contrast-125'
+              : 'opacity-[0.72] brightness-[0.63] contrast-125'
+            : isDragging
+              ? 'scale-[1.025] opacity-[0.82] brightness-[0.72] contrast-125'
+              : isZoneActive
+                ? 'scale-[1.008] opacity-[0.76] brightness-[0.67] contrast-125'
+                : 'opacity-[0.72] brightness-[0.63] contrast-125'}`}
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(3,3,4,0.86)_0%,rgba(3,3,4,0.76)_34%,rgba(3,3,4,0.28)_72%,rgba(3,3,4,0.12)_100%)]"
+          className={`pointer-events-none absolute inset-0 transition-colors duration-300 ${isDragging ? 'bg-[rgba(4,13,11,0.56)]' : 'bg-[radial-gradient(ellipse_at_center,rgba(3,3,4,0.82)_0%,rgba(3,3,4,0.68)_38%,rgba(3,3,4,0.18)_78%,rgba(3,3,4,0.08)_100%)]'}`}
         />
-        <div className="pointer-events-none absolute inset-4 rounded-[12px] border border-dashed border-white/[0.16] transition-colors duration-300 group-hover/outer:border-[#b9ddd8]/35" />
-        <div className="pointer-events-none absolute inset-x-6 top-6 flex items-center justify-between font-mono text-[10px] uppercase text-white/38 md:inset-x-8">
-          <span>Drop zone</span>
-          <span className="hidden sm:inline">Files stay on this device</span>
-        </div>
-
-        {(isDragging || isZoneActive) && !shouldReduceMotion && (
-          <motion.div
-            aria-hidden="true"
-            initial={{ top: '16%', opacity: 0 }}
-            animate={{ top: ['16%', '84%'], opacity: [0, 0.7, 0] }}
-            transition={{ duration: isDragging ? 1.15 : 1.8, repeat: Infinity, ease: 'easeInOut' }}
-            className="pointer-events-none absolute inset-x-8 z-10 h-px bg-gradient-to-r from-transparent via-[#b9ddd8]/80 to-transparent"
-          />
-        )}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/12 to-black/10" />
 
         {isDragging ? (
-          <div className="relative z-20 flex flex-col items-center gap-5 text-center">
+          <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-5 text-center">
             <motion.div
-              animate={shouldReduceMotion ? undefined : { y: [0, 7, 0] }}
-              transition={{ repeat: Infinity, duration: 1.25, ease: 'easeInOut' }}
-              className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#b9ddd8]/45 bg-[#07110f]/80 text-[#d7f2ed] shadow-[0_12px_36px_rgba(117,190,176,0.18)]"
+              animate={shouldReduceMotion ? undefined : { y: [0, 5, 0] }}
+              transition={{ repeat: Infinity, duration: 1.35, ease: 'easeInOut' }}
+              className="text-[#d7f2ed] drop-shadow-[0_8px_22px_rgba(117,190,176,0.24)]"
             >
-              <ArrowDown className="h-8 w-8 stroke-[2.25]" aria-hidden="true" />
+              <FilePlus className="h-12 w-12 stroke-[1.8]" aria-hidden="true" />
             </motion.div>
             <div>
               <span className="block text-3xl font-semibold tracking-tight text-neutral-50">松手，开始整理</span>
@@ -649,54 +640,42 @@ export const DragZone: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="ingest-drop-content relative z-20 flex max-w-[760px] flex-col items-center gap-6 text-center">
-            <motion.div
-              animate={isZoneActive && !shouldReduceMotion ? { y: [0, -3, 0] } : undefined}
-              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-              className="relative flex h-[72px] w-[72px] items-center justify-center rounded-2xl border border-white/[0.16] bg-black/45 text-white shadow-[0_18px_50px_rgba(0,0,0,0.34)] backdrop-blur-sm"
-            >
-              <FilePlus className="h-9 w-9 stroke-[2]" aria-hidden="true" />
-              <span className="absolute -bottom-2 rounded-full border border-[#b9ddd8]/30 bg-[#0b1715] px-2 py-0.5 font-mono text-[9px] uppercase text-[#b9ddd8]">Drop</span>
-            </motion.div>
-
-            <div className="flex flex-col items-center gap-2.5">
-              <h3 className="text-[2rem] font-semibold tracking-tight text-neutral-50 md:text-[2.55rem]">
-                把字幕拖到这里
-              </h3>
-              <p className="max-w-[580px] text-base leading-relaxed text-neutral-300 md:text-lg">
-                松手后自动读取字幕轨、压缩包与片源线索
-              </p>
-              <span className="text-sm text-neutral-500">也可以点击此区域选择文件</span>
+          <>
+            <div className="pointer-events-none absolute right-7 top-6 z-20 hidden items-center gap-3 font-mono text-[11px] text-white/42 sm:flex">
+              {FORMAT_MARKS.map(mark => <span key={mark}>{mark}</span>)}
             </div>
 
-            <div className="flex flex-col items-center gap-4">
-              <div className="flex items-center justify-center gap-4 font-mono text-sm text-neutral-400">
-                {FORMAT_MARKS.map((mark, index) => (
-                  <React.Fragment key={mark}>
-                    {index > 0 && <span className="text-white/14">/</span>}
-                    <span>{mark}</span>
-                  </React.Fragment>
-                ))}
+            <div className="absolute inset-x-0 bottom-0 z-20 flex flex-col gap-7 p-7 sm:p-9 md:flex-row md:items-end md:justify-between md:gap-10 md:p-11">
+              <div className="pointer-events-none max-w-[520px] text-left">
+                <FilePlus className="mb-4 h-8 w-8 stroke-[1.7] text-white/72" aria-hidden="true" />
+                <h3 className="text-[2rem] font-semibold leading-none tracking-tight text-white sm:text-[2.4rem] md:text-[3.4rem]">
+                  拖入字幕
+                </h3>
+                <p className="mt-3 text-sm text-white/58 md:text-base">松手即开始整理</p>
               </div>
-              <div className="h-px w-56 bg-gradient-to-r from-transparent via-[#b9ddd8]/45 to-transparent" />
-            </div>
-          </div>
-        )}
-      </motion.button>
 
-      <div className="ingest-feature-strip z-20 mt-5 w-full max-w-[760px] px-4">
-        <div className="flex items-center justify-center gap-3 text-sm text-neutral-500 md:gap-5">
-          {INGEST_STEPS.map((step, index) => (
-            <React.Fragment key={step}>
-              {index > 0 && <span className="h-px w-5 bg-white/12 md:w-10" aria-hidden="true" />}
-              <span className="inline-flex items-center gap-2 whitespace-nowrap">
-                <span className="font-mono text-[10px] text-[#b9ddd8]/65">0{index + 1}</span>
-                {step}
-              </span>
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
+              <div className="relative z-30 flex w-full gap-2 md:w-auto">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-semibold text-black outline-none transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-white/55 active:scale-[0.985] md:flex-none"
+                >
+                  <FilePlus className="h-5 w-5 stroke-[2.2]" aria-hidden="true" />
+                  选择文件
+                </button>
+                <button
+                  type="button"
+                  onClick={() => folderInputRef.current?.click()}
+                  className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-white/15 bg-black/35 px-5 text-sm font-medium text-white/82 outline-none backdrop-blur-sm transition-colors hover:border-white/28 hover:bg-black/50 hover:text-white focus-visible:ring-2 focus-visible:ring-white/45 active:scale-[0.985] md:flex-none"
+                >
+                  <FolderPlus className="h-5 w-5 stroke-[2.2]" aria-hidden="true" />
+                  文件夹
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </motion.div>
 
 	      {(preflightItems.length > 0 || trackSummaries.length > 0) && (
 	        <div className="mt-5 w-full max-w-[1120px] px-4 z-20">
@@ -735,36 +714,6 @@ export const DragZone: React.FC = () => {
 	          </div>
 	        </div>
 	      )}
-
-	      <div className="ingest-actions z-20 mt-8 grid w-full max-w-[720px] grid-cols-1 gap-3 px-4 sm:grid-cols-2">
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="group flex w-full items-center gap-4 rounded-xl px-6 py-4 text-left cursor-pointer transition-all duration-200
-            bg-neutral-100 hover:bg-white border border-white/[0.16]
-            text-black shadow-[0_12px_30px_rgba(0,0,0,0.28)] active:scale-[0.985]"
-	        >
-	          <FilePlus className="h-6 w-6 shrink-0 stroke-[2.25] text-black/75" aria-hidden="true" />
-          <span>
-            <span className="block text-base font-semibold">选择字幕文件</span>
-            <span className="mt-0.5 block text-xs font-normal text-black/55">SRT、ASS 或 ZIP / RAR / 7Z</span>
-          </span>
-	        </button>
-
-        <button
-          type="button"
-          onClick={() => folderInputRef.current?.click()}
-          className="group flex w-full items-center gap-4 rounded-xl px-6 py-4 text-left cursor-pointer transition-all duration-200
-            bg-white/[0.012] hover:bg-white/[0.04] border border-white/[0.055] hover:border-white/16
-            text-neutral-400 hover:text-neutral-100 shadow-[0_2px_8px_rgba(0,0,0,0.35)] active:scale-[0.985]"
-	        >
-	          <FolderPlus className="h-6 w-6 shrink-0 stroke-[2.25] text-neutral-300" aria-hidden="true" />
-	          <span>
-              <span className="block text-base font-semibold text-neutral-200">选择字幕文件夹</span>
-              <span className="mt-0.5 block text-xs font-normal text-neutral-500">读取文件夹及其子目录</span>
-            </span>
-	        </button>
-      </div>
 
       <input
         ref={fileInputRef}

@@ -163,24 +163,6 @@ body::before {
     min-height: 220px;
   }
 
-  .ingest-drop-content {
-    gap: 1rem;
-  }
-
-  .ingest-feature-strip,
-  .ingest-actions {
-    margin-top: 0.75rem;
-  }
-
-  .ingest-feature-strip > div {
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-  }
-
-  .ingest-actions button {
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-  }
 }
 
 /* Keyframe animations */
