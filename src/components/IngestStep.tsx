@@ -38,8 +38,8 @@ export const IngestStep: React.FC = () => {
 
       <div className="ingest-heading flex flex-col md:flex-row justify-between items-start md:items-center gap-5 mb-6 md:mb-8 z-20 flex-shrink-0">
         <div className="flex flex-col gap-2 text-left">
-          <h1 className="text-[clamp(2.35rem,7vw,6.25rem)] font-semibold tracking-tight text-white flex items-center flex-wrap gap-x-4 gap-y-2 font-sans leading-[0.98] break-words [overflow-wrap:anywhere]">
-            <span>SaikoSubStudio</span>
+          <h1 className="text-[clamp(2rem,7vw,6.25rem)] font-semibold tracking-tight text-white flex max-w-full items-center flex-wrap gap-x-4 gap-y-2 font-sans leading-[0.98] break-words [overflow-wrap:anywhere]">
+            <span className="max-w-full break-all sm:break-normal">SaikoSubStudio</span>
             <span className="text-xs text-[#e5e7eb] bg-[#9ca3af]/10 border border-[#9ca3af]/20 px-3 py-1 rounded-lg font-mono font-semibold shadow-[0_0_15px_rgba(156,163,175,0.08)]">
               v3.0.0
             </span>
