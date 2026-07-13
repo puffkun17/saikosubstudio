@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useStudioStore, TaskPair, Subfile } from '@/store/useStudioStore';
-import { CircleAlert, Play, Plus, RotateCcw, Search, X } from 'lucide-react';
+import { Check, CircleAlert, Paintbrush, Play, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { parseSrt, decodeBuffer, detectSubtitleLanguage, StyleSettings } from '@/utils/subtitleCore';
 import { motion } from 'framer-motion';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
@@ -10,6 +10,7 @@ import { CreditTool } from '@/components/Ingest/CreditTool';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { getSubtitleTermHint } from '@/utils/subtitleTerminology';
 import { getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
+import { AssStylePreview } from '@/components/Ingest/AssStylePreview';
 
 export const TaskList: React.FC = () => {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -32,6 +33,7 @@ export const TaskList: React.FC = () => {
     showAssHint,
     setShowAssHint,
     foundAssStyle,
+    customStyle,
     setCustomStyle,
     setActivePreset,
     addLog,
@@ -164,6 +166,9 @@ export const TaskList: React.FC = () => {
   const zhCount = getSubTitleCount(activeTask.zh);
   const enCount = getSubTitleCount(activeTask.en);
   const needsTitleInput = activeTask.title.includes('待补充片名');
+  const isFoundAssStyleApplied = Boolean(foundAssStyle && Object.entries(foundAssStyle).every(
+    ([key, value]) => customStyle[key as keyof StyleSettings] === value,
+  ));
   let diffBadge = null;
   if (activeTask.zh && activeTask.en) {
     const max = Math.max(zhCount, enCount);
@@ -309,11 +314,13 @@ export const TaskList: React.FC = () => {
             </div>
           ) : (
             <button
-              className="text-neutral-500 hover:text-rose-400 transition-colors flex-shrink-0 p-1.5 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/5 active:translate-y-[1px] cursor-pointer"
+              type="button"
+              className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-transparent px-2.5 py-1.5 text-neutral-500 transition-colors hover:border-white/[0.07] hover:bg-white/[0.04] hover:text-rose-300 active:translate-y-[1px] cursor-pointer"
               onClick={(e) => { e.stopPropagation(); setPendingDeleteId(activeTask.id); }}
-              title="删除任务"
+              aria-label="移除当前字幕任务"
             >
-              <X className="w-3.5 h-3.5" />
+              <Trash2 className="h-4 w-4" />
+              <span className="text-xs font-medium">移除</span>
             </button>
           )}
         </div>
@@ -427,35 +434,69 @@ export const TaskList: React.FC = () => {
           {/* Configuration & Process Dock */}
           <div className="pt-5 border-t border-white/[0.06] flex flex-col gap-4 overflow-visible mt-auto">
 
-            {/* ASS style extraction hint */}
-            {showAssHint && foundAssStyle && (
+            {/* Source ASS style preview and explicit adoption decision. */}
+            {foundAssStyle && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-[#9ca3af]/5 border border-[#9ca3af]/20 rounded-xl flex items-center justify-between gap-3 shadow-[0_4px_15px_rgba(0,0,0,0.3)]"
+                className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.018]"
               >
-                <div className="text-xs md:text-sm text-neutral-200">
-                  <span className="text-[#e5e7eb] font-bold">检测到字幕样式:</span>
-                  {' '}中文 {foundAssStyle.zhFontSize}像素 / 第二语言 {foundAssStyle.enFontSize}像素
-                </div>
-                <div className="flex gap-1.5">
-                  <button
-                    className="px-3 py-1.5 text-[#ffffff] text-xs font-bold rounded-lg border border-[#9ca3af]/20 bg-[#9ca3af]/10 hover:bg-[#9ca3af]/20 cursor-pointer"
-                    onClick={() => {
-                      setCustomStyle(foundAssStyle as StyleSettings);
-                      setActivePreset('custom');
-                      setShowAssHint(false);
-                      addLog("已应用 ASS 文件自带的字体参数", 'success');
-                    }}
-                  >
-                    采用此样式
-                  </button>
-                  <button
-                    className="px-3 py-1.5 bg-white/5 text-neutral-400 border border-white/5 text-xs rounded-lg hover:bg-white/10 cursor-pointer"
-                    onClick={() => setShowAssHint(false)}
-                  >
-                    保持当前
-                  </button>
+                <div className="grid gap-0 md:grid-cols-[minmax(220px,0.72fr)_minmax(0,1fr)]">
+                  <AssStylePreview style={foundAssStyle} className="min-h-36 rounded-none border-0 border-b border-white/[0.07] md:border-b-0 md:border-r" />
+                  <div className="flex min-w-0 flex-col justify-between gap-4 p-4 md:p-5">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Paintbrush className="h-4 w-4 text-[#9ddacb]" aria-hidden="true" />
+                        <h5 className="text-sm font-semibold text-neutral-100">文件内嵌样式</h5>
+                        {isFoundAssStyleApplied && !showAssHint && (
+                          <span className="inline-flex items-center gap-1 rounded-md border border-[#9ddacb]/20 bg-[#9ddacb]/[0.06] px-2 py-0.5 text-xs font-medium text-[#cfe9e3]">
+                            <Check className="h-3 w-3" />
+                            已用于导出
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1.5 text-xs leading-relaxed text-neutral-500">
+                        预览来自当前 ASS 文件。字体按当前设备可用版本近似呈现。
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-400">
+                        <span className="rounded-md border border-white/[0.07] bg-black/20 px-2 py-1">
+                          中文 {foundAssStyle.zhFontSize || '--'} px
+                        </span>
+                        <span className="rounded-md border border-white/[0.07] bg-black/20 px-2 py-1">
+                          第二语言 {foundAssStyle.enFontSize || '--'} px
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {(showAssHint || !isFoundAssStyleApplied) && (
+                        <button
+                          type="button"
+                          className="inline-flex h-9 items-center justify-center rounded-lg border border-[#9ddacb]/25 bg-[#9ddacb]/10 px-3 text-xs font-semibold text-[#d9efea] transition hover:bg-[#9ddacb]/16 active:translate-y-px"
+                          onClick={() => {
+                            setCustomStyle({ ...customStyle, ...foundAssStyle } as StyleSettings);
+                            setActivePreset('ass_native');
+                            setShowAssHint(false);
+                            addLog('已采用 ASS 文件内嵌样式', 'success');
+                          }}
+                        >
+                          使用源样式
+                        </button>
+                      )}
+                      {showAssHint && (
+                        <button
+                          type="button"
+                          className="inline-flex h-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 text-xs font-medium text-neutral-300 transition hover:bg-white/[0.06] hover:text-white active:translate-y-px"
+                          onClick={() => {
+                            setShowAssHint(false);
+                            addLog('已保留当前字幕样式', 'info');
+                          }}
+                        >
+                          保留当前样式
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}

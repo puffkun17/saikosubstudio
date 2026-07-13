@@ -1250,10 +1250,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         set({ 
           foundAssStyle: minedStyle, 
           showAssHint: true,
-          activePreset: 'ass_native',
-          customStyle: { ...get().customStyle, ...minedStyle } 
         });
-        get().addLog('已自动应用文件内嵌 ASS 样式', 'success');
+        get().addLog('检测到文件内嵌 ASS 样式，可预览后决定是否采用', 'info');
       } else {
         set({ foundAssStyle: null, showAssHint: false });
       }

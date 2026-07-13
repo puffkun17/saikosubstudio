@@ -5,6 +5,7 @@ import { useStudioStore, type TmdbSuggestion } from '@/store/useStudioStore';
 import { Search, Film, Star, Sparkles, X, CheckCircle2, CircleAlert, FileText, Languages } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseSrt } from '@/utils/subtitleCore';
+import { AssStylePreview } from '@/components/Ingest/AssStylePreview';
 
 const getRottenTomatoesScore = (title: string, voteAverage: number) => {
   if (!voteAverage || voteAverage === 0) return null;
@@ -263,20 +264,7 @@ export const TmdbPanel: React.FC = () => {
 
             {foundAssStyle && (
               <div className="overflow-hidden rounded-xl border border-white/[0.07] bg-[#050607]">
-                <div className="flex aspect-video flex-col items-center justify-end bg-[radial-gradient(circle_at_50%_35%,rgba(255,255,255,0.055),transparent_62%)] px-4 pb-5 text-center">
-                  <span
-                    className="max-w-full truncate text-base font-semibold drop-shadow-[0_1px_2px_#000]"
-                    style={{ color: foundAssStyle.zhColor || '#ffffff' }}
-                  >
-                    字幕样式预览
-                  </span>
-                  <span
-                    className="mt-1 max-w-full truncate text-xs drop-shadow-[0_1px_2px_#000]"
-                    style={{ color: foundAssStyle.enColor || '#e5e7eb' }}
-                  >
-                    Subtitle style preview
-                  </span>
-                </div>
+                <AssStylePreview style={foundAssStyle} compact className="rounded-none border-0" />
                 <div className="flex items-center justify-between border-t border-white/[0.06] px-3.5 py-2.5 text-xs text-neutral-500">
                   <span>检测到源样式</span>
                   <span className="font-mono tabular-nums">{foundAssStyle.zhFontSize || '--'} / {foundAssStyle.enFontSize || '--'} px</span>

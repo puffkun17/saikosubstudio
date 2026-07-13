@@ -121,10 +121,15 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
             <span className="text-white/38">{placeholder}</span>
           )}
         </span>
-        {countLabel != null && (
-          <span className="text-white/80 text-xs font-mono flex-shrink-0 font-semibold bg-[#0a0a0d] px-2 py-1 rounded-md border border-white/[0.06]">{countLabel}行</span>
-        )}
-        <ChevronDown className={`w-3.5 h-3.5 text-white/35 flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180 text-white/80' : ''}`} />
+        <span className="flex shrink-0 items-center gap-2 border-l border-white/[0.07] pl-2.5">
+          {countLabel != null && (
+            <span className="text-white/80 text-xs font-mono font-semibold bg-[#0a0a0d] px-2 py-1 rounded-md border border-white/[0.06]">{countLabel}行</span>
+          )}
+          <span className={`text-xs font-medium transition-colors ${open ? 'text-white' : 'text-neutral-400'}`}>
+            {selectedOption ? '更换' : '选择'}
+          </span>
+          <ChevronDown className={`h-4 w-4 text-white/45 transition-transform duration-200 ${open ? 'rotate-180 text-white/90' : ''}`} />
+        </span>
       </button>
 
       {/* Outset Layered Dropdown Board */}

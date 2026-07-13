@@ -27,7 +27,11 @@ export const CreditTool: React.FC = () => {
             {detectedAttributions.length > 0 ? `识别到 ${detectedAttributions.length} 条来源署名` : '未识别到来源署名'}
           </span>
         </div>
-        <ChevronDown className="h-4 w-4 shrink-0 text-neutral-500 transition-transform group-open:rotate-180" />
+        <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-neutral-400 transition-colors group-hover:text-neutral-200">
+          <span className="group-open:hidden">展开设置</span>
+          <span className="hidden group-open:inline">收起设置</span>
+          <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+        </span>
       </summary>
 
       <div className="mt-3 grid gap-4 border-t border-white/[0.05] pt-4 lg:grid-cols-[minmax(0,1fr)_minmax(240px,0.8fr)] lg:gap-6">
