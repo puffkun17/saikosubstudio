@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { useStudioStore, type TmdbSuggestion } from '@/store/useStudioStore';
-import { Search, SearchAlert, Film, Star, Sparkles, X, CheckCircle2, CircleAlert } from 'lucide-react';
+import { Search, Film, Star, Sparkles, X, CheckCircle2, CircleAlert, FileText, Languages } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { parseSrt } from '@/utils/subtitleCore';
 
 const getRottenTomatoesScore = (title: string, voteAverage: number) => {
   if (!voteAverage || voteAverage === 0) return null;
@@ -13,6 +14,18 @@ const getRottenTomatoesScore = (title: string, voteAverage: number) => {
   }
   const delta = (seed % 15) - 6; // deterministic score delta based on title
   return Math.max(30, Math.min(100, Math.round(voteAverage * 10 + delta)));
+};
+
+const countSubtitleCues = (text?: string) => {
+  if (!text) return 0;
+  try {
+    if (text.includes('[Events]') && text.includes('Dialogue:')) {
+      return text.split('\n').filter(line => line.trim().startsWith('Dialogue:')).length;
+    }
+    return parseSrt(text).length;
+  } catch {
+    return 0;
+  }
 };
 
 export const TmdbPanel: React.FC = () => {
@@ -28,7 +41,8 @@ export const TmdbPanel: React.FC = () => {
     selectTmdbSuggestion,
     isSearchingTmdb,
     tasks,
-    selectedTaskId
+    selectedTaskId,
+    foundAssStyle
   } = useStudioStore();
 
   const [pendingSuggestion, setPendingSuggestion] = useState<TmdbSuggestion | null>(null);
@@ -37,6 +51,14 @@ export const TmdbPanel: React.FC = () => {
   const activeTask = tasks.find((task) => task.id === selectedTaskId) || tasks[0];
   const needsTitleInput = Boolean(activeTask?.title.includes('待补充片名'));
   const shouldHighlightSearch = needsTitleInput && tmdbSuggestions.length === 0;
+  const summaryFile = activeTask?.zh || activeTask?.en;
+  const summaryCount = countSubtitleCues(summaryFile?.text);
+  const summaryFormat = !summaryFile ? '—' : summaryFile.name.toLowerCase().endsWith('.ass') ? 'ASS' : 'SRT';
+  const summaryLanguage = activeTask?.isBilingualSingle
+    ? '双语字幕'
+    : activeTask?.zh && activeTask?.en
+      ? '双轨字幕'
+      : '单轨字幕';
 
   const handleManualSearch = async (event?: React.FormEvent) => {
     event?.preventDefault();
@@ -108,9 +130,9 @@ export const TmdbPanel: React.FC = () => {
       <div className="flex justify-between items-center gap-4 pb-4 border-b border-white/[0.07] z-10">
         <div className="flex items-center gap-3.5">
           <h3 className="text-[22px] font-semibold text-neutral-100 tracking-tight font-sans">
-            片源信息
+            {tmdbData ? '片源信息' : '字幕概览'}
           </h3>
-          <a
+          {tmdbData && <a
             href="https://www.themoviedb.org/"
             target="_blank"
             rel="noopener noreferrer"
@@ -120,7 +142,7 @@ export const TmdbPanel: React.FC = () => {
             <span className="text-xs text-white/45 font-medium">Powered by</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/tmdb_logo_blue_square.svg" alt="TMDB Logo" className="h-full w-auto object-contain brightness-100 contrast-110 filter drop-shadow-[0_0_4px_rgba(59,130,246,0.6)]" />
-          </a>
+          </a>}
         </div>
         {(tmdbData || !needsTitleInput) && (
           <button
@@ -213,27 +235,62 @@ export const TmdbPanel: React.FC = () => {
               {tmdbData.overview || '暂无剧情简介...'}
             </div>
           </motion.div>
-        ) : needsTitleInput ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-neutral-500 gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-[#8ebcb5]/25 bg-[#8ebcb5]/[0.06] text-[#b9ddd8]">
-              <CircleAlert className="h-7 w-7" />
-            </div>
-            <p className="text-base font-semibold text-neutral-200">等待片名确认</p>
-            <p className="max-w-[28ch] text-sm leading-relaxed text-neutral-500">右侧补充片名后，这里会显示影片资料与封面。</p>
-          </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-neutral-600 gap-4">
-              <div className="relative p-4 rounded-xl bg-white/[0.012] border border-white/[0.06] shadow-[0_0_25px_rgba(0,0,0,0.08)] group-hover:border-[#9ca3af]/10 transition-colors">
-              <SearchAlert className="w-10 h-10 opacity-35 text-[#e5e7eb]" />
+          <div className="flex flex-1 flex-col gap-4 text-left">
+            <div className="rounded-xl border border-white/[0.07] bg-black/20 p-4">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <FileText className="h-5 w-5 shrink-0 text-neutral-400" aria-hidden="true" />
+                <span className="truncate text-sm font-medium text-neutral-200" title={summaryFile?.name}>
+                  {summaryFile?.name || '等待字幕轨'}
+                </span>
+              </div>
+
+              <div className="mt-4 grid grid-cols-3 divide-x divide-white/[0.06] border-t border-white/[0.06] pt-4">
+                <div>
+                  <span className="block text-xs text-neutral-600">格式</span>
+                  <strong className="mt-1 block text-sm font-semibold text-neutral-300">{summaryFormat}</strong>
+                </div>
+                <div className="pl-3">
+                  <span className="block text-xs text-neutral-600">结构</span>
+                  <strong className="mt-1 block text-sm font-semibold text-neutral-300">{summaryLanguage}</strong>
+                </div>
+                <div className="pl-3">
+                  <span className="block text-xs text-neutral-600">字幕行</span>
+                  <strong className="mt-1 block text-sm font-semibold tabular-nums text-neutral-300">{summaryCount}</strong>
+                </div>
+              </div>
             </div>
-            <p className="text-base text-neutral-300 max-w-[28ch] leading-[1.65]">
-              暂未匹配影视元数据<br/>
-              <span className="text-sm text-neutral-400 mt-1 block">关联字幕文件后将自动查找片源信息</span>
-            </p>
-            <div className="opacity-30 hover:opacity-75 transition-opacity duration-300 mt-4 flex flex-col items-center gap-1.5">
-              <span className="text-xs font-semibold text-neutral-300">数据支持</span>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/tmdb_logo_blue_square.svg" alt="TMDB Logo" className="h-6 w-auto object-contain brightness-90 contrast-110" />
+
+            {foundAssStyle && (
+              <div className="overflow-hidden rounded-xl border border-white/[0.07] bg-[#050607]">
+                <div className="flex aspect-video flex-col items-center justify-end bg-[radial-gradient(circle_at_50%_35%,rgba(255,255,255,0.055),transparent_62%)] px-4 pb-5 text-center">
+                  <span
+                    className="max-w-full truncate text-base font-semibold drop-shadow-[0_1px_2px_#000]"
+                    style={{ color: foundAssStyle.zhColor || '#ffffff' }}
+                  >
+                    字幕样式预览
+                  </span>
+                  <span
+                    className="mt-1 max-w-full truncate text-xs drop-shadow-[0_1px_2px_#000]"
+                    style={{ color: foundAssStyle.enColor || '#e5e7eb' }}
+                  >
+                    Subtitle style preview
+                  </span>
+                </div>
+                <div className="flex items-center justify-between border-t border-white/[0.06] px-3.5 py-2.5 text-xs text-neutral-500">
+                  <span>检测到源样式</span>
+                  <span className="font-mono tabular-nums">{foundAssStyle.zhFontSize || '--'} / {foundAssStyle.enFontSize || '--'} px</span>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-auto flex items-start gap-2 border-t border-white/[0.06] pt-4 text-xs leading-relaxed text-neutral-500">
+              {needsTitleInput ? (
+                <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#b9ddd8]/70" aria-hidden="true" />
+              ) : (
+                <Languages className="mt-0.5 h-4 w-4 shrink-0 text-neutral-600" aria-hidden="true" />
+              )}
+              <span>{needsTitleInput ? '确认片名后，这里将切换为片源资料。' : '片源资料尚未关联，当前显示字幕本身的信息。'}</span>
             </div>
           </div>
         )}

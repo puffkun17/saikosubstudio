@@ -254,22 +254,21 @@ export const TaskList: React.FC = () => {
       <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-white/[0.03] relative min-h-0 overflow-x-visible">
 
         {/* Banner/Title Card */}
-        <div className={`p-4 rounded-xl flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center relative flex-shrink-0 border transition-colors ${needsTitleInput ? 'action-required-surface' : 'bg-white/[0.018] border-white/[0.07]'}`}>
+        <div className={`rounded-xl flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center relative flex-shrink-0 border transition-colors ${needsTitleInput ? 'border-white/[0.09] border-l-[#b9ddd8]/55 border-l-2 bg-[#b9ddd8]/[0.035] px-4 py-3' : 'bg-white/[0.018] border-white/[0.07] p-4'}`}>
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             {needsTitleInput ? (
               <>
-                <span className="action-required-marker flex h-2.5 w-2.5 shrink-0 rounded-full" aria-hidden="true" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <CircleAlert className="h-4 w-4 shrink-0 text-[#b9ddd8]" aria-hidden="true" />
-                    <span className="text-sm font-semibold text-white">需要补充片名</span>
+                    <span className="text-sm font-semibold text-white">片名待确认</span>
                     {activeTask.epKey && <span className="text-xs font-mono text-[#c6e2de]">{activeTask.epKey}</span>}
                   </div>
-                  <p className="mt-0.5 text-xs leading-relaxed text-[#b9d8d3]">文件名只含技术参数，确认片名后即可关联片源资料。</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-neutral-500">确认后可关联片源资料并完善输出名称。</p>
                 </div>
                 <button
                   type="button"
-                  className="action-required-button ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition active:translate-y-[1px]"
+                  className="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#b9ddd8] px-3 py-2 text-sm font-semibold text-[#0a1715] transition hover:bg-[#cce9e4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b9ddd8]/70 active:translate-y-[1px]"
                   onClick={() => setTmdbManualOpen(true)}
                 >
                   <Search className="h-4 w-4" />
@@ -319,6 +318,40 @@ export const TaskList: React.FC = () => {
           )}
         </div>
 
+        {/* Output identity belongs to import decisions, before preview. */}
+        <div className="rounded-xl border border-white/[0.07] bg-white/[0.012] px-4 py-3.5 flex-shrink-0">
+          <div className="flex flex-col gap-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-sm text-neutral-200 font-semibold select-none inline-flex items-center gap-1.5">
+                输出名称
+                <InfoHint label="字幕输出文件名称说明">
+                  导出文件名可来自片源信息、文件名自动提取、历史存档或手动输入。弱命名文件不会强行生成片名。
+                </InfoHint>
+              </label>
+              <span className="shrink-0 rounded-md border border-white/[0.08] bg-white/[0.025] px-2 py-0.5 text-xs font-medium text-neutral-400">
+                {getFilenameSourceLabel()}
+              </span>
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                className="w-full h-11 bg-[#020204] border border-white/[0.09] focus:border-[#9ca3af]/45 focus:bg-white/[0.025] rounded-lg px-3.5 text-white text-sm outline-none transition-all placeholder:text-white/35 font-mono shadow-[inset_0_2px_4px_rgba(0,0,0,0.85)]"
+                value={customFilename}
+                onChange={e => setCustomFilename(e.target.value, 'manual')}
+                onFocus={() => setIsFilenameFocused(true)}
+                onBlur={() => setIsFilenameFocused(false)}
+                placeholder="等待命名"
+              />
+              {customFilename.length > 42 && !isFilenameFocused && (
+                <div className="pointer-events-none absolute inset-y-px left-px right-px rounded-lg bg-[#020204] flex items-center px-3.5 text-sm font-mono text-white overflow-hidden">
+                  {renderMarqueeText(customFilename, 'w-full')}
+                </div>
+              )}
+            </div>
+          </div>
+          <CreditTool />
+        </div>
+
         {/* Unified vertical workspace layout */}
         <div className="flex flex-col gap-3.5 flex-1 min-h-0 overflow-visible">
 
@@ -331,6 +364,11 @@ export const TaskList: React.FC = () => {
               <InfoHint label="字幕文件匹配说明">
                 选择要进入处理流程的字幕轨。单个已含双语内容的文件会作为双语字幕处理；分开的中文字幕与第二语言字幕会按时间轴合并。
               </InfoHint>
+              {activeTask.isBilingualSingle && (
+                <span className="rounded-md border border-white/[0.08] bg-white/[0.025] px-2 py-0.5 text-xs font-medium text-neutral-400">
+                  双语 · {zhCount} 行
+                </span>
+              )}
             </div>
             <div className="flex flex-col gap-3 bg-black/20 p-4 rounded-lg overflow-visible relative">
               {/* Chinese binding */}
@@ -382,13 +420,7 @@ export const TaskList: React.FC = () => {
                     />
                   </div>
                 </>
-              ) : (
-                <div className="flex items-center justify-center py-3.5 px-3 bg-[#9ca3af]/[0.025] border border-[#9ca3af]/12 rounded-xl mt-1">
-                  <span className="text-sm text-[#e5e7eb] font-semibold">
-                    已识别为双语字幕，可直接进入预览
-                  </span>
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -428,39 +460,7 @@ export const TaskList: React.FC = () => {
               </motion.div>
             )}
 
-            <div className="flex flex-col lg:flex-row lg:items-end gap-3.5">
-
-              {/* Output name */}
-              <div className="flex-1 flex flex-col gap-1.5 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <label className="text-sm text-neutral-200 font-semibold select-none inline-flex items-center gap-1.5">
-                    字幕输出文件名称
-                    <InfoHint label="字幕输出文件名称说明">
-                      导出文件名可来自片源信息、文件名自动提取、历史存档或手动输入。弱命名文件不会强行生成片名。
-                    </InfoHint>
-                  </label>
-                  <span className="shrink-0 rounded-md border border-[#9ca3af]/18 bg-[#9ca3af]/8 px-2 py-0.5 text-xs font-bold text-[#e5e7eb]">
-                    {getFilenameSourceLabel()}
-                  </span>
-                </div>
-                <div className="relative">
-                  <input
-                    type="text"
-                    className="w-full h-12 bg-[#020204] border border-white/[0.09] focus:border-[#9ca3af]/45 focus:bg-white/[0.025] rounded-xl px-4 text-white text-base outline-none transition-all placeholder:text-white/35 font-mono shadow-[inset_0_2px_4px_rgba(0,0,0,0.85)]"
-                    value={customFilename}
-                    onChange={e => setCustomFilename(e.target.value, 'manual')}
-                    onFocus={() => setIsFilenameFocused(true)}
-                    onBlur={() => setIsFilenameFocused(false)}
-                    placeholder="自动命名..."
-                  />
-                  {customFilename.length > 42 && !isFilenameFocused && (
-                    <div className="pointer-events-none absolute inset-y-px left-px right-px rounded-xl bg-[#020204] flex items-center px-4 text-base font-mono text-white overflow-hidden">
-                      {renderMarqueeText(customFilename, 'w-full')}
-                    </div>
-                  )}
-                </div>
-              </div>
-
+            <div className="flex flex-col justify-end gap-3.5 lg:flex-row lg:items-end">
               {/* Alignment Mode Selection */}
               {!activeTask.isBilingualSingle && (
                 <div className="flex flex-col gap-1.5 w-full lg:w-60 shrink-0">
@@ -524,8 +524,6 @@ export const TaskList: React.FC = () => {
               </div>
 
             </div>
-
-            <CreditTool />
           </div>
 
         </div>
