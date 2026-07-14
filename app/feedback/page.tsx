@@ -64,10 +64,10 @@ export default function FeedbackPage() {
   };
 
   return (
-    <main className="flex-1 overflow-y-auto bg-[#050507] px-5 py-8 md:px-10 md:py-12">
+    <main className="flex-1 overflow-y-auto bg-[var(--v4-canvas)] px-5 py-8 md:px-10 md:py-12">
       <div className="mx-auto w-full max-w-2xl pb-12 pt-3">
         <header className="mt-3">
-          <div className="flex items-center gap-3 text-[#b9ddd8]">
+          <div className="flex items-center gap-3 text-[#9aaad3]">
             <MessageSquareText className="h-7 w-7 stroke-[2.25]" aria-hidden="true" />
             <span className="text-xs font-semibold tracking-[0.12em]">SAIKOSUBSTUDIO / FEEDBACK</span>
           </div>
@@ -91,11 +91,11 @@ export default function FeedbackPage() {
                     onClick={() => { setCategory(item.id); setState('idle'); setError(''); }}
                     className={`flex min-h-28 flex-col items-start gap-3 rounded-xl border px-4 py-4 text-left transition-colors cursor-pointer
                       ${selected
-                        ? 'border-[#b9ddd8]/50 bg-[#b9ddd8]/[0.09] text-white'
+                        ? 'border-[#9aaad3]/50 bg-[#9aaad3]/[0.09] text-white'
                         : 'border-white/[0.08] bg-white/[0.018] text-white/70 hover:border-white/[0.18] hover:bg-white/[0.035]'}`}
                     aria-pressed={selected}
                   >
-                    <Icon className={`h-5 w-5 stroke-[2.25] ${selected ? 'text-[#b9ddd8]' : 'text-white/58'}`} aria-hidden="true" />
+                    <Icon className={`h-5 w-5 stroke-[2.25] ${selected ? 'text-[#9aaad3]' : 'text-white/58'}`} aria-hidden="true" />
                     <span>
                       <span className="block text-sm font-semibold">{item.label}</span>
                       <span className="mt-1 block text-xs leading-5 text-white/48">{item.description}</span>
@@ -121,7 +121,7 @@ export default function FeedbackPage() {
               required
               rows={9}
               placeholder="请描述遇到的情况，或希望改进的方向。"
-              className="mt-3 w-full resize-y rounded-xl border border-white/[0.1] bg-[#090a0c] px-4 py-3.5 text-base leading-7 text-white outline-none transition-colors placeholder:text-white/32 focus:border-[#b9ddd8]/55 focus:bg-[#b9ddd8]/[0.025]"
+              className="mt-3 w-full resize-y rounded-xl border border-white/[0.1] bg-[#090a0c] px-4 py-3.5 text-base leading-7 text-white outline-none transition-colors placeholder:text-white/32 focus:border-[#9aaad3]/55 focus:bg-[#9aaad3]/[0.025]"
             />
             <p className="mt-2 text-sm text-white/42">{message.length} / 3000</p>
           </div>
@@ -129,7 +129,7 @@ export default function FeedbackPage() {
           {showSupportPrompt && (
             <div
               ref={supportPromptRef}
-              className="flex flex-col gap-4 rounded-xl border border-[#b9ddd8]/20 bg-[#b9ddd8]/[0.055] px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-4 rounded-xl border border-[#9aaad3]/20 bg-[#9aaad3]/[0.055] px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
               role="status"
             >
               <div>
@@ -140,7 +140,7 @@ export default function FeedbackPage() {
                 type="button"
                 onClick={registerSupport}
                 disabled={hasLiked}
-                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#b9ddd8]/35 bg-[#b9ddd8]/[0.09] px-4 text-sm font-semibold text-[#c9ebe5] transition-colors hover:bg-[#b9ddd8]/[0.16] disabled:cursor-default disabled:border-white/[0.12] disabled:bg-white/[0.04] disabled:text-white/58"
+                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#9aaad3]/35 bg-[#9aaad3]/[0.09] px-4 text-sm font-semibold text-[#c8d1e5] transition-colors hover:bg-[#9aaad3]/[0.16] disabled:cursor-default disabled:border-white/[0.12] disabled:bg-white/[0.04] disabled:text-white/58"
               >
                 <ThumbsUp className="h-5 w-5 stroke-[2.25]" aria-hidden="true" />
                 {hasLiked ? '已点赞支持' : '点赞支持'}
@@ -152,7 +152,7 @@ export default function FeedbackPage() {
             <button
               type="submit"
               disabled={state === 'sending' || message.trim().length === 0}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#b9ddd8] px-5 text-base font-semibold text-[#08201d] transition-colors hover:bg-[#d3eee8] disabled:cursor-not-allowed disabled:opacity-45"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#9aaad3] px-5 text-base font-semibold text-[#08201d] transition-colors hover:bg-[#d2d9e9] disabled:cursor-not-allowed disabled:opacity-45"
             >
               {state === 'sending'
                 ? <LoaderCircle className="h-5 w-5 animate-spin stroke-[2.25]" aria-hidden="true" />
@@ -161,7 +161,7 @@ export default function FeedbackPage() {
             </button>
 
             {state === 'sent' && (
-              <p className="inline-flex items-center gap-2 text-sm font-medium text-[#b9ddd8]" role="status">
+              <p className="inline-flex items-center gap-2 text-sm font-medium text-[#9aaad3]" role="status">
                 <CheckCircle2 className="h-5 w-5 stroke-[2.25]" aria-hidden="true" />
                 反馈已送达，感谢参与。
               </p>

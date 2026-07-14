@@ -2,9 +2,9 @@
 
 import React, { useRef, useState } from 'react';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
-import { decodeBuffer, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
+import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
-import { CheckCircle2, FilePlus, FolderPlus } from 'lucide-react';
+import { Archive, ArrowRight, FilePlus, FileText, FolderPlus, HardDrive, Trash2, X } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { CLIENT_IMPORT_LIMITS, getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
 import { extractLocalArchiveSubtitles, LocalArchiveError } from '@/utils/localArchive';
@@ -62,6 +62,20 @@ const PHASE_COPY: Record<IngestPhase, string> = {
 
 const FORMAT_MARKS = ['SRT', 'ASS', 'ZIP', 'RAR', '7Z'];
 
+const formatBytes = (bytes: number) => {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB'];
+  let value = bytes / 1024;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value >= 100 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
+};
+
+const getQueueKey = (file: File) => `${file.name}:${file.size}:${file.lastModified}`;
+
 const getExtension = (name: string) => {
   const idx = name.lastIndexOf('.');
   return idx >= 0 ? name.slice(idx + 1).toLowerCase() : '';
@@ -69,6 +83,20 @@ const getExtension = (name: string) => {
 
 const isSubtitleExtension = (ext: string) => ext === 'srt' || ext === 'ass';
 const isMultipartArchiveName = (name: string) => /\.part\d+\.rar$|\.r\d{2}$|\.7z\.\d+$/i.test(name);
+
+const PREFLIGHT_LANGUAGE_LABELS = {
+  'zh-CN': '简中',
+  'zh-TW': '繁中',
+  en: '英语',
+  ja: '日语',
+  ko: '韩语',
+  fr: '法语',
+  es: '西语',
+  latin: '拉丁文字',
+  bilingual: '双语',
+  commentary: '导评',
+  unknown: '语言待识别',
+} as const;
 
 const createPreflightItem = (file: File): PreflightItem => {
   const extension = getExtension(file.name);
@@ -85,6 +113,7 @@ const createPreflightItem = (file: File): PreflightItem => {
     };
   }
   if (isSubtitleExtension(extension)) {
+    const language = detectLanguageByFilename(file.name);
     return {
       file,
       name: file.name,
@@ -92,7 +121,7 @@ const createPreflightItem = (file: File): PreflightItem => {
       kind: 'subtitle',
       label: extension.toUpperCase(),
       accepted: true,
-      note: extension === 'ass' ? '样式字幕轨' : '标准字幕轨',
+      note: `${PREFLIGHT_LANGUAGE_LABELS[language]} · ${extension === 'ass' ? '样式字幕轨' : '标准字幕轨'}`,
     };
   }
   if (extension === 'zip') {
@@ -165,8 +194,8 @@ export const DragZone: React.FC = () => {
   const [ingestPhase, setIngestPhase] = useState<IngestPhase>('idle');
   const [ingestMessage, setIngestMessage] = useState(PHASE_COPY.idle);
   const [resultChips, setResultChips] = useState<string[]>([]);
-  const [preflightItems, setPreflightItems] = useState<PreflightItem[]>([]);
-  const [trackSummaries, setTrackSummaries] = useState<TrackSummary[]>([]);
+  const [queuedItems, setQueuedItems] = useState<PreflightItem[]>([]);
+  const [queueIssue, setQueueIssue] = useState<string | null>(null);
 
   const setPhase = (phase: IngestPhase, message = PHASE_COPY[phase]) => {
     setIngestPhase(phase);
@@ -174,6 +203,40 @@ export const DragZone: React.FC = () => {
   };
 
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const addFilesToQueue = (filesList: File[]) => {
+    if (filesList.length === 0) return;
+    const existingKeys = new Set(queuedItems.map(item => getQueueKey(item.file)));
+    const seenKeys = new Set(existingKeys);
+    const additions = filesList
+      .filter(file => {
+        const key = getQueueKey(file);
+        if (seenKeys.has(key)) return false;
+        seenKeys.add(key);
+        return true;
+      })
+      .map(createPreflightItem);
+    const nextItems = [...queuedItems, ...additions];
+    const batchIssue = getClientBatchIssue(nextItems.map(item => item.file));
+
+    if (batchIssue) {
+      setQueueIssue(batchIssue);
+      addLog(batchIssue, 'error');
+      return;
+    }
+
+    setQueueIssue(null);
+    setQueuedItems(nextItems);
+    if (additions.length < filesList.length) {
+      addLog(`已忽略 ${filesList.length - additions.length} 个重复文件`, 'info');
+    }
+  };
+
+  const removeQueuedFile = (file: File) => {
+    const key = getQueueKey(file);
+    setQueuedItems(items => items.filter(item => getQueueKey(item.file) !== key));
+    setQueueIssue(null);
+  };
 
   const readAndDecodeFile = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -315,8 +378,6 @@ export const DragZone: React.FC = () => {
     }
 
     const preflight = filesList.map(createPreflightItem);
-    setPreflightItems(preflight);
-    setTrackSummaries([]);
     setResultChips([]);
 
     const validItems = preflight.filter(item => item.accepted);
@@ -397,8 +458,6 @@ export const DragZone: React.FC = () => {
         }
       }
     }
-
-    setTrackSummaries(summaries);
 
     if (detectedFiles.length > 0) {
       setParsingFiles(preflight.map(item => ({
@@ -503,7 +562,7 @@ export const DragZone: React.FC = () => {
     }
 
     if (filesArray.length > 0) {
-      await handleFilesProcess(filesArray);
+      addFilesToQueue(filesArray);
     }
   };
 
@@ -585,9 +644,15 @@ export const DragZone: React.FC = () => {
     );
   }
 
+  const acceptedItems = queuedItems.filter(item => item.accepted);
+  const rejectedItems = queuedItems.filter(item => !item.accepted);
+  const subtitleCount = queuedItems.filter(item => item.kind === 'subtitle').length;
+  const archiveCount = queuedItems.filter(item => item.kind === 'zip' || item.kind === 'archive').length;
+  const totalBytes = queuedItems.reduce((sum, item) => sum + item.file.size, 0);
+
   return (
     <div
-      className="ingest-drop-zone w-full flex flex-col items-center group/outer py-2 md:py-4"
+      className="ingest-drop-zone group/outer flex w-full flex-col items-center py-2 md:py-4"
       onMouseEnter={() => setIsZoneActive(true)}
       onMouseLeave={() => setIsZoneActive(false)}
       onDragOver={handleDragOver}
@@ -605,115 +670,110 @@ export const DragZone: React.FC = () => {
               : { scale: 1, boxShadow: 'inset 0 0 42px rgba(0,0,0,0.46), 0 18px 60px rgba(0,0,0,0.22)' }
         }
         transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 320, damping: 26 }}
-        className={`ingest-drop-stage relative z-10 mx-auto min-h-[340px] md:min-h-[380px] lg:min-h-[clamp(360px,44vh,430px)] w-full max-w-[1120px] select-none overflow-hidden rounded-[18px] bg-[#080807] transition-colors duration-300 ${isDragging ? 'border border-[#b9ddd8]/55' : 'border border-white/[0.08]'}`}
+        className={`ingest-drop-stage v4-panel relative z-10 mx-auto min-h-[360px] w-full max-w-[1180px] select-none overflow-hidden rounded-lg transition-colors duration-300 md:min-h-[400px] ${isDragging ? 'border-[var(--v4-accent)]' : ''}`}
       >
-        <div
-          aria-hidden="true"
-          className={`pointer-events-none absolute inset-0 bg-[url('/Background.jpg')] bg-cover bg-center grayscale transition-all duration-700 ${shouldReduceMotion
-            ? isDragging
-              ? 'opacity-[0.82] brightness-[0.72] contrast-125'
-              : 'opacity-[0.72] brightness-[0.63] contrast-125'
-            : isDragging
-              ? 'scale-[1.025] opacity-[0.82] brightness-[0.72] contrast-125'
-              : isZoneActive
-                ? 'scale-[1.008] opacity-[0.76] brightness-[0.67] contrast-125'
-                : 'opacity-[0.72] brightness-[0.63] contrast-125'}`}
-        />
-        <div
-          aria-hidden="true"
-          className={`pointer-events-none absolute inset-0 transition-colors duration-300 ${isDragging ? 'bg-[rgba(4,13,11,0.56)]' : 'bg-[radial-gradient(ellipse_at_center,rgba(3,3,4,0.82)_0%,rgba(3,3,4,0.68)_38%,rgba(3,3,4,0.18)_78%,rgba(3,3,4,0.08)_100%)]'}`}
-        />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/12 to-black/10" />
-
         {isDragging ? (
-          <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-5 text-center">
+          <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center gap-5 bg-[color:rgba(11,15,24,0.96)] text-center">
             <motion.div
               animate={shouldReduceMotion ? undefined : { y: [0, 5, 0] }}
               transition={{ repeat: Infinity, duration: 1.35, ease: 'easeInOut' }}
-              className="text-[#d7f2ed] drop-shadow-[0_8px_22px_rgba(117,190,176,0.24)]"
+              className="text-[var(--v4-accent-strong)]"
             >
-              <FilePlus className="h-12 w-12 stroke-[1.8]" aria-hidden="true" />
+              <FilePlus className="h-12 w-12 stroke-[2]" aria-hidden="true" />
             </motion.div>
             <div>
-              <span className="block text-3xl font-semibold tracking-tight text-neutral-50">松手，开始整理</span>
-              <span className="mt-2 block text-sm text-[#c7e7e1]/72">已准备接收字幕文件</span>
+              <span className="block text-3xl font-semibold tracking-tight text-neutral-50">松手，加入导入清单</span>
+              <span className="mt-2 block text-sm text-[var(--v4-text-muted)]">确认清单后才会读取与整理</span>
+            </div>
+          </div>
+        ) : queuedItems.length === 0 ? (
+          <div className="grid min-h-[398px] md:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)]">
+            <div className="relative min-h-[260px] overflow-hidden border-b border-[var(--v4-line)] md:border-b-0 md:border-r">
+              <div aria-hidden="true" className="absolute inset-0 bg-[url('/Background.jpg')] bg-cover bg-[center_58%] opacity-35 grayscale contrast-125" />
+              <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,rgba(12,15,21,0.38),rgba(12,15,21,0.88))]" />
+              <div className="absolute inset-x-0 bottom-0 z-10 p-7 text-left md:p-9">
+                <span className="v4-kicker">Import desk</span>
+                <h3 className="mt-3 text-[2rem] font-semibold leading-none tracking-tight text-white sm:text-[2.5rem]">规划本次导入</h3>
+                <p className="mt-3 max-w-md text-sm leading-6 text-[var(--v4-text-muted)]">字幕文件、字幕包与文件夹可先加入清单，确认组合后再开始读取。</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col justify-between p-7 text-left md:p-9">
+              <div>
+                <div className="flex items-start justify-between gap-5">
+                  <div>
+                    <FilePlus className="h-8 w-8 stroke-[2] text-[var(--v4-accent-strong)]" aria-hidden="true" />
+                    <h4 className="mt-5 text-2xl font-semibold tracking-tight text-[var(--v4-text)]">拖入字幕，建立清单</h4>
+                    <p className="mt-2 text-sm leading-6 text-[var(--v4-text-muted)]">松手后仍可继续补充或移除，不会立即进入处理流程。</p>
+                  </div>
+                  <div className="hidden items-center gap-2 font-mono text-[11px] text-[var(--v4-text-faint)] sm:flex">
+                    {FORMAT_MARKS.map(mark => <span key={mark}>{mark}</span>)}
+                  </div>
+                </div>
+                <div className="mt-8 grid gap-2 sm:grid-cols-2">
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="v4-focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[var(--v4-accent)] px-5 text-sm font-semibold text-[#0b0f18] transition-colors hover:bg-[var(--v4-accent-strong)] active:scale-[0.985]">
+                    <FilePlus className="h-5 w-5 stroke-[2.2]" aria-hidden="true" />
+                    选择文件或字幕包
+                  </button>
+                  <button type="button" onClick={() => folderInputRef.current?.click()} className="v4-focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-muted)] px-5 text-sm font-medium text-[var(--v4-text)] transition-colors hover:bg-[var(--v4-panel-raised)] active:scale-[0.985]">
+                    <FolderPlus className="h-5 w-5 stroke-[2.2]" aria-hidden="true" />
+                    选择文件夹
+                  </button>
+                </div>
+              </div>
+              <div className="mt-8 flex items-center gap-2 border-t border-[var(--v4-line)] pt-5 text-xs text-[var(--v4-text-faint)]">
+                <HardDrive className="h-4 w-4" aria-hidden="true" />
+                文件仅在当前设备读取，不会上传至本站服务器
+              </div>
             </div>
           </div>
         ) : (
-          <>
-            <div className="pointer-events-none absolute right-7 top-6 z-20 hidden items-center gap-3 font-mono text-[11px] text-white/42 sm:flex">
-              {FORMAT_MARKS.map(mark => <span key={mark}>{mark}</span>)}
-            </div>
-
-            <div className="absolute inset-x-0 bottom-0 z-20 flex flex-col gap-7 p-7 sm:p-9 md:flex-row md:items-end md:justify-between md:gap-10 md:p-11">
-              <div className="pointer-events-none max-w-[520px] text-left">
-                <FilePlus className="mb-4 h-8 w-8 stroke-[1.7] text-white/72" aria-hidden="true" />
-                <h3 className="text-[2rem] font-semibold leading-none tracking-tight text-white sm:text-[2.4rem] md:text-[3.4rem]">
-                  拖入字幕
-                </h3>
-                <p className="mt-3 text-sm text-white/58 md:text-base">松手即开始整理</p>
+          <div className="grid min-h-[398px] md:grid-cols-[minmax(250px,0.35fr)_minmax(0,0.65fr)]">
+            <aside className="flex flex-col justify-between border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-6 text-left md:border-b-0 md:border-r md:p-7">
+              <div>
+                <span className="v4-kicker">Import plan</span>
+                <h3 className="mt-3 text-2xl font-semibold tracking-tight">本次导入</h3>
+                <p className="mt-2 text-sm leading-6 text-[var(--v4-text-muted)]">先确认文件组合，再统一识别轨道与片源线索。</p>
+                <dl className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-md border border-[var(--v4-line)] bg-[var(--v4-line)]">
+                  <div className="bg-[var(--v4-panel)] p-3"><dt className="text-xs text-[var(--v4-text-faint)]">字幕文件</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{subtitleCount}</dd></div>
+                  <div className="bg-[var(--v4-panel)] p-3"><dt className="text-xs text-[var(--v4-text-faint)]">字幕包</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{archiveCount}</dd></div>
+                  <div className="bg-[var(--v4-panel)] p-3"><dt className="text-xs text-[var(--v4-text-faint)]">可处理</dt><dd className="mt-1 text-xl font-semibold tabular-nums text-[var(--v4-accent-strong)]">{acceptedItems.length}</dd></div>
+                  <div className="bg-[var(--v4-panel)] p-3"><dt className="text-xs text-[var(--v4-text-faint)]">总体积</dt><dd className="mt-1 text-base font-semibold tabular-nums">{formatBytes(totalBytes)}</dd></div>
+                </dl>
               </div>
-
-              <div className="relative z-30 flex w-full gap-2 md:w-auto">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-semibold text-black outline-none transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-white/55 active:scale-[0.985] md:flex-none"
-                >
-                  <FilePlus className="h-5 w-5 stroke-[2.2]" aria-hidden="true" />
-                  选择文件
-                </button>
-                <button
-                  type="button"
-                  onClick={() => folderInputRef.current?.click()}
-                  className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-white/15 bg-black/35 px-5 text-sm font-medium text-white/82 outline-none backdrop-blur-sm transition-colors hover:border-white/28 hover:bg-black/50 hover:text-white focus-visible:ring-2 focus-visible:ring-white/45 active:scale-[0.985] md:flex-none"
-                >
-                  <FolderPlus className="h-5 w-5 stroke-[2.2]" aria-hidden="true" />
-                  文件夹
-                </button>
+              <div className="mt-6 grid gap-2">
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="v4-focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel)] px-3 text-sm font-medium hover:bg-[var(--v4-panel-raised)]"><FilePlus className="h-4 w-4" />继续添加文件</button>
+                <button type="button" onClick={() => folderInputRef.current?.click()} className="v4-focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[var(--v4-line)] px-3 text-sm text-[var(--v4-text-muted)] hover:text-white"><FolderPlus className="h-4 w-4" />添加文件夹</button>
               </div>
-            </div>
-          </>
+            </aside>
+
+            <section className="flex min-h-0 flex-col text-left">
+              <header className="flex items-center justify-between gap-4 border-b border-[var(--v4-line)] px-5 py-4 md:px-6">
+                <div><h4 className="text-lg font-semibold">导入清单</h4><p className="mt-0.5 text-xs text-[var(--v4-text-faint)]">{queuedItems.length} 个项目 · {formatBytes(totalBytes)}</p></div>
+                <button type="button" onClick={() => { setQueuedItems([]); setQueueIssue(null); }} className="v4-focus-ring inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs text-[var(--v4-text-muted)] hover:bg-white/[0.04] hover:text-white"><Trash2 className="h-4 w-4" />清空</button>
+              </header>
+              <div className="max-h-[310px] flex-1 overflow-y-auto divide-y divide-[var(--v4-line)]">
+                {queuedItems.map(item => (
+                  <div key={getQueueKey(item.file)} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-5 py-3.5 md:px-6">
+                    <span className={`grid h-9 w-9 place-items-center rounded-md border ${item.accepted ? 'border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'border-[color:rgba(200,135,140,0.25)] bg-[color:rgba(200,135,140,0.08)] text-[var(--v4-danger)]'}`}>
+                      {item.kind === 'zip' || item.kind === 'archive' ? <Archive className="h-4.5 w-4.5" /> : <FileText className="h-4.5 w-4.5" />}
+                    </span>
+                    <div className="min-w-0"><div className="flex min-w-0 items-center gap-2"><span className="truncate text-sm font-medium text-[var(--v4-text)]">{item.name}</span><span className="shrink-0 rounded border border-[var(--v4-line)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--v4-text-muted)]">{item.label}</span></div><div className={`mt-1 flex items-center gap-2 text-xs ${item.accepted ? 'text-[var(--v4-text-faint)]' : 'text-[var(--v4-danger)]'}`}><span>{item.note}</span><span aria-hidden="true">·</span><span>{formatBytes(item.file.size)}</span></div></div>
+                    <button type="button" onClick={() => removeQueuedFile(item.file)} className="v4-focus-ring grid h-8 w-8 place-items-center rounded-md text-[var(--v4-text-faint)] hover:bg-white/[0.05] hover:text-white" aria-label={`从清单移除 ${item.name}`}><X className="h-4 w-4" /></button>
+                  </div>
+                ))}
+              </div>
+              <footer className="mt-auto border-t border-[var(--v4-line)] p-4 md:px-6">
+                {(queueIssue || rejectedItems.length > 0) && <p className="mb-3 text-xs leading-5 text-[var(--v4-warning)]">{queueIssue || `${rejectedItems.length} 个项目不会进入处理流程，可移除后继续。`}</p>}
+                <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
+                  <span className="inline-flex items-center gap-2 text-xs text-[var(--v4-text-faint)]"><HardDrive className="h-4 w-4" />确认后在当前设备读取</span>
+                  <button type="button" disabled={acceptedItems.length === 0 || Boolean(queueIssue)} onClick={() => handleFilesProcess(queuedItems.map(item => item.file))} className="v4-focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[var(--v4-accent)] px-5 text-sm font-semibold text-[#0b0f18] transition-colors hover:bg-[var(--v4-accent-strong)] disabled:cursor-not-allowed disabled:opacity-35">开始整理 {acceptedItems.length} 个文件<ArrowRight className="h-4 w-4" /></button>
+                </div>
+              </footer>
+            </section>
+          </div>
         )}
       </motion.div>
-
-	      {(preflightItems.length > 0 || trackSummaries.length > 0) && (
-	        <div className="mt-5 w-full max-w-[1120px] px-4 z-20">
-	          <div className="rounded-2xl border border-white/[0.055] bg-black/30 overflow-hidden">
-	            {preflightItems.length > 0 && (
-	              <div className="p-3 border-b border-white/[0.045]">
-	                <div className="text-xs font-semibold text-white/60 mb-2">导入概览</div>
-	                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-	                  {preflightItems.slice(0, 6).map((item) => (
-	                    <div key={`${item.name}-${item.file.size}`} className="flex items-center gap-2 text-xs min-w-0">
-	                      <span className={`px-1.5 py-0.5 rounded font-semibold ${item.accepted ? 'bg-white/[0.08] text-white/85 border border-white/[0.08]' : 'bg-[#9f897b]/16 text-[#eadfd8] border border-[#c0a89a]/25'}`}>
-	                        {item.label}
-	                      </span>
-	                      <span className="truncate text-white/70">{item.name}</span>
-	                      <span className="text-white/50 truncate hidden sm:inline">{item.note}</span>
-	                    </div>
-	                  ))}
-	                </div>
-	              </div>
-	            )}
-	            {trackSummaries.length > 0 && (
-	              <div className="p-3">
-	                <div className="text-xs font-semibold text-white/60 mb-2">轨道识别</div>
-	                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-	                  {trackSummaries.slice(0, 6).map((item) => (
-	                    <div key={`${item.name}-${item.source}`} className="flex items-center gap-2 text-xs min-w-0">
-	                      <CheckCircle2 className="w-3.5 h-3.5 text-[#e5e7eb] shrink-0" />
-	                      <span className="px-1.5 py-0.5 rounded bg-[#9ca3af]/10 text-[#e5e7eb] font-semibold">{item.format}</span>
-	                      <span className="text-white/70 truncate">{item.lang}</span>
-	                      <span className="text-white/55 truncate">{item.name}</span>
-	                    </div>
-	                  ))}
-	                </div>
-	              </div>
-	            )}
-	          </div>
-	        </div>
-	      )}
 
       <input
         ref={fileInputRef}
@@ -721,14 +781,20 @@ export const DragZone: React.FC = () => {
 	        multiple
 	        accept=".srt,.ass,.zip,.rar,.7z"
         className="hidden"
-        onChange={(e) => handleFilesProcess(Array.from(e.target.files || []))}
+        onChange={(e) => {
+          addFilesToQueue(Array.from(e.target.files || []));
+          e.currentTarget.value = '';
+        }}
       />
 	      <input
 	        ref={folderInputRef}
 	        type="file"
 	        {...({ webkitdirectory: 'true', directory: 'true' } as React.InputHTMLAttributes<HTMLInputElement>)}
 	        className="hidden"
-	        onChange={(e) => handleFilesProcess(Array.from(e.target.files || []))}
+	        onChange={(e) => {
+	          addFilesToQueue(Array.from(e.target.files || []));
+	          e.currentTarget.value = '';
+	        }}
 	      />
     </div>
   );

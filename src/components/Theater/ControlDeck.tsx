@@ -38,21 +38,21 @@ interface DialControlProps {
 }
 
 const DialControl = ({ label, value, description, icon, onPrevious, onNext, disabled = false }: DialControlProps) => (
-  <section className="flex min-w-[196px] items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.018] px-3 py-2.5">
-    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-white/[0.07] bg-black/20 text-[#b9ddd8]">
+  <section className="flex min-w-[220px] items-center gap-3 px-4 py-3">
+    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-accent-strong)]">
       {icon}
     </div>
     <div className="min-w-0 flex-1">
-      <p className="text-xs font-medium text-white/42">{label}</p>
-      <p className="truncate text-sm font-semibold text-white/88" title={description}>{value}</p>
+      <p className="text-xs font-medium text-[var(--v4-text-faint)]">{label}</p>
+      <p className="truncate text-sm font-semibold text-[var(--v4-text)]" title={description}>{value}</p>
     </div>
     {(onPrevious || onNext) && (
-      <div className="flex shrink-0 overflow-hidden rounded-lg border border-white/[0.08] bg-black/20">
+      <div className="flex shrink-0 overflow-hidden rounded-md border border-[var(--v4-line)] bg-[var(--v4-canvas)]">
         <button
           type="button"
           onClick={onPrevious}
           disabled={disabled}
-          className="grid h-8 w-8 place-items-center text-white/58 transition-colors hover:bg-white/[0.07] hover:text-white disabled:cursor-default disabled:opacity-35"
+          className="grid h-8 w-8 place-items-center text-[var(--v4-text-muted)] transition-colors hover:bg-white/[0.05] hover:text-white disabled:cursor-default disabled:opacity-35"
           aria-label={`上一项：${label}`}
         >
           <ChevronLeft className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />
@@ -61,7 +61,7 @@ const DialControl = ({ label, value, description, icon, onPrevious, onNext, disa
           type="button"
           onClick={onNext}
           disabled={disabled}
-          className="grid h-8 w-8 place-items-center border-l border-white/[0.08] text-white/58 transition-colors hover:bg-white/[0.07] hover:text-white disabled:cursor-default disabled:opacity-35"
+          className="grid h-8 w-8 place-items-center border-l border-[var(--v4-line)] text-[var(--v4-text-muted)] transition-colors hover:bg-white/[0.05] hover:text-white disabled:cursor-default disabled:opacity-35"
           aria-label={`下一项：${label}`}
         >
           <ChevronRight className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />
@@ -107,7 +107,7 @@ export const ControlDeck: React.FC = () => {
   };
 
   return (
-    <div className="grid w-full gap-2 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="v4-panel-muted grid w-full divide-y divide-[var(--v4-line)] overflow-hidden rounded-lg sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-3">
       <DialControl
         label="画幅比例"
         value={activeAspect.label}

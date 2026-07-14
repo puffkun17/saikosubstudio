@@ -104,31 +104,12 @@ export const TmdbPanel: React.FC = () => {
   }, [isApplyingSuggestion, setTmdbManualOpen, setTmdbSuggestions, tmdbManualOpen]);
 
   return (
-    <div className={`flex flex-col gap-5 glass-panel-ar p-5 md:p-6 xl:p-7 rounded-xl desktop-panel-fit-hidden relative shadow-xl group transition-all duration-300
+    <div className={`v4-panel relative flex flex-col gap-5 rounded-lg p-5 desktop-panel-fit-hidden md:p-6 xl:p-7
       ${tmdbData
-        ? 'border-[#9ca3af]/16 bg-gradient-to-b from-transparent via-transparent to-[#9ca3af]/[0.008]'
-        : 'hover:border-[#9ca3af]/12'}`}>
+        ? 'border-[var(--v4-line-strong)]'
+        : ''}`}>
 
-      {/* Cinematic Poster Background Blur - Liquid Glow (Lively drift) */}
-      {tmdbData?.posterUrl && (
-        <motion.div
-          animate={{
-            scale: [1.1, 1.15, 1.08, 1.11, 1.1],
-            rotate: [0, 1.5, -1, 0.5, 0],
-            x: [0, 4, -3, 2, 0],
-            y: [0, -3, 4, -1, 0]
-          }}
-          transition={{
-            duration: 25,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-          className="absolute inset-0 bg-cover bg-center -z-10 filter blur-[24px] pointer-events-none opacity-[0.06]"
-          style={{ backgroundImage: `url(${tmdbData.posterUrl})` }}
-        />
-      )}
-
-      <div className="flex justify-between items-center gap-4 pb-4 border-b border-white/[0.07] z-10">
+      <div className="z-10 flex items-center justify-between gap-4 border-b border-[var(--v4-line)] pb-4">
         <div className="flex items-center gap-3.5">
           <h3 className="text-[22px] font-semibold text-neutral-100 tracking-tight font-sans">
             {tmdbData ? '片源信息' : '字幕概览'}
@@ -137,7 +118,7 @@ export const TmdbPanel: React.FC = () => {
             href="https://www.themoviedb.org/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 h-8 px-2.5 py-1 rounded-lg bg-black/40 border border-white/5 hover:border-[#9ca3af]/30 hover:bg-[#9ca3af]/5 hover:scale-[1.03] transition-all duration-300 group/logo"
+            className="flex h-8 items-center gap-2 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 transition-colors hover:border-[var(--v4-line-strong)]"
             title="Powered by The Movie Database"
           >
             <span className="text-xs text-white/45 font-medium">Powered by</span>
@@ -147,7 +128,7 @@ export const TmdbPanel: React.FC = () => {
         </div>
         {(tmdbData || !needsTitleInput) && (
           <button
-            className="group px-4 py-2.5 rounded-xl bg-white text-black text-[15px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer border border-white/20 hover:bg-neutral-200 hover:scale-[1.01]"
+            className="v4-focus-ring group flex cursor-pointer items-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] px-4 py-2.5 text-[15px] font-semibold text-[var(--v4-text)] transition-colors hover:bg-[var(--v4-accent-soft)]"
             onClick={() => setTmdbManualOpen(true)}
           >
             <Search className="w-3.5 h-3.5 group-hover:scale-110 group-hover:rotate-6 transition-transform" />
@@ -172,16 +153,16 @@ export const TmdbPanel: React.FC = () => {
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                   src={tmdbData.posterUrl}
                   alt={tmdbData.title}
-                  className="w-32 sm:w-40 lg:w-48 xl:w-52 h-auto aspect-[2/3] object-cover rounded-xl border border-white/10 shadow-[0_12px_24px_rgba(0,0,0,0.4)] group-hover:border-[#9ca3af]/20 transition-all duration-300 shrink-0 cursor-pointer"
+                  className="aspect-[2/3] h-auto w-32 shrink-0 cursor-pointer rounded-md border border-[var(--v4-line-strong)] object-cover shadow-[0_12px_24px_rgba(0,0,0,0.28)] transition-all duration-300 sm:w-36 xl:w-40"
                 />
               ) : (
-                <div className="w-32 sm:w-40 lg:w-48 xl:w-52 aspect-[2/3] bg-white/[0.01] border border-white/5 rounded-xl flex items-center justify-center text-neutral-600 shadow-[0_12px_24px_rgba(0,0,0,0.4)] flex-shrink-0" />
+                <div className="flex aspect-[2/3] w-32 flex-shrink-0 items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-neutral-600 sm:w-36 xl:w-40" />
               )}
 
               {/* Movie metadata (Title + Badges) */}
               <div className="flex-1 flex flex-col gap-3.5 min-w-0 text-left pt-1">
                 <div>
-                  <h4 className="text-[26px] font-semibold text-neutral-100 leading-[1.12] tracking-tight font-sans">
+                  <h4 className="text-[clamp(1.25rem,1.7vw,1.7rem)] font-semibold text-neutral-100 leading-[1.18] tracking-tight font-sans">
                     {tmdbData.title}
                   </h4>
                   {tmdbData.originalTitle && tmdbData.originalTitle !== tmdbData.title && (
@@ -274,7 +255,7 @@ export const TmdbPanel: React.FC = () => {
 
             <div className="mt-auto flex items-start gap-2 border-t border-white/[0.06] pt-4 text-xs leading-relaxed text-neutral-500">
               {needsTitleInput ? (
-                <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#b9ddd8]/70" aria-hidden="true" />
+                <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#9aaad3]/70" aria-hidden="true" />
               ) : (
                 <Languages className="mt-0.5 h-4 w-4 shrink-0 text-neutral-600" aria-hidden="true" />
               )}
@@ -309,7 +290,7 @@ export const TmdbPanel: React.FC = () => {
               <div className="flex justify-between items-center px-6 py-5 border-b border-white/5">
                 <div>
                   <h2 id="tmdb-search-title" className="text-xl font-semibold text-white tracking-tight">{needsTitleInput ? '补充片名' : '手动检索'}</h2>
-                  {needsTitleInput && <p id="tmdb-search-description" className="mt-1 text-sm text-[#b9d8d3]">确认后将用于片源资料与导出命名。</p>}
+                  {needsTitleInput && <p id="tmdb-search-description" className="mt-1 text-sm text-[#aab7d5]">确认后将用于片源资料与导出命名。</p>}
                 </div>
                 <button
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition cursor-pointer"
@@ -329,7 +310,7 @@ export const TmdbPanel: React.FC = () => {
                     <input
                       id="tmdb-title-input"
                       type="text"
-                      className={`w-full bg-white/[0.02] border rounded-xl py-4 pl-12 pr-4 text-white text-base outline-none transition-all ${needsTitleInput ? 'border-[#8ebcb5]/35 focus:bg-[#8ebcb5]/[0.04] focus:border-[#b9ddd8]' : 'border-white/[0.07] focus:bg-white/[0.04] focus:border-[#9ca3af]/35'}`}
+                      className={`w-full bg-white/[0.02] border rounded-xl py-4 pl-12 pr-4 text-white text-base outline-none transition-all ${needsTitleInput ? 'border-[#8295c5]/35 focus:bg-[#8295c5]/[0.04] focus:border-[#9aaad3]' : 'border-white/[0.07] focus:bg-white/[0.04] focus:border-[#9ca3af]/35'}`}
                       value={tmdbManualInput.title}
                       onChange={e => setTmdbManualInput({ ...tmdbManualInput, title: e.target.value })}
                       placeholder="输入电影或剧集名称"
@@ -376,7 +357,7 @@ export const TmdbPanel: React.FC = () => {
                         <span className="text-xs text-white/38">用于单集剧照与导出命名</span>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
-                        <label className="group flex min-w-0 items-center rounded-lg border border-white/[0.075] bg-black/20 transition-colors focus-within:border-[#9ddacb]/48 focus-within:bg-[#9ddacb]/[0.035]">
+                        <label className="group flex min-w-0 items-center rounded-lg border border-white/[0.075] bg-black/20 transition-colors focus-within:border-[#8fa3d1]/48 focus-within:bg-[#8fa3d1]/[0.035]">
                           <span className="shrink-0 pl-3.5 text-sm text-white/48">第</span>
                           <input
                             type="number"
@@ -388,9 +369,9 @@ export const TmdbPanel: React.FC = () => {
                             value={tmdbManualInput.season || ''}
                             onChange={e => setTmdbManualInput({ ...tmdbManualInput, season: e.target.value })}
                           />
-                          <span className="shrink-0 border-l border-white/[0.06] px-3.5 py-1 text-sm font-medium text-[#b9ddd8]">季</span>
+                          <span className="shrink-0 border-l border-white/[0.06] px-3.5 py-1 text-sm font-medium text-[#9aaad3]">季</span>
                         </label>
-                        <label className="group flex min-w-0 items-center rounded-lg border border-white/[0.075] bg-black/20 transition-colors focus-within:border-[#9ddacb]/48 focus-within:bg-[#9ddacb]/[0.035]">
+                        <label className="group flex min-w-0 items-center rounded-lg border border-white/[0.075] bg-black/20 transition-colors focus-within:border-[#8fa3d1]/48 focus-within:bg-[#8fa3d1]/[0.035]">
                           <span className="shrink-0 pl-3.5 text-sm text-white/48">第</span>
                           <input
                             type="number"
@@ -402,7 +383,7 @@ export const TmdbPanel: React.FC = () => {
                             value={tmdbManualInput.episode || ''}
                             onChange={e => setTmdbManualInput({ ...tmdbManualInput, episode: e.target.value })}
                           />
-                          <span className="shrink-0 border-l border-white/[0.06] px-3.5 py-1 text-sm font-medium text-[#b9ddd8]">集</span>
+                          <span className="shrink-0 border-l border-white/[0.06] px-3.5 py-1 text-sm font-medium text-[#9aaad3]">集</span>
                         </label>
                       </div>
                     </div>
@@ -443,7 +424,7 @@ export const TmdbPanel: React.FC = () => {
                             aria-pressed={isChosen}
                             className={`w-full p-3 rounded-xl flex items-center gap-4 text-left transition-all border cursor-pointer
                             ${isChosen
-                                ? 'border-[#8ebcb5]/45 bg-[#8ebcb5]/[0.07] shadow-[inset_3px_0_0_#8ebcb5]'
+                                ? 'border-[#8295c5]/45 bg-[#8295c5]/[0.07] shadow-[inset_3px_0_0_#8295c5]'
                                 : 'bg-white/[0.015] border-white/5 hover:bg-white/[0.035]'
                               }`}
                             onClick={() => setPendingSuggestion(s)}
@@ -477,7 +458,7 @@ export const TmdbPanel: React.FC = () => {
                               </div>
                             </div>
 
-                            <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border ${isChosen ? 'border-[#9ddacb]/55 bg-[#9ddacb]/15 text-[#c5eee5]' : 'border-white/[0.09] text-transparent'}`}>
+                            <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border ${isChosen ? 'border-[#8fa3d1]/55 bg-[#8fa3d1]/15 text-[#d2d9e9]' : 'border-white/[0.09] text-transparent'}`}>
                               <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                             </span>
                           </button>
@@ -492,7 +473,7 @@ export const TmdbPanel: React.FC = () => {
               <div className="flex flex-col gap-3 border-t border-white/5 bg-[#070708]/95 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 text-sm text-white/50">
                   {pendingSuggestion ? (
-                    <span className="block truncate text-white">已选择 <strong className="text-[#b9ddd8]">{pendingSuggestion.title || pendingSuggestion.name}</strong></span>
+                    <span className="block truncate text-white">已选择 <strong className="text-[#9aaad3]">{pendingSuggestion.title || pendingSuggestion.name}</strong></span>
                   ) : (
                     '请选择匹配项'
                   )}

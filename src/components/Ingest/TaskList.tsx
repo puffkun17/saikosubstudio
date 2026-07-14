@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useStudioStore, TaskPair, Subfile } from '@/store/useStudioStore';
-import { Check, CircleAlert, Paintbrush, Play, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
+import { ArrowRight, Check, CircleAlert, Paintbrush, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { parseSrt, decodeBuffer, detectSubtitleLanguage, StyleSettings } from '@/utils/subtitleCore';
 import { motion } from 'framer-motion';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
@@ -183,15 +183,16 @@ export const TaskList: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col gap-4 glass-panel-ar p-5 md:p-6 rounded-xl desktop-panel-fit-visible relative group transition-all duration-300 hover:border-[#9ca3af]/18">
+    <div className="v4-panel relative flex flex-col gap-4 rounded-lg p-5 desktop-panel-fit-visible md:p-6">
 
       {/* Header section */}
-      <div className="flex justify-between items-center pb-4 border-b border-white/[0.07] flex-shrink-0 select-none gap-3">
+      <div className="flex flex-shrink-0 select-none items-center justify-between gap-3 border-b border-[var(--v4-line)] pb-4">
         <div className="flex items-center gap-3 min-w-0">
-          <h3 className="text-xl font-semibold text-neutral-100 tracking-tight font-sans whitespace-nowrap">
-            字幕文件数：
-          </h3>
-          <span className="text-sm font-semibold text-[#e5e7eb] bg-white/[0.05] border border-white/[0.09] px-3 py-1 rounded-full">
+          <div>
+            <p className="v4-kicker mb-1">Subtitle tracks</p>
+            <h3 className="whitespace-nowrap font-sans text-xl font-semibold tracking-tight text-neutral-100">字幕文件</h3>
+          </div>
+          <span className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-sm font-semibold text-[var(--v4-text)]">
             {tasks.length}
           </span>
         </div>
@@ -216,7 +217,7 @@ export const TaskList: React.FC = () => {
           ) : (
             <button
               type="button"
-              className="group px-4 py-2.5 glass-btn-ar rounded-xl text-sm flex items-center gap-1.5 transition-all duration-200 cursor-pointer border border-white/5 hover:bg-white/[0.04]"
+              className="v4-focus-ring group flex cursor-pointer items-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3.5 py-2.5 text-sm transition-colors hover:bg-[var(--v4-panel-raised)]"
               onClick={() => setPendingCancelUpload(true)}
               title="取消本次导入并返回上传入口"
             >
@@ -225,7 +226,7 @@ export const TaskList: React.FC = () => {
             </button>
           )}
           <button
-            className="group px-4 py-2.5 glass-btn-ar rounded-xl text-sm flex items-center gap-1.5 transition-all duration-200 cursor-pointer border border-white/5 hover:bg-white/[0.04]"
+            className="v4-focus-ring group flex cursor-pointer items-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3.5 py-2.5 text-sm transition-colors hover:bg-[var(--v4-panel-raised)]"
             onClick={() => fileInputRef.current?.click()}
           >
             <Plus className="w-3.5 h-3.5 text-[#e5e7eb] group-hover:rotate-90 transition-transform duration-300" />
@@ -259,21 +260,21 @@ export const TaskList: React.FC = () => {
       <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-white/[0.03] relative min-h-0 overflow-x-visible">
 
         {/* Banner/Title Card */}
-        <div className={`rounded-xl flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center relative flex-shrink-0 border transition-colors ${needsTitleInput ? 'border-white/[0.09] border-l-[#b9ddd8]/55 border-l-2 bg-[#b9ddd8]/[0.035] px-4 py-3' : 'bg-white/[0.018] border-white/[0.07] p-4'}`}>
+        <div className={`rounded-xl flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center relative flex-shrink-0 border transition-colors ${needsTitleInput ? 'border-white/[0.09] border-l-[#9aaad3]/55 border-l-2 bg-[#9aaad3]/[0.035] px-4 py-3' : 'bg-white/[0.018] border-white/[0.07] p-4'}`}>
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             {needsTitleInput ? (
               <>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <CircleAlert className="h-4 w-4 shrink-0 text-[#b9ddd8]" aria-hidden="true" />
+                    <CircleAlert className="h-4 w-4 shrink-0 text-[#9aaad3]" aria-hidden="true" />
                     <span className="text-sm font-semibold text-white">片名待确认</span>
-                    {activeTask.epKey && <span className="text-xs font-mono text-[#c6e2de]">{activeTask.epKey}</span>}
+                    {activeTask.epKey && <span className="text-xs font-mono text-[#c8d1e5]">{activeTask.epKey}</span>}
                   </div>
                   <p className="mt-0.5 text-xs leading-relaxed text-neutral-500">确认后可关联片源资料并完善输出名称。</p>
                 </div>
                 <button
                   type="button"
-                  className="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#b9ddd8] px-3 py-2 text-sm font-semibold text-[#0a1715] transition hover:bg-[#cce9e4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b9ddd8]/70 active:translate-y-[1px]"
+                  className="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#9aaad3] px-3 py-2 text-sm font-semibold text-[#0a1715] transition hover:bg-[#d2d9e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9aaad3]/70 active:translate-y-[1px]"
                   onClick={() => setTmdbManualOpen(true)}
                 >
                   <Search className="h-4 w-4" />
@@ -446,10 +447,10 @@ export const TaskList: React.FC = () => {
                   <div className="flex min-w-0 flex-col justify-between gap-4 p-4 md:p-5">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <Paintbrush className="h-4 w-4 text-[#9ddacb]" aria-hidden="true" />
+                        <Paintbrush className="h-4 w-4 text-[#8fa3d1]" aria-hidden="true" />
                         <h5 className="text-sm font-semibold text-neutral-100">文件内嵌样式</h5>
                         {isFoundAssStyleApplied && !showAssHint && (
-                          <span className="inline-flex items-center gap-1 rounded-md border border-[#9ddacb]/20 bg-[#9ddacb]/[0.06] px-2 py-0.5 text-xs font-medium text-[#cfe9e3]">
+                          <span className="inline-flex items-center gap-1 rounded-md border border-[#8fa3d1]/20 bg-[#8fa3d1]/[0.06] px-2 py-0.5 text-xs font-medium text-[#d2d9e9]">
                             <Check className="h-3 w-3" />
                             已用于导出
                           </span>
@@ -472,7 +473,7 @@ export const TaskList: React.FC = () => {
                       {(showAssHint || !isFoundAssStyleApplied) && (
                         <button
                           type="button"
-                          className="inline-flex h-9 items-center justify-center rounded-lg border border-[#9ddacb]/25 bg-[#9ddacb]/10 px-3 text-xs font-semibold text-[#d9efea] transition hover:bg-[#9ddacb]/16 active:translate-y-px"
+                          className="inline-flex h-9 items-center justify-center rounded-lg border border-[#8fa3d1]/25 bg-[#8fa3d1]/10 px-3 text-xs font-semibold text-[#d9efea] transition hover:bg-[#8fa3d1]/16 active:translate-y-px"
                           onClick={() => {
                             setCustomStyle({ ...customStyle, ...foundAssStyle } as StyleSettings);
                             setActivePreset('ass_native');
@@ -558,7 +559,7 @@ export const TaskList: React.FC = () => {
                   {isProcessing ? (
                     <span className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin shrink-0" />
                   ) : (
-                  <Play className={`w-4 h-4 shrink-0 ${(!activeTask.zh && !activeTask.en) ? 'text-white/20 fill-white/10' : needsTitleInput ? 'text-white/80 fill-white/20' : 'text-black fill-black/20'}`} />
+                  <ArrowRight className={`h-4 w-4 shrink-0 ${(!activeTask.zh && !activeTask.en) ? 'text-white/20' : needsTitleInput ? 'text-white/80' : 'text-black'}`} />
                   )}
                   {isProcessing ? '正在准备下一步...' : getProcessBtnText(activeTask, needsTitleInput)}
                 </button>

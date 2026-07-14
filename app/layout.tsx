@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-CN" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="font-sans bg-[#050507] text-white h-dvh overflow-hidden">
+      <body className="app-canvas font-sans h-dvh overflow-hidden">
         <SystemTray />
         <div className="pt-[68px] h-dvh box-border overflow-hidden flex flex-col">
           {children}

@@ -71,16 +71,16 @@ export const TheaterStep: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 w-full h-full flex flex-col overflow-hidden relative bg-[#050507]">
+    <div className="flex-1 w-full h-full flex flex-col overflow-hidden relative bg-[var(--v4-canvas)]">
       
       {/* 顶部导航栏 */}
-      <div className="relative z-[70] flex flex-col gap-3 border-b border-white/[0.07] bg-[#020203]/72 px-5 py-4 backdrop-blur-md md:px-8">
+      <div className="relative z-[70] flex flex-col gap-3 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-5 py-4 md:px-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <motion.button
             whileHover={{ scale: 1.03, y: -0.5 }}
             whileTap={{ scale: 0.97 }}
-            className="p-2 glass-btn-ar rounded-lg flex items-center justify-center cursor-pointer text-neutral-400 hover:text-neutral-200"
+            className="v4-focus-ring flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-accent-strong)] hover:bg-[var(--v4-panel)]"
             onClick={handleBack}
             aria-label="返回字幕工作台"
           >
@@ -88,16 +88,17 @@ export const TheaterStep: React.FC = () => {
           </motion.button>
           
             <div>
+              <p className="v4-kicker mb-1">Preview room</p>
               <h2 className="text-xl font-semibold tracking-tight text-neutral-100">放映厅预览</h2>
-              <p className="mt-0.5 text-sm text-[#e5e7eb]">{theaterAspect} · {tmdbBackdrop ? '片源剧照' : '影院默认画面'}</p>
+              <p className="mt-0.5 text-sm text-[var(--v4-text-muted)]">{theaterAspect} · {tmdbBackdrop ? '片源剧照' : '影院默认画面'}</p>
             </div>
           </div>
 
           <div className="relative z-[90] flex items-center gap-2">
             <button
               onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-all cursor-pointer
-                ${isSettingsOpen ? 'glass-btn-ar-active' : 'glass-btn-ar text-neutral-350 hover:text-white'}`}
+              className={`v4-focus-ring inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-4 py-2.5 text-sm font-medium transition-all
+                ${isSettingsOpen ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-white'}`}
             >
               <SlidersHorizontal className="h-4 w-4 stroke-[2.25]" />
               样式参数
@@ -148,7 +149,7 @@ export const TheaterStep: React.FC = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: 360, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="absolute inset-y-4 right-4 z-40 flex w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl glass-panel-ar xl:relative xl:inset-auto xl:z-20 xl:my-5 xl:mr-5 xl:w-[380px] xl:shrink-0"
+                className="v4-panel absolute inset-y-4 right-4 z-40 flex w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg xl:relative xl:inset-auto xl:z-20 xl:my-5 xl:mr-5 xl:w-[380px] xl:shrink-0"
               >
                 <StyleSidebar />
               </motion.aside>

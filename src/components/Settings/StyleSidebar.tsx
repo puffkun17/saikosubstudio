@@ -324,7 +324,7 @@ export const StyleSidebar: React.FC = () => {
       <div className="flex flex-1 flex-col gap-4">
         <SettingSection
           title="模板"
-          icon={<Paintbrush className="h-4 w-4 text-[#b9ddd8]" aria-hidden="true" />}
+          icon={<Paintbrush className="h-4 w-4 text-[#9aaad3]" aria-hidden="true" />}
           action={
             <button
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-300 transition-colors hover:text-white cursor-pointer"
@@ -401,7 +401,7 @@ export const StyleSidebar: React.FC = () => {
           </div>
         </SettingSection>
 
-        <SettingSection title="文字尺寸" icon={<ALargeSmall className="h-4 w-4 text-[#b9ddd8]" aria-hidden="true" />}>
+        <SettingSection title="文字尺寸" icon={<ALargeSmall className="h-4 w-4 text-[#9aaad3]" aria-hidden="true" />}>
           <SliderControl
             label="整体缩放"
             value={customStyle.globalScale ?? 1}
@@ -441,7 +441,7 @@ export const StyleSidebar: React.FC = () => {
           />
         </SettingSection>
 
-        <SettingSection title="字体" icon={<FileType className="h-4 w-4 text-[#b9ddd8]" aria-hidden="true" />}>
+        <SettingSection title="字体" icon={<FileType className="h-4 w-4 text-[#9aaad3]" aria-hidden="true" />}>
           <FontFamilySelect
             label="中文"
             value={customStyle.zhFontFamily || FONT_FAMILIES_ZH[0].value}
@@ -456,7 +456,7 @@ export const StyleSidebar: React.FC = () => {
           />
         </SettingSection>
 
-        <SettingSection title="颜色" icon={<Pipette className="h-4 w-4 text-[#b9ddd8]" aria-hidden="true" />}>
+        <SettingSection title="颜色" icon={<Pipette className="h-4 w-4 text-[#9aaad3]" aria-hidden="true" />}>
           <ColorPicker
             label="中文文字"
             value={customStyle.zhColor}
@@ -487,7 +487,7 @@ export const StyleSidebar: React.FC = () => {
           />
         </SettingSection>
 
-        <SettingSection title="输出" icon={<SquareArrowRightExit className="h-4 w-4 text-[#b9ddd8]" aria-hidden="true" />}>
+        <SettingSection title="输出" icon={<SquareArrowRightExit className="h-4 w-4 text-[#9aaad3]" aria-hidden="true" />}>
           <div className="flex flex-col gap-2.5">
             <span className="text-sm font-medium text-neutral-300 inline-flex items-center gap-1.5">
               辅助字幕策略
@@ -507,7 +507,7 @@ export const StyleSidebar: React.FC = () => {
                   aria-pressed={(customStyle.auxiliaryMode || 'keep') === item.value}
                   className={`min-h-11 rounded-lg px-1.5 py-1.5 text-left transition-all cursor-pointer
                     ${(customStyle.auxiliaryMode || 'keep') === item.value
-                      ? 'bg-[#b9ddd8] text-black shadow-[0_0_18px_rgba(185,221,216,0.14)]'
+                      ? 'bg-[#9aaad3] text-black shadow-[0_0_18px_rgba(154, 170, 211,0.14)]'
                       : 'text-neutral-500 hover:bg-white/[0.05] hover:text-neutral-200'}`}
                   onClick={() => handleStyleChange('auxiliaryMode', item.value)}
                 >

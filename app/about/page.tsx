@@ -9,14 +9,14 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 
 export default function AboutPage() {
   return (
-    <main className="flex-1 overflow-y-auto bg-[#050507] px-5 py-8 md:px-10 md:py-12">
+    <main className="flex-1 overflow-y-auto bg-[var(--v4-canvas)] px-5 py-8 md:px-10 md:py-12">
       <div className="mx-auto w-full max-w-3xl pb-10 pt-3">
         <div className="mt-3 flex items-start gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#b9ddd8]/20 bg-[#b9ddd8]/10 text-[#b9ddd8]">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#9aaad3]/20 bg-[#9aaad3]/10 text-[#9aaad3]">
             <ShieldCheck className="h-5 w-5 stroke-[2.25]" aria-hidden="true" />
           </div>
           <div>
-            <p className="text-xs font-semibold tracking-[0.12em] text-[#b9ddd8]">SAIKOSUBSTUDIO / POLICY</p>
+            <p className="text-xs font-semibold tracking-[0.12em] text-[#9aaad3]">SAIKOSUBSTUDIO / POLICY</p>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white md:text-3xl">隐私与版权说明</h1>
             <p className="mt-1 text-sm font-medium tracking-[0.04em] text-white/46">Privacy &amp; Copyright Notice</p>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-white/60 md:text-base">文件处理尽量在当前设备本地完成；片源资料检索遵循最小必要原则。</p>
@@ -27,7 +27,7 @@ export default function AboutPage() {
         <div className="mt-10 rounded-2xl border border-white/[0.08] bg-white/[0.018] px-6 py-7 md:px-8">
           <Section title="本地文件处理 / Local files">
             <p>字幕、ZIP、7Z、RAR 字幕包与作为参照的本地媒体文件均由浏览器在当前设备读取和处理，不会上传到本站服务器。主动使用“历史存档”时，处理结果和样式会保存在当前浏览器的本地存储中，可随时删除；清除浏览器数据也会移除这些记录。</p>
-            <p className="flex items-start gap-2 text-white/50"><FileLock2 className="mt-1 h-4 w-4 shrink-0 text-[#b9ddd8]" />导入限制用于降低异常文件对浏览器内存的过度占用，不会改变原始文件。</p>
+            <p className="flex items-start gap-2 text-white/50"><FileLock2 className="mt-1 h-4 w-4 shrink-0 text-[#9aaad3]" />导入限制用于降低异常文件对浏览器内存的过度占用，不会改变原始文件。</p>
           </Section>
 
           <Section title="影视资料与 TMDB / Metadata">

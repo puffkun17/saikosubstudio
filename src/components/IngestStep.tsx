@@ -28,35 +28,35 @@ export const IngestStep: React.FC = () => {
   }, [isLibraryOpen, setLibraryOpen]);
 
   return (
-    <div className="ingest-shell flex-1 w-full h-full flex flex-col p-5 md:p-8 lg:p-10 2xl:p-12 overflow-y-auto relative bg-[#020203] z-0">
-      <div className={`flex items-center gap-2 select-none z-20 flex-shrink-0 ${tasks.length === 0 ? 'mb-3' : 'mb-2'}`}>
-        <span className="w-1.5 h-1.5 rounded-full bg-[#9ca3af]/85" />
-        <span className="text-sm font-medium text-[#e5e7eb]/86">
-          本地处理 · 片源关联
+    <div className="ingest-shell flex-1 w-full h-full flex flex-col p-5 md:p-8 lg:p-10 2xl:p-12 overflow-y-auto relative bg-[var(--v4-canvas)] z-0">
+      <div className={`flex items-center gap-2 select-none z-20 flex-shrink-0 ${tasks.length === 0 ? 'mb-4' : 'mb-2'}`}>
+        <span className="h-px w-5 bg-[var(--v4-accent)]" />
+        <span className="v4-kicker">
+          Local subtitle workbench
         </span>
       </div>
 
       {tasks.length === 0 ? (
-        <div className="ingest-heading flex flex-col md:flex-row justify-between items-start md:items-center gap-5 mb-6 md:mb-8 z-20 flex-shrink-0">
+        <div className="ingest-heading flex flex-col md:flex-row justify-between items-start md:items-end gap-5 mb-6 md:mb-8 z-20 flex-shrink-0">
           <div className="flex flex-col gap-2 text-left">
-            <h1 className="text-[clamp(2rem,7vw,6.25rem)] font-semibold tracking-tight text-white flex max-w-full items-center flex-wrap gap-x-4 gap-y-2 font-sans leading-[0.98] break-words [overflow-wrap:anywhere]">
+            <h1 className="text-[clamp(2.25rem,5vw,4.75rem)] font-semibold tracking-tight text-[var(--v4-text)] flex max-w-full items-center flex-wrap gap-x-4 gap-y-2 font-sans leading-[0.98] break-words [overflow-wrap:anywhere]">
               <span className="max-w-full break-all sm:break-normal">SaikoSubStudio</span>
-              <span className="text-xs text-[#e5e7eb] bg-[#9ca3af]/10 border border-[#9ca3af]/20 px-3 py-1 rounded-lg font-mono font-semibold shadow-[0_0_15px_rgba(156,163,175,0.08)]">
-                v3.0.0
+              <span className="rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-2.5 py-1 text-xs font-mono font-semibold text-[var(--v4-accent-strong)]">
+                v4.0 Beta
               </span>
             </h1>
-            <p className="text-base text-neutral-300 max-w-2xl">
-              导入、整理并输出适配片源的双语字幕。
+            <p className="max-w-2xl text-base text-[var(--v4-text-muted)]">
+              先规划导入清单，再整理轨道、片源与输出。
             </p>
           </div>
         </div>
       ) : (
-        <div className="mb-5 flex flex-shrink-0 items-end justify-between gap-4 border-b border-white/[0.06] pb-4 z-20">
+        <div className="mb-5 flex flex-shrink-0 items-end justify-between gap-4 border-b border-[var(--v4-line)] pb-4 z-20">
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-tight text-white md:text-[1.75rem]">字幕导入</h1>
             <p className="mt-1 text-sm text-neutral-500">确认轨道、命名与片源信息</p>
           </div>
-          <span className="shrink-0 rounded-lg border border-white/[0.08] bg-white/[0.025] px-2.5 py-1 text-xs font-medium text-neutral-400">
+          <span className="shrink-0 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-xs font-medium text-[var(--v4-text-muted)]">
             {tasks.length} 个任务
           </span>
         </div>
@@ -81,14 +81,14 @@ export const IngestStep: React.FC = () => {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="flex-1 desktop-panel-fit-hidden grid grid-cols-1 lg:grid-cols-3 gap-5 z-10 max-w-[1680px] mx-auto w-full relative"
+            className="z-10 mx-auto grid w-full max-w-[1720px] flex-1 grid-cols-1 gap-5 lg:grid-cols-[minmax(310px,0.34fr)_minmax(0,0.66fr)]"
           >
             {/* TMDB Panel */}
-            <div className="lg:col-span-1 desktop-panel-fit-hidden min-w-0">
+            <div className="desktop-panel-fit-hidden min-w-0">
               <TmdbPanel />
             </div>
             {/* TaskList */}
-            <div className="lg:col-span-2 flex flex-col desktop-panel-fit-visible min-w-0 relative">
+            <div className="relative flex min-w-0 flex-col desktop-panel-fit-visible">
               <TaskList />
             </div>
           </motion.div>
@@ -148,7 +148,7 @@ export const IngestStep: React.FC = () => {
                             />
                           )}
 
-                          <button type="button" className="min-w-0 flex-1 rounded-xl p-3 text-left border-l-2 border-transparent group-hover:border-[#9ca3af] transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#9ddacb]/70" onClick={() => { loadFromLibrary(item); setLibraryOpen(false); }}>
+                          <button type="button" className="min-w-0 flex-1 rounded-xl p-3 text-left border-l-2 border-transparent group-hover:border-[#9ca3af] transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8fa3d1]/70" onClick={() => { loadFromLibrary(item); setLibraryOpen(false); }}>
                             <h4 className="text-base font-bold text-white/90 group-hover:text-white truncate transition-colors pl-3">
                               {item.name}
                             </h4>

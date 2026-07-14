@@ -41,16 +41,16 @@ export const WorkbenchStep: React.FC = () => {
   }, [isSettingsOpen, setIsSettingsOpen, showBackConfirm]);
 
   return (
-    <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#050507]">
+    <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[var(--v4-canvas)]">
       {/* Top Navbar */}
-      <div className="flex flex-col md:flex-row justify-between items-center px-6 md:px-8 py-5 border-b border-white/[0.07] bg-[#020203]/72 backdrop-blur-md gap-4 z-[70] flex-shrink-0">
+      <div className="z-[70] flex flex-shrink-0 flex-col items-center justify-between gap-4 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-6 py-4 md:flex-row md:px-8">
         <div className="flex items-center gap-4 text-left shrink-0">
           <div>
             {/* Bounce back button */}
             <motion.button 
               whileHover={{ scale: 1.03, y: -0.5 }}
               whileTap={{ scale: 0.97 }}
-              className="p-2 glass-btn-ar rounded-lg flex items-center justify-center cursor-pointer text-[#9ddacb] hover:text-[#c3eee3]"
+              className="v4-focus-ring flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-accent-strong)] hover:bg-[var(--v4-panel)]"
               onClick={handleBack}
               aria-label="返回字幕配对"
             >
@@ -60,8 +60,9 @@ export const WorkbenchStep: React.FC = () => {
           </div>
           
           <div className="min-w-0 max-w-[720px]">
+            <p className="v4-kicker mb-1 pl-0.5">Workspace</p>
             <h2 className="text-xl font-semibold text-neutral-100 tracking-tight pl-0.5">字幕工作台</h2>
-            <p className="text-sm text-neutral-400 mt-0.5 whitespace-normal break-words leading-relaxed pl-0.5" title={customFilename}>
+            <p className="text-sm text-[var(--v4-text-muted)] mt-0.5 whitespace-normal break-words leading-relaxed pl-0.5" title={customFilename}>
               <span className="text-neutral-100 font-semibold">{processedSubs?.length || 0} 行</span>
               <span className="mx-2 text-white/18">/</span>
               <span>{customFilename || '未命名字幕'}</span>
@@ -74,12 +75,12 @@ export const WorkbenchStep: React.FC = () => {
           <motion.button 
             whileHover={{ scale: 1.02, y: -0.5 }}
             whileTap={{ scale: 0.98 }}
-            className={`py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer
-              ${isSettingsOpen ? 'glass-btn-ar-active' : 'glass-btn-ar text-neutral-350 hover:text-white'}`}
+            className={`v4-focus-ring flex cursor-pointer items-center gap-1.5 rounded-md border px-4 py-2.5 text-sm font-semibold transition-all
+              ${isSettingsOpen ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-white'}`}
             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
             title="样式配置选项"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-[#9ddacb]" />
+            <SlidersHorizontal className="w-4 h-4 text-[var(--v4-accent-strong)]" />
             样式参数
           </motion.button>
 
@@ -90,11 +91,11 @@ export const WorkbenchStep: React.FC = () => {
           <motion.button 
             whileHover={{ scale: 1.02, y: -0.5 }}
             whileTap={{ scale: 0.98 }}
-            className="group py-2.5 px-5 rounded-xl bg-white text-black text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer border border-white/20 hover:bg-neutral-200 hover:scale-[1.01] shadow-[0_10px_26px_rgba(255,255,255,0.08)]"
+            className="v4-focus-ring group flex cursor-pointer items-center gap-2 rounded-md bg-[var(--v4-accent)] px-5 py-2.5 text-sm font-semibold text-[#0b0f18] transition-colors hover:bg-[var(--v4-accent-strong)]"
             onClick={() => setWorkflowStep(3)}
           >
-            <MonitorCheck className="w-3.5 h-3.5 text-[#267c6e]" />
-            下一步：放映厅预览
+            <MonitorCheck className="w-4 h-4" />
+            进入放映厅
           </motion.button>
         </div>
       </div>
@@ -103,14 +104,14 @@ export const WorkbenchStep: React.FC = () => {
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* Center Panel: Subtitle sequence list */}
         <div className="flex-1 p-4 md:p-6 min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
-          <div className="max-w-6xl w-full flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+          <div className="max-w-[1480px] w-full flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
             {processedSubs && processedSubs.length > 0 && (
               <SourceMatchPanel rows={processedSubs} />
             )}
             {processedSubs && processedSubs.length > 0 && (
               <AlignmentDiffPanel rows={processedSubs} />
             )}
-            <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white/[0.012] border border-white/[0.075] rounded-xl">
+            <div className="v4-panel flex-1 min-h-0 flex flex-col overflow-hidden rounded-lg">
               <SequenceList />
             </div>
           </div>
@@ -135,7 +136,7 @@ export const WorkbenchStep: React.FC = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: 360, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="absolute inset-y-4 right-4 z-50 flex w-[min(390px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl glass-panel-ar lg:relative lg:inset-auto lg:z-20 lg:my-6 lg:mr-6 lg:w-[390px] lg:shrink-0"
+                className="v4-panel absolute inset-y-4 right-4 z-50 flex w-[min(390px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg lg:relative lg:inset-auto lg:z-20 lg:my-6 lg:mr-6 lg:w-[390px] lg:shrink-0"
               >
                 <StyleSidebar />
               </motion.aside>
@@ -171,7 +172,7 @@ export const WorkbenchStep: React.FC = () => {
                 <button type="button" className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-neutral-300 hover:bg-white/[0.07] hover:text-white" onClick={() => setShowBackConfirm(false)}>
                   继续编辑
                 </button>
-                <button type="button" className="rounded-xl border border-[#9ddacb]/25 bg-[#9ddacb]/10 px-4 py-2.5 text-sm font-semibold text-[#d6f2eb] hover:bg-[#9ddacb]/16" onClick={() => { setShowBackConfirm(false); setProcessedSubs(null); setWorkflowStep(1); }}>
+                <button type="button" className="rounded-xl border border-[#8fa3d1]/25 bg-[#8fa3d1]/10 px-4 py-2.5 text-sm font-semibold text-[#dce2ef] hover:bg-[#8fa3d1]/16" onClick={() => { setShowBackConfirm(false); setProcessedSubs(null); setWorkflowStep(1); }}>
                   返回配对
                 </button>
               </div>

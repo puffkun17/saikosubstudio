@@ -225,12 +225,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
   const isMagnetic = targetCqh > 0 && Math.abs(paddingBottomCqh - targetCqh) < 1.0;
 
   return (
-    <div className="relative flex h-full w-full flex-1 items-center justify-center overflow-hidden bg-[#050507] p-4 md:p-8">
-      {/* 空间极光氛围呼吸光晕（家庭观影环境氛围） */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 select-none">
-        <div className="absolute top-[20%] left-[20%] w-[55%] h-[55%] rounded-full bg-aurora-glow-purple" />
-        <div className="absolute bottom-[20%] right-[20%] w-[45%] h-[45%] rounded-full bg-aurora-glow-emerald" />
-      </div>
+    <div className="relative flex h-full w-full flex-1 items-center justify-center overflow-hidden bg-[var(--v4-canvas)] p-4 md:p-8">
 
       {/* Outer wrapper constrained to the TV Mask's Aspect Ratio */}
       <div 
@@ -338,18 +333,18 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
             style={{
               bottom: `${paddingBottomCqh}cqh`,
               opacity: (guides.show || guides.temp) ? 1 : 0,
-              borderColor: isMagnetic ? '#b9ddd8' : 'rgba(185,221,216,0.72)',
+              borderColor: isMagnetic ? '#9aaad3' : 'rgba(154, 170, 211,0.72)',
               borderStyle: isMagnetic ? 'solid' : 'dashed',
-              boxShadow: isMagnetic ? '0 0 14px rgba(185,221,216,0.72)' : '0 0 10px rgba(185,221,216,0.28)',
+              boxShadow: isMagnetic ? '0 0 14px rgba(154, 170, 211,0.72)' : '0 0 10px rgba(154, 170, 211,0.28)',
             }}
           >
-            <span className="absolute left-3 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.08em] text-[#c9ebe5]">
+            <span className="absolute left-3 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.08em] text-[#c8d1e5]">
               字幕基线
             </span>
-            <span className="absolute -left-px -top-1 h-2 w-px bg-[#c9ebe5]" />
-            <span className="absolute -right-px -top-1 h-2 w-px bg-[#c9ebe5]" />
+            <span className="absolute -left-px -top-1 h-2 w-px bg-[#c8d1e5]" />
+            <span className="absolute -right-px -top-1 h-2 w-px bg-[#c8d1e5]" />
             {isMagnetic && (
-               <div className="absolute right-4 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-[10px] font-semibold text-[#c9ebe5]">
+               <div className="absolute right-4 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-[10px] font-semibold text-[#c8d1e5]">
                  已贴合参考线
                </div>
             )}
