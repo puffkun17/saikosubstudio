@@ -113,14 +113,14 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
             className="w-full py-3 px-4 text-xs font-semibold hover:bg-white/5 text-left border-b border-white/[0.06] transition text-white/80 hover:text-white flex items-center gap-2 cursor-pointer"
             onClick={() => { handleDownload('ass'); setOpen(false); }}
           >
-            <span className="font-mono text-[#e6dfe6] text-[0.625rem] bg-[#998aa0]/18 border border-[#b9a7b5]/20 px-1.5 py-0.5 rounded">ASS</span>
+            <span className="font-mono text-[#e6dfe6] text-xs bg-[#998aa0]/18 border border-[#b9a7b5]/20 px-1.5 py-0.5 rounded">ASS</span>
             导出 ASS
           </button>
           <button
             className="w-full py-3 px-4 text-xs font-semibold hover:bg-white/5 text-left transition text-white/80 hover:text-white flex items-center gap-2 cursor-pointer"
             onClick={() => { handleDownload('srt'); setOpen(false); }}
           >
-            <span className="font-mono text-white/50 text-[0.625rem] bg-white/5 px-1.5 py-0.5 rounded">SRT</span>
+            <span className="font-mono text-white/50 text-xs bg-white/5 px-1.5 py-0.5 rounded">SRT</span>
             导出 SRT
           </button>
         </div>

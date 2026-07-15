@@ -32,21 +32,21 @@ export const IngestStep: React.FC = () => {
       <div className={`flex items-center gap-2 select-none z-20 flex-shrink-0 ${tasks.length === 0 ? 'mb-4' : 'mb-2'}`}>
         <span className="h-px w-5 bg-[var(--v4-accent)]" />
         <span className="v4-kicker">
-          Local subtitle workbench
+          本地字幕工作台
         </span>
       </div>
 
       {tasks.length === 0 ? (
         <div className="ingest-heading flex flex-col md:flex-row justify-between items-start md:items-end gap-5 mb-6 md:mb-8 z-20 flex-shrink-0">
           <div className="flex flex-col gap-2 text-left">
-            <h1 className="text-[clamp(2.25rem,5vw,4.75rem)] font-semibold tracking-tight text-[var(--v4-text)] flex max-w-full items-center flex-wrap gap-x-4 gap-y-2 font-sans leading-[0.98] break-words [overflow-wrap:anywhere]">
+            <h1 className="flex max-w-full flex-wrap items-center gap-x-4 gap-y-2 break-words font-sans text-[clamp(2.25rem,4.5vw,3.75rem)] font-semibold leading-none tracking-tight text-[var(--v4-text)] [overflow-wrap:anywhere]">
               <span className="max-w-full break-all sm:break-normal">SaikoSubStudio</span>
               <span className="rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-2.5 py-1 text-xs font-mono font-semibold text-[var(--v4-accent-strong)]">
                 v4.0 Beta
               </span>
             </h1>
-            <p className="max-w-2xl text-base text-[var(--v4-text-muted)]">
-              先规划导入清单，再整理轨道、片源与输出。
+            <p className="max-w-2xl text-base leading-7 text-[var(--v4-text-muted)]">
+              先加入字幕文件，确认清单后统一整理。
             </p>
           </div>
         </div>

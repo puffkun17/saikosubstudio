@@ -128,7 +128,7 @@ export const TmdbPanel: React.FC = () => {
         </div>
         {(tmdbData || !needsTitleInput) && (
           <button
-            className="v4-focus-ring group flex cursor-pointer items-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] px-4 py-2.5 text-[15px] font-semibold text-[var(--v4-text)] transition-colors hover:bg-[var(--v4-accent-soft)]"
+            className="v4-focus-ring group flex cursor-pointer items-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] px-4 py-2.5 text-sm font-semibold text-[var(--v4-text)] transition-colors hover:bg-[var(--v4-accent-soft)]"
             onClick={() => setTmdbManualOpen(true)}
           >
             <Search className="w-3.5 h-3.5 group-hover:scale-110 group-hover:rotate-6 transition-transform" />
@@ -172,23 +172,23 @@ export const TmdbPanel: React.FC = () => {
 
                 <div className="flex flex-wrap items-center gap-1.5 select-none">
                   {tmdbData.year && (
-                    <span className="px-2.5 py-1 bg-white/[0.03] border border-white/[0.06] rounded-md text-[13px] font-bold text-neutral-200">
+                    <span className="px-2.5 py-1 bg-white/[0.03] border border-white/[0.06] rounded-md text-xs font-bold text-neutral-200">
                       {tmdbData.year}
                     </span>
                   )}
                   {tmdbData.voteAverage > 0 && (
-                    <span className="px-2.5 py-1 bg-[#9ca3af]/10 text-[#e5e7eb] border border-[#9ca3af]/18 rounded-md text-[13px] font-mono font-bold flex items-center gap-1.5">
+                    <span className="px-2.5 py-1 bg-[#9ca3af]/10 text-[#e5e7eb] border border-[#9ca3af]/18 rounded-md text-xs font-mono font-bold flex items-center gap-1.5">
                       <Star className="w-3.5 h-3.5 fill-[#e5e7eb] text-[#e5e7eb]" />
                       {tmdbData.voteAverage.toFixed(1)}
                     </span>
                   )}
                   {rtScore && (
-                    <span className="px-2.5 py-1 bg-red-500/10 text-red-400 border border-red-500/15 rounded-md text-[13px] font-mono font-bold flex items-center gap-1.5 shadow-[0_0_8px_rgba(239,68,68,0.08)]">
+                    <span className="px-2.5 py-1 bg-red-500/10 text-red-400 border border-red-500/15 rounded-md text-xs font-mono font-bold flex items-center gap-1.5 shadow-[0_0_8px_rgba(239,68,68,0.08)]">
                       RT {rtScore}%
                     </span>
                   )}
                   {tmdbData.genres && tmdbData.genres.map((g: string, i: number) => (
-                    <span key={i} className="px-2.5 py-1 bg-white/[0.025] border border-white/[0.05] text-[13px] rounded-md font-semibold text-neutral-300">
+                    <span key={i} className="px-2.5 py-1 bg-white/[0.025] border border-white/[0.05] text-xs rounded-md font-semibold text-neutral-300">
                       {g}
                     </span>
                   ))}

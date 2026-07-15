@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Source Han Sans CN VF";
+  src: url("/fonts/SourceHanSansCN-VF.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  unicode-range: U+2E80-2FFF, U+3000-303F, U+31C0-31EF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
+
 @theme {
-  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Source Han Sans CN", "Noto Sans SC", sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "PingFang SC", "Microsoft YaHei", "Source Han Sans CN", "Noto Sans SC", monospace;
+  --font-sans: "Source Han Sans CN VF", var(--font-geist-sans), "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: var(--font-geist-mono), "SFMono-Regular", "Cascadia Mono", ui-monospace, monospace, "Source Han Sans CN VF";
   --color-accent-neon: #dfe5f2;
   --color-accent-glow: rgba(124, 141, 187, 0.14);
   --color-accent-muted: #8e99b5;
@@ -28,17 +37,13 @@
   --color-surface-2: #121722;
   --color-surface-3: #181e2a;
   
-  /* Consistent type scale for aesthetics and readability (esp. Chinese on dark) */
-  --text-xs: 0.8125rem;  /* 13px - badges, quiet labels */
-  --text-sm: 1rem;       /* 16px - controls, dense content */
-  --text-base: 1.0625rem; /* 17px - primary body */
-  --text-lg: 1.1875rem;  /* 19px - panel titles */
-  --text-xl: 1.375rem;   /* 22px - section headers */
-  --text-2xl: 1.75rem;   /* 28px - emphasized titles */
-  
-  --text-h1: clamp(3.5rem, 5.6vw, 6.75rem);
-  --text-h4: 1.75rem;
-  --text-h6: 1.375rem;
+  /* One readable scale: annotation 13, control 15, body 16, headings 18-24. */
+  --text-xs: 0.8125rem;
+  --text-sm: 0.9375rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
 }
 
 :root {
@@ -61,16 +66,6 @@
   --v4-warning: #c5a472;
 }
 
-h4 {
-  font-size: var(--text-h4);
-  line-height: 1.2;
-}
-h6 {
-  font-size: var(--text-h6);
-  font-weight: normal;
-  line-height: 1.3;
-}
-
 html {
   font-size: calc(16px * var(--site-scale, 1));
   height: 100%;
@@ -78,6 +73,7 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-synthesis: none;
 }
 
 body {
@@ -121,11 +117,10 @@ body {
 
 .v4-kicker {
   color: var(--v4-accent-strong);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
 }
 
 .v4-focus-ring:focus-visible {

@@ -338,13 +338,13 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
               boxShadow: isMagnetic ? '0 0 14px rgba(154, 170, 211,0.72)' : '0 0 10px rgba(154, 170, 211,0.28)',
             }}
           >
-            <span className="absolute left-3 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.08em] text-[#c8d1e5]">
+            <span className="absolute left-3 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-xs font-semibold tracking-[0.08em] text-[#c8d1e5]">
               字幕基线
             </span>
             <span className="absolute -left-px -top-1 h-2 w-px bg-[#c8d1e5]" />
             <span className="absolute -right-px -top-1 h-2 w-px bg-[#c8d1e5]" />
             {isMagnetic && (
-               <div className="absolute right-4 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-[10px] font-semibold text-[#c8d1e5]">
+               <div className="absolute right-4 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-xs font-semibold text-[#c8d1e5]">
                  已贴合参考线
                </div>
             )}
@@ -359,7 +359,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
               opacity: (guides.show || guides.temp) && !isMagnetic ? 1 : 0,
             }}
           >
-            <span className="absolute right-3 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-[10px] font-medium text-white/58">画幅参考线</span>
+            <span className="absolute right-3 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-xs font-medium text-white/58">画幅参考线</span>
           </div>
           )}
         </div>

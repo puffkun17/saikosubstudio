@@ -112,22 +112,22 @@ export const SystemTray = () => {
 
   return (
     <nav
-      aria-label="System tray"
+      aria-label="全局导航"
       className="fixed top-0 z-50 flex h-[68px] w-full items-center justify-between border-b border-[var(--v4-line)] bg-[color:rgba(9,11,16,0.92)] px-5 backdrop-blur-md transition-colors duration-300 md:px-8"
     >
       {/* ── Left: brand + nav ──────────────────────────────── */}
-      <div className="flex items-center gap-4 text-[17px] tracking-tight min-w-0">
+      <div className="flex min-w-0 items-center gap-3 tracking-tight">
         <button
           type="button"
           onClick={() => handleStepClick(1)}
-          className="v4-focus-ring flex shrink-0 cursor-pointer items-center gap-2 rounded-md font-semibold text-[var(--v4-text)] transition-colors duration-150 hover:text-white"
+          className="v4-focus-ring flex shrink-0 cursor-pointer items-center gap-2 rounded-md text-base font-semibold text-[var(--v4-text)] transition-colors duration-150 hover:text-white"
           aria-label="返回上传入口"
         >
           <Image src="/favicon.svg" alt="" aria-hidden="true" width={20} height={20} className="h-5 w-5 rounded-[5px]" />
           <span className="hidden sm:inline">SubStudio</span>
         </button>
 
-        {!isInfoPage && <div className="hidden items-center gap-1 border-l border-[var(--v4-line)] pl-4 md:flex">
+        {!isInfoPage && <div className="hidden items-center gap-1 border-l border-[var(--v4-line)] pl-3 md:flex">
           {WORKFLOW_STEPS.map(step => {
             const isActive = workflowStep === step.id;
             const disabled = (step.id === 2 && !hasUploadData && !hasWorkbenchData) || (step.id === 3 && !hasWorkbenchData);
@@ -136,7 +136,7 @@ export const SystemTray = () => {
                 key={step.id}
                 type="button"
                 onClick={() => handleStepClick(step.id)}
-                  className={`v4-focus-ring cursor-pointer rounded-md px-3.5 py-2 text-[15px] font-medium transition-all
+                  className={`v4-focus-ring cursor-pointer rounded-md px-4 py-2 text-base font-semibold transition-all
                   ${isActive
                     ? 'bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
                     : disabled
@@ -177,7 +177,7 @@ export const SystemTray = () => {
           className="v4-focus-ring inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm font-medium text-[var(--v4-text-muted)] transition-colors hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)] hover:text-white"
             title="历史存档字幕"
           >
-            <FolderClock className="h-5 w-5 stroke-[2.25] text-[var(--v4-accent-strong)]" aria-hidden="true" />
+            <FolderClock className="h-[18px] w-[18px] stroke-[2.2] text-[var(--v4-accent-strong)]" aria-hidden="true" />
             <span className="hidden lg:inline">历史存档</span>
             {libraryList.length > 0 && (
               <span className="hidden min-w-5 items-center justify-center rounded bg-[var(--v4-accent-soft)] px-1.5 py-0.5 text-xs font-semibold text-[var(--v4-accent-strong)] lg:inline-flex">
@@ -191,7 +191,7 @@ export const SystemTray = () => {
           className="v4-focus-ring inline-flex h-10 items-center gap-2 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm font-medium text-[var(--v4-text-muted)] transition-colors hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)] hover:text-white"
           title="隐私与版权"
         >
-          <ShieldCheck className="h-5 w-5 stroke-[2.25] text-[var(--v4-accent-strong)]" aria-hidden="true" />
+          <ShieldCheck className="h-[18px] w-[18px] stroke-[2.2] text-[var(--v4-accent-strong)]" aria-hidden="true" />
           <span className="hidden lg:inline">隐私与版权</span>
         </Link>
         <Link
@@ -199,7 +199,7 @@ export const SystemTray = () => {
           className="v4-focus-ring inline-flex h-10 items-center gap-2 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm font-medium text-[var(--v4-text-muted)] transition-colors hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)] hover:text-white"
           title="提交反馈"
         >
-          <MessageSquareText className="h-5 w-5 stroke-[2.25] text-[var(--v4-accent-strong)]" aria-hidden="true" />
+          <MessageSquareText className="h-[18px] w-[18px] stroke-[2.2] text-[var(--v4-accent-strong)]" aria-hidden="true" />
           <span className="hidden sm:inline">反馈</span>
         </Link>
         <button
@@ -207,7 +207,7 @@ export const SystemTray = () => {
           className="v4-focus-ring hidden h-10 cursor-pointer select-none items-center gap-2 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm font-mono text-[var(--v4-text-muted)] hover:text-white lg:flex"
           title="调节网页整体缩放"
         >
-          <span className="text-[13px] opacity-75 font-bold tracking-wide">A±</span>
+          <span className="text-xs opacity-75 font-bold tracking-wide">A±</span>
           <span className="font-bold text-[var(--v4-text)]" suppressHydrationWarning>{Math.round(scale * 100)}%</span>
         </button>
         <span

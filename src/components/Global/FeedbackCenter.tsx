@@ -65,7 +65,7 @@ export const FeedbackCenter: React.FC = () => {
             className={`fixed right-4 bottom-[5.5rem] left-4 z-[60] flex min-h-11 items-center gap-3 rounded-xl border px-3.5 py-2 shadow-[0_10px_28px_rgba(0,0,0,0.3)] backdrop-blur-xl md:right-6 md:left-auto md:w-[min(420px,calc(100vw-3rem))] xl:top-3 xl:right-auto xl:bottom-auto xl:left-[calc(50%+1.5rem)] xl:h-11 xl:w-[min(620px,calc(100vw-42rem))] xl:-translate-x-1/2 xl:py-0 ${noticeStyles[latestNotice.tone]}`}
           >
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#8fa3d1] shadow-[0_0_10px_rgba(143, 163, 209,0.52)]" />
-            <span className="shrink-0 text-[13px] font-semibold tracking-tight">{latestNotice.title}</span>
+            <span className="shrink-0 text-xs font-semibold tracking-tight">{latestNotice.title}</span>
             {latestNotice.message && (
               <span className="min-w-0 flex-1 truncate text-xs text-current/65">{latestNotice.message}</span>
             )}
@@ -105,7 +105,7 @@ export const FeedbackCenter: React.FC = () => {
                 animate={{ opacity: log.fade ? 0 : 1, y: log.fade ? 6 : 0, scale: log.fade ? 0.98 : 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.98 }}
                 transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                className={`pointer-events-auto flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-[13px] font-medium leading-relaxed shadow-[0_12px_34px_rgba(0,0,0,0.35)] backdrop-blur-xl ${styles.shell}`}
+                className={`pointer-events-auto flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-xs font-medium leading-relaxed shadow-[0_12px_34px_rgba(0,0,0,0.35)] backdrop-blur-xl ${styles.shell}`}
               >
                 <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${styles.dot}`} />
                 <span className="mt-0.5 shrink-0 text-white/48">{styles.icon}</span>

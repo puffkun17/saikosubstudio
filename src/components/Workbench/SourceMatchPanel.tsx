@@ -91,18 +91,18 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
         <div className="border-b xl:border-b-0 xl:border-r border-white/[0.055] px-5 py-4 md:px-6 md:py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <div className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] text-neutral-100">
+              <div className="flex items-center gap-2 text-sm font-semibold tracking-normal text-neutral-100">
                 <Activity className="h-4 w-4 text-[#8fa3d1]" />
                 {isMatchMode ? '片源时长参照' : '字幕概览'}
               </div>
-              <p className="mt-1 max-w-[28ch] text-[13px] leading-5 text-neutral-400">
+              <p className="mt-1 max-w-[28ch] text-xs leading-5 text-neutral-400">
                 {isMatchMode ? '已读取片源时长，用于检查字幕覆盖范围。' : '先确认字幕规模与分布，再加入本地片源检查时长覆盖。'}
               </p>
             </div>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[#8fa3d1]/20 bg-[#8fa3d1]/[0.045] px-3.5 py-2.5 text-[13px] font-medium text-[#dce2ef] transition hover:border-[#8fa3d1]/38 hover:bg-[#8fa3d1]/[0.09] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8fa3d1]/70 active:translate-y-px cursor-pointer"
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[#8fa3d1]/20 bg-[#8fa3d1]/[0.045] px-3.5 py-2.5 text-xs font-medium text-[#dce2ef] transition hover:border-[#8fa3d1]/38 hover:bg-[#8fa3d1]/[0.09] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8fa3d1]/70 active:translate-y-px cursor-pointer"
             >
               <Clapperboard className="h-3.5 w-3.5" />
               {isMatchMode ? '更换片源' : '加入片源'}
@@ -123,11 +123,11 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                   key={report.coverageRatio}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`text-[46px] leading-none font-semibold tracking-[-0.04em] ${meta.tone}`}
+                  className={`text-[46px] leading-none font-semibold tracking-normal ${meta.tone}`}
                 >
                   {report.coverageRatio ? `${Math.round(report.coverageRatio * 100)}%` : '--'}
                 </motion.div>
-                <div className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-[0.12em] text-neutral-500">
+                <div className="mt-1 inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-[0.12em] text-neutral-500">
                   时间覆盖
                   <InfoHint label="时间覆盖说明">
                     这里只比较字幕起止范围与片源总时长，不读取音频，也不能判断对白是否合轴。
@@ -135,35 +135,35 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                 </div>
               </div>
               <div className="text-right">
-                <div className={`text-[15px] font-semibold ${meta.tone}`}>{meta.label}</div>
+                <div className={`text-sm font-semibold ${meta.tone}`}>{meta.label}</div>
                 <div className="mt-1 text-xs text-neutral-500">依据：时长与字幕时间轴</div>
               </div>
             </div>
           ) : (
-            <dl className="mt-5 grid grid-cols-3 gap-0 overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.016]">
-              <div className="px-3.5 py-3">
-                <dt className="text-[11px] text-neutral-500">文本量</dt>
-                <dd className="mt-1.5 text-[19px] leading-none font-semibold tracking-[-0.02em] text-neutral-100">{formatCount(report.stats.characterCount)}</dd>
+            <dl className="mt-5 grid grid-cols-3 gap-0 overflow-hidden rounded-lg border border-white/[0.06] bg-white/[0.016]">
+              <div className="min-w-0 px-3 py-3">
+                <dt className="whitespace-nowrap text-xs text-neutral-500">文本量</dt>
+                <dd className="mt-1.5 whitespace-nowrap text-lg leading-none font-semibold tabular-nums text-neutral-100">{formatCount(report.stats.characterCount)}</dd>
               </div>
-              <div className="border-l border-white/[0.055] px-3.5 py-3">
-                <dt className="text-[11px] text-neutral-500">时间跨度</dt>
-                <dd className="mt-1.5 text-[19px] leading-none font-semibold tracking-[-0.02em] text-neutral-100">{formatMsClock(report.stats.spanMs)}</dd>
+              <div className="min-w-0 border-l border-white/[0.055] px-3 py-3">
+                <dt className="whitespace-nowrap text-xs text-neutral-500">时间跨度</dt>
+                <dd className="mt-1.5 whitespace-nowrap text-lg leading-none font-semibold tabular-nums text-neutral-100">{formatMsClock(report.stats.spanMs)}</dd>
               </div>
-              <div className="border-l border-white/[0.055] px-3.5 py-3">
-                <dt className="text-[11px] text-neutral-500 inline-flex items-center gap-1.5">
+              <div className="min-w-0 border-l border-white/[0.055] px-3 py-3">
+                <dt className="inline-flex items-center gap-1 whitespace-nowrap text-xs text-neutral-500">
                   对白密度
                   <InfoHint label="对白密度说明">
                     每分钟字幕行数，用于观察字幕分布是否异常。声音说明、歌词和画面文字也会影响这个指标。
                   </InfoHint>
                 </dt>
-                <dd className="mt-1.5 text-[18px] leading-none font-semibold tracking-[-0.02em] text-[#8fa3d1]">{report.stats.densityPerMinute}</dd>
+                <dd className="mt-1.5 whitespace-nowrap text-lg leading-none font-semibold tabular-nums text-[#8fa3d1]">{report.stats.densityPerMinute}</dd>
               </div>
             </dl>
           )}
 
           <div className="mt-4">
-            <div className="text-[15px] font-semibold tracking-[-0.01em] text-neutral-100">{report.title}</div>
-            <p className="mt-1.5 max-w-[36ch] text-[13px] leading-5 text-neutral-400">{report.summary}</p>
+            <div className="text-sm font-semibold tracking-normal text-neutral-100">{report.title}</div>
+            <p className="mt-1.5 max-w-[36ch] text-xs leading-5 text-neutral-400">{report.summary}</p>
           </div>
 
           <div className="mt-4 flex items-center gap-2 text-xs text-neutral-500">
@@ -179,13 +179,13 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
           <figure className="overflow-visible">
             <figcaption className="flex items-start justify-between gap-3 pb-2 text-xs text-neutral-500">
               <div>
-                <div className="text-[13px] font-medium text-neutral-300 inline-flex items-center gap-1.5">
+                <div className="text-xs font-medium text-neutral-300 inline-flex items-center gap-1.5">
                   {isMatchMode ? '片源时长内的字幕分布' : '字幕时间分布'}
                   <InfoHint label="字幕分布图说明">
                     曲线只展示字幕事件在时间轴中的分布。加入片源后，横轴按片源总时长计算，可用于发现明显越界或覆盖不足。
                   </InfoHint>
                 </div>
-                <div className="mt-0.5 text-[12px] text-neutral-500">{report.stats.distributionLabel} · {formatCount(report.stats.lineCount)} 行</div>
+                <div className="mt-0.5 text-xs text-neutral-500">{report.stats.distributionLabel} · {formatCount(report.stats.lineCount)} 行</div>
               </div>
               <span className="shrink-0 tabular-nums">{report.stats.densityPerMinute} 行/分钟</span>
             </figcaption>
@@ -242,7 +242,7 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
             <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-3">
               {report.findings.slice(0, 3).map(finding => (
                 <div key={finding.id} className={`rounded-lg border p-3 ${severityClass[finding.severity]}`}>
-                  <div className="flex items-center gap-2 text-[13px] font-semibold">
+                  <div className="flex items-center gap-2 text-xs font-semibold">
                     <FindingIcon severity={finding.severity} />
                     {finding.label}
                   </div>

@@ -512,7 +512,7 @@ export const StyleSidebar: React.FC = () => {
                   onClick={() => handleStyleChange('auxiliaryMode', item.value)}
                 >
                   <span className="block text-center text-xs font-semibold leading-tight">{item.label}</span>
-                  <span className={`mt-0.5 block text-center text-[10px] leading-tight ${(customStyle.auxiliaryMode || 'keep') === item.value ? 'text-black/55' : 'text-neutral-600'}`}>
+                  <span className={`mt-0.5 block text-center text-xs leading-tight ${(customStyle.auxiliaryMode || 'keep') === item.value ? 'text-black/55' : 'text-neutral-600'}`}>
                     {item.desc}
                   </span>
                 </button>

@@ -71,7 +71,7 @@ export const SequenceList: React.FC = () => {
         <div className="flex flex-col gap-3 px-5 md:px-6 py-3.5 border-b border-white/[0.055] bg-white/[0.008] flex-shrink-0">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0 flex items-center gap-3">
-              <span className="text-[15px] tracking-[-0.01em] text-neutral-100 font-semibold whitespace-nowrap">
+              <span className="text-sm tracking-normal text-neutral-100 font-semibold whitespace-nowrap">
                 时间轴
               </span>
               <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-xs tabular-nums text-neutral-400">
@@ -207,33 +207,33 @@ export const SequenceList: React.FC = () => {
                     ) : (
                       <>
                         {isExpandedDialogue && (
-                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[#8fa3d1]/20 bg-[#8fa3d1]/[0.055] px-2 py-0.5 text-[11px] font-medium text-[#d2d9e9]">
+                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[#8fa3d1]/20 bg-[#8fa3d1]/[0.055] px-2 py-0.5 text-xs font-medium text-[#d2d9e9]">
                             对话组
                           </span>
                         )}
                         {sub.cueKind === 'screen_text' && (
-                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[#a8b7a3]/20 bg-[#a8b7a3]/[0.055] px-2 py-0.5 text-[11px] font-medium text-[#cbd6c7]">
+                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[#a8b7a3]/20 bg-[#a8b7a3]/[0.055] px-2 py-0.5 text-xs font-medium text-[#cbd6c7]">
                             <Captions className="mr-1 h-3 w-3" />
                             画面文字
                           </span>
                         )}
                         {isSoundCaption && (
-                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-white/[0.08] bg-white/[0.025] px-2 py-0.5 text-[11px] font-medium text-neutral-400">
+                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-white/[0.08] bg-white/[0.025] px-2 py-0.5 text-xs font-medium text-neutral-400">
                             <Volume2 className="mr-1 h-3 w-3" />
                             声音说明
                           </span>
                         )}
                         {isAuxiliarySemantic && (
-                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[#9aaad3]/20 bg-[#9aaad3]/[0.055] px-2 py-0.5 text-[11px] font-medium text-[#d2d9e9]">
+                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[#9aaad3]/20 bg-[#9aaad3]/[0.055] px-2 py-0.5 text-xs font-medium text-[#d2d9e9]">
                             <Captions className="mr-1 h-3 w-3" />
                             辅助信息
                           </span>
                         )}
-                        <div className={`text-[15px] font-medium leading-6 break-words ${isActive ? 'text-white' : 'text-neutral-200'}`}>
+                        <div className={`text-sm font-medium leading-6 break-words ${isActive ? 'text-white' : 'text-neutral-200'}`}>
                           {zhText}
                         </div>
                         {enText && (
-                          <div className={`text-[13px] mt-0.5 font-normal leading-5 break-words ${isActive ? 'text-[#e5e7eb]/90' : 'text-neutral-400'}`}>
+                          <div className={`text-xs mt-0.5 font-normal leading-5 break-words ${isActive ? 'text-[#e5e7eb]/90' : 'text-neutral-400'}`}>
                             {enText}
                           </div>
                         )}

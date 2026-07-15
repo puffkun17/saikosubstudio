@@ -682,8 +682,8 @@ export const DragZone: React.FC = () => {
               <FilePlus className="h-12 w-12 stroke-[2]" aria-hidden="true" />
             </motion.div>
             <div>
-              <span className="block text-3xl font-semibold tracking-tight text-neutral-50">松手，加入导入清单</span>
-              <span className="mt-2 block text-sm text-[var(--v4-text-muted)]">确认清单后才会读取与整理</span>
+              <span className="block text-3xl font-semibold tracking-tight text-neutral-50">松手，加入清单</span>
+              <span className="mt-2 block text-sm text-[var(--v4-text-muted)]">文件仍可继续补充或移除</span>
             </div>
           </div>
         ) : queuedItems.length === 0 ? (
@@ -692,9 +692,9 @@ export const DragZone: React.FC = () => {
               <div aria-hidden="true" className="absolute inset-0 bg-[url('/Background.jpg')] bg-cover bg-[center_58%] opacity-35 grayscale contrast-125" />
               <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,rgba(12,15,21,0.38),rgba(12,15,21,0.88))]" />
               <div className="absolute inset-x-0 bottom-0 z-10 p-7 text-left md:p-9">
-                <span className="v4-kicker">Import desk</span>
-                <h3 className="mt-3 text-[2rem] font-semibold leading-none tracking-tight text-white sm:text-[2.5rem]">规划本次导入</h3>
-                <p className="mt-3 max-w-md text-sm leading-6 text-[var(--v4-text-muted)]">字幕文件、字幕包与文件夹可先加入清单，确认组合后再开始读取。</p>
+                <span className="v4-kicker">导入规划</span>
+                <h3 className="mt-3 text-[2rem] font-semibold leading-tight tracking-tight text-white sm:text-[2.35rem]">规划本次导入</h3>
+                <p className="mt-3 max-w-md text-base leading-7 text-[var(--v4-text-muted)]">先组合字幕与字幕包，再开始统一识别。</p>
               </div>
             </div>
 
@@ -702,18 +702,15 @@ export const DragZone: React.FC = () => {
               <div>
                 <div className="flex items-start justify-between gap-5">
                   <div>
-                    <FilePlus className="h-8 w-8 stroke-[2] text-[var(--v4-accent-strong)]" aria-hidden="true" />
-                    <h4 className="mt-5 text-2xl font-semibold tracking-tight text-[var(--v4-text)]">拖入字幕，建立清单</h4>
-                    <p className="mt-2 text-sm leading-6 text-[var(--v4-text-muted)]">松手后仍可继续补充或移除，不会立即进入处理流程。</p>
-                  </div>
-                  <div className="hidden items-center gap-2 font-mono text-[11px] text-[var(--v4-text-faint)] sm:flex">
-                    {FORMAT_MARKS.map(mark => <span key={mark}>{mark}</span>)}
+                    <h4 className="text-2xl font-semibold tracking-tight text-[var(--v4-text)]">拖入字幕文件</h4>
+                    <p className="mt-2 max-w-lg text-base leading-7 text-[var(--v4-text-muted)]">也可从设备选择文件、字幕包或文件夹，确认组合后再开始整理。</p>
+                    <p className="mt-3 text-sm font-medium text-[var(--v4-text-faint)]">支持 {FORMAT_MARKS.join(' / ')}</p>
                   </div>
                 </div>
                 <div className="mt-8 grid gap-2 sm:grid-cols-2">
                   <button type="button" onClick={() => fileInputRef.current?.click()} className="v4-focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[var(--v4-accent)] px-5 text-sm font-semibold text-[#0b0f18] transition-colors hover:bg-[var(--v4-accent-strong)] active:scale-[0.985]">
                     <FilePlus className="h-5 w-5 stroke-[2.2]" aria-hidden="true" />
-                    选择文件或字幕包
+                    选择文件 / 字幕包
                   </button>
                   <button type="button" onClick={() => folderInputRef.current?.click()} className="v4-focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-muted)] px-5 text-sm font-medium text-[var(--v4-text)] transition-colors hover:bg-[var(--v4-panel-raised)] active:scale-[0.985]">
                     <FolderPlus className="h-5 w-5 stroke-[2.2]" aria-hidden="true" />
@@ -721,9 +718,9 @@ export const DragZone: React.FC = () => {
                   </button>
                 </div>
               </div>
-              <div className="mt-8 flex items-center gap-2 border-t border-[var(--v4-line)] pt-5 text-xs text-[var(--v4-text-faint)]">
+              <div className="mt-8 flex items-center gap-2 border-t border-[var(--v4-line)] pt-5 text-sm font-medium text-[var(--v4-text-muted)]">
                 <HardDrive className="h-4 w-4" aria-hidden="true" />
-                文件仅在当前设备读取，不会上传至本站服务器
+                仅在当前设备读取
               </div>
             </div>
           </div>
@@ -731,26 +728,26 @@ export const DragZone: React.FC = () => {
           <div className="grid min-h-[398px] md:grid-cols-[minmax(250px,0.35fr)_minmax(0,0.65fr)]">
             <aside className="flex flex-col justify-between border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-6 text-left md:border-b-0 md:border-r md:p-7">
               <div>
-                <span className="v4-kicker">Import plan</span>
+                <span className="v4-kicker">导入计划</span>
                 <h3 className="mt-3 text-2xl font-semibold tracking-tight">本次导入</h3>
-                <p className="mt-2 text-sm leading-6 text-[var(--v4-text-muted)]">先确认文件组合，再统一识别轨道与片源线索。</p>
+                <p className="mt-2 text-base leading-7 text-[var(--v4-text-muted)]">确认文件组合后，再统一识别轨道。</p>
                 <dl className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-md border border-[var(--v4-line)] bg-[var(--v4-line)]">
-                  <div className="bg-[var(--v4-panel)] p-3"><dt className="text-xs text-[var(--v4-text-faint)]">字幕文件</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{subtitleCount}</dd></div>
-                  <div className="bg-[var(--v4-panel)] p-3"><dt className="text-xs text-[var(--v4-text-faint)]">字幕包</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{archiveCount}</dd></div>
-                  <div className="bg-[var(--v4-panel)] p-3"><dt className="text-xs text-[var(--v4-text-faint)]">可处理</dt><dd className="mt-1 text-xl font-semibold tabular-nums text-[var(--v4-accent-strong)]">{acceptedItems.length}</dd></div>
-                  <div className="bg-[var(--v4-panel)] p-3"><dt className="text-xs text-[var(--v4-text-faint)]">总体积</dt><dd className="mt-1 text-base font-semibold tabular-nums">{formatBytes(totalBytes)}</dd></div>
+                  <div className="bg-[var(--v4-panel)] p-3"><dt className="whitespace-nowrap text-xs text-[var(--v4-text-faint)]">字幕文件</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{subtitleCount}</dd></div>
+                  <div className="bg-[var(--v4-panel)] p-3"><dt className="whitespace-nowrap text-xs text-[var(--v4-text-faint)]">字幕包</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{archiveCount}</dd></div>
+                  <div className="bg-[var(--v4-panel)] p-3"><dt className="whitespace-nowrap text-xs text-[var(--v4-text-faint)]">可处理</dt><dd className="mt-1 text-xl font-semibold tabular-nums text-[var(--v4-accent-strong)]">{acceptedItems.length}</dd></div>
+                  <div className="bg-[var(--v4-panel)] p-3"><dt className="whitespace-nowrap text-xs text-[var(--v4-text-faint)]">总体积</dt><dd className="mt-1 whitespace-nowrap text-base font-semibold tabular-nums">{formatBytes(totalBytes)}</dd></div>
                 </dl>
               </div>
               <div className="mt-6 grid gap-2">
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="v4-focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel)] px-3 text-sm font-medium hover:bg-[var(--v4-panel-raised)]"><FilePlus className="h-4 w-4" />继续添加文件</button>
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="v4-focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel)] px-3 text-sm font-medium hover:bg-[var(--v4-panel-raised)]"><FilePlus className="h-4 w-4" />添加文件</button>
                 <button type="button" onClick={() => folderInputRef.current?.click()} className="v4-focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[var(--v4-line)] px-3 text-sm text-[var(--v4-text-muted)] hover:text-white"><FolderPlus className="h-4 w-4" />添加文件夹</button>
               </div>
             </aside>
 
             <section className="flex min-h-0 flex-col text-left">
               <header className="flex items-center justify-between gap-4 border-b border-[var(--v4-line)] px-5 py-4 md:px-6">
-                <div><h4 className="text-lg font-semibold">导入清单</h4><p className="mt-0.5 text-xs text-[var(--v4-text-faint)]">{queuedItems.length} 个项目 · {formatBytes(totalBytes)}</p></div>
-                <button type="button" onClick={() => { setQueuedItems([]); setQueueIssue(null); }} className="v4-focus-ring inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs text-[var(--v4-text-muted)] hover:bg-white/[0.04] hover:text-white"><Trash2 className="h-4 w-4" />清空</button>
+                <div><h4 className="text-xl font-semibold">导入清单</h4><p className="mt-1 text-xs text-[var(--v4-text-faint)]">{queuedItems.length} 个项目 · {formatBytes(totalBytes)}</p></div>
+                <button type="button" onClick={() => { setQueuedItems([]); setQueueIssue(null); }} className="v4-focus-ring inline-flex h-9 items-center gap-2 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm font-medium text-[var(--v4-text-muted)] hover:border-[var(--v4-line-strong)] hover:text-white"><Trash2 className="h-4 w-4" />清空清单</button>
               </header>
               <div className="max-h-[310px] flex-1 overflow-y-auto divide-y divide-[var(--v4-line)]">
                 {queuedItems.map(item => (
@@ -758,7 +755,7 @@ export const DragZone: React.FC = () => {
                     <span className={`grid h-9 w-9 place-items-center rounded-md border ${item.accepted ? 'border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'border-[color:rgba(200,135,140,0.25)] bg-[color:rgba(200,135,140,0.08)] text-[var(--v4-danger)]'}`}>
                       {item.kind === 'zip' || item.kind === 'archive' ? <Archive className="h-4.5 w-4.5" /> : <FileText className="h-4.5 w-4.5" />}
                     </span>
-                    <div className="min-w-0"><div className="flex min-w-0 items-center gap-2"><span className="truncate text-sm font-medium text-[var(--v4-text)]">{item.name}</span><span className="shrink-0 rounded border border-[var(--v4-line)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--v4-text-muted)]">{item.label}</span></div><div className={`mt-1 flex items-center gap-2 text-xs ${item.accepted ? 'text-[var(--v4-text-faint)]' : 'text-[var(--v4-danger)]'}`}><span>{item.note}</span><span aria-hidden="true">·</span><span>{formatBytes(item.file.size)}</span></div></div>
+                    <div className="min-w-0"><div className="flex min-w-0 items-center gap-2"><span className="truncate text-base font-medium text-[var(--v4-text)]">{item.name}</span><span className="shrink-0 rounded border border-[var(--v4-line)] px-1.5 py-0.5 font-mono text-xs text-[var(--v4-text-muted)]">{item.label}</span></div><div className={`mt-1 flex items-center gap-2 text-xs ${item.accepted ? 'text-[var(--v4-text-muted)]' : 'text-[var(--v4-danger)]'}`}><span>{item.note}</span><span aria-hidden="true">·</span><span>{formatBytes(item.file.size)}</span></div></div>
                     <button type="button" onClick={() => removeQueuedFile(item.file)} className="v4-focus-ring grid h-8 w-8 place-items-center rounded-md text-[var(--v4-text-faint)] hover:bg-white/[0.05] hover:text-white" aria-label={`从清单移除 ${item.name}`}><X className="h-4 w-4" /></button>
                   </div>
                 ))}
@@ -766,8 +763,8 @@ export const DragZone: React.FC = () => {
               <footer className="mt-auto border-t border-[var(--v4-line)] p-4 md:px-6">
                 {(queueIssue || rejectedItems.length > 0) && <p className="mb-3 text-xs leading-5 text-[var(--v4-warning)]">{queueIssue || `${rejectedItems.length} 个项目不会进入处理流程，可移除后继续。`}</p>}
                 <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
-                  <span className="inline-flex items-center gap-2 text-xs text-[var(--v4-text-faint)]"><HardDrive className="h-4 w-4" />确认后在当前设备读取</span>
-                  <button type="button" disabled={acceptedItems.length === 0 || Boolean(queueIssue)} onClick={() => handleFilesProcess(queuedItems.map(item => item.file))} className="v4-focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[var(--v4-accent)] px-5 text-sm font-semibold text-[#0b0f18] transition-colors hover:bg-[var(--v4-accent-strong)] disabled:cursor-not-allowed disabled:opacity-35">开始整理 {acceptedItems.length} 个文件<ArrowRight className="h-4 w-4" /></button>
+                  <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--v4-text-muted)]"><HardDrive className="h-4 w-4" />文件将在当前设备读取</span>
+                  <button type="button" disabled={acceptedItems.length === 0 || Boolean(queueIssue)} onClick={() => handleFilesProcess(queuedItems.map(item => item.file))} className="v4-focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[var(--v4-accent)] px-5 text-base font-semibold text-[#0b0f18] transition-colors hover:bg-[var(--v4-accent-strong)] disabled:cursor-not-allowed disabled:opacity-35">开始整理 {acceptedItems.length} 个文件<ArrowRight className="h-4 w-4" /></button>
                 </div>
               </footer>
             </section>

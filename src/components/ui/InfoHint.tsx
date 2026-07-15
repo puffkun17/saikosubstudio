@@ -70,7 +70,7 @@ export const InfoHint: React.FC<InfoHintProps> = ({
           id={tooltipId}
           role="tooltip"
           style={{ top: position.top, left: position.left }}
-          className="pointer-events-none fixed z-[100] w-[min(19rem,calc(100vw-2rem))] -translate-y-1/2 rounded-xl border border-white/[0.09] bg-[#101115]/[0.98] px-4 py-3 text-left text-[13px] leading-5 text-neutral-200 shadow-[0_18px_45px_rgba(0,0,0,0.55)] backdrop-blur-md"
+          className="pointer-events-none fixed z-[100] w-[min(19rem,calc(100vw-2rem))] -translate-y-1/2 rounded-xl border border-white/[0.09] bg-[#101115]/[0.98] px-4 py-3 text-left text-xs leading-5 text-neutral-200 shadow-[0_18px_45px_rgba(0,0,0,0.55)] backdrop-blur-md"
         >
           {children}
         </span>,
