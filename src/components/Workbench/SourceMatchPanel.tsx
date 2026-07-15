@@ -5,8 +5,9 @@ import { Activity, AlertTriangle, CheckCircle2, Clapperboard, HardDrive, XCircle
 import { motion } from 'framer-motion';
 import type { SubRow } from '@/utils/subtitleCore';
 import { createSourceMatchReport, type SourceMatchFinding, type SourceMatchReport } from '@/utils/timeline/sourceMatch';
-import { formatMsClock } from '@/utils/timeline/timecode';
+import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 import { InfoHint } from '@/components/ui/InfoHint';
+import { useStudioStore } from '@/store/useStudioStore';
 
 const GRADE_META: Record<SourceMatchReport['grade'], { label: string; tone: string; action: string }> = {
   matched: { label: '覆盖完整', tone: 'text-neutral-100', action: '继续检查字幕' },
@@ -45,7 +46,16 @@ const FindingIcon = ({ severity }: { severity: SourceMatchFinding['severity'] })
 
 const formatCount = (value: number) => new Intl.NumberFormat('zh-CN').format(value);
 
-export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
+interface SourceMatchPanelProps {
+  rows: SubRow[];
+  onTimelineDurationChange?: (durationMs: number | undefined) => void;
+}
+
+export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
+  rows,
+  onTimelineDurationChange,
+}) => {
+  const previewIndex = useStudioStore(state => state.previewIndex);
   const inputRef = useRef<HTMLInputElement>(null);
   const [videoName, setVideoName] = useState('');
   const [videoDurationMs, setVideoDurationMs] = useState<number | undefined>(undefined);
@@ -60,8 +70,16 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
   const chartHeight = 142;
   const subtitlePath = getChartPath(report.activityCurve, chartWidth, chartHeight);
   const subtitleArea = buildAreaPath(subtitlePath, chartWidth, chartHeight);
-  const coverageStart = report.videoDurationMs ? Math.max(0, Math.min(1, report.subtitleStartMs / report.videoDurationMs)) : 0;
-  const coverageEnd = report.videoDurationMs ? Math.max(0, Math.min(1, report.subtitleEndMs / report.videoDurationMs)) : 1;
+  const timelineDurationMs = Math.max(report.videoDurationMs || 0, report.subtitleEndMs, 1);
+  const coverageStart = Math.max(0, Math.min(1, report.subtitleStartMs / timelineDurationMs));
+  const coverageEnd = Math.max(0, Math.min(1, report.subtitleEndMs / timelineDurationMs));
+  const videoEnd = report.videoDurationMs
+    ? Math.max(0, Math.min(1, report.videoDurationMs / timelineDurationMs))
+    : undefined;
+  const activeRow = rows[Math.max(0, Math.min(previewIndex, rows.length - 1))];
+  const activeTimeMs = activeRow ? parseSubtitleRange(activeRow.ts).startMs : 0;
+  const activePosition = Math.max(0, Math.min(1, activeTimeMs / timelineDurationMs));
+  const activeX = activePosition * chartWidth;
   const meta = GRADE_META[report.grade];
   const isMatchMode = report.mode === 'match';
 
@@ -70,16 +88,20 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
     setMetadataError('');
     setVideoName(file.name);
     setVideoDurationMs(undefined);
+    onTimelineDurationChange?.(undefined);
 
     const url = URL.createObjectURL(file);
     const video = document.createElement('video');
     video.preload = 'metadata';
     video.onloadedmetadata = () => {
-      setVideoDurationMs(Number.isFinite(video.duration) ? Math.round(video.duration * 1000) : undefined);
+      const durationMs = Number.isFinite(video.duration) ? Math.round(video.duration * 1000) : undefined;
+      setVideoDurationMs(durationMs);
+      onTimelineDurationChange?.(durationMs);
       URL.revokeObjectURL(url);
     };
     video.onerror = () => {
       setMetadataError('无法读取该片源时长，请尝试常见 MP4 / MKV / MOV 文件。');
+      onTimelineDurationChange?.(undefined);
       URL.revokeObjectURL(url);
     };
     video.src = url;
@@ -180,63 +202,121 @@ export const SourceMatchPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
             <figcaption className="flex items-start justify-between gap-3 pb-2 text-xs text-neutral-500">
               <div>
                 <div className="text-xs font-medium text-neutral-300 inline-flex items-center gap-1.5">
-                  {isMatchMode ? '片源时长内的字幕分布' : '字幕时间分布'}
+                  {isMatchMode ? '统一时间轴上的字幕分布' : '字幕时间分布'}
                   <InfoHint label="字幕分布图说明">
-                    曲线只展示字幕事件在时间轴中的分布。加入片源后，横轴按片源总时长计算，可用于发现明显越界或覆盖不足。
+                    曲线、跨度条和下方时间线共用同一时间刻度。加入片源后，较长的一方决定横轴终点，避免隐藏字幕越界。
                   </InfoHint>
                 </div>
                 <div className="mt-0.5 text-xs text-neutral-500">{report.stats.distributionLabel} · {formatCount(report.stats.lineCount)} 行</div>
               </div>
               <span className="shrink-0 tabular-nums">{report.stats.densityPerMinute} 行/分钟</span>
             </figcaption>
-            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label={isMatchMode ? '片源覆盖与字幕活动图' : '字幕时间分布图'} className="w-full h-[142px] overflow-visible">
-              <defs>
-                <linearGradient id="subtitleArea" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#8fa3d1" stopOpacity="0.24" />
-                  <stop offset="100%" stopColor="#8fa3d1" stopOpacity="0.015" />
-                </linearGradient>
-              </defs>
-              {Array.from({ length: 7 }).map((_, index) => (
-                <line
-                  key={index}
-                  x1={(chartWidth / 6) * index}
-                  x2={(chartWidth / 6) * index}
-                  y1="12"
-                  y2={chartHeight - 8}
-                  stroke="rgba(143, 163, 209,0.06)"
-                  strokeWidth="1"
+            <div className="px-4">
+              <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label={isMatchMode ? '片源覆盖与字幕活动图' : '字幕时间分布图'} className="h-[142px] w-full overflow-visible">
+                <defs>
+                  <linearGradient id="subtitleArea" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#8fa3d1" stopOpacity="0.24" />
+                    <stop offset="100%" stopColor="#8fa3d1" stopOpacity="0.015" />
+                  </linearGradient>
+                </defs>
+                {Array.from({ length: 7 }).map((_, index) => (
+                  <line
+                    key={index}
+                    x1={(chartWidth / 6) * index}
+                    x2={(chartWidth / 6) * index}
+                    y1="12"
+                    y2={chartHeight - 8}
+                    stroke="rgba(143, 163, 209,0.07)"
+                    strokeWidth="1"
+                  />
+                ))}
+                <path d={subtitleArea} fill="url(#subtitleArea)" />
+                <motion.path
+                  d={subtitlePath}
+                  fill="none"
+                  stroke="#8fa3d1"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 1 }}
+                  transition={{ duration: 1.05, ease: 'easeOut', delay: 0.08 }}
                 />
-              ))}
-              <path d={subtitleArea} fill="url(#subtitleArea)" />
-              <motion.path
-                d={subtitlePath}
-                fill="none"
-                stroke="#8fa3d1"
-                strokeWidth="2"
-                strokeLinecap="round"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: 1.05, ease: 'easeOut', delay: 0.08 }}
-              />
-            </svg>
-          </figure>
+                {videoEnd !== undefined && videoEnd < 0.999 && (
+                  <line
+                    x1={videoEnd * chartWidth}
+                    x2={videoEnd * chartWidth}
+                    y1="12"
+                    y2={chartHeight - 8}
+                    stroke="rgba(192, 168, 154, 0.72)"
+                    strokeWidth="1.5"
+                    strokeDasharray="4 5"
+                  />
+                )}
+                <motion.line
+                  x1={activeX}
+                  x2={activeX}
+                  y1="8"
+                  y2={chartHeight - 4}
+                  stroke="rgba(225, 231, 245, 0.56)"
+                  strokeWidth="1"
+                  animate={{ x1: activeX, x2: activeX }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                />
+                <motion.circle
+                  cy={chartHeight - 7}
+                  r="4"
+                  fill="#dce2ef"
+                  stroke="#0a0b0f"
+                  strokeWidth="2"
+                  animate={{ cx: activeX }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                />
+              </svg>
 
-          <div className="mt-3 rounded-lg border border-white/[0.05] bg-white/[0.012] px-4 py-3">
-            <div className="flex items-center justify-between gap-3 text-xs text-neutral-500 mb-2.5">
-              <span>{isMatchMode ? '片源覆盖' : '字幕跨度'}</span>
-              <span>
-                {formatMsClock(report.subtitleStartMs)} - {formatMsClock(report.subtitleEndMs)}
-              </span>
+              <div className="mt-1 grid grid-cols-3 font-mono text-[11px] tabular-nums text-neutral-600">
+                <span>00:00</span>
+                <span className="text-center">{formatMsClock(timelineDurationMs / 2)}</span>
+                <span className="text-right">{formatMsClock(timelineDurationMs)}</span>
+              </div>
+
+              <div className="mt-3 border-t border-white/[0.05] pt-3">
+                <div className="mb-2.5 flex items-center justify-between gap-3 text-xs text-neutral-500">
+                  <span>{isMatchMode ? '片源与字幕跨度' : '字幕跨度'}</span>
+                  <span className="tabular-nums">
+                    当前 {formatMsClock(activeTimeMs)} · 字幕 {formatMsClock(report.subtitleStartMs)} - {formatMsClock(report.subtitleEndMs)}
+                  </span>
+                </div>
+                <div className="relative py-1.5">
+                  <div className="relative h-2 overflow-hidden rounded-full bg-white/[0.045]">
+                    {videoEnd !== undefined && (
+                      <div
+                        className="absolute inset-y-0 left-0 bg-white/[0.09]"
+                        style={{ width: `${videoEnd * 100}%` }}
+                      />
+                    )}
+                    <motion.div
+                      className="absolute inset-y-0 rounded-full bg-[#8fa3d1]/78"
+                      initial={{ left: `${coverageStart * 100}%`, right: `${100 - coverageStart * 100}%` }}
+                      animate={{ left: `${coverageStart * 100}%`, right: `${100 - coverageEnd * 100}%` }}
+                      transition={{ duration: 0.6, ease: 'easeOut' }}
+                    />
+                  </div>
+                  {videoEnd !== undefined && videoEnd < 0.999 && (
+                    <span
+                      className="absolute top-0 h-5 w-px bg-[#c0a89a]/80"
+                      style={{ left: `${videoEnd * 100}%` }}
+                      title={`片源结束于 ${formatMsClock(report.videoDurationMs || 0)}`}
+                    />
+                  )}
+                  <motion.span
+                    className="absolute top-0 h-5 w-px bg-[#dce2ef] shadow-[0_0_8px_rgba(220,226,239,0.45)]"
+                    animate={{ left: `${activePosition * 100}%` }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="relative h-2 rounded-full bg-white/[0.06] overflow-hidden">
-              <motion.div
-                className="absolute top-0 bottom-0 rounded-full bg-[#8fa3d1]/75"
-                initial={{ left: `${coverageStart * 100}%`, right: `${100 - coverageStart * 100}%` }}
-                animate={{ left: `${coverageStart * 100}%`, right: `${100 - coverageEnd * 100}%` }}
-                transition={{ duration: 0.6, ease: 'easeOut' }}
-              />
-            </div>
-          </div>
+          </figure>
 
           {isMatchMode ? (
             <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-3">

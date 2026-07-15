@@ -8,7 +8,11 @@ import { Captions, ChevronDown, Music2, Volume2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TimelineControls } from '@/components/Workbench/TimelineControls';
 
-export const SequenceList: React.FC = () => {
+interface SequenceListProps {
+  timelineDurationMs?: number;
+}
+
+export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }) => {
   const { processedSubs, previewIndex, setPreviewIndex, setJumpLineVal, showAllSubs, setShowAllSubs, updateSubtitleText } = useStudioStore();
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -94,7 +98,7 @@ export const SequenceList: React.FC = () => {
               </button>
             )}
           </div>
-          <TimelineControls />
+          <TimelineControls timelineDurationMs={timelineDurationMs} />
         </div>
       )}
 

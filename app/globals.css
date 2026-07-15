@@ -518,7 +518,11 @@ body::before {
   width: 100%;
   height: 5px;
   border-radius: 2px;
-  background: linear-gradient(90deg, rgba(143, 163, 209, 0.66) 0%, rgba(143, 163, 209, 0.18) 58%, rgba(255, 255, 255, 0.055) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(143, 163, 209, 0.7) 0 var(--timeline-progress, 0%),
+    rgba(255, 255, 255, 0.065) var(--timeline-progress, 0%) 100%
+  );
 }
 
 .v9-timeline-dial-slider::-webkit-slider-thumb {
