@@ -212,6 +212,7 @@ export const StyleSidebar: React.FC = () => {
   const [templateNameInput, setTemplateNameInput] = useState('');
   const [openPicker, setOpenPicker] = useState<string | null>(null);
   const [isLyricsExpanded, setIsLyricsExpanded] = useState(true);
+  const [activePanel, setActivePanel] = useState<'template' | 'type' | 'output'>('type');
 
   const hasLyrics = processedSubs?.some(sub => {
     if (!sub.text) return false;
@@ -321,7 +322,27 @@ export const StyleSidebar: React.FC = () => {
         </div>
       </div>
 
+      <div className="mb-4 grid grid-cols-3 rounded-md border border-[var(--v4-line)] bg-[var(--v4-canvas)] p-1" role="tablist" aria-label="样式设置分类">
+        {([
+          { id: 'template', label: '模板' },
+          { id: 'type', label: '文字' },
+          { id: 'output', label: '输出' },
+        ] as const).map(item => (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={activePanel === item.id}
+            onClick={() => setActivePanel(item.id)}
+            className={`v4-focus-ring h-9 rounded-md text-sm font-semibold transition-colors ${activePanel === item.id ? 'bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-muted)] hover:bg-white/[0.04] hover:text-white'}`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-1 flex-col gap-4">
+        {activePanel === 'template' && (
         <SettingSection
           title="模板"
           icon={<Paintbrush className="h-4 w-4 text-[#9aaad3]" aria-hidden="true" />}
@@ -400,7 +421,10 @@ export const StyleSidebar: React.FC = () => {
             )}
           </div>
         </SettingSection>
+        )}
 
+        {activePanel === 'type' && (
+          <>
         <SettingSection title="文字尺寸" icon={<ALargeSmall className="h-4 w-4 text-[#9aaad3]" aria-hidden="true" />}>
           <SliderControl
             label="整体缩放"
@@ -486,7 +510,11 @@ export const StyleSidebar: React.FC = () => {
             onChange={(c) => handleStyleChange('enOutline', c)}
           />
         </SettingSection>
+          </>
+        )}
 
+        {activePanel === 'output' && (
+          <>
         <SettingSection title="输出" icon={<SquareArrowRightExit className="h-4 w-4 text-[#9aaad3]" aria-hidden="true" />}>
           <div className="flex flex-col gap-2.5">
             <span className="text-sm font-medium text-neutral-300 inline-flex items-center gap-1.5">
@@ -608,6 +636,8 @@ export const StyleSidebar: React.FC = () => {
               )}
             </AnimatePresence>
           </SettingSection>
+        )}
+          </>
         )}
       </div>
     </div>

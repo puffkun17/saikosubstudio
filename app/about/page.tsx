@@ -24,7 +24,7 @@ export default function AboutPage() {
           </div>
         </div>
 
-        <div className="mt-10 rounded-2xl border border-white/[0.08] bg-white/[0.018] px-6 py-7 md:px-8">
+        <div className="mt-10 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-6 py-7 md:px-8">
           <Section title="本地文件处理 / Local files">
             <p>字幕、ZIP、7Z、RAR 字幕包与作为参照的本地媒体文件均由浏览器在当前设备读取和处理，不会上传到本站服务器。主动使用“历史存档”时，处理结果和样式会保存在当前浏览器的本地存储中，可随时删除；清除浏览器数据也会移除这些记录。</p>
             <p className="flex items-start gap-2 text-white/50"><FileLock2 className="mt-1 h-4 w-4 shrink-0 text-[#9aaad3]" />导入限制用于降低异常文件对浏览器内存的过度占用，不会改变原始文件。</p>

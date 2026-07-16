@@ -572,7 +572,7 @@ export const DragZone: React.FC = () => {
       <div className="w-full max-w-6xl mx-auto relative flex min-h-[540px] flex-col items-center justify-center px-4">
         <div className="relative z-10 w-full max-w-[980px] overflow-hidden rounded-[18px] border border-white/[0.075] bg-[#080806]/78 shadow-[0_24px_80px_rgba(0,0,0,0.42)]">
           <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_0%,rgba(255,255,255,0.035)_46%,transparent_54%)] opacity-35 pointer-events-none" />
-          <div className="relative flex min-h-[320px] flex-col items-center justify-center px-8 text-center">
+          <div className="relative flex min-h-[300px] flex-col items-center justify-center px-8 text-center">
             <motion.div
               key={ingestMessage}
               initial={{ opacity: 0, y: 8 }}
@@ -580,35 +580,19 @@ export const DragZone: React.FC = () => {
               transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
               className="flex flex-col items-center"
             >
-              <span className="mb-5 font-mono text-xs uppercase tracking-[0.32em] text-[#a8b7a3]/75">
-                SUBTITLE WORKBENCH
-              </span>
-              <h3 className="max-w-[760px] text-2xl md:text-[2.125rem] font-semibold tracking-tight text-neutral-50">
+              <h3 className="max-w-[760px] text-2xl font-semibold text-neutral-50 md:text-[2rem]">
                 {ingestMessage}
               </h3>
-              <p className="mt-4 max-w-[560px] text-sm leading-relaxed text-neutral-400">
-                正在整理字幕轨、文件结构与片源线索
+              <p className="mt-3 max-w-[560px] text-sm leading-6 text-neutral-400">
+                文件仅在当前设备读取，请保持页面开启
               </p>
             </motion.div>
 
-            <div className="mt-10 flex w-full max-w-[660px] flex-col gap-3">
-              <div className="h-px w-full bg-gradient-to-r from-transparent via-white/16 to-transparent" />
-              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-medium text-neutral-500">
-                {PHASE_STEPS.map((step, index) => {
-                  const active = step.id === ingestPhase;
-                  const complete = activeStepIndex >= index || ingestPhase === 'ready';
-                  return (
-                    <motion.span
-                      key={step.id}
-                      animate={{ opacity: active ? 1 : complete ? 0.72 : 0.36 }}
-                      className={`${active ? 'text-neutral-100' : complete ? 'text-neutral-300' : 'text-neutral-600'}`}
-                    >
-                      {step.label}
-                    </motion.span>
-                  );
-                })}
-              </div>
-              <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <div className="mt-9 grid w-full max-w-[520px] grid-cols-5 gap-2" aria-label={`处理进度 ${activeStepIndex + 1} / ${PHASE_STEPS.length}`}>
+              {PHASE_STEPS.map((step, index) => {
+                const complete = activeStepIndex >= index || ingestPhase === 'ready';
+                return <span key={step.id} className={`h-1 rounded-full ${complete ? 'bg-[var(--v4-accent)]' : 'bg-white/[0.07]'}`} />;
+              })}
             </div>
           </div>
 
@@ -692,9 +676,8 @@ export const DragZone: React.FC = () => {
               <div aria-hidden="true" className="absolute inset-0 bg-[url('/Background.jpg')] bg-cover bg-[center_58%] opacity-35 grayscale contrast-125" />
               <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,rgba(12,15,21,0.38),rgba(12,15,21,0.88))]" />
               <div className="absolute inset-x-0 bottom-0 z-10 p-7 text-left md:p-9">
-                <span className="v4-kicker">导入规划</span>
-                <h3 className="mt-3 text-[2rem] font-semibold leading-tight tracking-tight text-white sm:text-[2.35rem]">规划本次导入</h3>
-                <p className="mt-3 max-w-md text-base leading-7 text-[var(--v4-text-muted)]">先组合字幕与字幕包，再开始统一识别。</p>
+                <h3 className="text-[1.8rem] font-semibold leading-tight text-white sm:text-[2.15rem]">先把文件放在一起</h3>
+                <p className="mt-3 max-w-md text-base leading-7 text-[var(--v4-text-muted)]">加入后仍可补充、移除或重新组合。</p>
               </div>
             </div>
 
@@ -702,8 +685,8 @@ export const DragZone: React.FC = () => {
               <div>
                 <div className="flex items-start justify-between gap-5">
                   <div>
-                    <h4 className="text-2xl font-semibold tracking-tight text-[var(--v4-text)]">拖入字幕文件</h4>
-                    <p className="mt-2 max-w-lg text-base leading-7 text-[var(--v4-text-muted)]">也可从设备选择文件、字幕包或文件夹，确认组合后再开始整理。</p>
+                    <h4 className="text-2xl font-semibold text-[var(--v4-text)]">拖入字幕或字幕包</h4>
+                    <p className="mt-2 max-w-lg text-base leading-7 text-[var(--v4-text-muted)]">松手后只会加入清单，不会立即开始处理。</p>
                     <p className="mt-3 text-sm font-medium text-[var(--v4-text-faint)]">支持 {FORMAT_MARKS.join(' / ')}</p>
                   </div>
                 </div>
@@ -728,14 +711,13 @@ export const DragZone: React.FC = () => {
           <div className="grid min-h-[398px] md:grid-cols-[minmax(250px,0.35fr)_minmax(0,0.65fr)]">
             <aside className="flex flex-col justify-between border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-6 text-left md:border-b-0 md:border-r md:p-7">
               <div>
-                <span className="v4-kicker">导入计划</span>
-                <h3 className="mt-3 text-2xl font-semibold tracking-tight">本次导入</h3>
+                <h3 className="text-2xl font-semibold">本次导入</h3>
                 <p className="mt-2 text-base leading-7 text-[var(--v4-text-muted)]">确认文件组合后，再统一识别轨道。</p>
-                <dl className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-md border border-[var(--v4-line)] bg-[var(--v4-line)]">
-                  <div className="bg-[var(--v4-panel)] p-3"><dt className="whitespace-nowrap text-xs text-[var(--v4-text-faint)]">字幕文件</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{subtitleCount}</dd></div>
-                  <div className="bg-[var(--v4-panel)] p-3"><dt className="whitespace-nowrap text-xs text-[var(--v4-text-faint)]">字幕包</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{archiveCount}</dd></div>
-                  <div className="bg-[var(--v4-panel)] p-3"><dt className="whitespace-nowrap text-xs text-[var(--v4-text-faint)]">可处理</dt><dd className="mt-1 text-xl font-semibold tabular-nums text-[var(--v4-accent-strong)]">{acceptedItems.length}</dd></div>
-                  <div className="bg-[var(--v4-panel)] p-3"><dt className="whitespace-nowrap text-xs text-[var(--v4-text-faint)]">总体积</dt><dd className="mt-1 whitespace-nowrap text-base font-semibold tabular-nums">{formatBytes(totalBytes)}</dd></div>
+                <dl className="mt-6 space-y-3 border-t border-[var(--v4-line)] pt-5 text-sm">
+                  <div className="flex items-center justify-between"><dt className="text-[var(--v4-text-muted)]">字幕文件</dt><dd className="font-semibold tabular-nums">{subtitleCount}</dd></div>
+                  <div className="flex items-center justify-between"><dt className="text-[var(--v4-text-muted)]">字幕包</dt><dd className="font-semibold tabular-nums">{archiveCount}</dd></div>
+                  <div className="flex items-center justify-between"><dt className="text-[var(--v4-text-muted)]">可处理</dt><dd className="font-semibold tabular-nums text-[var(--v4-accent-strong)]">{acceptedItems.length}</dd></div>
+                  <div className="flex items-center justify-between"><dt className="text-[var(--v4-text-muted)]">总体积</dt><dd className="font-semibold tabular-nums">{formatBytes(totalBytes)}</dd></div>
                 </dl>
               </div>
               <div className="mt-6 grid gap-2">

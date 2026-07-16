@@ -222,7 +222,7 @@ export const SystemTray = () => {
           className="fixed inset-0 z-[130] grid place-items-center bg-black/65 p-4 backdrop-blur-sm"
           onClick={(event) => { if (event.target === event.currentTarget) setPendingReset(false); }}
         >
-          <div role="alertdialog" aria-modal="true" aria-labelledby="restart-title" aria-describedby="restart-description" className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#0b0b0d] p-5 text-left shadow-2xl">
+          <div role="alertdialog" aria-modal="true" aria-labelledby="restart-title" aria-describedby="restart-description" className="w-full max-w-sm rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] p-5 text-left shadow-[0_18px_48px_rgba(0,0,0,0.42)]">
             <div className="flex items-start gap-3">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[#c0a89a]/20 bg-[#c0a89a]/[0.08] text-[#dfc9bc]">
                 <RotateCcw className="h-4 w-4" aria-hidden="true" />

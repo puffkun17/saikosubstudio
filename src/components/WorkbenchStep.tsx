@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { SequenceList } from '@/components/Workbench/SequenceList';
 import { AlignmentDiffPanel } from '@/components/Workbench/AlignmentDiffPanel';
 import { SourceMatchPanel } from '@/components/Workbench/SourceMatchPanel';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
-import { ChevronLeft, MonitorCheck, SlidersHorizontal } from 'lucide-react';
+import { ChevronDown, ChevronLeft, GitCompareArrows, MonitorCheck, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { analyzeAlignmentDiff } from '@/utils/timeline/alignmentDiff';
 
 export const WorkbenchStep: React.FC = () => {
   const { 
@@ -16,12 +17,18 @@ export const WorkbenchStep: React.FC = () => {
     customFilename, 
     setWorkflowStep,
     setProcessedSubs,
+    selectedTaskId,
     isSettingsOpen,
     setIsSettingsOpen
   } = useStudioStore();
 
   const [showBackConfirm, setShowBackConfirm] = useState(false);
   const [sourceDurationMs, setSourceDurationMs] = useState<number | undefined>(undefined);
+  const [isInspectionOpen, setIsInspectionOpen] = useState(false);
+  const alignmentSummary = useMemo(
+    () => processedSubs ? analyzeAlignmentDiff(processedSubs) : null,
+    [processedSubs]
+  );
 
   const handleBack = () => {
     if (processedSubs && processedSubs.length > 0) {
@@ -61,8 +68,7 @@ export const WorkbenchStep: React.FC = () => {
           </div>
           
           <div className="min-w-0 max-w-[720px]">
-            <p className="v4-kicker mb-1 pl-0.5">Workspace</p>
-            <h2 className="text-xl font-semibold text-neutral-100 tracking-tight pl-0.5">字幕工作台</h2>
+            <h2 className="pl-0.5 text-xl font-semibold tracking-tight text-neutral-100">字幕工作台</h2>
             <p className="text-sm text-[var(--v4-text-muted)] mt-0.5 whitespace-normal break-words leading-relaxed pl-0.5" title={customFilename}>
               <span className="text-neutral-100 font-semibold">{processedSubs?.length || 0} 行</span>
               <span className="mx-2 text-white/18">/</span>
@@ -105,18 +111,42 @@ export const WorkbenchStep: React.FC = () => {
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* Center Panel: Subtitle sequence list */}
         <div className="flex-1 p-4 md:p-6 min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
-          <div className="max-w-[1480px] w-full flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+          <div className="max-w-[1480px] w-full flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
             {processedSubs && processedSubs.length > 0 && (
-              <SourceMatchPanel
-                rows={processedSubs}
-                onTimelineDurationChange={setSourceDurationMs}
-              />
+              <section className="flex-shrink-0 overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]">
+                <button
+                  type="button"
+                  className="v4-focus-ring flex w-full items-center justify-between gap-4 px-4 py-3 text-left md:px-5"
+                  onClick={() => setIsInspectionOpen(value => !value)}
+                  aria-expanded={isInspectionOpen}
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <GitCompareArrows className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-[var(--v4-text)]">字幕检查</span>
+                      <span className="mt-0.5 block truncate text-sm text-[var(--v4-text-muted)]">
+                        {alignmentSummary && alignmentSummary.entries.length > 0
+                          ? `${alignmentSummary.entries.length} 处结构差异待复核`
+                          : '未发现需要复核的结构差异'}
+                      </span>
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2 text-sm font-medium text-[var(--v4-text-muted)]">
+                    {isInspectionOpen ? '收起报告' : '查看报告'}
+                    <ChevronDown className={`h-4 w-4 transition-transform ${isInspectionOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                  </span>
+                </button>
+                <div hidden={!isInspectionOpen} className="space-y-3 border-t border-[var(--v4-line)] p-3 md:p-4">
+                  <SourceMatchPanel
+                    rows={processedSubs}
+                    onTimelineDurationChange={setSourceDurationMs}
+                  />
+                  <AlignmentDiffPanel rows={processedSubs} />
+                </div>
+              </section>
             )}
-            {processedSubs && processedSubs.length > 0 && (
-              <AlignmentDiffPanel rows={processedSubs} />
-            )}
-            <div className="v4-panel flex-1 min-h-0 flex flex-col overflow-hidden rounded-lg">
-              <SequenceList timelineDurationMs={sourceDurationMs} />
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+              <SequenceList key={selectedTaskId || customFilename} timelineDurationMs={sourceDurationMs} />
             </div>
           </div>
         </div>
@@ -166,7 +196,7 @@ export const WorkbenchStep: React.FC = () => {
               initial={{ opacity: 0, y: 10, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.98 }}
-              className="w-full max-w-sm rounded-2xl border border-white/[0.09] bg-[#0b0b0d] p-5 shadow-2xl"
+              className="w-full max-w-sm rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] p-5 shadow-[0_18px_48px_rgba(0,0,0,0.42)]"
             >
               <h3 id="workbench-back-title" className="text-lg font-semibold text-white">返回字幕配对</h3>
               <p id="workbench-back-description" className="mt-2 text-sm leading-6 text-neutral-400">

@@ -24,7 +24,7 @@ export class SimulatorBoundary extends React.Component<Props, State> {
   public render() {
     if (this.state.error) {
       return (
-        <div className="flex-1 w-full h-full min-h-[300px] flex flex-col items-center justify-center bg-surface-0 border border-white/5 rounded-2xl p-6 select-none shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
+        <div className="flex h-full min-h-[300px] w-full flex-1 select-none flex-col items-center justify-center rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)] p-6">
           <div className="text-rose-300/85 text-sm font-semibold mb-2">
             预览渲染失败
           </div>

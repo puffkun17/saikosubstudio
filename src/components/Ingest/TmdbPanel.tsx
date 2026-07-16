@@ -162,7 +162,7 @@ export const TmdbPanel: React.FC = () => {
               {/* Movie metadata (Title + Badges) */}
               <div className="flex-1 flex flex-col gap-3.5 min-w-0 text-left pt-1">
                 <div>
-                  <h4 className="text-[clamp(1.25rem,1.7vw,1.7rem)] font-semibold text-neutral-100 leading-[1.18] tracking-tight font-sans">
+                  <h4 className="font-sans text-[1.35rem] font-semibold leading-tight tracking-normal text-neutral-100">
                     {tmdbData.title}
                   </h4>
                   {tmdbData.originalTitle && tmdbData.originalTitle !== tmdbData.title && (
@@ -213,7 +213,7 @@ export const TmdbPanel: React.FC = () => {
             </div>
 
             {/* Bottom Row: Synopsis text - consistent scale, better CJK leading for readability */}
-            <div className="border-l-2 border-[#9ca3af]/25 pl-4 py-1 text-[15.5px] text-neutral-300 leading-[1.78] font-sans text-left line-clamp-6 lg:line-clamp-7 min-h-0 w-full">
+            <div className="py-1 text-left font-sans text-[15.5px] leading-[1.78] text-neutral-300 line-clamp-6 lg:line-clamp-7 min-h-0 w-full">
               {tmdbData.overview || '暂无剧情简介...'}
             </div>
           </motion.div>
@@ -280,7 +280,7 @@ export const TmdbPanel: React.FC = () => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="glass-panel-ar rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col gap-0 max-h-[85vh] overflow-hidden"
+              className="glass-panel-ar flex max-h-[85vh] w-full max-w-2xl flex-col gap-0 overflow-hidden rounded-lg shadow-[0_24px_70px_rgba(0,0,0,0.46)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="tmdb-search-title"

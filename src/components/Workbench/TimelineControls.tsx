@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 
@@ -45,6 +45,8 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
     showAllSubs,
     setShowAllSubs,
   } = useStudioStore();
+  const [scrubTimeMs, setScrubTimeMs] = useState<number | null>(null);
+  const isPointerScrubbing = useRef(false);
 
   const timelinePoints = useMemo<TimelinePoint[]>(() => (
     (processedSubs || [])
@@ -55,6 +57,10 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
       .sort((a, b) => a.startMs - b.startMs)
   ), [processedSubs]);
 
+  useEffect(() => {
+    if (!isPointerScrubbing.current) setScrubTimeMs(null);
+  }, [previewIndex]);
+
   if (!processedSubs || processedSubs.length === 0 || timelinePoints.length === 0) return null;
 
   const safePreviewIndex = Math.max(0, Math.min(previewIndex, processedSubs.length - 1));
@@ -62,13 +68,14 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
   const subtitleEndMs = timelinePoints.reduce((latest, point) => Math.max(latest, point.endMs), 0);
   const sharedDurationMs = Math.max(timelineDurationMs || 0, subtitleEndMs, 1);
   const currentTimeMs = Math.max(0, Math.min(activeRange.startMs, sharedDurationMs));
-  const timelinePercent = ((currentTimeMs / sharedDurationMs) * 100).toFixed(1);
+  const displayTimeMs = Math.max(0, Math.min(scrubTimeMs ?? currentTimeMs, sharedDurationMs));
+  const timelinePercent = ((displayTimeMs / sharedDurationMs) * 100).toFixed(1);
   const timelineStyle = {
     '--timeline-progress': `${timelinePercent}%`,
   } as React.CSSProperties;
 
   const revealTarget = (targetIdx: number) => {
-    if (targetIdx >= 50 && !showAllSubs) setShowAllSubs(true);
+    if (targetIdx >= 100 && !showAllSubs) setShowAllSubs(true);
   };
 
   const selectRow = (targetIdx: number) => {
@@ -78,10 +85,28 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
     revealTarget(safeIndex);
   };
 
-  const handleTimelineChange = (value: string) => {
+  const commitTimelineChange = (value: string) => {
     const targetMs = Number(value);
     if (!Number.isFinite(targetMs)) return;
     selectRow(findNearestPoint(timelinePoints, targetMs).rowIndex);
+    setScrubTimeMs(null);
+  };
+
+  const handleTimelineChange = (value: string) => {
+    const targetMs = Number(value);
+    if (!Number.isFinite(targetMs)) return;
+    if (isPointerScrubbing.current) setScrubTimeMs(targetMs);
+    else commitTimelineChange(value);
+  };
+
+  const beginScrub = (event: React.PointerEvent<HTMLInputElement>) => {
+    isPointerScrubbing.current = true;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const endScrub = (value: string) => {
+    isPointerScrubbing.current = false;
+    commitTimelineChange(value);
   };
 
   const handleJumpToLine = (event?: React.FormEvent) => {
@@ -91,24 +116,28 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
     selectRow(lineNum - 1);
   };
 
-  const timeReadout = `${formatMsClock(currentTimeMs)} / ${formatMsClock(sharedDurationMs)}`;
+  const timeReadout = `${formatMsClock(displayTimeMs)} / ${formatMsClock(sharedDurationMs)}`;
 
   if (variant === 'compact') {
     return (
-      <div className="w-full min-w-[220px] max-w-[420px] bg-[#121216]/55 border border-white/5 px-3 py-2 rounded-xl flex items-center gap-3">
+      <div className="flex w-full min-w-[220px] max-w-[420px] items-center gap-3 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2">
         <input
           type="range"
           min="0"
           max={sharedDurationMs}
           step="100"
-          value={currentTimeMs}
+          value={displayTimeMs}
           onChange={event => handleTimelineChange(event.target.value)}
+          onPointerDown={beginScrub}
+          onPointerUp={event => endScrub(event.currentTarget.value)}
+          onPointerCancel={() => { isPointerScrubbing.current = false; setScrubTimeMs(null); }}
+          onBlur={event => { if (scrubTimeMs !== null) endScrub(event.currentTarget.value); }}
           style={timelineStyle}
           className="v9-timeline-dial-slider flex-1 min-w-0"
           aria-label="字幕时间位置"
         />
         <span className="w-[4.5rem] text-right font-mono text-xs tabular-nums text-[#c2cce3]">
-          {formatMsClock(currentTimeMs)}
+          {formatMsClock(displayTimeMs)}
         </span>
       </div>
     );
@@ -116,7 +145,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
 
   if (variant === 'theater') {
     return (
-      <div className="w-full bg-[#08080c]/78 border border-white/[0.07] px-4 py-3 rounded-xl flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 shadow-[0_12px_32px_rgba(0,0,0,0.28)] backdrop-blur-md">
+      <div className="flex w-full flex-col gap-3 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs font-semibold text-neutral-300">预览时间</span>
           <span className="font-mono text-xs tabular-nums text-[#c2cce3]">{timeReadout}</span>
@@ -126,8 +155,12 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
           min="0"
           max={sharedDurationMs}
           step="100"
-          value={currentTimeMs}
+          value={displayTimeMs}
           onChange={event => handleTimelineChange(event.target.value)}
+          onPointerDown={beginScrub}
+          onPointerUp={event => endScrub(event.currentTarget.value)}
+          onPointerCancel={() => { isPointerScrubbing.current = false; setScrubTimeMs(null); }}
+          onBlur={event => { if (scrubTimeMs !== null) endScrub(event.currentTarget.value); }}
           style={timelineStyle}
           className="v9-timeline-dial-slider w-full flex-1 min-w-0"
           aria-label="字幕预览时间"
@@ -152,15 +185,19 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
   }
 
   return (
-    <div className="v9-dial-slider-container flex w-full flex-col gap-2.5 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+    <div className="v9-dial-slider-container flex w-full flex-col gap-2.5 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <div className="v9-dial-slider-wrapper flex min-w-0 flex-1 items-center gap-3">
         <input
           type="range"
           min="0"
           max={sharedDurationMs}
           step="100"
-          value={currentTimeMs}
+          value={displayTimeMs}
           onChange={event => handleTimelineChange(event.target.value)}
+          onPointerDown={beginScrub}
+          onPointerUp={event => endScrub(event.currentTarget.value)}
+          onPointerCancel={() => { isPointerScrubbing.current = false; setScrubTimeMs(null); }}
+          onBlur={event => { if (scrubTimeMs !== null) endScrub(event.currentTarget.value); }}
           style={timelineStyle}
           className="v9-timeline-dial-slider w-full"
           aria-label="字幕时间轴位置"

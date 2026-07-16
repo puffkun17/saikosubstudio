@@ -90,8 +90,8 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
     return () => document.removeEventListener('keydown', handler);
   }, [open]);
 
-  const primaryClass = 'py-1.5 px-3 md:py-2 md:px-4 glass-btn-ar text-white font-bold text-xs md:text-sm flex items-center gap-1.5 transition-all cursor-pointer';
-  const ghostClass = 'py-1.5 px-3.5 glass-btn-ar text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer';
+  const primaryClass = 'v4-focus-ring flex h-10 cursor-pointer items-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3.5 text-sm font-semibold text-[var(--v4-text)] transition-colors hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)]';
+  const ghostClass = primaryClass;
 
   return (
     <div className="relative" ref={ref}>
@@ -108,7 +108,7 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 z-[110] mt-1.5 min-w-[140px] overflow-hidden rounded-xl glass-panel-ar shadow-2xl animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="glass-panel-ar absolute right-0 top-full z-[110] mt-1.5 min-w-[160px] overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(0,0,0,0.46)] animate-in fade-in slide-in-from-top-1 duration-150">
           <button
             className="w-full py-3 px-4 text-xs font-semibold hover:bg-white/5 text-left border-b border-white/[0.06] transition text-white/80 hover:text-white flex items-center gap-2 cursor-pointer"
             onClick={() => { handleDownload('ass'); setOpen(false); }}

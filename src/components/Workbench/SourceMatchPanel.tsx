@@ -9,11 +9,11 @@ import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { useStudioStore } from '@/store/useStudioStore';
 
-const GRADE_META: Record<SourceMatchReport['grade'], { label: string; tone: string; action: string }> = {
-  matched: { label: '覆盖完整', tone: 'text-neutral-100', action: '继续检查字幕' },
-  fixable: { label: '需要试听', tone: 'text-[#a8b7a3]', action: '检查关键位置' },
-  complex: { label: '覆盖有风险', tone: 'text-[#c0a89a]', action: '查看风险时间线' },
-  poor: { label: '差异明显', tone: 'text-[#b98982]', action: '考虑更换字幕' },
+const GRADE_META: Record<SourceMatchReport['grade'], { label: string; tone: string }> = {
+  matched: { label: '跨度接近', tone: 'text-neutral-100' },
+  fixable: { label: '建议抽查', tone: 'text-[#a8b7a3]' },
+  complex: { label: '跨度有差异', tone: 'text-[#c0a89a]' },
+  poor: { label: '差异较大', tone: 'text-[#b98982]' },
 };
 
 const severityClass: Record<SourceMatchFinding['severity'], string> = {
@@ -56,6 +56,10 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
   onTimelineDurationChange,
 }) => {
   const previewIndex = useStudioStore(state => state.previewIndex);
+  const setPreviewIndex = useStudioStore(state => state.setPreviewIndex);
+  const setJumpLineVal = useStudioStore(state => state.setJumpLineVal);
+  const showAllSubs = useStudioStore(state => state.showAllSubs);
+  const setShowAllSubs = useStudioStore(state => state.setShowAllSubs);
   const inputRef = useRef<HTMLInputElement>(null);
   const [videoName, setVideoName] = useState('');
   const [videoDurationMs, setVideoDurationMs] = useState<number | undefined>(undefined);
@@ -82,6 +86,32 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
   const activeX = activePosition * chartWidth;
   const meta = GRADE_META[report.grade];
   const isMatchMode = report.mode === 'match';
+  const timelinePoints = useMemo(() => rows
+    .map((row, arrayIndex) => ({
+      arrayIndex,
+      rowIndex: row.index,
+      startMs: parseSubtitleRange(row.ts).startMs,
+    }))
+    .sort((left, right) => left.startMs - right.startMs), [rows]);
+
+  const selectTimelineTime = (targetMs: number) => {
+    if (timelinePoints.length === 0) return;
+    let low = 0;
+    let high = timelinePoints.length - 1;
+    while (low < high) {
+      const middle = Math.floor((low + high) / 2);
+      if (timelinePoints[middle].startMs < targetMs) low = middle + 1;
+      else high = middle;
+    }
+    const next = timelinePoints[low];
+    const previous = timelinePoints[Math.max(0, low - 1)];
+    const nearest = Math.abs(next.startMs - targetMs) < Math.abs(previous.startMs - targetMs)
+      ? next
+      : previous;
+    setPreviewIndex(nearest.arrayIndex);
+    setJumpLineVal(String(nearest.rowIndex));
+    if (nearest.arrayIndex >= 100 && !showAllSubs) setShowAllSubs(true);
+  };
 
   const handleVideoFile = (file: File | undefined) => {
     if (!file) return;
@@ -108,7 +138,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
   };
 
   return (
-    <section className="w-full rounded-xl border border-white/[0.075] bg-[#080807]/72 shadow-[0_20px_70px_rgba(0,0,0,0.24)] overflow-hidden">
+    <section className="w-full overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)]">
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] gap-0">
         <div className="border-b xl:border-b-0 xl:border-r border-white/[0.055] px-5 py-4 md:px-6 md:py-5">
           <div className="flex items-start justify-between gap-4">
@@ -145,14 +175,14 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                   key={report.coverageRatio}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`text-[46px] leading-none font-semibold tracking-normal ${meta.tone}`}
+                  className={`text-[2rem] leading-none font-semibold ${meta.tone}`}
                 >
                   {report.coverageRatio ? `${Math.round(report.coverageRatio * 100)}%` : '--'}
                 </motion.div>
                 <div className="mt-1 inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-[0.12em] text-neutral-500">
-                  时间覆盖
+                  字幕跨度占比
                   <InfoHint label="时间覆盖说明">
-                    这里只比较字幕起止范围与片源总时长，不读取音频，也不能判断对白是否合轴。
+                    这里只比较字幕起止范围与片源总时长，不读取音频，也不代表对白已经合轴。
                   </InfoHint>
                 </div>
               </div>
@@ -173,8 +203,8 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
               </div>
               <div className="min-w-0 border-l border-white/[0.055] px-3 py-3">
                 <dt className="inline-flex items-center gap-1 whitespace-nowrap text-xs text-neutral-500">
-                  对白密度
-                  <InfoHint label="对白密度说明">
+                  字幕密度
+                  <InfoHint label="字幕密度说明">
                     每分钟字幕行数，用于观察字幕分布是否异常。声音说明、歌词和画面文字也会影响这个指标。
                   </InfoHint>
                 </dt>
@@ -212,66 +242,78 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
               <span className="shrink-0 tabular-nums">{report.stats.densityPerMinute} 行/分钟</span>
             </figcaption>
             <div className="px-4">
-              <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label={isMatchMode ? '片源覆盖与字幕活动图' : '字幕时间分布图'} className="h-[142px] w-full overflow-visible">
-                <defs>
-                  <linearGradient id="subtitleArea" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#8fa3d1" stopOpacity="0.24" />
-                    <stop offset="100%" stopColor="#8fa3d1" stopOpacity="0.015" />
-                  </linearGradient>
-                </defs>
-                {Array.from({ length: 7 }).map((_, index) => (
-                  <line
-                    key={index}
-                    x1={(chartWidth / 6) * index}
-                    x2={(chartWidth / 6) * index}
-                    y1="12"
-                    y2={chartHeight - 8}
-                    stroke="rgba(143, 163, 209,0.07)"
+              <div className="relative">
+                <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label={isMatchMode ? '片源覆盖与字幕活动图' : '字幕时间分布图'} className="h-[142px] w-full overflow-visible">
+                  <defs>
+                    <linearGradient id="subtitleArea" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#8fa3d1" stopOpacity="0.24" />
+                      <stop offset="100%" stopColor="#8fa3d1" stopOpacity="0.015" />
+                    </linearGradient>
+                  </defs>
+                  {Array.from({ length: 7 }).map((_, index) => (
+                    <line
+                      key={index}
+                      x1={(chartWidth / 6) * index}
+                      x2={(chartWidth / 6) * index}
+                      y1="12"
+                      y2={chartHeight - 8}
+                      stroke="rgba(143, 163, 209,0.07)"
+                      strokeWidth="1"
+                    />
+                  ))}
+                  <path d={subtitleArea} fill="url(#subtitleArea)" />
+                  <motion.path
+                    d={subtitlePath}
+                    fill="none"
+                    stroke="#8fa3d1"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 1 }}
+                    transition={{ duration: 1.05, ease: 'easeOut', delay: 0.08 }}
+                  />
+                  {videoEnd !== undefined && videoEnd < 0.999 && (
+                    <line
+                      x1={videoEnd * chartWidth}
+                      x2={videoEnd * chartWidth}
+                      y1="12"
+                      y2={chartHeight - 8}
+                      stroke="rgba(192, 168, 154, 0.72)"
+                      strokeWidth="1.5"
+                      strokeDasharray="4 5"
+                    />
+                  )}
+                  <motion.line
+                    x1={activeX}
+                    x2={activeX}
+                    y1="8"
+                    y2={chartHeight - 4}
+                    stroke="rgba(225, 231, 245, 0.56)"
                     strokeWidth="1"
+                    animate={{ x1: activeX, x2: activeX }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
                   />
-                ))}
-                <path d={subtitleArea} fill="url(#subtitleArea)" />
-                <motion.path
-                  d={subtitlePath}
-                  fill="none"
-                  stroke="#8fa3d1"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 1 }}
-                  transition={{ duration: 1.05, ease: 'easeOut', delay: 0.08 }}
-                />
-                {videoEnd !== undefined && videoEnd < 0.999 && (
-                  <line
-                    x1={videoEnd * chartWidth}
-                    x2={videoEnd * chartWidth}
-                    y1="12"
-                    y2={chartHeight - 8}
-                    stroke="rgba(192, 168, 154, 0.72)"
-                    strokeWidth="1.5"
-                    strokeDasharray="4 5"
+                  <motion.circle
+                    cy={chartHeight - 7}
+                    r="4"
+                    fill="#dce2ef"
+                    stroke="#0a0b0f"
+                    strokeWidth="2"
+                    animate={{ cx: activeX }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
                   />
-                )}
-                <motion.line
-                  x1={activeX}
-                  x2={activeX}
-                  y1="8"
-                  y2={chartHeight - 4}
-                  stroke="rgba(225, 231, 245, 0.56)"
-                  strokeWidth="1"
-                  animate={{ x1: activeX, x2: activeX }}
-                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                </svg>
+                <input
+                  type="range"
+                  min="0"
+                  max={timelineDurationMs}
+                  step="100"
+                  value={activeTimeMs}
+                  onChange={event => selectTimelineTime(Number(event.target.value))}
+                  className="absolute inset-0 h-full w-full cursor-ew-resize opacity-0"
+                  aria-label="在字幕分布图中定位时间"
                 />
-                <motion.circle
-                  cy={chartHeight - 7}
-                  r="4"
-                  fill="#dce2ef"
-                  stroke="#0a0b0f"
-                  strokeWidth="2"
-                  animate={{ cx: activeX }}
-                  transition={{ duration: 0.18, ease: 'easeOut' }}
-                />
-              </svg>
+              </div>
 
               <div className="mt-1 grid grid-cols-3 font-mono text-[11px] tabular-nums text-neutral-600">
                 <span>00:00</span>

@@ -29,24 +29,17 @@ export const IngestStep: React.FC = () => {
 
   return (
     <div className="ingest-shell flex-1 w-full h-full flex flex-col p-5 md:p-8 lg:p-10 2xl:p-12 overflow-y-auto relative bg-[var(--v4-canvas)] z-0">
-      <div className={`flex items-center gap-2 select-none z-20 flex-shrink-0 ${tasks.length === 0 ? 'mb-4' : 'mb-2'}`}>
-        <span className="h-px w-5 bg-[var(--v4-accent)]" />
-        <span className="v4-kicker">
-          本地字幕工作台
-        </span>
-      </div>
-
       {tasks.length === 0 ? (
-        <div className="ingest-heading flex flex-col md:flex-row justify-between items-start md:items-end gap-5 mb-6 md:mb-8 z-20 flex-shrink-0">
-          <div className="flex flex-col gap-2 text-left">
-            <h1 className="flex max-w-full flex-wrap items-center gap-x-4 gap-y-2 break-words font-sans text-[clamp(2.25rem,4.5vw,3.75rem)] font-semibold leading-none tracking-tight text-[var(--v4-text)] [overflow-wrap:anywhere]">
-              <span className="max-w-full break-all sm:break-normal">SaikoSubStudio</span>
-              <span className="rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-2.5 py-1 text-xs font-mono font-semibold text-[var(--v4-accent-strong)]">
+        <div className="ingest-heading z-20 mb-5 flex flex-shrink-0 items-end justify-between gap-5 md:mb-6">
+          <div className="min-w-0 text-left">
+            <h1 className="flex max-w-full flex-wrap items-center gap-3 text-3xl font-semibold leading-tight text-[var(--v4-text)] md:text-4xl">
+              字幕导入
+              <span className="rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-2 py-1 text-xs font-mono font-semibold text-[var(--v4-accent-strong)]">
                 v4.0 Beta
               </span>
             </h1>
-            <p className="max-w-2xl text-base leading-7 text-[var(--v4-text-muted)]">
-              先加入字幕文件，确认清单后统一整理。
+            <p className="mt-2 max-w-2xl text-base leading-7 text-[var(--v4-text-muted)]">
+              把本次需要处理的字幕放在一起，确认后统一整理。
             </p>
           </div>
         </div>
@@ -110,7 +103,7 @@ export const IngestStep: React.FC = () => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="glass-panel-ar rounded-3xl w-full max-w-4xl shadow-2xl flex flex-col gap-0 max-h-[85vh] overflow-hidden"
+              className="glass-panel-ar flex max-h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden rounded-lg shadow-[0_24px_70px_rgba(0,0,0,0.46)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="library-title"
@@ -139,7 +132,7 @@ export const IngestStep: React.FC = () => {
                         <motion.div 
                           key={item.id}
                           whileHover={{ y: -2 }}
-                          className="relative overflow-hidden p-3 bg-white/[0.015] hover:bg-white/[0.035] border border-white/5 hover:border-white/10 rounded-2xl flex gap-2 transition-all duration-300 items-center justify-between group shadow-lg"
+                          className="group relative flex items-center justify-between gap-2 overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-3 transition-colors hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)]"
                         >
                           {item.backdrop && (
                             <div 
@@ -148,7 +141,7 @@ export const IngestStep: React.FC = () => {
                             />
                           )}
 
-                          <button type="button" className="min-w-0 flex-1 rounded-xl p-3 text-left border-l-2 border-transparent group-hover:border-[#9ca3af] transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8fa3d1]/70" onClick={() => { loadFromLibrary(item); setLibraryOpen(false); }}>
+                          <button type="button" className="min-w-0 flex-1 rounded-lg border border-transparent p-3 text-left transition-colors duration-200 group-hover:border-[var(--v4-line-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8fa3d1]/70" onClick={() => { loadFromLibrary(item); setLibraryOpen(false); }}>
                             <h4 className="text-base font-bold text-white/90 group-hover:text-white truncate transition-colors pl-3">
                               {item.name}
                             </h4>

@@ -85,10 +85,9 @@ export const TheaterStep: React.FC = () => {
             aria-label="返回字幕工作台"
           >
             <ChevronLeft className="w-4 h-4" />
-          </motion.button>
+            </motion.button>
           
             <div>
-              <p className="v4-kicker mb-1">Preview room</p>
               <h2 className="text-xl font-semibold tracking-tight text-neutral-100">放映厅预览</h2>
               <p className="mt-0.5 text-sm text-[var(--v4-text-muted)]">{theaterAspect} · {tmdbBackdrop ? '片源剧照' : '影院默认画面'}</p>
             </div>

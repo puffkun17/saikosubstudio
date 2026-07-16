@@ -189,7 +189,6 @@ export const TaskList: React.FC = () => {
       <div className="flex flex-shrink-0 select-none items-center justify-between gap-3 border-b border-[var(--v4-line)] pb-4">
         <div className="flex items-center gap-3 min-w-0">
           <div>
-            <p className="v4-kicker mb-1">Subtitle tracks</p>
             <h3 className="whitespace-nowrap font-sans text-xl font-semibold tracking-tight text-neutral-100">字幕文件</h3>
           </div>
           <span className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-sm font-semibold text-[var(--v4-text)]">
@@ -260,7 +259,7 @@ export const TaskList: React.FC = () => {
       <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-white/[0.03] relative min-h-0 overflow-x-visible">
 
         {/* Banner/Title Card */}
-        <div className={`rounded-xl flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center relative flex-shrink-0 border transition-colors ${needsTitleInput ? 'border-white/[0.09] border-l-[#9aaad3]/55 border-l-2 bg-[#9aaad3]/[0.035] px-4 py-3' : 'bg-white/[0.018] border-white/[0.07] p-4'}`}>
+        <div className={`rounded-lg flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center relative flex-shrink-0 border transition-colors ${needsTitleInput ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] px-4 py-3' : 'bg-white/[0.018] border-white/[0.07] p-4'}`}>
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             {needsTitleInput ? (
               <>

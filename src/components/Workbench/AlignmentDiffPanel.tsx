@@ -32,7 +32,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
   };
 
   return (
-    <section className="overflow-hidden rounded-xl border border-white/[0.065] bg-[#080808]/68">
+    <section className="overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)]">
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 md:px-6">
         <div className="flex min-w-0 items-center gap-3">
           <GitCompareArrows className="h-4 w-4 shrink-0 text-[#8fa3d1]" />
