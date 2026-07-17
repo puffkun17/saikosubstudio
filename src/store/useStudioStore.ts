@@ -1653,7 +1653,16 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
         const { alignmentMode } = get();
         const merged = alignmentMode === 'industrial'
-          ? alignSubtitlesIndustrial(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t))
+          ? alignSubtitlesIndustrial(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t), {
+              onFallback: (info) => {
+                get().setStatusNotice({
+                  id: 'alignment-fallback',
+                  tone: 'notice',
+                  title: '已切换快速对齐',
+                  message: `字幕体量较大（约 ${Math.round(info.cells / 1_000_000)}M 对齐单元），已用低内存快速合并，建议人工复核时间轴。`,
+                });
+              },
+            })
           : mergeSubtitles(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t));
         set({ processedSubs: merged, previewIndex: 0, workflowStep: 2 });
       }

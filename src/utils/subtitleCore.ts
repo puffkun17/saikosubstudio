@@ -838,33 +838,43 @@ const stripWrappingBrackets = (text: string): string => text
   .replace(/\s*[\])）】]\s*$/, '')
   .trim();
 
+/** Named confidence floors for auxiliary cue classification (tune here, not inline). */
+export const AUXILIARY_CLASSIFY_SCORES = {
+  unknownBase: 38,
+  music: 78,
+  screenText: 86,
+  speechContext: 82,
+  ambient: 76,
+  bracket: 58,
+} as const;
+
 export function classifyAuxiliaryCue(text: string): AuxiliaryCueClassification {
   const rawText = text || '';
   const cleanText = stripSubtitleInlineTags(rawText);
   const innerText = stripWrappingBrackets(cleanText);
   const reasons: string[] = [];
   let category: AuxiliaryCueCategory = 'unknown';
-  let confidence = 38;
+  let confidence: number = AUXILIARY_CLASSIFY_SCORES.unknownBase;
   let action: AuxiliaryCueAction = 'keep_auxiliary';
 
   if (isLyricText(rawText) || /\b(song|singing|lyrics?)\b/i.test(innerText) || /(歌词|歌声|唱歌|哼唱)/.test(innerText)) {
     category = 'music';
-    confidence = 78;
+    confidence = AUXILIARY_CLASSIFY_SCORES.music;
     action = 'keep_auxiliary';
     reasons.push('music-or-lyric');
   }
 
   if (/(ON SCREEN|SCREEN TEXT|TEXT|SIGN|TITLE CARD|CAPTION|SUBTITLE|sign reads|text reads|牌匾|招牌|标识|路牌|屏幕|短信|邮件|标题|告示|字幕显示)/i.test(innerText)) {
     category = 'screen_text';
-    confidence = 86;
+    confidence = AUXILIARY_CLASSIFY_SCORES.screenText;
     action = 'keep_visible';
     reasons.push('screen-text');
   }
 
   if (/\b(speaking|speaks|language|alien|robot|machine|computer|ai|voice|radio|intercom|announcer|broadcast|chatter|chirps?|responds?|whispers?|murmurs?)\b/i.test(innerText)
     || /(外星|语言|語言|机器|機器|人工智能|广播|廣播|电台|電台|对讲机|對講機|播报|播報|说话|說話|低语|低語)/i.test(innerText)) {
-    category = 'semantic_sdh';
-    confidence = Math.max(confidence, 82);
+    category = 'speech_context';
+    confidence = Math.max(confidence, AUXILIARY_CLASSIFY_SCORES.speechContext);
     action = 'keep_auxiliary';
     reasons.push('semantic-speech-context');
   }
@@ -872,14 +882,14 @@ export function classifyAuxiliaryCue(text: string): AuxiliaryCueClassification {
   if (/(wind|rain|thunder|music|beep|beeping|door|footsteps?|steps?|creak|creaking|knock|ringing|phone|siren|engine|laughs?|laughter|applause|breathing|sighs?|groans?|crying|wind howling|风声|風聲|雨声|雨聲|雷声|雷聲|音乐|音樂|铃声|鈴聲|脚步声|腳步聲|敲门|敲門|开门|開門|关门|關門|笑声|笑聲|掌声|掌聲|呼吸|叹息|嘆息|哭声|哭聲|引擎|警笛)/i.test(innerText)) {
     if (category === 'unknown' || category === 'music') {
       category = /\b(music|song|singing)\b/i.test(innerText) || /(音乐|音樂|歌声|歌聲)/.test(innerText) ? 'music' : 'ambient_sdh';
-      confidence = Math.max(confidence, 76);
+      confidence = Math.max(confidence, AUXILIARY_CLASSIFY_SCORES.ambient);
       action = 'hide_by_default';
       reasons.push('ambient-sound');
     }
   }
 
   if (category === 'unknown' && (/^[\[(（【].*[\])）】]$/.test(cleanText) || /^<.*>$/.test(cleanText))) {
-    confidence = 58;
+    confidence = AUXILIARY_CLASSIFY_SCORES.bracket;
     action = 'keep_auxiliary';
     reasons.push('bracket-auxiliary');
   }
@@ -1551,33 +1561,112 @@ function buildExpandedDialogueRows(
   ];
 }
 
-function getExpandedDialogueRows(
+/** Shared temporal match policy for fast merge and industrial DP (keep in sync via this table only). */
+export const CUE_MATCH_POLICY = {
+  strongOverlap: 0.5,
+  nearStartMs: 300,
+  looseOverlap: 0.2,
+  looseStartMs: 1500,
+  maxAlignmentCells: 8_000_000,
+} as const;
+
+export function isTemporalCueMatch(overlap: number, startDiffMs: number): boolean {
+  return (
+    overlap > CUE_MATCH_POLICY.strongOverlap
+    || startDiffMs < CUE_MATCH_POLICY.nearStartMs
+    || (overlap > CUE_MATCH_POLICY.looseOverlap && startDiffMs < CUE_MATCH_POLICY.looseStartMs)
+  );
+}
+
+export type AlignmentFallbackInfo = {
+  reason: 'matrix_too_large';
+  cells: number;
+  limit: number;
+};
+
+export type AlignSubtitlesOptions = {
+  onFallback?: (info: AlignmentFallbackInfo) => void;
+};
+
+type ExpandedDialoguePlan = {
+  rows: ExpandedDialogueRow[];
+  /** Extra path steps to skip after consuming the current match (0 or 1). */
+  advancePath: number;
+  skipEnIdx?: number;
+  skipZhIdx?: number;
+};
+
+/**
+ * Expand a packed two-speaker cue when the path (or array neighbors) expose two counterpart turns.
+ * Prefer the next path step; fall back to idx+1 when the path ends or an intervening unpaired cue blocks it.
+ */
+function tryExpandPackedDialogueAtPath(
   path: AlignmentStep[],
   pathIndex: number,
   zhDialogues: PreprocessedRow[],
   enDialogues: PreprocessedRow[],
-): ExpandedDialogueRow[] | null {
-  // 只拆安全组合
+): ExpandedDialoguePlan | null {
   const current = path[pathIndex];
+  if (!current || current.zhIdx === null || current.enIdx === null) return null;
   const next = path[pathIndex + 1];
-  if (!current || !next || current.zhIdx === null || current.enIdx === null) return null;
 
-  if (next.zhIdx === null && next.enIdx !== null) {
-    return buildExpandedDialogueRows(
+  if (next && next.zhIdx === null && next.enIdx !== null) {
+    const rows = buildExpandedDialogueRows(
       zhDialogues[current.zhIdx],
       enDialogues[current.enIdx],
       enDialogues[next.enIdx],
       true,
     );
+    if (rows) return { rows, advancePath: 1 };
   }
 
-  if (next.enIdx === null && next.zhIdx !== null) {
-    return buildExpandedDialogueRows(
+  if (next && next.enIdx === null && next.zhIdx !== null) {
+    const rows = buildExpandedDialogueRows(
       enDialogues[current.enIdx],
       zhDialogues[current.zhIdx],
       zhDialogues[next.zhIdx],
       false,
     );
+    if (rows) return { rows, advancePath: 1 };
+  }
+
+  const nextEnIdx = current.enIdx + 1;
+  const nextZhIdx = current.zhIdx + 1;
+
+  if (enDialogues[nextEnIdx]) {
+    const laterPaired = path.slice(pathIndex + 1).some(
+      (step) => step.enIdx === nextEnIdx && step.zhIdx !== null,
+    );
+    if (!laterPaired) {
+      const rows = buildExpandedDialogueRows(
+        zhDialogues[current.zhIdx],
+        enDialogues[current.enIdx],
+        enDialogues[nextEnIdx],
+        true,
+      );
+      if (rows) {
+        const advancePath = next?.zhIdx === null && next.enIdx === nextEnIdx ? 1 : 0;
+        return { rows, advancePath, skipEnIdx: nextEnIdx };
+      }
+    }
+  }
+
+  if (zhDialogues[nextZhIdx]) {
+    const laterPaired = path.slice(pathIndex + 1).some(
+      (step) => step.zhIdx === nextZhIdx && step.enIdx !== null,
+    );
+    if (!laterPaired) {
+      const rows = buildExpandedDialogueRows(
+        enDialogues[current.enIdx],
+        zhDialogues[current.zhIdx],
+        zhDialogues[nextZhIdx],
+        false,
+      );
+      if (rows) {
+        const advancePath = next?.enIdx === null && next.zhIdx === nextZhIdx ? 1 : 0;
+        return { rows, advancePath, skipZhIdx: nextZhIdx };
+      }
+    }
   }
 
   return null;
@@ -1616,7 +1705,7 @@ export function mergeSubtitles(
     const diff = Math.abs(zhS - enS);
     const compatibleCueKinds = shouldAttemptCueMerge(zh, en);
     
-    if (compatibleCueKinds && (overlap > 0.5 || diff < 300 || (overlap > 0.2 && diff < 1500))) {
+    if (compatibleCueKinds && isTemporalCueMatch(overlap, diff)) {
       const expandedZh = enDialogues[j + 1]
         ? buildExpandedDialogueRows(zh, en, enDialogues[j + 1], true)
         : null;
@@ -1681,7 +1770,8 @@ export function alignSubtitlesIndustrial(
   zhSubs: RawSub[], 
   enSubs: RawSub[], 
   commSubs: RawSub[] = [], 
-  addLog: (msg: string, type: 'info' | 'success' | 'error') => void = () => {}
+  addLog: (msg: string, type: 'info' | 'success' | 'error') => void = () => {},
+  options: AlignSubtitlesOptions = {},
 ): SubRow[] {
   const zhProc = preprocessMixedContent(zhSubs);
   const enProc = preprocessMixedContent(enSubs);
@@ -1702,9 +1792,13 @@ export function alignSubtitlesIndustrial(
   const secondaryOffsetMs = offsetDiagnosis.shouldApply ? offsetDiagnosis.offsetMs : 0;
   
   const alignmentCells = M * N;
-  const MAX_ALIGNMENT_CELLS = 8_000_000;
-  if (alignmentCells > MAX_ALIGNMENT_CELLS) {
+  if (alignmentCells > CUE_MATCH_POLICY.maxAlignmentCells) {
     addLog(`[工业级合并] 对齐矩阵约 ${Math.round(alignmentCells / 1_000_000)}M 单元，已切换为低内存快速合并`, 'info');
+    options.onFallback?.({
+      reason: 'matrix_too_large',
+      cells: alignmentCells,
+      limit: CUE_MATCH_POLICY.maxAlignmentCells,
+    });
     return mergeSubtitles(zhSubs, enSubs, commSubs, addLog);
   }
   if (Math.abs(offsetDiagnosis.offsetMs) >= 1200) {
@@ -1730,10 +1824,10 @@ export function alignSubtitlesIndustrial(
     const overlap = calculateOverlapRatio(zhTiming.start, zhTiming.end, enTiming.start, enTiming.end);
     const diff = Math.abs(zhTiming.start - enTiming.start);
     
-    const isMatch = (overlap > 0.5 || diff < 300 || (overlap > 0.2 && diff < 1500));
+    const isMatch = isTemporalCueMatch(overlap, diff);
     if (isMatch) {
       // Optimal alignment bonus based on similarity and time proximity
-      return 15 + overlap * 10 - (diff / 1500) * 5 + compatibility.scoreAdjustment;
+      return 15 + overlap * 10 - (diff / CUE_MATCH_POLICY.looseStartMs) * 5 + compatibility.scoreAdjustment;
     }
     // Moderate penalty if they are relatively close (within 3s) but don't overlap
     if (diff < 3000) {
@@ -1803,14 +1897,20 @@ export function alignSubtitlesIndustrial(
   path.reverse();
   
   const mergedDialogues: Array<{ ts: string; text: string; type: string; cueKind?: CueKind; auxiliary?: AuxiliaryCueClassification; alignment?: SubRow['alignment']; provenance?: AlignmentProvenance }> = [];
-  
+  const skippedEn = new Set<number>();
+  const skippedZh = new Set<number>();
+
   for (let pathIndex = 0; pathIndex < path.length; pathIndex++) {
     const step = path[pathIndex];
+    if (step.enIdx !== null && skippedEn.has(step.enIdx)) continue;
+    if (step.zhIdx !== null && skippedZh.has(step.zhIdx)) continue;
 
-    const expandedRows = getExpandedDialogueRows(path, pathIndex, zhDialogues, enDialogues);
-    if (expandedRows) {
-      mergedDialogues.push(...expandedRows);
-      pathIndex += 1;
+    const expanded = tryExpandPackedDialogueAtPath(path, pathIndex, zhDialogues, enDialogues);
+    if (expanded) {
+      mergedDialogues.push(...expanded.rows);
+      if (expanded.skipEnIdx != null) skippedEn.add(expanded.skipEnIdx);
+      if (expanded.skipZhIdx != null) skippedZh.add(expanded.skipZhIdx);
+      pathIndex += expanded.advancePath;
       continue;
     }
 
@@ -1822,7 +1922,7 @@ export function alignSubtitlesIndustrial(
       const overlap = calculateOverlapRatio(zhTiming.start, zhTiming.end, enTiming.start, enTiming.end);
       const diff = Math.abs(zhTiming.start - enTiming.start);
       const compatibility = getCueMergeCompatibility(zh, en);
-      const isMatch = compatibility.canMerge && (overlap > 0.5 || diff < 300 || (overlap > 0.2 && diff < 1500));
+      const isMatch = compatibility.canMerge && isTemporalCueMatch(overlap, diff);
       
       if (isMatch) {
         mergedDialogues.push(createMergedRow(

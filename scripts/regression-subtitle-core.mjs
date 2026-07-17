@@ -39,6 +39,7 @@ const {
   cleanFilename,
   classifySubtitleCue,
   classifyAuxiliaryCue,
+  CUE_MATCH_POLICY,
   detectLanguageByContent,
   detectLanguageByFilename,
   detectSubtitleLanguage,
@@ -402,6 +403,29 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
   assert.equal(aligned.some(row => row.alignment === 'expanded-dialogue'), false, 'Ordinary visual line breaks must not be mistaken for two-speaker dialogue.');
 }
 
+{
+  // Path after the packed match may insert an unpaired ZH cue before the second EN turn.
+  // Expansion must still use array adjacency rather than requiring a contiguous path pair.
+  const aligned = alignSubtitlesIndustrial(
+    [
+      { ts: '01:03:43,988 --> 01:03:47,574', text: '-这是你所期望走的路吗?-正是' },
+      { ts: '01:03:45,200 --> 01:03:45,600', text: '插入旁白' },
+    ],
+    [
+      { ts: '01:03:44,533 --> 01:03:47,077', text: 'Alors Mathieu, ça se passe\ncomme vous voulez ?' },
+      { ts: '01:03:47,411 --> 01:03:48,329', text: "Je l'espère." },
+    ],
+    [],
+    noopLog,
+  );
+  assert.equal(
+    aligned.filter(row => row.alignment === 'expanded-dialogue').length,
+    2,
+    'Packed dialogue must expand even when an unpaired cue sits between path steps.',
+  );
+  assert.ok(aligned.some(row => row.text === '插入旁白'), 'The intervening unpaired cue must remain on the timeline.');
+}
+
 const makeRegressionTs = (startMs) => {
   const pad = (n, size = 2) => String(n).padStart(size, '0');
   const format = (value) => {
@@ -413,6 +437,26 @@ const makeRegressionTs = (startMs) => {
   };
   return `${format(startMs)} --> ${format(startMs + 900)}`;
 };
+
+{
+  const primary = Array.from({ length: 3000 }, (_, index) => ({
+    ts: makeRegressionTs(index * 1000),
+    text: `中文 ${index}`,
+  }));
+  const secondary = Array.from({ length: 3000 }, (_, index) => ({
+    ts: makeRegressionTs(index * 1000 + 40),
+    text: `English ${index}`,
+  }));
+  assert.ok(primary.length * secondary.length > CUE_MATCH_POLICY.maxAlignmentCells, 'Fallback fixture must exceed the shared matrix limit.');
+  let fallback = null;
+  const logs = [];
+  alignSubtitlesIndustrial(primary, secondary, [], message => logs.push(message), {
+    onFallback: (info) => { fallback = info; },
+  });
+  assert.ok(fallback, 'Oversized alignment matrices must surface an onFallback signal.');
+  assert.equal(fallback.reason, 'matrix_too_large');
+  assert.ok(logs.some(message => /低内存快速合并/.test(message)), 'Oversized matrices should still log the low-memory fallback.');
+}
 
 {
   const primary = Array.from({ length: 30 }, (_, index) => ({
@@ -614,7 +658,7 @@ Movimiento ocular detectado.`;
   assert.equal(classifySubtitleCue('我们今天去吃 KFC。').kind, 'dialogue');
   assert.equal(classifySubtitleCue('（脚步声）').kind, 'sound_caption');
   assert.equal(classifySubtitleCue('[faint beeping]').kind, 'sound_caption');
-  assert.equal(classifyAuxiliaryCue('[speaking alien language]').category, 'semantic_sdh');
+  assert.equal(classifyAuxiliaryCue('[speaking alien language]').category, 'speech_context');
 }
 
 {
@@ -648,7 +692,7 @@ Movimiento ocular detectado.`;
     { ts: '00:00:10,000 --> 00:00:12,000', text: '[speaking alien language]', cueKind: 'narration', auxiliary: classifyAuxiliaryCue('[speaking alien language]') },
   ];
   const aligned = alignSubtitlesIndustrial(primary, secondary, [], noopLog);
-  assert.equal(aligned.filter(row => row.auxiliary?.category === 'semantic_sdh').length, 2, 'Semantic auxiliary cues should be preserved for export-mode decisions.');
+  assert.equal(aligned.filter(row => row.auxiliary?.category === 'speech_context').length, 2, 'Speech-context auxiliary cues should be preserved for export-mode decisions.');
 }
 
 {
