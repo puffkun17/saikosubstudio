@@ -69,6 +69,9 @@
   --v4-desk-glow: rgba(208, 164, 111, 0.08);
   --v4-desk-veil: linear-gradient(165deg, rgba(28, 24, 20, 0.92) 0%, rgba(12, 11, 10, 0.98) 48%, #0c0b0a 100%);
 
+  /* Twin trays: top nav + bottom ops deck. */
+  --tray-h: 72px;
+
   /* Stacking: nav < feedback < overlay/modal. Never mount modals inside nav. */
   --z-raised: 10;
   --z-sticky: 40;
@@ -122,22 +125,314 @@ body {
   box-shadow: 0 1px 0 rgba(255, 248, 235, 0.02);
 }
 
+/* Parsing / progress card (not the empty→queue handoff). */
 .ingest-receive-surface {
   position: relative;
   isolation: isolate;
   border: 1px solid var(--v4-line);
   background:
-    radial-gradient(720px 280px at 50% 0%, var(--v4-desk-glow), transparent 70%),
-    linear-gradient(180deg, rgba(255, 244, 226, 0.028), transparent 40%),
+    radial-gradient(780px 300px at 50% -8%, var(--v4-desk-glow), transparent 68%),
+    linear-gradient(180deg, rgba(255, 244, 226, 0.03), transparent 38%),
     var(--v4-panel);
-  box-shadow: inset 0 1px 0 rgba(255, 244, 226, 0.035);
+  box-shadow: inset 0 1px 0 rgba(255, 244, 226, 0.04);
 }
 
-.ingest-receive-surface.is-dragging {
-  border-color: color-mix(in srgb, var(--v4-accent) 65%, transparent);
+/* Shared handoff stage: empty + queue share one field — no panel hard-cut. */
+.ingest-stage {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  max-width: 36rem;
+  margin-inline: auto;
+  transition:
+    max-width 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    padding 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ingest-stage.has-queue {
+  max-width: 44rem;
+}
+
+.ingest-stage.is-empty {
+  max-width: min(40rem, 100%);
+  min-height: min(22rem, 58vh);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/*
+ * Film gate — CSS-only sprocket rails (background-position).
+ * Idle: slow transport · drag: faster · reduced-motion: static.
+ */
+.ingest-focus {
+  position: absolute;
+  inset: 6% 0 8%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: radial-gradient(
+    ellipse 68% 56% at 50% 42%,
+    var(--v4-desk-glow),
+    transparent 74%
+  );
+  transition: background 0.22s ease, opacity 0.22s ease;
+}
+
+.ingest-film {
+  position: absolute;
+  inset: 0;
+}
+
+.ingest-film__rail {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  width: 1.35rem;
+  opacity: 0.55;
+  background-color: color-mix(in srgb, #1a1410 88%, var(--v4-accent));
+  /* Sprocket holes punched through the strip */
+  background-image: radial-gradient(
+    ellipse 38% 28% at 50% 50%,
+    var(--v4-canvas) 0 62%,
+    transparent 66%
+  );
+  background-size: 100% 1.55rem;
+  background-repeat: repeat-y;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v4-accent) 12%, transparent);
+  animation: ingest-film-run 2.8s linear infinite;
+  will-change: background-position;
+}
+
+.ingest-film__rail--left {
+  left: 0.35rem;
+}
+
+.ingest-film__rail--right {
+  right: 0.35rem;
+  animation-direction: reverse;
+}
+
+.ingest-film__frame {
+  position: absolute;
+  inset: 0.65rem 2.1rem;
+  border: 1px solid color-mix(in srgb, var(--v4-line-strong) 70%, transparent);
+  border-radius: 2px;
   background:
-    radial-gradient(640px 260px at 50% 35%, color-mix(in srgb, var(--v4-accent) 16%, transparent), transparent 72%),
-    var(--v4-panel);
+    linear-gradient(
+      180deg,
+      transparent 0,
+      transparent calc(100% - 1px),
+      color-mix(in srgb, var(--v4-line) 80%, transparent) 100%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 4.5rem,
+      color-mix(in srgb, var(--v4-line) 55%, transparent) 4.5rem,
+      color-mix(in srgb, var(--v4-line) 55%, transparent) calc(4.5rem + 1px)
+    );
+  background-size: 100% 100%, 100% 4.55rem;
+  animation: ingest-film-frames 2.8s linear infinite;
+  opacity: 0.35;
+  will-change: background-position;
+}
+
+.ingest-focus__mark {
+  position: absolute;
+  z-index: 1;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-color: color-mix(in srgb, var(--v4-accent) 48%, transparent);
+  border-style: solid;
+  border-width: 0;
+  opacity: 0.75;
+  transition:
+    border-color 0.22s ease,
+    opacity 0.22s ease,
+    width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    height 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ingest-focus__mark--tl {
+  top: 0.55rem;
+  left: 2rem;
+  border-top-width: 1.5px;
+  border-left-width: 1.5px;
+}
+
+.ingest-focus__mark--tr {
+  top: 0.55rem;
+  right: 2rem;
+  border-top-width: 1.5px;
+  border-right-width: 1.5px;
+}
+
+.ingest-focus__mark--bl {
+  bottom: 0.55rem;
+  left: 2rem;
+  border-bottom-width: 1.5px;
+  border-left-width: 1.5px;
+}
+
+.ingest-focus__mark--br {
+  bottom: 0.55rem;
+  right: 2rem;
+  border-bottom-width: 1.5px;
+  border-right-width: 1.5px;
+}
+
+@keyframes ingest-film-run {
+  to { background-position-y: 1.55rem; }
+}
+
+@keyframes ingest-film-frames {
+  to { background-position: 0 0, 0 4.55rem; }
+}
+
+.ingest-stage.is-dragging .ingest-focus {
+  background: radial-gradient(
+    ellipse 78% 64% at 50% 44%,
+    color-mix(in srgb, var(--v4-accent) 18%, transparent),
+    transparent 74%
+  );
+}
+
+.ingest-stage.is-dragging .ingest-film__rail {
+  opacity: 0.85;
+  animation-duration: 0.85s;
+}
+
+.ingest-stage.is-dragging .ingest-film__frame {
+  opacity: 0.55;
+  animation-duration: 0.85s;
+}
+
+.ingest-stage.is-dragging .ingest-focus__mark {
+  width: 1.35rem;
+  height: 1.35rem;
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--v4-accent-strong) 82%, transparent);
+}
+
+.ingest-stage.is-accepting .ingest-focus {
+  background: radial-gradient(
+    ellipse 60% 50% at 50% 46%,
+    color-mix(in srgb, var(--v4-accent) 26%, transparent),
+    transparent 70%
+  );
+}
+
+.ingest-stage.is-accepting .ingest-film__rail,
+.ingest-stage.is-accepting .ingest-film__frame {
+  animation-duration: 0.35s;
+  opacity: 1;
+}
+
+.ingest-empty-copy {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 34rem;
+  padding: 1.75rem 1.25rem;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.ingest-stage.is-dragging .ingest-empty-copy {
+  transform: scale(0.985);
+}
+
+.ingest-stage.is-accepting .ingest-empty-copy {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ingest-film__rail,
+  .ingest-film__frame {
+    animation: none !important;
+  }
+
+  .ingest-focus,
+  .ingest-focus__mark,
+  .ingest-empty-copy {
+    transition: none !important;
+  }
+
+  .ingest-stage.is-dragging .ingest-empty-copy,
+  .ingest-stage.is-accepting .ingest-empty-copy {
+    transform: none;
+  }
+
+  .ingest-stage.is-accepting .ingest-empty-copy {
+    opacity: 0.45;
+  }
+}
+
+/* Archive children: soft spine + stubs instead of file-explorer L-lines. */
+.ingest-halo-tree {
+  position: relative;
+  margin-left: 1.05rem;
+  padding-left: 1.35rem;
+}
+
+.ingest-halo-tree::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.15rem;
+  bottom: 0.85rem;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--v4-accent) 58%, transparent),
+    color-mix(in srgb, var(--v4-line-strong) 55%, transparent) 72%,
+    transparent
+  );
+  box-shadow: 0 0 14px color-mix(in srgb, var(--v4-accent) 28%, transparent);
+}
+
+.ingest-halo-leaf {
+  position: relative;
+}
+
+.ingest-halo-leaf::before {
+  content: "";
+  position: absolute;
+  left: -1.35rem;
+  top: 50%;
+  width: 0.85rem;
+  height: 2px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  background: color-mix(in srgb, var(--v4-accent) 40%, var(--v4-line-strong));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--v4-accent) 22%, transparent);
+  opacity: 0.85;
+}
+
+.ingest-halo-root {
+  position: relative;
+}
+
+.ingest-halo-root::before {
+  content: "";
+  position: absolute;
+  left: -0.35rem;
+  top: 50%;
+  z-index: -1;
+  width: 3.25rem;
+  height: 3.25rem;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--v4-accent) 28%, transparent),
+    transparent 70%
+  );
+  pointer-events: none;
 }
 
 /*
@@ -147,7 +442,7 @@ body {
 .feedback-dock {
   pointer-events: none;
   position: fixed;
-  bottom: 1rem;
+  bottom: calc(var(--tray-h) + 0.75rem);
   left: 50%;
   z-index: var(--z-feedback);
   display: flex;
@@ -159,7 +454,7 @@ body {
 
 @media (min-width: 768px) {
   .feedback-dock {
-    bottom: 1.25rem;
+    bottom: calc(var(--tray-h) + 1rem);
   }
 }
 

@@ -275,7 +275,7 @@ export const TaskList: React.FC = () => {
   }
 
   return (
-    <div className="v4-panel relative flex flex-col gap-4 rounded-lg p-5 desktop-panel-fit-visible md:p-6">
+    <div className="v4-panel relative flex flex-col gap-4 rounded-lg p-5 md:p-6">
 
       {/* Header section */}
       <div className="flex flex-shrink-0 select-none items-center justify-between gap-3 border-b border-[var(--v4-line)] pb-4">
@@ -334,10 +334,10 @@ export const TaskList: React.FC = () => {
             return (
               <button
                 key={t.id}
-                className={`px-4 py-2 rounded-xl text-sm font-mono transition-all truncate max-w-[220px] cursor-pointer border
+                className={`max-w-[220px] cursor-pointer truncate rounded-xl border px-4 py-2 font-sans text-sm transition-all
                   ${isActive
-                    ? 'bg-[#9ca3af]/10 text-[#e5e7eb] border-[#9ca3af]/30 shadow-[0_0_12px_rgba(156,163,175,0.12)] font-bold'
-                    : 'bg-white/[0.01] text-neutral-400 border-white/[0.04] hover:bg-white/[0.04] hover:text-neutral-200'}`}
+                    ? 'border-[#9ca3af]/30 bg-[#9ca3af]/10 font-semibold text-[#e5e7eb] shadow-[0_0_12px_rgba(156,163,175,0.12)]'
+                    : 'border-white/[0.04] bg-white/[0.01] text-neutral-400 hover:bg-white/[0.04] hover:text-neutral-200'}`}
                 onClick={() => selectTask(t.id)}
               >
                 {t.title}
@@ -347,8 +347,8 @@ export const TaskList: React.FC = () => {
         </div>
       )}
 
-      {/* Main workspace layout stretching to fill card height */}
-      <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-white/[0.03] relative min-h-0 overflow-x-visible">
+      {/* Main workspace — hug content; sticky dock without stretching voids */}
+      <div className="relative flex min-h-0 flex-col gap-4 overflow-x-visible overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-white/[0.03]">
 
         {/* Compact task row */}
         <div className={`relative flex flex-shrink-0 flex-col items-stretch justify-between gap-2 rounded-lg border px-3 py-2.5 transition-colors sm:flex-row sm:items-center ${needsTitleInput ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)]' : 'border-white/[0.07] bg-white/[0.018]'}`}>
@@ -370,7 +370,7 @@ export const TaskList: React.FC = () => {
               </>
             ) : (
               <>
-                {renderMarqueeText(activeTask.title, 'min-w-0 flex-1 truncate text-sm font-semibold text-neutral-100 font-mono')}
+                {renderMarqueeText(activeTask.title, 'min-w-0 flex-1 truncate font-sans text-sm font-semibold text-neutral-100')}
                 {diffBadge}
               </>
             )}
@@ -405,7 +405,7 @@ export const TaskList: React.FC = () => {
         </div>
 
         {/* Track bindings first — primary decision before naming/credits */}
-        <div className="flex flex-col gap-3.5 flex-1 min-h-0 overflow-visible">
+        <div className="flex min-h-0 flex-col gap-3.5 overflow-visible">
           <div className="relative flex flex-col gap-3 overflow-visible">
             <div className="flex items-center gap-2">
               <h4 className="block select-none text-base font-semibold text-neutral-100">
@@ -601,8 +601,8 @@ export const TaskList: React.FC = () => {
             <CreditTool />
           </div>
 
-          {/* Configuration & Process Dock — stays near viewport bottom */}
-          <div className="sticky bottom-0 z-10 mt-auto flex flex-col gap-3 overflow-visible border-t border-white/[0.06] bg-[var(--v4-panel)]/95 pt-3 backdrop-blur-sm">
+          {/* Configuration & Process Dock — sticky, no mt-auto void */}
+          <div className="sticky bottom-0 z-10 mt-3 flex flex-col gap-3 overflow-visible border-t border-white/[0.06] bg-[var(--v4-panel)]/95 pt-3 backdrop-blur-sm">
 
             {/* Source ASS style preview and explicit adoption decision. */}
             {foundAssStyle && (

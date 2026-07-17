@@ -81,11 +81,11 @@ export const IngestStep: React.FC = () => {
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
             className="z-10 mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-4"
           >
-            <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(300px,400px)_minmax(0,1fr)] lg:items-start xl:gap-5">
-              <aside className="min-w-0 lg:sticky lg:top-2 lg:self-start">
+            <div className="grid min-h-0 flex-1 grid-cols-1 content-start items-start gap-4 lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)] xl:gap-5">
+              <aside className="min-w-0 self-start lg:sticky lg:top-2">
                 <SourceIdentityStrip />
               </aside>
-              <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+              <div className="relative flex min-h-0 min-w-0 flex-1 flex-col self-stretch">
                 <TaskList />
               </div>
             </div>
@@ -98,7 +98,7 @@ export const IngestStep: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="ingest-empty flex-1 flex flex-col gap-6 max-w-7xl mx-auto w-full items-center justify-start py-1 md:py-3"
+            className="ingest-empty mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-start gap-6 py-2 md:py-4"
           >
             <DragZone />
           </motion.div>
@@ -112,7 +112,7 @@ export const IngestStep: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-xl z-[2000] flex items-center justify-center p-4"
+            className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70 p-4"
             onClick={(e) => { if (e.target === e.currentTarget) setLibraryOpen(false); }}
           >
             <motion.div 
@@ -152,8 +152,8 @@ export const IngestStep: React.FC = () => {
                           className="group relative flex items-center justify-between gap-2 overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-3 transition-colors hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)]"
                         >
                           {item.backdrop && (
-                            <div 
-                              className="absolute inset-0 bg-cover bg-center opacity-[0.05] group-hover:opacity-[0.1] transition-opacity -z-10 filter blur-[8px] scale-110"
+                            <div
+                              className="pointer-events-none absolute inset-0 -z-10 bg-cover bg-center opacity-[0.07] transition-opacity group-hover:opacity-[0.12]"
                               style={{ backgroundImage: `url(${item.backdrop})` }}
                             />
                           )}

@@ -306,11 +306,14 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                             辅助信息
                           </span>
                         )}
-                        <div className={`text-sm font-medium leading-6 break-words ${isActive ? 'text-white' : 'text-neutral-200'}`}>
+                        <div className={`font-sans text-sm font-medium leading-6 break-words ${isActive ? 'text-white' : 'text-neutral-200'}`}>
                           {zhText}
                         </div>
                         {enText && (
-                          <div className={`text-xs mt-0.5 font-normal leading-5 break-words ${isActive ? 'text-[#e5e7eb]/90' : 'text-neutral-400'}`}>
+                          <div
+                            className={`mt-0.5 text-xs font-normal leading-5 break-words tracking-[0.01em] ${isActive ? 'text-[#e5e7eb]/90' : 'text-neutral-400'}`}
+                            style={{ fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }}
+                          >
                             {enText}
                           </div>
                         )}

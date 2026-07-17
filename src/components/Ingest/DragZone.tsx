@@ -5,7 +5,7 @@ import { useStudioStore, type Subfile } from '@/store/useStudioStore';
 import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
 import { ArrowRight, ChevronDown, FilePlus, FolderPlus, HardDrive, Plus, Trash2, X } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { CLIENT_IMPORT_LIMITS, getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
 import { extractLocalArchiveSubtitles, listLocalArchiveSubtitles, LocalArchiveError } from '@/utils/localArchive';
 import { FileFormatIcon, LanguageMark, resolveFileFormat } from '@/components/ui/FileFormatIcon';
@@ -203,13 +203,13 @@ export const DragZone: React.FC = () => {
   // Parsing states
   const [isParsing, setIsParsing] = useState(false);
   const [parsingFiles, setParsingFiles] = useState<ParsingFileState[]>([]);
-  const [isZoneActive, setIsZoneActive] = useState(false);
   const [ingestPhase, setIngestPhase] = useState<IngestPhase>('idle');
   const [ingestMessage, setIngestMessage] = useState(PHASE_COPY.idle);
   const [resultChips, setResultChips] = useState<string[]>([]);
   const [queuedItems, setQueuedItems] = useState<PreflightItem[]>([]);
   const [queueIssue, setQueueIssue] = useState<string | null>(null);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [isAccepting, setIsAccepting] = useState(false);
   const addMenuRef = useRef<HTMLDivElement>(null);
 
   const setPhase = (phase: IngestPhase, message = PHASE_COPY[phase]) => {
@@ -693,9 +693,17 @@ export const DragZone: React.FC = () => {
       }
     }
 
-    if (filesArray.length > 0) {
+    if (filesArray.length === 0) return;
+
+    // Empty → queue: short accept flash (CSS only), then reveal tree.
+    if (queuedItems.length === 0 && !shouldReduceMotion) {
+      setIsAccepting(true);
+      await sleep(180);
       addFilesToQueue(filesArray);
+      setIsAccepting(false);
+      return;
     }
+    addFilesToQueue(filesArray);
   };
 
   if (isParsing) {
@@ -779,230 +787,268 @@ export const DragZone: React.FC = () => {
   return (
     <div
       className="ingest-drop-zone group/outer flex w-full flex-col items-center py-1 md:py-2"
-      onMouseEnter={() => setIsZoneActive(true)}
-      onMouseLeave={() => setIsZoneActive(false)}
       onDragOver={handleDragOver}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <motion.div
-        animate={shouldReduceMotion
-          ? { scale: 1 }
-          : isDragging
-            ? { scale: 0.992 }
-            : isZoneActive
-              ? { scale: 1.004 }
-              : { scale: 1 }
-        }
-        transition={shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 340, damping: 28 }}
-        className={`ingest-receive-surface relative z-10 mx-auto w-full max-w-[980px] select-none overflow-hidden rounded-lg transition-[border-color,background] duration-300 ${
-          isDragging ? 'is-dragging' : ''
-        } ${queuedItems.length === 0 ? 'min-h-[380px] md:min-h-[420px]' : 'min-h-[400px]'}`}
+      <div
+        className={`ingest-stage relative z-10 select-none px-3 py-6 md:px-4 md:py-8 ${
+          queuedItems.length > 0 ? 'has-queue' : 'is-empty'
+        } ${isDragging ? 'is-dragging' : ''} ${isAccepting ? 'is-accepting' : ''}`}
       >
-        {isDragging ? (
-          <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 text-center">
+        {queuedItems.length === 0 && (
+          <div className="ingest-focus" aria-hidden="true">
+            <div className="ingest-film">
+              <div className="ingest-film__rail ingest-film__rail--left" />
+              <div className="ingest-film__frame" />
+              <div className="ingest-film__rail ingest-film__rail--right" />
+            </div>
+            <span className="ingest-focus__mark ingest-focus__mark--tl" />
+            <span className="ingest-focus__mark ingest-focus__mark--tr" />
+            <span className="ingest-focus__mark ingest-focus__mark--bl" />
+            <span className="ingest-focus__mark ingest-focus__mark--br" />
+          </div>
+        )}
+
+        <AnimatePresence mode="wait">
+          {queuedItems.length === 0 ? (
             <motion.div
-              animate={shouldReduceMotion ? undefined : { y: [0, 6, 0] }}
-              transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
-              className="text-[var(--v4-accent-strong)]"
+              key="empty"
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={shouldReduceMotion ? undefined : { opacity: 0, y: -4 }}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="ingest-empty-copy mx-auto text-center"
             >
-              <FilePlus className="h-11 w-11 stroke-[1.8]" aria-hidden="true" />
-            </motion.div>
-            <div>
-              <span className="block text-2xl font-semibold tracking-tight text-[var(--v4-text)] md:text-3xl">松手加入清单</span>
-              <span className="mt-2 block text-sm text-[var(--v4-text-muted)]">不会立刻开始整理，之后仍可增删</span>
-            </div>
-          </div>
-        ) : queuedItems.length === 0 ? (
-          <div className="relative flex min-h-[380px] flex-col items-center justify-center px-6 py-10 text-center md:min-h-[420px] md:px-12">
-            <motion.div
-              aria-hidden="true"
-              className="mb-6 h-px w-16 bg-[var(--v4-accent)]"
-              initial={shouldReduceMotion ? false : { scaleX: 0.4, opacity: 0.5 }}
-              animate={shouldReduceMotion ? undefined : { scaleX: [0.4, 1, 0.4], opacity: [0.45, 1, 0.45] }}
-              transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <h3 className="max-w-md text-balance text-[1.65rem] font-semibold tracking-tight text-[var(--v4-text)] md:text-[2rem]">
-              把字幕拖到这里
-            </h3>
-            <p className="mt-3 max-w-md text-pretty text-base leading-7 text-[var(--v4-text-muted)]">
-              单轨、压缩包或整夹都行。先入清单，确认后再整理。
-            </p>
-            <p className="mt-4 text-sm text-[var(--v4-text-faint)]">
-              {FORMAT_MARKS.join(' · ')}
-            </p>
-            <div className="mt-8 grid w-full max-w-md gap-2 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="v4-focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[var(--v4-accent)] px-5 text-sm font-semibold text-[var(--v4-accent-ink)] transition-colors hover:bg-[var(--v4-accent-strong)] active:scale-[0.985]"
+              <h3 className="text-balance text-[1.75rem] font-semibold leading-snug tracking-tight text-[var(--v4-text)] md:text-[2rem]">
+                {isDragging ? '松手加入清单' : '把字幕拖到这里'}
+              </h3>
+              <p className="mx-auto mt-3 max-w-md text-pretty text-base leading-7 text-[var(--v4-text-muted)]">
+                {isDragging
+                  ? '不会立刻整理，之后仍可增删。'
+                  : '单轨、压缩包或整夹都行。先入清单，确认后再整理。'}
+              </p>
+              <p
+                className={`mt-5 text-[12px] tracking-[0.16em] text-[var(--v4-text-muted)] transition-opacity duration-200 ${
+                  isDragging ? 'opacity-0' : 'opacity-100'
+                }`}
+                style={{ fontFamily: 'var(--font-geist-mono), ui-monospace, monospace' }}
+                aria-label="支持的格式"
               >
-                <FilePlus className="h-5 w-5 stroke-[2]" aria-hidden="true" />
-                选择文件
-              </button>
-              <button
-                type="button"
-                onClick={() => folderInputRef.current?.click()}
-                className="v4-focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-muted)] px-5 text-sm font-medium text-[var(--v4-text)] transition-colors hover:bg-[var(--v4-panel-raised)] active:scale-[0.985]"
+                {FORMAT_MARKS.join(' · ')}
+              </p>
+
+              <div
+                className={`mx-auto mt-8 inline-flex max-w-full overflow-hidden rounded-md border border-[var(--v4-line-strong)] shadow-[0_1px_0_rgba(255,244,226,0.04)] transition-opacity duration-200 ${
+                  isDragging ? 'pointer-events-none opacity-30' : 'opacity-100'
+                }`}
               >
-                <FolderPlus className="h-5 w-5 stroke-[2]" aria-hidden="true" />
-                选择文件夹
-              </button>
-            </div>
-            <p className="mt-8 inline-flex items-center gap-2 text-sm text-[var(--v4-text-muted)]">
-              <HardDrive className="h-4 w-4 shrink-0" aria-hidden="true" />
-              仅在当前设备读取，不上传
-            </p>
-          </div>
-        ) : (
-          <div className="flex min-h-[360px] flex-col text-left">
-            {/* Global ops sticky at top */}
-            <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--v4-line)] px-4 py-3 md:px-5">
-              <div className="min-w-0">
-                {/* Weight ladder: section 600 · meta 400 only. Avoid stacking medium everywhere. */}
-                <h3 className="text-sm font-semibold tracking-tight text-[var(--v4-text)]">已添加</h3>
-                <p className="mt-0.5 text-xs font-normal tabular-nums text-[var(--v4-text-muted)]">
-                  {archivePeekPending && trackCount === 0
-                    ? '正在读取…'
-                    : `${queuedItems.length} 项 · ${trackCount} 条字幕 · ${formatBytes(totalBytes)}`}
-                  {rejectedItems.length > 0 ? ` · ${rejectedItems.length} 项已忽略` : ''}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <div className="relative" ref={addMenuRef}>
-                  <button
-                    type="button"
-                    onClick={() => setAddMenuOpen((open) => !open)}
-                    className="v4-focus-ring inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] px-3 text-sm font-semibold text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)]"
-                    aria-expanded={addMenuOpen}
-                  >
-                    <Plus className="h-4 w-4" aria-hidden="true" />
-                    添加
-                    <ChevronDown className={`h-3.5 w-3.5 text-[var(--v4-text-faint)] transition-transform ${addMenuOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  {addMenuOpen && (
-                    <div className="absolute right-0 top-full z-20 mt-1.5 min-w-[11rem] overflow-hidden rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] shadow-[0_12px_28px_rgba(0,0,0,0.4)]">
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-normal text-[var(--v4-text)] hover:bg-white/[0.04]"
-                        onClick={() => { setAddMenuOpen(false); fileInputRef.current?.click(); }}
-                      >
-                        <FilePlus className="h-4 w-4 text-[var(--v4-accent-strong)]" />
-                        文件 / 压缩包
-                      </button>
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-2 border-t border-[var(--v4-line)] px-3 py-2.5 text-left text-sm font-normal text-[var(--v4-text)] hover:bg-white/[0.04]"
-                        onClick={() => { setAddMenuOpen(false); folderInputRef.current?.click(); }}
-                      >
-                        <FolderPlus className="h-4 w-4 text-[var(--v4-accent-strong)]" />
-                        文件夹
-                      </button>
-                    </div>
-                  )}
-                </div>
                 <button
                   type="button"
-                  onClick={() => { setQueuedItems([]); setQueueIssue(null); }}
-                  className="v4-focus-ring inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm font-normal text-[var(--v4-text-muted)] hover:border-[var(--v4-line-strong)] hover:text-[var(--v4-text)]"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="v4-focus-ring inline-flex h-11 items-center justify-center gap-2 bg-[var(--v4-accent)] px-5 text-sm font-semibold text-[var(--v4-accent-ink)] transition-colors hover:bg-[var(--v4-accent-strong)] sm:px-6"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  清空
+                  <FilePlus className="h-[18px] w-[18px] shrink-0 stroke-[2.25]" aria-hidden="true" />
+                  选择文件
+                </button>
+                <button
+                  type="button"
+                  onClick={() => folderInputRef.current?.click()}
+                  className="v4-focus-ring inline-flex h-11 items-center justify-center gap-2 border-l border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] px-5 text-sm font-semibold text-[var(--v4-text)] transition-colors hover:bg-[var(--v4-accent-soft)] sm:px-6"
+                >
+                  <FolderPlus className="h-[18px] w-[18px] shrink-0 stroke-[2.25]" aria-hidden="true" />
+                  选择文件夹
                 </button>
               </div>
-            </header>
 
-            <div className="max-h-[380px] flex-1 overflow-y-auto">
-              {queuedItems.map((item) => {
-                const langs = languagesForItem(item);
-                const isArchive = item.kind === 'zip' || item.kind === 'archive';
-                return (
-                  <div key={getQueueKey(item.file)} className="border-b border-[var(--v4-line)] px-4 py-3 last:border-b-0 md:px-5">
-                    {/* Parent row: one primary name (600). Counts/size live only in the header summary. */}
-                    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
-                      <FileFormatIcon format={resolveFileFormat(item.name)} size="lg" />
-                      <div className="min-w-0">
-                        <p className="truncate text-[15px] font-semibold leading-snug tracking-tight text-[var(--v4-text)]" title={item.name}>
-                          {item.name}
-                        </p>
-                        {!isArchive && (
-                          <div className={`mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-normal ${item.accepted ? 'text-[var(--v4-text-muted)]' : 'text-[var(--v4-danger)]'}`}>
-                            <span>{item.note} · {formatBytes(item.file.size)}</span>
-                            {langs.length > 0 && (
-                              <>
-                                <span aria-hidden="true" className="text-[var(--v4-text-faint)]">·</span>
-                                <span className="inline-flex flex-wrap items-center gap-1">
-                                  {langs.map((label) => (
-                                    <LanguageMark key={`${item.name}:${label}`} label={label} />
-                                  ))}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        )}
-                        {isArchive && item.archivePeekStatus === 'loading' && (
-                          <p className="mt-1 text-xs font-normal text-[var(--v4-text-muted)]">正在读取包内字幕…</p>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeQueuedFile(item.file)}
-                        className="v4-focus-ring grid h-8 w-8 place-items-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] transition-colors hover:border-[color:rgba(201,138,134,0.45)] hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)]"
-                        aria-label={`移除 ${item.name}`}
-                      >
-                        <X className="h-4 w-4" strokeWidth={2.25} />
-                      </button>
-                    </div>
-                    {isArchive && (
-                      <div className="relative mt-2 ml-[17px] border-l border-[var(--v4-line-strong)] pl-5">
-                        {item.archivePeekStatus === 'error' && (
-                          <p className="mb-1.5 text-xs font-normal text-[var(--v4-danger)]">{item.archivePeekError || item.note}</p>
-                        )}
-                        {item.archiveEntries?.map((entry) => (
-                          <div
-                            key={`${item.name}:${entry.name}`}
-                            className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 py-1.5 before:absolute before:-left-5 before:top-1/2 before:h-px before:w-3.5 before:bg-[var(--v4-line-strong)] before:content-['']"
-                          >
-                            <FileFormatIcon name={entry.name} size="md" />
-                            <span className="min-w-0 truncate text-[13px] font-normal leading-snug text-[var(--v4-text-muted)]" title={entry.name}>
-                              {entry.name}
-                            </span>
-                            <LanguageMark label={entry.languageLabel} className="justify-self-end" />
-                          </div>
-                        ))}
+              <p
+                className={`mt-7 inline-flex items-center justify-center gap-2 text-sm text-[var(--v4-text-muted)] transition-opacity duration-200 ${
+                  isDragging ? 'opacity-0' : 'opacity-100'
+                }`}
+              >
+                <HardDrive className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden="true" />
+                仅在当前设备读取，不上传
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="queue"
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={shouldReduceMotion ? undefined : { opacity: 0 }}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col text-left"
+            >
+              {isDragging && (
+                <p className="mb-4 px-1 text-sm font-medium text-[var(--v4-accent-strong)]">
+                  松手继续加入 · 不会立刻整理
+                </p>
+              )}
+              <header className="mb-5 flex flex-wrap items-end justify-between gap-3 px-1">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold tracking-tight text-[var(--v4-text)]">已添加</h3>
+                  <p className="mt-0.5 text-xs font-normal tabular-nums text-[var(--v4-text-muted)]">
+                    {archivePeekPending && trackCount === 0
+                      ? '正在读取…'
+                      : `${queuedItems.length} 项 · ${trackCount} 条字幕 · ${formatBytes(totalBytes)}`}
+                    {rejectedItems.length > 0 ? ` · ${rejectedItems.length} 项已忽略` : ''}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <div className="relative" ref={addMenuRef}>
+                    <button
+                      type="button"
+                      onClick={() => setAddMenuOpen((open) => !open)}
+                      className="v4-focus-ring inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)]/80 px-3 text-sm font-semibold text-[var(--v4-text)] backdrop-blur-sm hover:bg-[var(--v4-accent-soft)]"
+                      aria-expanded={addMenuOpen}
+                    >
+                      <Plus className="h-4 w-4" aria-hidden="true" />
+                      添加
+                      <ChevronDown className={`h-3.5 w-3.5 text-[var(--v4-text-faint)] transition-transform ${addMenuOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {addMenuOpen && (
+                      <div className="absolute right-0 top-full z-20 mt-1.5 min-w-[11rem] overflow-hidden rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] shadow-[0_12px_28px_rgba(0,0,0,0.4)]">
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-normal text-[var(--v4-text)] hover:bg-white/[0.04]"
+                          onClick={() => { setAddMenuOpen(false); fileInputRef.current?.click(); }}
+                        >
+                          <FilePlus className="h-4 w-4 text-[var(--v4-accent-strong)]" />
+                          文件 / 压缩包
+                        </button>
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 border-t border-[var(--v4-line)] px-3 py-2.5 text-left text-sm font-normal text-[var(--v4-text)] hover:bg-white/[0.04]"
+                          onClick={() => { setAddMenuOpen(false); folderInputRef.current?.click(); }}
+                        >
+                          <FolderPlus className="h-4 w-4 text-[var(--v4-accent-strong)]" />
+                          文件夹
+                        </button>
                       </div>
                     )}
                   </div>
-                );
-              })}
-            </div>
+                  <button
+                    type="button"
+                    onClick={() => { setQueuedItems([]); setQueueIssue(null); }}
+                    className="v4-focus-ring inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-normal text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)]"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    清空
+                  </button>
+                </div>
+              </header>
 
-            <footer className="mt-auto border-t border-[var(--v4-line)] px-4 py-3 md:px-5">
-              {(queueIssue || rejectedItems.length > 0) && (
-                <p className="mb-2 text-xs leading-5 text-[var(--v4-warning)]">
-                  {queueIssue || `${rejectedItems.length} 项无法处理，可移除后继续。`}
-                </p>
-              )}
-              <div className="flex flex-col items-stretch justify-between gap-2.5 sm:flex-row sm:items-center">
-                <span className="inline-flex items-center gap-2 text-xs text-[var(--v4-text-muted)]">
-                  <HardDrive className="h-3.5 w-3.5" aria-hidden="true" />
-                  仅在本机读取，不会上传
-                </span>
-                <button
-                  type="button"
-                  disabled={acceptedItems.length === 0 || Boolean(queueIssue)}
-                  onClick={() => handleFilesProcess(queuedItems.map(item => item.file))}
-                  className="v4-focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[var(--v4-accent)] px-5 text-sm font-semibold text-[var(--v4-accent-ink)] transition-colors hover:bg-[var(--v4-accent-strong)] disabled:cursor-not-allowed disabled:opacity-35"
-                >
-                  开始整理
-                  <ArrowRight className="h-4 w-4" />
-                </button>
+              <div className="max-h-[min(420px,52vh)] space-y-4 overflow-y-auto px-1 pb-1">
+                {queuedItems.map((item, itemIndex) => {
+                  const langs = languagesForItem(item);
+                  const isArchive = item.kind === 'zip' || item.kind === 'archive';
+                  return (
+                    <motion.div
+                      key={getQueueKey(item.file)}
+                      initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: shouldReduceMotion ? 0 : 0.28,
+                        delay: shouldReduceMotion ? 0 : Math.min(itemIndex * 0.04, 0.16),
+                        ease: [0.16, 1, 0.3, 1],
+                      }}
+                      className="min-w-0"
+                    >
+                      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+                        <div className="ingest-halo-root">
+                          <FileFormatIcon format={resolveFileFormat(item.name)} size="lg" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-[15px] font-semibold leading-snug tracking-tight text-[var(--v4-text)]" title={item.name}>
+                            {item.name}
+                          </p>
+                          {!isArchive && (
+                            <div className={`mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-normal ${item.accepted ? 'text-[var(--v4-text-muted)]' : 'text-[var(--v4-danger)]'}`}>
+                              <span>{item.note} · {formatBytes(item.file.size)}</span>
+                              {langs.length > 0 && (
+                                <>
+                                  <span aria-hidden="true" className="text-[var(--v4-text-faint)]">·</span>
+                                  <span className="inline-flex flex-wrap items-center gap-1">
+                                    {langs.map((label) => (
+                                      <LanguageMark key={`${item.name}:${label}`} label={label} />
+                                    ))}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                          {isArchive && item.archivePeekStatus === 'loading' && (
+                            <p className="mt-1 text-xs font-normal text-[var(--v4-text-muted)]">正在读取包内字幕…</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeQueuedFile(item.file)}
+                          className="v4-focus-ring grid h-8 w-8 place-items-center rounded-md text-[var(--v4-text-muted)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)]"
+                          aria-label={`移除 ${item.name}`}
+                        >
+                          <X className="h-4 w-4" strokeWidth={2.25} />
+                        </button>
+                      </div>
+
+                      {isArchive && (item.archivePeekStatus === 'error' || (item.archiveEntries && item.archiveEntries.length > 0)) && (
+                        <div className="ingest-halo-tree mt-2.5">
+                          {item.archivePeekStatus === 'error' && (
+                            <p className="mb-1.5 text-xs font-normal text-[var(--v4-danger)]">{item.archivePeekError || item.note}</p>
+                          )}
+                          {item.archiveEntries?.map((entry, entryIndex) => (
+                            <motion.div
+                              key={`${item.name}:${entry.name}`}
+                              initial={shouldReduceMotion ? false : { opacity: 0, x: -6 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{
+                                duration: shouldReduceMotion ? 0 : 0.24,
+                                delay: shouldReduceMotion ? 0 : 0.06 + Math.min(entryIndex * 0.05, 0.2),
+                                ease: [0.16, 1, 0.3, 1],
+                              }}
+                              className="ingest-halo-leaf grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 py-1.5"
+                            >
+                              <FileFormatIcon name={entry.name} size="md" />
+                              <span className="min-w-0 truncate text-[13px] font-normal leading-snug text-[var(--v4-text-muted)]" title={entry.name}>
+                                {entry.name}
+                              </span>
+                              <LanguageMark label={entry.languageLabel} className="justify-self-end" />
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </div>
-            </footer>
-          </div>
-        )}
-      </motion.div>
+
+              <footer className="mt-6 px-1">
+                {(queueIssue || rejectedItems.length > 0) && (
+                  <p className="mb-3 text-xs leading-5 text-[var(--v4-warning)]">
+                    {queueIssue || `${rejectedItems.length} 项无法处理，可移除后继续。`}
+                  </p>
+                )}
+                <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
+                  <span className="inline-flex items-center gap-2 text-xs text-[var(--v4-text-muted)]">
+                    <HardDrive className="h-3.5 w-3.5" aria-hidden="true" />
+                    仅在本机读取，不会上传
+                  </span>
+                  <button
+                    type="button"
+                    disabled={acceptedItems.length === 0 || Boolean(queueIssue)}
+                    onClick={() => handleFilesProcess(queuedItems.map(item => item.file))}
+                    className="v4-focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[var(--v4-accent)] px-5 text-sm font-semibold text-[var(--v4-accent-ink)] transition-colors hover:bg-[var(--v4-accent-strong)] disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    开始整理
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </footer>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       <input
         ref={fileInputRef}

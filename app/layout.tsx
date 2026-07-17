@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="zh-CN" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="app-canvas font-sans h-dvh overflow-hidden">
         <SystemTray />
-        <div className="pt-[68px] h-dvh box-border overflow-hidden flex flex-col">
+        <div className="box-border flex h-dvh flex-col overflow-hidden pt-[var(--tray-h)] pb-[var(--tray-h)]">
           {children}
         </div>
       </body>

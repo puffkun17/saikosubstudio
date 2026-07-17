@@ -173,7 +173,13 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                     {tmdbData.title}
                   </h4>
                   {tmdbData.originalTitle && tmdbData.originalTitle !== tmdbData.title && (
-                    <p className="text-base text-neutral-300 mt-1 truncate">{tmdbData.originalTitle}</p>
+                    <p
+                      className="mt-1 truncate whitespace-nowrap text-sm font-medium tracking-[0.02em] text-neutral-400"
+                      style={{ fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }}
+                      title={tmdbData.originalTitle}
+                    >
+                      {tmdbData.originalTitle}
+                    </p>
                   )}
                 </div>
 
@@ -281,7 +287,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-xl z-[2000] flex items-center justify-center p-4"
+            className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70 p-4"
             onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
           >
             <motion.div
@@ -449,17 +455,26 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                               )}
                             </div>
 
-                            <div className="flex-1 min-w-0 flex flex-col justify-center">
-                              <span className={`text-base font-semibold truncate ${isChosen ? 'text-[#e5e7eb]' : 'text-white/90'}`}>
+                            <div className="flex min-w-0 flex-1 flex-col justify-center">
+                              <span className={`truncate font-sans text-base font-semibold ${isChosen ? 'text-[#e5e7eb]' : 'text-white/90'}`}>
                                 {s.title || s.name}
                               </span>
-                              <div className="flex items-center gap-2 mt-1">
-                                {year && <span className="text-xs text-white/40 font-mono">{year}</span>}
-                                <span className="text-xs font-medium text-white/50 bg-white/5 px-1.5 py-0.5 rounded">
+                              {((s.original_title && s.original_title !== s.title) || (s.original_name && s.original_name !== s.name)) && (
+                                <span
+                                  className="mt-0.5 truncate whitespace-nowrap text-[12px] font-medium tracking-[0.02em] text-white/45"
+                                  style={{ fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }}
+                                  title={s.original_title || s.original_name}
+                                >
+                                  {s.original_title || s.original_name}
+                                </span>
+                              )}
+                              <div className="mt-1 flex items-center gap-2">
+                                {year && <span className="font-mono text-xs text-white/40">{year}</span>}
+                                <span className="rounded bg-white/5 px-1.5 py-0.5 text-xs font-medium text-white/50">
                                   {mediaType}
                                 </span>
                                 {(s.vote_average ?? 0) > 0 && (
-                                  <span className="text-xs text-[#e5e7eb] font-mono flex items-center gap-1">
+                                  <span className="flex items-center gap-1 font-mono text-xs text-[#e5e7eb]">
                                     <Star className="h-3.5 w-3.5 fill-current stroke-[2]" aria-hidden="true" />
                                     {(s.vote_average ?? 0).toFixed(1)}
                                   </span>
