@@ -3,7 +3,6 @@
 import React from 'react';
 import { BadgeCheck, ChevronDown, PenLine } from 'lucide-react';
 import { useStudioStore } from '@/store/useStudioStore';
-import { InfoHint } from '@/components/ui/InfoHint';
 
 export const CreditTool: React.FC = () => {
   const {
@@ -15,22 +14,19 @@ export const CreditTool: React.FC = () => {
   } = useStudioStore();
 
   return (
-    <details className="group border-t border-white/[0.06] pt-3">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg py-1 text-left [&::-webkit-details-marker]:hidden">
-        <div className="flex min-w-0 items-center gap-2">
-          <PenLine className="h-4 w-4 shrink-0 text-[#8fa3d1]" />
-          <span className="text-sm font-semibold text-neutral-100">署名工具</span>
-          <InfoHint label="署名工具说明" side="right">
-            系统从 ASS 头信息以及字幕开头、结尾的署名行提取来源信息。识别结果仅供核对，不会自动改写原字幕；片尾署名仅在导出时追加。
-          </InfoHint>
+    <details className="group border-t border-white/[0.06] pt-2">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-md py-0.5 text-left [&::-webkit-details-marker]:hidden">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <PenLine className="h-3.5 w-3.5 shrink-0 text-[var(--v4-accent-strong)]" />
+          <span className="text-xs font-semibold text-neutral-200">署名</span>
           <span className="truncate text-xs text-neutral-500">
-            {detectedAttributions.length > 0 ? `识别到 ${detectedAttributions.length} 条来源署名` : '未识别到来源署名'}
+            {detectedAttributions.length > 0 ? `${detectedAttributions.length} 条` : '可选'}
           </span>
         </div>
-        <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-neutral-400 transition-colors group-hover:text-neutral-200">
-          <span className="group-open:hidden">展开设置</span>
-          <span className="hidden group-open:inline">收起设置</span>
-          <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+        <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-neutral-500 transition-colors group-hover:text-neutral-300">
+          <span className="group-open:hidden">展开</span>
+          <span className="hidden group-open:inline">收起</span>
+          <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
         </span>
       </summary>
 

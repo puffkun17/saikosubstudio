@@ -581,6 +581,13 @@ export function buildTmdbSearchQueries(input: string, maxQueries = 10): string[]
 
   const tokens = base.split(/\s+/).filter(Boolean);
   const hasHan = /[\u4e00-\u9fff]/.test(base);
+  // Mixed Chinese + Latin titles: also search each script alone (e.g. 新攻壳… + Ghost in the Shell).
+  if (hasHan) {
+    const hanOnly = normalizeSearchText((base.match(/[\u4e00-\u9fff]+/g) || []).join(' '));
+    const latinOnly = normalizeSearchText((base.match(/[A-Za-z][A-Za-z'’]*(?:\s+[A-Za-z][A-Za-z'’]*)*/g) || []).join(' '));
+    add(hanOnly);
+    add(latinOnly);
+  }
   if (!hasHan && tokens.length >= 3) {
     let trimmedTokens = [...tokens];
     while (trimmedTokens.length >= 2 && isLikelySearchNoiseToken(trimmedTokens[trimmedTokens.length - 1])) {

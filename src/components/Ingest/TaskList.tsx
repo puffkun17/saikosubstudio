@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useStudioStore, TaskPair, Subfile } from '@/store/useStudioStore';
-import { ArrowRight, Check, CircleAlert, Paintbrush, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
+import { ArrowRight, Check, CircleAlert, GripVertical, Paintbrush, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { parseSrt, decodeBuffer, detectSubtitleLanguage, StyleSettings } from '@/utils/subtitleCore';
 import { motion } from 'framer-motion';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
 import { CreditTool } from '@/components/Ingest/CreditTool';
 import { InfoHint } from '@/components/ui/InfoHint';
+import { FileFormatIcon, LanguageMark } from '@/components/ui/FileFormatIcon';
+import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import { getSubtitleTermHint } from '@/utils/subtitleTerminology';
 import { getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
 import { AssStylePreview } from '@/components/Ingest/AssStylePreview';
@@ -16,11 +18,20 @@ export const TaskList: React.FC = () => {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [pendingCancelUpload, setPendingCancelUpload] = useState(false);
   const [isFilenameFocused, setIsFilenameFocused] = useState(false);
+  const [draggingTrack, setDraggingTrack] = useState<'zh' | 'en' | null>(null);
+  const [dropTargetTrack, setDropTargetTrack] = useState<'zh' | 'en' | null>(null);
+  const [dragPointer, setDragPointer] = useState<{ x: number; y: number } | null>(null);
+  const [dragCardSize, setDragCardSize] = useState<{ w: number; h: number }>({ w: 320, h: 52 });
+  const [dragOffset, setDragOffset] = useState({ x: 16, y: 20 });
+  const zhRowRef = useRef<HTMLDivElement>(null);
+  const enRowRef = useRef<HTMLDivElement>(null);
+  const draggingTrackRef = useRef<'zh' | 'en' | null>(null);
   const {
     tasks,
     selectedTaskId,
     selectTask,
     bindTrack,
+    swapPrimaryTracks,
     // removeFileFromTask,
     deleteTask,
     cancelCurrentUpload,
@@ -118,32 +129,31 @@ export const TaskList: React.FC = () => {
 
   const getProcessBtnText = (task: TaskPair, bypassMetadata = false) => {
     if (bypassMetadata) {
-      return '暂不关联片源，直接预览';
+      return '跳过影片匹配，继续';
     }
     if (task.isBilingualSingle) {
-      return '下一步：预览双语字幕';
+      return '下一步';
     }
     const hasZh = !!task.zh;
     const hasEn = !!task.en;
     if (hasZh && hasEn) {
-      return '下一步：合并双语字幕';
-    } else {
-      return '下一步：预览单轨字幕';
+      return '下一步';
     }
+    return '下一步';
   };
 
   const getFilenameSourceLabel = () => {
     switch (filenameSource) {
       case 'tmdb':
-        return '来自片源信息';
+        return '影片资料';
       case 'auto':
-        return '自动提取';
+        return '自动识别';
       case 'manual':
-        return '手动输入';
+        return '手动编辑';
       case 'library':
         return '历史存档';
       default:
-        return '等待命名';
+        return '待命名';
     }
   };
 
@@ -160,6 +170,88 @@ export const TaskList: React.FC = () => {
 
   // Find active task or default to first
   const activeTask = tasks.find(t => t.id === selectedTaskId) || tasks[0];
+
+  const canReorderTracks = Boolean(
+    activeTask && !activeTask.isBilingualSingle && activeTask.zh && activeTask.en,
+  );
+
+  const endTrackDrag = () => {
+    draggingTrackRef.current = null;
+    setDraggingTrack(null);
+    setDropTargetTrack(null);
+    setDragPointer(null);
+  };
+
+  const hitTestTrackRow = (clientX: number, clientY: number): 'zh' | 'en' | null => {
+    const zhBox = zhRowRef.current?.getBoundingClientRect();
+    const enBox = enRowRef.current?.getBoundingClientRect();
+    if (zhBox && clientX >= zhBox.left && clientX <= zhBox.right && clientY >= zhBox.top && clientY <= zhBox.bottom) {
+      return 'zh';
+    }
+    if (enBox && clientX >= enBox.left && clientX <= enBox.right && clientY >= enBox.top && clientY <= enBox.bottom) {
+      return 'en';
+    }
+    return null;
+  };
+
+  const beginTrackDrag = (
+    trackKey: 'zh' | 'en',
+    event: React.PointerEvent<HTMLElement>,
+    rowEl: HTMLDivElement | null,
+  ) => {
+    if (!canReorderTracks || !activeTask) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const rect = rowEl?.getBoundingClientRect();
+    if (rect) {
+      setDragOffset({
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      });
+      setDragCardSize({ w: Math.max(240, Math.round(rect.width)), h: Math.round(rect.height) });
+    } else {
+      setDragOffset({ x: 16, y: 20 });
+    }
+    draggingTrackRef.current = trackKey;
+    setDraggingTrack(trackKey);
+    setDragPointer({ x: event.clientX, y: event.clientY });
+  };
+
+  useEffect(() => {
+    if (!draggingTrack) return;
+
+    const previousCursor = document.body.style.cursor;
+    const previousUserSelect = document.body.style.userSelect;
+    document.body.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
+
+    const onMove = (event: PointerEvent) => {
+      setDragPointer({ x: event.clientX, y: event.clientY });
+      const hit = hitTestTrackRow(event.clientX, event.clientY);
+      const from = draggingTrackRef.current;
+      setDropTargetTrack(hit && from && hit !== from ? hit : null);
+    };
+
+    const onUp = (event: PointerEvent) => {
+      const from = draggingTrackRef.current;
+      const hit = hitTestTrackRow(event.clientX, event.clientY);
+      if (from && hit && hit !== from && activeTask) {
+        swapPrimaryTracks(activeTask.id);
+      }
+      endTrackDrag();
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousUserSelect;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [draggingTrack, activeTask, swapPrimaryTracks]);
 
   if (!activeTask) return null;
 
@@ -258,181 +350,259 @@ export const TaskList: React.FC = () => {
       {/* Main workspace layout stretching to fill card height */}
       <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-white/[0.03] relative min-h-0 overflow-x-visible">
 
-        {/* Banner/Title Card */}
-        <div className={`rounded-lg flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center relative flex-shrink-0 border transition-colors ${needsTitleInput ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] px-4 py-3' : 'bg-white/[0.018] border-white/[0.07] p-4'}`}>
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        {/* Compact task row */}
+        <div className={`relative flex flex-shrink-0 flex-col items-stretch justify-between gap-2 rounded-lg border px-3 py-2.5 transition-colors sm:flex-row sm:items-center ${needsTitleInput ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)]' : 'border-white/[0.07] bg-white/[0.018]'}`}>
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
             {needsTitleInput ? (
               <>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <CircleAlert className="h-4 w-4 shrink-0 text-[#9aaad3]" aria-hidden="true" />
-                    <span className="text-sm font-semibold text-white">片名待确认</span>
-                    {activeTask.epKey && <span className="text-xs font-mono text-[#c8d1e5]">{activeTask.epKey}</span>}
-                  </div>
-                  <p className="mt-0.5 text-xs leading-relaxed text-neutral-500">确认后可关联片源资料并完善输出名称。</p>
-                </div>
+                <CircleAlert className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
+                <span className="truncate text-sm font-semibold text-[var(--v4-text)]">
+                  片名待确认{activeTask.epKey ? ` · ${activeTask.epKey}` : ''}
+                </span>
                 <button
                   type="button"
-                  className="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#9aaad3] px-3 py-2 text-sm font-semibold text-[#0a1715] transition hover:bg-[#d2d9e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9aaad3]/70 active:translate-y-[1px]"
+                  className="ml-auto inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-[var(--v4-accent)] px-2.5 text-xs font-semibold text-[var(--v4-accent-ink)]"
                   onClick={() => setTmdbManualOpen(true)}
                 >
-                  <Search className="h-4 w-4" />
+                  <Search className="h-3.5 w-3.5" />
                   补充片名
                 </button>
               </>
             ) : (
               <>
-                <span
-                  className={`w-1.5 h-1.5 rounded-full flex-shrink-0
-                    ${(activeTask.zh && activeTask.en)
-                      ? 'bg-[#e5e7eb] shadow-[0_0_10px_rgba(156,163,175,0.65)]'
-                      : (activeTask.zh || activeTask.en)
-                        ? 'bg-[#b8ad96] shadow-[0_0_10px_rgba(184,173,150,0.28)]'
-                        : 'bg-white/10'}`}
-                />
-                {renderMarqueeText(activeTask.title, 'text-sm font-semibold text-neutral-100 pr-1 font-mono flex-1')}
+                {renderMarqueeText(activeTask.title, 'min-w-0 flex-1 truncate text-sm font-semibold text-neutral-100 font-mono')}
                 {diffBadge}
               </>
             )}
           </div>
 
-          {/* Delete Task */}
           {pendingDeleteId === activeTask.id ? (
-            <div className="flex items-center gap-1.5 flex-shrink-0">
+            <div className="flex shrink-0 items-center gap-1.5">
               <button
-                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-600/20 text-rose-300 hover:bg-rose-600/40 border border-rose-500/15 active:translate-y-[1px] transition-colors cursor-pointer"
+                className="cursor-pointer rounded-md border border-rose-500/15 bg-rose-600/20 px-2.5 py-1 text-xs font-semibold text-rose-300 transition-colors hover:bg-rose-600/40"
                 onClick={(e) => { e.stopPropagation(); deleteTask(activeTask.id); setPendingDeleteId(null); }}
               >
-                删除任务
+                删除
               </button>
               <button
-                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/5 text-neutral-300 hover:bg-white/10 hover:text-neutral-100 border border-white/5 active:translate-y-[1px] transition-colors cursor-pointer"
+                className="cursor-pointer rounded-md border border-white/5 bg-white/5 px-2.5 py-1 text-xs font-semibold text-neutral-300 transition-colors hover:bg-white/10"
                 onClick={(e) => { e.stopPropagation(); setPendingDeleteId(null); }}
               >
-                保留任务
+                取消
               </button>
             </div>
           ) : (
             <button
               type="button"
-              className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-transparent px-2.5 py-1.5 text-neutral-500 transition-colors hover:border-white/[0.07] hover:bg-white/[0.04] hover:text-rose-300 active:translate-y-[1px] cursor-pointer"
+              className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-neutral-500 transition-colors hover:bg-white/[0.04] hover:text-rose-300"
               onClick={(e) => { e.stopPropagation(); setPendingDeleteId(activeTask.id); }}
               aria-label="移除当前字幕任务"
             >
-              <Trash2 className="h-4 w-4" />
-              <span className="text-xs font-medium">移除</span>
+              <Trash2 className="h-3.5 w-3.5" />
+              移除
             </button>
           )}
         </div>
 
-        {/* Output identity belongs to import decisions, before preview. */}
-        <div className="rounded-xl border border-white/[0.07] bg-white/[0.012] px-4 py-3.5 flex-shrink-0">
-          <div className="flex flex-col gap-1.5 min-w-0">
-            <div className="flex items-center justify-between gap-2">
-              <label className="text-sm text-neutral-200 font-semibold select-none inline-flex items-center gap-1.5">
-                输出名称
-                <InfoHint label="字幕输出文件名称说明">
-                  导出文件名可来自片源信息、文件名自动提取、历史存档或手动输入。弱命名文件不会强行生成片名。
-                </InfoHint>
-              </label>
-              <span className="shrink-0 rounded-md border border-white/[0.08] bg-white/[0.025] px-2 py-0.5 text-xs font-medium text-neutral-400">
-                {getFilenameSourceLabel()}
-              </span>
-            </div>
-            <div className="relative">
-              <input
-                type="text"
-                className="w-full h-11 bg-[#020204] border border-white/[0.09] focus:border-[#9ca3af]/45 focus:bg-white/[0.025] rounded-lg px-3.5 text-white text-sm outline-none transition-all placeholder:text-white/35 font-mono shadow-[inset_0_2px_4px_rgba(0,0,0,0.85)]"
-                value={customFilename}
-                onChange={e => setCustomFilename(e.target.value, 'manual')}
-                onFocus={() => setIsFilenameFocused(true)}
-                onBlur={() => setIsFilenameFocused(false)}
-                placeholder="等待命名"
-              />
-              {customFilename.length > 42 && !isFilenameFocused && (
-                <div className="pointer-events-none absolute inset-y-px left-px right-px rounded-lg bg-[#020204] flex items-center px-3.5 text-sm font-mono text-white overflow-hidden">
-                  {renderMarqueeText(customFilename, 'w-full')}
-                </div>
-              )}
-            </div>
-          </div>
-          <CreditTool />
-        </div>
-
-        {/* Unified vertical workspace layout */}
+        {/* Track bindings first — primary decision before naming/credits */}
         <div className="flex flex-col gap-3.5 flex-1 min-h-0 overflow-visible">
-
-          {/* Track Bindings - Wide horizontal card */}
-          <div className="pt-2 flex flex-col gap-4 overflow-visible relative">
+          <div className="relative flex flex-col gap-3 overflow-visible">
             <div className="flex items-center gap-2">
-              <h4 className="text-lg text-neutral-100 font-semibold block select-none">
-                字幕文件匹配
+              <h4 className="block select-none text-base font-semibold text-neutral-100">
+                字幕轨
               </h4>
-              <InfoHint label="字幕文件匹配说明">
-                选择要进入处理流程的字幕轨。单个已含双语内容的文件会作为双语字幕处理；分开的中文字幕与第二语言字幕会按时间轴合并。
+              <InfoHint label="字幕轨说明">
+                选择要处理的字幕文件。双语单文件会自动识别；分开的中文与第二语言轨将按时间轴合并。
               </InfoHint>
               {activeTask.isBilingualSingle && (
                 <span className="rounded-md border border-white/[0.08] bg-white/[0.025] px-2 py-0.5 text-xs font-medium text-neutral-400">
                   双语 · {zhCount} 行
                 </span>
               )}
-            </div>
-            <div className="flex flex-col gap-3 bg-black/20 p-4 rounded-lg overflow-visible relative">
-              {/* Chinese binding */}
-              <div className="flex flex-row items-center gap-2 overflow-visible">
-                <span className="w-28 text-sm text-neutral-200 font-semibold shrink-0 text-left inline-flex items-center gap-1.5">
-                  主字幕
-                  <InfoHint label="主字幕说明" side="right">
-                    主字幕优先承载中文或双语内容。若文件已识别为双语，系统会自动折叠同时间窗的对应字幕行。
-                  </InfoHint>
+              {!activeTask.isBilingualSingle && activeTask.zh && activeTask.en && (
+                <span className="ml-auto text-xs font-normal text-neutral-500">
+                  按住六点拖动可对调主副轨
                 </span>
-                <TrackSelect
-                  value={activeTask.zh?.id || ''}
-                  options={uploadedFiles.map(f => ({ id: f.id, name: f.name, count: getSubTitleCount(f), lang: f.lang, languagePair: f.languagePair }))}
-                  onChange={(id) => bindTrack(activeTask.id, 'zh', id)}
-                  countLabel={activeTask.zh ? getSubTitleCount(activeTask.zh) : null}
-                  placeholder="选择中文或双语字幕"
-                />
-              </div>
+              )}
+            </div>
+            <div className="relative flex flex-col gap-2.5 overflow-visible rounded-lg bg-black/20 p-3">
+              {(() => {
+                const trackOptions = uploadedFiles.map(f => ({
+                  id: f.id,
+                  name: f.name,
+                  count: getSubTitleCount(f),
+                  lang: f.lang,
+                  languagePair: f.languagePair,
+                }));
 
-              {!activeTask.isBilingualSingle ? (
-                <>
-                  {/* English binding */}
-                  <div className="flex flex-row items-center gap-2 overflow-visible">
-                    <span className="w-28 text-sm text-neutral-200 font-semibold shrink-0 text-left">
-                      第二语言字幕
-                    </span>
-                    <TrackSelect
-                      value={activeTask.en?.id || ''}
-                      options={uploadedFiles.map(f => ({ id: f.id, name: f.name, count: getSubTitleCount(f), lang: f.lang, languagePair: f.languagePair }))}
-                      onChange={(id) => bindTrack(activeTask.id, 'en', id)}
-                      countLabel={activeTask.en ? getSubTitleCount(activeTask.en) : null}
-                      placeholder="选择英语、日语、韩语或其他语言字幕（可选）"
-                    />
-                  </div>
+                const renderPrimaryRow = (
+                  trackKey: 'zh' | 'en',
+                  label: React.ReactNode,
+                  placeholder: string,
+                  rowRef: React.RefObject<HTMLDivElement | null>,
+                ) => {
+                  const file = trackKey === 'zh' ? activeTask.zh : activeTask.en;
+                  const isDropTarget = draggingTrack != null && draggingTrack !== trackKey && dropTargetTrack === trackKey;
+                  const isDragging = draggingTrack === trackKey;
+                  return (
+                    <div
+                      ref={rowRef}
+                      className={`flex flex-row items-center gap-1.5 overflow-visible rounded-xl transition-[background-color,box-shadow,opacity,transform] duration-150 ${
+                        isDropTarget ? 'bg-[var(--v4-accent-soft)] ring-1 ring-[var(--v4-accent)]/40 scale-[1.01]' : ''
+                      } ${isDragging ? 'opacity-35' : ''}`}
+                    >
+                      <span
+                        role="button"
+                        tabIndex={canReorderTracks ? 0 : -1}
+                        onPointerDown={(e) => {
+                          if (e.button !== 0) return;
+                          beginTrackDrag(trackKey, e, rowRef.current);
+                        }}
+                        onKeyDown={(e) => {
+                          if (!canReorderTracks) return;
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            swapPrimaryTracks(activeTask.id);
+                          }
+                        }}
+                        aria-label={canReorderTracks ? `拖动以对调${trackKey === 'zh' ? '主字幕' : '第二语言'}顺序` : undefined}
+                        title={canReorderTracks ? '按住拖动，对调主副轨' : undefined}
+                        className={`grid h-11 w-7 shrink-0 place-items-center rounded-md text-neutral-500 transition-colors touch-none ${
+                          canReorderTracks
+                            ? 'cursor-grab hover:bg-white/[0.05] hover:text-neutral-200 active:cursor-grabbing'
+                            : 'cursor-default opacity-25'
+                        }`}
+                      >
+                        <GripVertical className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
+                      </span>
+                      <span className="inline-flex w-[4.75rem] shrink-0 items-center gap-1 text-left text-sm font-semibold text-neutral-200">
+                        {label}
+                      </span>
+                      <TrackSelect
+                        value={file?.id || ''}
+                        options={trackOptions}
+                        onChange={(id) => bindTrack(activeTask.id, trackKey, id)}
+                        countLabel={file ? getSubTitleCount(file) : null}
+                        placeholder={placeholder}
+                      />
+                    </div>
+                  );
+                };
 
-                  {/* Commentary binding */}
-                  <div className="flex flex-row items-center gap-2 overflow-visible">
-                    <span className="w-28 text-sm text-neutral-200 font-semibold shrink-0 text-left inline-flex items-center gap-1.5">
-                      旁白与导评
-                      <InfoHint label="旁白与导评说明" side="right">
-                        {getSubtitleTermHint('narration')} 导评则是导演或制作人员评论音轨字幕，通常不是正片对白。
-                      </InfoHint>
-                    </span>
-                    <TrackSelect
-                      value={activeTask.commentary?.id || ''}
-                      options={uploadedFiles.map(f => ({ id: f.id, name: f.name, count: getSubTitleCount(f), lang: f.lang }))}
-                      onChange={(id) => bindTrack(activeTask.id, 'commentary', id)}
-                      placeholder="选择旁白或导评字幕（可选）"
-                    />
-                  </div>
-                </>
-              ) : null}
+                const dragFile = draggingTrack === 'zh' ? activeTask.zh : draggingTrack === 'en' ? activeTask.en : null;
+
+                return (
+                  <>
+                    {renderPrimaryRow(
+                      'zh',
+                      <>
+                        主字幕
+                        <InfoHint label="主字幕说明" side="right">
+                          主字幕优先使用中文或双语内容。
+                        </InfoHint>
+                      </>,
+                      '选择中文或双语字幕',
+                      zhRowRef,
+                    )}
+
+                    {!activeTask.isBilingualSingle ? (
+                      <>
+                        {renderPrimaryRow(
+                          'en',
+                          '第二语言',
+                          '选择英语或其他语言（可选）',
+                          enRowRef,
+                        )}
+
+                        <div className="flex flex-row items-center gap-1.5 overflow-visible pl-7">
+                          <span className="inline-flex w-[4.75rem] shrink-0 items-center gap-1 text-left text-sm font-semibold text-neutral-200">
+                            旁白导评
+                            <InfoHint label="旁白与导评说明" side="right">
+                              {getSubtitleTermHint('narration')} 导评通常不是正片对白。
+                            </InfoHint>
+                          </span>
+                          <TrackSelect
+                            value={activeTask.commentary?.id || ''}
+                            options={uploadedFiles.map(f => ({ id: f.id, name: f.name, count: getSubTitleCount(f), lang: f.lang }))}
+                            onChange={(id) => bindTrack(activeTask.id, 'commentary', id)}
+                            placeholder="可选"
+                          />
+                        </div>
+                      </>
+                    ) : null}
+
+                    {draggingTrack && dragPointer && dragFile && (
+                      <OverlayPortal>
+                        <div
+                          className="pointer-events-none fixed z-[var(--z-overlay)]"
+                          style={{
+                            left: dragPointer.x - dragOffset.x,
+                            top: dragPointer.y - dragOffset.y,
+                            width: dragCardSize.w,
+                          }}
+                        >
+                          <motion.div
+                            initial={{ opacity: 0.85, scale: 0.98 }}
+                            animate={{ opacity: 1, scale: 1.03 }}
+                            transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
+                            className="flex items-center gap-2 rounded-xl border border-[var(--v4-accent)]/40 bg-[#12100e]/95 px-3 py-2.5 shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur-md"
+                            style={{ height: dragCardSize.h }}
+                          >
+                            <GripVertical className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
+                            <FileFormatIcon name={dragFile.name} size="sm" />
+                            <LanguageMark lang={dragFile.lang} languagePair={dragFile.languagePair} />
+                            <span className="min-w-0 flex-1 truncate font-mono text-sm text-neutral-100">
+                              {dragFile.name}
+                            </span>
+                            <span className="shrink-0 rounded-md border border-white/[0.08] bg-black/30 px-2 py-0.5 font-mono text-xs text-neutral-400">
+                              {getSubTitleCount(dragFile)}行
+                            </span>
+                          </motion.div>
+                        </div>
+                      </OverlayPortal>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
 
-          {/* Configuration & Process Dock */}
-          <div className="pt-5 border-t border-white/[0.06] flex flex-col gap-4 overflow-visible mt-auto">
+          {/* Output name + credits — compact, after tracks */}
+          <div className="flex-shrink-0 rounded-lg border border-white/[0.07] bg-white/[0.012] px-3 py-2.5">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <label className="inline-flex select-none items-center gap-1.5 text-sm font-semibold text-neutral-200">
+                  导出名称
+                  <InfoHint label="导出文件名称说明">
+                    可直接编辑。名称可来自影片资料、文件名识别或历史存档。
+                  </InfoHint>
+                </label>
+                <span className="shrink-0 rounded-md border border-white/[0.08] bg-white/[0.025] px-2 py-0.5 text-xs font-medium text-neutral-400">
+                  {getFilenameSourceLabel()}
+                </span>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  className="v4-focus-ring h-10 w-full rounded-lg border border-white/[0.09] bg-[#020204] px-3 font-mono text-sm text-white outline-none transition-all placeholder:text-white/35 focus:border-[var(--v4-accent)]/45 focus:bg-white/[0.025]"
+                  value={customFilename}
+                  onChange={e => setCustomFilename(e.target.value, 'manual')}
+                  onFocus={() => setIsFilenameFocused(true)}
+                  onBlur={() => setIsFilenameFocused(false)}
+                  placeholder="输入导出文件名"
+                />
+                {customFilename.length > 42 && !isFilenameFocused && (
+                  <div className="pointer-events-none absolute inset-y-px left-px right-px flex items-center overflow-hidden rounded-lg bg-[#020204] px-3 font-mono text-sm text-white">
+                    {renderMarqueeText(customFilename, 'w-full')}
+                  </div>
+                )}
+              </div>
+            </div>
+            <CreditTool />
+          </div>
+
+          {/* Configuration & Process Dock — stays near viewport bottom */}
+          <div className="sticky bottom-0 z-10 mt-auto flex flex-col gap-3 overflow-visible border-t border-white/[0.06] bg-[var(--v4-panel)]/95 pt-3 backdrop-blur-sm">
 
             {/* Source ASS style preview and explicit adoption decision. */}
             {foundAssStyle && (
@@ -553,14 +723,14 @@ export const TaskList: React.FC = () => {
                         : 'bg-[#e5e7eb] hover:bg-[#ffffff] text-black border border-[#9ca3af]/45 hover:border-[#ffffff]/60 shadow-[0_4px_20px_rgba(156,163,175,0.16)] hover:scale-[1.01]'}`}
                   disabled={(!activeTask.zh && !activeTask.en) || isProcessing}
                   onClick={runSubtitleMerge}
-                  title={needsTitleInput ? '跳过片源关联，直接进入字幕预览' : undefined}
+                  title={needsTitleInput ? '可先跳过影片匹配，进入工作台' : undefined}
                 >
                   {isProcessing ? (
                     <span className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin shrink-0" />
                   ) : (
                   <ArrowRight className={`h-4 w-4 shrink-0 ${(!activeTask.zh && !activeTask.en) ? 'text-white/20' : needsTitleInput ? 'text-white/80' : 'text-black'}`} />
                   )}
-                  {isProcessing ? '正在准备下一步...' : getProcessBtnText(activeTask, needsTitleInput)}
+                  {isProcessing ? '正在准备…' : getProcessBtnText(activeTask, needsTitleInput)}
                 </button>
               </div>
 

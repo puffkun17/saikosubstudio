@@ -78,6 +78,30 @@ const assertIncludes = (items, expected, message) => {
 }
 
 {
+  const zh = '新攻壳机动队.The.Ghost.in.the.Shell.S01E02.简中.srt';
+  const tw = '新攻壳机动队.The.Ghost.in.the.Shell.S01E02.繁中.srt';
+  const en = '新攻壳机动队.The.Ghost.in.the.Shell.S01E02.eng.srt';
+  assert.equal(detectLanguageByFilename(zh), 'zh-CN');
+  assert.equal(detectLanguageByFilename(tw), 'zh-TW');
+  assert.equal(detectLanguageByFilename(en), 'en');
+  assert.equal(cleanFilename(zh), '新攻壳机动队 The Ghost in the Shell');
+  assert.equal(cleanFilename(tw), '新攻壳机动队 The Ghost in the Shell');
+  assert.equal(cleanFilename(en), '新攻壳机动队 The Ghost in the Shell');
+  assert.equal(parseMediaFilename(zh).title, '新攻壳机动队 The Ghost in the Shell');
+  assert.equal(parseMediaFilename(tw).title, '新攻壳机动队 The Ghost in the Shell');
+  assert.equal(assessMediaIdentity(zh).title, '新攻壳机动队 The Ghost in the Shell');
+  const queries = buildTmdbSearchQueries(zh, 8);
+  assertIncludes(queries, '新攻壳机动队 The Ghost in the Shell', 'Mixed CN/EN TV pack titles should keep a clean search seed.');
+  assertIncludes(queries, 'The Ghost in the Shell', 'Latin title alone should be searchable for mixed filenames.');
+  assertIncludes(queries, '新攻壳机动队', 'Chinese title alone should be searchable for mixed filenames.');
+  assert.equal(
+    cleanFilename(zh),
+    cleanFilename(en),
+    'Language-tagged sibling tracks in one episode pack must share the same task base title.',
+  );
+}
+
+{
   const queries = buildTmdbSearchQueries('[zmk.pw]Down.Cemetery.Road.S01E02.A.Kind.of.Grief.1080p.ATVP.WEB-DL.DD.5.1.Atmos.H.264-playWEB.简体&英文');
   assert.equal(queries[0], 'Down Cemetery Road', 'Release/site tags should not outrank the real title.');
 }

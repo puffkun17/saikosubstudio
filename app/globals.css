@@ -47,23 +47,36 @@
 }
 
 :root {
-  --background: #090b10;
-  --foreground: #eef1f6;
-  --v4-canvas: #090b10;
-  --v4-canvas-raised: #0d1016;
-  --v4-panel: #121620;
-  --v4-panel-raised: #171c27;
-  --v4-panel-muted: #0f131b;
-  --v4-line: rgba(190, 201, 224, 0.1);
-  --v4-line-strong: rgba(190, 201, 224, 0.17);
-  --v4-text: #eef1f6;
-  --v4-text-muted: #98a0ae;
-  --v4-text-faint: #667080;
-  --v4-accent: #8295c5;
-  --v4-accent-strong: #a7b4d6;
-  --v4-accent-soft: rgba(130, 149, 197, 0.13);
-  --v4-danger: #c8878c;
+  /* Handoff desk / projection booth: warm ink + tungsten accent (not cool SaaS blue). */
+  --background: #0c0b0a;
+  --foreground: #f3ebe2;
+  --v4-canvas: #0c0b0a;
+  --v4-canvas-raised: #131110;
+  --v4-panel: #171412;
+  --v4-panel-raised: #1e1a17;
+  --v4-panel-muted: #12100e;
+  --v4-line: rgba(232, 214, 190, 0.1);
+  --v4-line-strong: rgba(232, 214, 190, 0.18);
+  --v4-text: #f3ebe2;
+  --v4-text-muted: #a89b8c;
+  --v4-text-faint: #6f655a;
+  --v4-accent: #d0a46f;
+  --v4-accent-strong: #e0b984;
+  --v4-accent-soft: rgba(208, 164, 111, 0.14);
+  --v4-accent-ink: #17120d;
+  --v4-danger: #c98a86;
   --v4-warning: #c5a472;
+  --v4-desk-glow: rgba(208, 164, 111, 0.08);
+  --v4-desk-veil: linear-gradient(165deg, rgba(28, 24, 20, 0.92) 0%, rgba(12, 11, 10, 0.98) 48%, #0c0b0a 100%);
+
+  /* Stacking: nav < feedback < overlay/modal. Never mount modals inside nav. */
+  --z-raised: 10;
+  --z-sticky: 40;
+  --z-nav: 50;
+  --z-dropdown: 80;
+  --z-feedback: 90;
+  --z-overlay: 200;
+  --z-modal: 210;
 }
 
 html {
@@ -93,19 +106,71 @@ body {
 
 .app-canvas {
   color: var(--v4-text);
-  background: var(--v4-canvas);
+  background:
+    radial-gradient(1200px 520px at 50% -8%, var(--v4-desk-glow), transparent 58%),
+    var(--v4-canvas);
 }
 
 .app-workspace {
   color: var(--v4-text);
-  background: var(--v4-canvas);
+  background: transparent;
 }
 
 .v4-panel {
   border: 1px solid var(--v4-line);
   background: var(--v4-panel);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.018);
+  box-shadow: 0 1px 0 rgba(255, 248, 235, 0.02);
 }
+
+.ingest-receive-surface {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid var(--v4-line);
+  background:
+    radial-gradient(720px 280px at 50% 0%, var(--v4-desk-glow), transparent 70%),
+    linear-gradient(180deg, rgba(255, 244, 226, 0.028), transparent 40%),
+    var(--v4-panel);
+  box-shadow: inset 0 1px 0 rgba(255, 244, 226, 0.035);
+}
+
+.ingest-receive-surface.is-dragging {
+  border-color: color-mix(in srgb, var(--v4-accent) 65%, transparent);
+  background:
+    radial-gradient(640px 260px at 50% 35%, color-mix(in srgb, var(--v4-accent) 16%, transparent), transparent 72%),
+    var(--v4-panel);
+}
+
+/*
+ * Floating tips: bottom-center only.
+ * Film-match feedback is inline in SourceIdentityStrip — never in this dock.
+ */
+.feedback-dock {
+  pointer-events: none;
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  z-index: var(--z-feedback);
+  display: flex;
+  width: min(24rem, calc(100vw - 2rem));
+  transform: translateX(-50%);
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .feedback-dock {
+    bottom: 1.25rem;
+  }
+}
+
+.ui-overlay {
+  z-index: var(--z-overlay);
+}
+
+.ui-modal-layer {
+  z-index: var(--z-modal);
+}
+
 
 .v4-panel-muted {
   border: 1px solid var(--v4-line);

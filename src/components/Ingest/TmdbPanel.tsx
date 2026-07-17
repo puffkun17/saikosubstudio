@@ -29,7 +29,12 @@ const countSubtitleCues = (text?: string) => {
   }
 };
 
-export const TmdbPanel: React.FC = () => {
+type TmdbPanelProps = {
+  /** Keep only the search dialog when SourceIdentityStrip owns the visible identity chrome. */
+  mode?: 'panel' | 'modal-only';
+};
+
+export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
   const {
     tmdbData,
     tmdbManualOpen,
@@ -104,6 +109,8 @@ export const TmdbPanel: React.FC = () => {
   }, [isApplyingSuggestion, setTmdbManualOpen, setTmdbSuggestions, tmdbManualOpen]);
 
   return (
+    <>
+    {mode === 'panel' && (
     <div className={`v4-panel relative flex flex-col gap-5 rounded-lg p-5 desktop-panel-fit-hidden md:p-6 xl:p-7
       ${tmdbData
         ? 'border-[var(--v4-line-strong)]'
@@ -264,6 +271,8 @@ export const TmdbPanel: React.FC = () => {
           </div>
         )}
       </div>
+    </div>
+    )}
 
       {/* Manual Search Floating Modal */}
       <AnimatePresence>
@@ -502,6 +511,6 @@ export const TmdbPanel: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 };

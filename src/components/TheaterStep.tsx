@@ -28,6 +28,8 @@ export const TheaterStep: React.FC = () => {
     theaterAspect,
     showGuides,
     tempShowGuides,
+    previewClockMs,
+    isPreviewPlaying,
   } = useStudioStore();
 
   const safePreviewIndex = processedSubs && processedSubs.length > 0
@@ -74,7 +76,7 @@ export const TheaterStep: React.FC = () => {
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden relative bg-[var(--v4-canvas)]">
       
       {/* 顶部导航栏 */}
-      <div className="relative z-[70] flex flex-col gap-3 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-5 py-4 md:px-8">
+      <div className="relative z-[var(--z-raised)] flex flex-col gap-3 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-5 py-4 md:px-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <motion.button
@@ -82,25 +84,25 @@ export const TheaterStep: React.FC = () => {
             whileTap={{ scale: 0.97 }}
             className="v4-focus-ring flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-accent-strong)] hover:bg-[var(--v4-panel)]"
             onClick={handleBack}
-            aria-label="返回字幕工作台"
+            aria-label="返回工作台"
           >
             <ChevronLeft className="w-4 h-4" />
             </motion.button>
           
             <div>
-              <h2 className="text-xl font-semibold tracking-tight text-neutral-100">放映厅预览</h2>
-              <p className="mt-0.5 text-sm text-[var(--v4-text-muted)]">{theaterAspect} · {tmdbBackdrop ? '片源剧照' : '影院默认画面'}</p>
+              <h2 className="text-xl font-semibold tracking-tight text-[var(--v4-text)]">字幕预览</h2>
+              <p className="mt-0.5 text-sm text-[var(--v4-text-muted)]">{theaterAspect} · {tmdbBackdrop ? '影片剧照' : '默认背景'}</p>
             </div>
           </div>
 
-          <div className="relative z-[90] flex items-center gap-2">
+          <div className="relative z-[var(--z-dropdown)] flex items-center gap-2">
             <button
               onClick={() => setIsSettingsOpen(!isSettingsOpen)}
               className={`v4-focus-ring inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-4 py-2.5 text-sm font-medium transition-all
-                ${isSettingsOpen ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-white'}`}
+                ${isSettingsOpen ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]'}`}
             >
               <SlidersHorizontal className="h-4 w-4 stroke-[2.25]" />
-              样式参数
+              字幕样式
             </button>
             <ExportDropdown variant="ghost" />
           </div>
@@ -122,6 +124,8 @@ export const TheaterStep: React.FC = () => {
                 backdrop={backdropSlot}
                 style={customStyle}
                 previewIndex={safePreviewIndex}
+                previewClockMs={previewClockMs}
+                isPreviewPlaying={isPreviewPlaying}
                 theaterAspect={theaterAspect}
                 guides={{ show: showGuides, temp: tempShowGuides }}
               />

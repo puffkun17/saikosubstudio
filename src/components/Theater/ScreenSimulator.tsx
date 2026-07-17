@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { BackdropSlot, SubtitleDataSlot, StyleSettings } from '@/types/subtitleTypes';
+import { parseSubtitleRange } from '@/utils/timeline/timecode';
 
 const getOutlineShadow = (outlineColor: string) => {
   return `
@@ -21,21 +22,49 @@ interface ScreenSimulatorProps {
   backdrop: BackdropSlot;
   style: StyleSettings;
   previewIndex: number;
+  /** Continuous clock for fade-in / fade-out preview. */
+  previewClockMs?: number;
+  isPreviewPlaying?: boolean;
   theaterAspect: string;
   guides: { show: boolean; temp: boolean };
 }
+
+/** Preview fade window (ASS-like). Kept modest so styles stay readable. */
+const PREVIEW_FADE_MS = 280;
+
+const cueOpacity = (
+  clockMs: number | undefined,
+  startMs: number,
+  endMs: number,
+): number => {
+  if (clockMs == null || !Number.isFinite(clockMs)) return 1;
+  if (clockMs < startMs || clockMs >= endMs) return 0;
+  const into = clockMs - startMs;
+  const left = endMs - clockMs;
+  const fade = Math.min(PREVIEW_FADE_MS, Math.max(40, (endMs - startMs) / 3));
+  if (into < fade) return Math.max(0, into / fade);
+  if (left < fade) return Math.max(0, left / fade);
+  return 1;
+};
 
 export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
   subtitle,
   backdrop,
   style,
   previewIndex,
+  previewClockMs,
+  isPreviewPlaying = false,
   theaterAspect,
   guides,
 }) => {
   const activeSub = subtitle.status === 'ready' && subtitle.data ? subtitle.data[previewIndex] : null;
   
   const scale = style.globalScale || 1.0;
+
+  const activeRange = activeSub?.ts ? parseSubtitleRange(activeSub.ts) : null;
+  const fadeOpacity = isPreviewPlaying && activeRange
+    ? cueOpacity(previewClockMs, activeRange.startMs, activeRange.endMs)
+    : 1;
 
   // 注意：大量使用 cqh（container query height）单位
   // 要求现代浏览器支持（Chrome 105+ / Safari 16+ / Firefox 110+）
@@ -308,20 +337,20 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
           )}
           
           {/* Top Subtitle Rendering Layer */}
-          {topElement && (
+          {topElement && fadeOpacity > 0.01 && (
             <div 
-              className="absolute left-[5%] right-[5%] flex flex-col items-center justify-start text-center pointer-events-none select-none z-40 transition-all duration-200"
-              style={{ top: `${paddingBottomCqh * 0.8}cqh` }}
+              className="absolute left-[5%] right-[5%] z-40 flex select-none flex-col items-center justify-start text-center pointer-events-none"
+              style={{ top: `${paddingBottomCqh * 0.8}cqh`, opacity: fadeOpacity }}
             >
               {topElement}
             </div>
           )}
 
           {/* Subtitle Rendering Layer (Bottom) */}
-          {bottomElement && (
+          {bottomElement && fadeOpacity > 0.01 && (
             <div 
-              className="absolute left-[5%] right-[5%] flex flex-col items-center justify-end text-center pointer-events-none select-none z-40 transition-all duration-200"
-              style={{ bottom: `${paddingBottomCqh}cqh` }}
+              className="absolute left-[5%] right-[5%] z-40 flex select-none flex-col items-center justify-end text-center pointer-events-none"
+              style={{ bottom: `${paddingBottomCqh}cqh`, opacity: fadeOpacity }}
             >
               {bottomElement}
             </div>

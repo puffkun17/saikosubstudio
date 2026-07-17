@@ -6,17 +6,18 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ArrowLeft, FolderClock, MessageSquareText, RotateCcw, ShieldCheck } from 'lucide-react';
 import { useStudioStore } from '@/store/useStudioStore';
+import { OverlayPortal } from '@/components/Global/OverlayPortal';
 
 const STEP_LABEL: Record<number, string> = {
   1: '导入',
   2: '工作台',
-  3: '放映厅',
+  3: '预览',
 };
 
 const WORKFLOW_STEPS = [
   { id: 1, label: '导入' },
   { id: 2, label: '工作台' },
-  { id: 3, label: '放映厅' },
+  { id: 3, label: '预览' },
 ];
 
 const getDefaultScale = () => {
@@ -58,7 +59,12 @@ export const SystemTray = () => {
 
     if (targetStep === 2) {
       if (!hasUploadData && !hasWorkbenchData) {
-        setStatusNotice({ id: 'workflow-guard', tone: 'notice', title: '请先导入字幕文件' });
+        setStatusNotice({
+          id: 'workflow-guard',
+          tone: 'notice',
+          title: '请先导入字幕',
+          message: '加入文件并整理后，即可进入工作台。',
+        });
         return;
       }
       setWorkflowStep(2);
@@ -67,7 +73,12 @@ export const SystemTray = () => {
 
     if (targetStep === 3) {
       if (!hasWorkbenchData) {
-        setStatusNotice({ id: 'workflow-guard', tone: 'notice', title: '请先准备字幕预览' });
+        setStatusNotice({
+          id: 'workflow-guard',
+          tone: 'notice',
+          title: '请先生成预览',
+          message: '在工作台确认轨道后，再打开预览。',
+        });
         return;
       }
       setWorkflowStep(3);
@@ -111,9 +122,10 @@ export const SystemTray = () => {
   }, [pendingReset]);
 
   return (
+    <>
     <nav
       aria-label="全局导航"
-      className="fixed top-0 z-50 flex h-[68px] w-full items-center justify-between border-b border-[var(--v4-line)] bg-[color:rgba(9,11,16,0.92)] px-5 backdrop-blur-md transition-colors duration-300 md:px-8"
+      className="fixed top-0 z-[var(--z-nav)] flex h-[68px] w-full items-center justify-between border-b border-[var(--v4-line)] bg-[color:rgba(12,11,10,0.92)] px-5 backdrop-blur-md transition-colors duration-300 md:px-8"
     >
       {/* ── Left: brand + nav ──────────────────────────────── */}
       <div className="flex min-w-0 items-center gap-3 tracking-tight">
@@ -121,9 +133,9 @@ export const SystemTray = () => {
           type="button"
           onClick={() => handleStepClick(1)}
           className="v4-focus-ring flex shrink-0 cursor-pointer items-center gap-2 rounded-md text-base font-semibold text-[var(--v4-text)] transition-colors duration-150 hover:text-white"
-          aria-label="返回上传入口"
+          aria-label="返回导入页"
         >
-          <Image src="/favicon.svg" alt="" aria-hidden="true" width={20} height={20} className="h-5 w-5 rounded-[5px]" />
+          <Image src="/favicon.svg" alt="" aria-hidden="true" width={32} height={32} className="h-8 w-8 rounded-[9px] shadow-[0_1px_2px_rgba(0,0,0,0.45)]" />
           <span className="hidden sm:inline">SubStudio</span>
         </button>
 
@@ -155,11 +167,10 @@ export const SystemTray = () => {
           <Link
             href="/"
             className="v4-focus-ring inline-flex h-10 items-center gap-2 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-3 text-sm font-medium text-[var(--v4-accent-strong)] transition-colors hover:border-[var(--v4-accent)]"
-            aria-label="返回字幕工作台"
+            aria-label="返回首页"
           >
             <ArrowLeft className="h-5 w-5 stroke-[2.25]" aria-hidden="true" />
-            <span className="hidden lg:inline">返回工作台</span>
-            <span className="hidden opacity-55 xl:inline">/ Workspace</span>
+            <span className="hidden lg:inline">返回首页</span>
           </Link>
         )}
 
@@ -217,28 +228,52 @@ export const SystemTray = () => {
           {time}
         </span>
       </div>
-      {pendingReset && (
+    </nav>
+
+    {pendingReset && (
+      <OverlayPortal>
         <div
-          className="fixed inset-0 z-[130] grid place-items-center bg-black/65 p-4 backdrop-blur-sm"
+          className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
           onClick={(event) => { if (event.target === event.currentTarget) setPendingReset(false); }}
         >
-          <div role="alertdialog" aria-modal="true" aria-labelledby="restart-title" aria-describedby="restart-description" className="w-full max-w-sm rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] p-5 text-left shadow-[0_18px_48px_rgba(0,0,0,0.42)]">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="restart-title"
+            aria-describedby="restart-description"
+            className="w-full max-w-sm rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] p-5 text-left shadow-[0_18px_48px_rgba(0,0,0,0.42)]"
+          >
             <div className="flex items-start gap-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[#c0a89a]/20 bg-[#c0a89a]/[0.08] text-[#dfc9bc]">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]">
                 <RotateCcw className="h-4 w-4" aria-hidden="true" />
               </span>
               <div>
-                <h2 id="restart-title" className="text-lg font-semibold text-white">重新开始</h2>
-                <p id="restart-description" className="mt-1.5 text-sm leading-6 text-neutral-400">当前导入文件、轨道配对和预览结果都将清除。已保存的历史存档不受影响。</p>
+                <h2 id="restart-title" className="text-lg font-semibold text-[var(--v4-text)]">清空当前进度？</h2>
+                <p id="restart-description" className="mt-1.5 text-sm leading-6 text-[var(--v4-text-muted)]">
+                  将清除已导入的文件、轨道选择与预览结果。历史存档不会受到影响。
+                </p>
               </div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-2">
-              <button type="button" className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-neutral-300 hover:bg-white/[0.07] hover:text-white" onClick={() => setPendingReset(false)}>保留当前任务</button>
-              <button type="button" className="rounded-xl border border-[#b07b7d]/25 bg-[#b07b7d]/10 px-4 py-2.5 text-sm font-semibold text-[#efd5d6] hover:bg-[#b07b7d]/18" onClick={() => { setPendingReset(false); restartSystem(); }}>清除并重新开始</button>
+              <button
+                type="button"
+                className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-4 py-2.5 text-sm font-semibold text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]"
+                onClick={() => setPendingReset(false)}
+              >
+                继续编辑
+              </button>
+              <button
+                type="button"
+                className="rounded-md border border-[color:rgba(201,138,134,0.32)] bg-[color:rgba(201,138,134,0.12)] px-4 py-2.5 text-sm font-semibold text-[var(--v4-danger)] hover:bg-[color:rgba(201,138,134,0.2)]"
+                onClick={() => { setPendingReset(false); restartSystem(); }}
+              >
+                清空并重新开始
+              </button>
             </div>
           </div>
         </div>
-      )}
-    </nav>
+      </OverlayPortal>
+    )}
+    </>
   );
 };

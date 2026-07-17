@@ -118,8 +118,8 @@ export const ControlDeck: React.FC = () => {
       />
       <DialControl
         label="预览画面"
-        value={tmdbBackdrop ? '片源剧照' : '影院默认画面'}
-        description={tmdbBackdrop ? '已关联片源剧照' : '默认影院画面'}
+        value={tmdbBackdrop ? '影片剧照' : '默认背景'}
+        description={tmdbBackdrop ? '已使用影片剧照' : '未匹配影片时的默认背景'}
         icon={<Film className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />}
         onPrevious={tmdbBackdropList.length > 1 ? shuffleBackdrop : undefined}
         onNext={tmdbBackdropList.length > 1 ? shuffleBackdrop : undefined}

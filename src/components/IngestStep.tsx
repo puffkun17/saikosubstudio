@@ -5,6 +5,7 @@ import { useStudioStore } from '@/store/useStudioStore';
 import { DragZone } from '@/components/Ingest/DragZone';
 import { TaskList } from '@/components/Ingest/TaskList';
 import { TmdbPanel } from '@/components/Ingest/TmdbPanel';
+import { SourceIdentityStrip } from '@/components/Ingest/SourceIdentityStrip';
 import { Database, Trash2, Calendar, FolderClock, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -16,7 +17,14 @@ export const IngestStep: React.FC = () => {
     deleteFromLibrary,
     isLibraryOpen,
     setLibraryOpen,
+    isIngestClearing,
   } = useStudioStore();
+
+  const shellState: 'empty' | 'clearing' | 'ready' = isIngestClearing
+    ? 'clearing'
+    : tasks.length === 0
+      ? 'empty'
+      : 'ready';
 
   useEffect(() => {
     if (!isLibraryOpen) return;
@@ -28,37 +36,60 @@ export const IngestStep: React.FC = () => {
   }, [isLibraryOpen, setLibraryOpen]);
 
   return (
-    <div className="ingest-shell flex-1 w-full h-full flex flex-col p-5 md:p-8 lg:p-10 2xl:p-12 overflow-y-auto relative bg-[var(--v4-canvas)] z-0">
-      {tasks.length === 0 ? (
-        <div className="ingest-heading z-20 mb-5 flex flex-shrink-0 items-end justify-between gap-5 md:mb-6">
-          <div className="min-w-0 text-left">
-            <h1 className="flex max-w-full flex-wrap items-center gap-3 text-3xl font-semibold leading-tight text-[var(--v4-text)] md:text-4xl">
-              字幕导入
-              <span className="rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-2 py-1 text-xs font-mono font-semibold text-[var(--v4-accent-strong)]">
-                v4.0 Beta
-              </span>
-            </h1>
-            <p className="mt-2 max-w-2xl text-base leading-7 text-[var(--v4-text-muted)]">
-              把本次需要处理的字幕放在一起，确认后统一整理。
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="mb-5 flex flex-shrink-0 items-end justify-between gap-4 border-b border-[var(--v4-line)] pb-4 z-20">
+    <div className="ingest-shell relative z-0 flex h-full w-full flex-1 flex-col overflow-y-auto p-5 md:p-8 lg:p-10 2xl:p-12">
+      {shellState === 'ready' ? (
+        <div className="z-20 mb-4 flex flex-shrink-0 items-end justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold tracking-tight text-white md:text-[1.75rem]">字幕导入</h1>
-            <p className="mt-1 text-sm text-neutral-500">确认轨道、命名与片源信息</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--v4-text)] md:text-[1.75rem]">核对清单</h1>
+            <p className="mt-1 text-sm text-[var(--v4-text-muted)]">请确认字幕轨与导出名称，完成后即可进入下一步。</p>
           </div>
           <span className="shrink-0 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-xs font-medium text-[var(--v4-text-muted)]">
             {tasks.length} 个任务
           </span>
         </div>
+      ) : shellState === 'clearing' ? (
+        <div className="ingest-heading z-20 mb-5 flex flex-shrink-0 items-end justify-between gap-5 md:mb-6">
+          <div className="min-w-0 text-left">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--v4-text)] md:text-3xl">正在整理</h1>
+            <p className="mt-2 max-w-xl text-base leading-7 text-[var(--v4-text-muted)]">
+              正在本地识别字幕轨、按集归组，并尝试匹配影片资料。
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="ingest-heading z-20 mb-6 flex flex-shrink-0 items-end justify-between gap-5 md:mb-8">
+          <div className="min-w-0 text-left">
+            <h1 className="flex max-w-full flex-wrap items-baseline gap-3 text-3xl font-semibold leading-tight tracking-tight text-[var(--v4-text)] md:text-[2.5rem]">
+              导入字幕
+              <span className="rounded border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-2 py-0.5 font-mono text-xs font-semibold text-[var(--v4-accent-strong)]">
+                v4.0 Beta
+              </span>
+            </h1>
+            <p className="mt-2 max-w-xl text-base leading-7 text-[var(--v4-text-muted)]">
+              先加入清单并确认内容，再开始整理。松手不会立即处理。
+            </p>
+          </div>
+        </div>
       )}
 
       <AnimatePresence mode="wait">
-        {tasks.length === 0 ? (
+        {shellState === 'ready' ? (
           <motion.div 
-            key="empty-state"
+            key="ready-state"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            className="z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4"
+          >
+            <SourceIdentityStrip />
+            <div className="relative flex min-w-0 flex-1 flex-col">
+              <TaskList />
+            </div>
+            <TmdbPanel mode="modal-only" />
+          </motion.div>
+        ) : (
+          <motion.div 
+            key="handoff-state"
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
@@ -66,24 +97,6 @@ export const IngestStep: React.FC = () => {
             className="ingest-empty flex-1 flex flex-col gap-6 max-w-7xl mx-auto w-full items-center justify-start py-1 md:py-3"
           >
             <DragZone />
-          </motion.div>
-        ) : (
-          /* Task List when files are loaded - Split Grid Layout */
-          <motion.div 
-            key="task-list-container"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="z-10 mx-auto grid w-full max-w-[1720px] flex-1 grid-cols-1 gap-5 lg:grid-cols-[minmax(310px,0.34fr)_minmax(0,0.66fr)]"
-          >
-            {/* TMDB Panel */}
-            <div className="desktop-panel-fit-hidden min-w-0">
-              <TmdbPanel />
-            </div>
-            {/* TaskList */}
-            <div className="relative flex min-w-0 flex-col desktop-panel-fit-visible">
-              <TaskList />
-            </div>
           </motion.div>
         )}
       </AnimatePresence>

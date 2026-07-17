@@ -351,7 +351,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-neutral-400 text-xs tracking-wide py-24 select-none">
-            暂无可预览字幕序列
+            当前没有可预览的字幕
           </div>
         )}
       </div>
