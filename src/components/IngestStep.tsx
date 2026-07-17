@@ -79,11 +79,15 @@ export const IngestStep: React.FC = () => {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4"
+            className="z-10 mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-4"
           >
-            <SourceIdentityStrip />
-            <div className="relative flex min-w-0 flex-1 flex-col">
-              <TaskList />
+            <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(300px,400px)_minmax(0,1fr)] lg:items-start xl:gap-5">
+              <aside className="min-w-0 lg:sticky lg:top-2 lg:self-start">
+                <SourceIdentityStrip />
+              </aside>
+              <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+                <TaskList />
+              </div>
             </div>
             <TmdbPanel mode="modal-only" />
           </motion.div>

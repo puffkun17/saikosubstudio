@@ -2,12 +2,12 @@
 
 import React from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
-import { Film, Search, LoaderCircle, X } from 'lucide-react';
+import { Film, Search, LoaderCircle, X, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
- * Dual-anchor identity bar: authority signal + contextual film-match feedback.
- * Match notices live here so they never float over the checklist.
+ * Ready-state identity anchor: poster + rating + overview.
+ * Sits beside TaskList on large screens so film match is not a footnote.
  */
 export const SourceIdentityStrip: React.FC = () => {
   const {
@@ -38,12 +38,35 @@ export const SourceIdentityStrip: React.FC = () => {
     .find((notice) => notice.id === 'media-match' || notice.id === 'media-identity');
 
   const showInlineNotice = Boolean(filmNotice && !tmdbData);
+  const displayTitle = tmdbData?.title || optimisticTitle;
+  const displayOriginal = tmdbData?.originalTitle && tmdbData.originalTitle !== tmdbData.title
+    ? tmdbData.originalTitle
+    : null;
+  const metaBits = [tmdbData?.year, activeTask?.epKey].filter(Boolean);
+  const hasScore = Boolean(tmdbData && tmdbData.voteAverage > 0);
+  const overview = tmdbData?.overview?.trim() || '';
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="v4-panel flex flex-col gap-3 rounded-lg px-4 py-3 md:flex-row md:items-center md:gap-4 md:px-5">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div className="relative h-11 w-[1.9rem] shrink-0 overflow-hidden rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-muted)]">
+    <div className="flex flex-col gap-2.5">
+      <section className="v4-panel relative overflow-hidden rounded-lg">
+        {/* Soft poster wash behind content when matched */}
+        {tmdbData?.posterUrl && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.14]"
+            style={{
+              backgroundImage: `linear-gradient(120deg, rgba(12,11,10,0.2), rgba(12,11,10,0.92)), url(${tmdbData.posterUrl})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center top',
+              filter: 'blur(18px)',
+              transform: 'scale(1.08)',
+            }}
+          />
+        )}
+
+        <div className="relative flex flex-col gap-4 p-4 sm:flex-row sm:gap-5 sm:p-5">
+          {/* Poster */}
+          <div className="relative mx-auto aspect-[2/3] w-[7.5rem] shrink-0 overflow-hidden rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-muted)] shadow-[0_12px_28px_rgba(0,0,0,0.35)] sm:mx-0 sm:w-[8.5rem] lg:w-[9.5rem]">
             <AnimatePresence mode="wait">
               {tmdbData?.posterUrl ? (
                 <motion.img
@@ -62,59 +85,106 @@ export const SourceIdentityStrip: React.FC = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className={`flex h-full w-full items-center justify-center ${isSearchingTmdb ? 'animate-pulse bg-[var(--v4-accent-soft)]' : 'text-[var(--v4-text-faint)]'}`}
+                  className={`flex h-full w-full flex-col items-center justify-center gap-2 ${isSearchingTmdb ? 'animate-pulse bg-[var(--v4-accent-soft)]' : 'text-[var(--v4-text-faint)]'}`}
                 >
                   {isSearchingTmdb ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin text-[var(--v4-accent-strong)]" aria-hidden="true" />
+                    <LoaderCircle className="h-6 w-6 animate-spin text-[var(--v4-accent-strong)]" aria-hidden="true" />
                   ) : (
-                    <Film className="h-4 w-4" aria-hidden="true" />
+                    <>
+                      <Film className="h-7 w-7" aria-hidden="true" />
+                      <span className="px-2 text-center text-[11px] font-medium leading-snug text-[var(--v4-text-faint)]">
+                        暂无封面
+                      </span>
+                    </>
                   )}
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          <div className="min-w-0 flex-1 text-left">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="truncate text-base font-semibold tracking-tight text-[var(--v4-text)] md:text-lg">
-                {tmdbData?.title || optimisticTitle}
-              </h3>
-              {(tmdbData?.year || activeTask?.epKey) && (
-                <span className="shrink-0 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2 py-0.5 text-xs font-medium tabular-nums text-[var(--v4-text-muted)]">
-                  {[tmdbData?.year, activeTask?.epKey].filter(Boolean).join(' · ')}
-                </span>
+          {/* Copy + meta */}
+          <div className="flex min-w-0 flex-1 flex-col text-left">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-balance text-xl font-semibold tracking-tight text-[var(--v4-text)] md:text-[1.35rem]">
+                  {displayTitle}
+                </h3>
+                {displayOriginal && (
+                  <p className="mt-1 truncate text-sm text-[var(--v4-text-muted)]">
+                    {displayOriginal}
+                  </p>
+                )}
+                {!tmdbData && !displayOriginal && (
+                  <p className="mt-1 text-sm text-[var(--v4-text-muted)]">
+                    影片资料用于命名与预览背景，可先处理字幕轨后再补充。
+                  </p>
+                )}
+              </div>
+              <span
+                className={`inline-flex shrink-0 items-center rounded-md border px-2.5 py-1 text-xs font-semibold ${
+                  tmdbData
+                    ? 'border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
+                    : isSearchingTmdb
+                      ? 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]'
+                      : 'border-[var(--v4-line)] text-[var(--v4-text-faint)]'
+                }`}
+              >
+                {statusLabel}
+              </span>
+            </div>
+
+            {(metaBits.length > 0 || hasScore || (tmdbData?.genres?.length ?? 0) > 0) && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {metaBits.length > 0 && (
+                  <span className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]/80 px-2 py-1 text-xs font-medium tabular-nums text-[var(--v4-text-muted)]">
+                    {metaBits.join(' · ')}
+                  </span>
+                )}
+                {hasScore && (
+                  <span className="inline-flex items-center gap-1 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]/80 px-2 py-1 text-xs font-semibold tabular-nums text-[var(--v4-text)]">
+                    <Star className="h-3.5 w-3.5 fill-[var(--v4-accent)] text-[var(--v4-accent)]" aria-hidden="true" />
+                    {tmdbData!.voteAverage.toFixed(1)}
+                  </span>
+                )}
+                {tmdbData?.genres?.slice(0, 3).map((genre) => (
+                  <span
+                    key={genre}
+                    className="rounded-md border border-[var(--v4-line)] bg-black/20 px-2 py-1 text-xs font-medium text-[var(--v4-text-muted)]"
+                  >
+                    {genre}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {overview ? (
+              <p className="mt-3 line-clamp-4 text-sm leading-relaxed text-[var(--v4-text-muted)] md:line-clamp-5">
+                {overview}
+              </p>
+            ) : (
+              !tmdbData && (
+                <p className="mt-3 text-sm leading-relaxed text-[var(--v4-text-faint)]">
+                  匹配后将显示封面、评分与剧情简介。
+                </p>
+              )
+            )}
+
+            <div className="mt-auto flex flex-wrap items-center gap-2 pt-4">
+              <button
+                type="button"
+                onClick={() => setTmdbManualOpen(true)}
+                className="v4-focus-ring inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] px-3 text-sm font-semibold text-[var(--v4-text)] transition-colors hover:bg-[var(--v4-accent-soft)]"
+              >
+                <Search className="h-3.5 w-3.5" aria-hidden="true" />
+                {tmdbData ? '更改匹配' : needsTitleInput ? '补充片名' : '搜索影片'}
+              </button>
+              {!tmdbData && !isSearchingTmdb && (
+                <span className="text-xs text-[var(--v4-text-faint)]">不挡进入下一步</span>
               )}
             </div>
-            <p className="mt-0.5 truncate text-xs text-[var(--v4-text-muted)] md:text-sm">
-              {tmdbData?.originalTitle && tmdbData.originalTitle !== tmdbData.title
-                ? tmdbData.originalTitle
-                : '影片资料用于命名与预览背景，可稍后补充'}
-            </p>
           </div>
         </div>
-
-        <div className="flex shrink-0 items-center gap-2 self-stretch md:self-auto">
-          <span
-            className={`inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium ${
-              tmdbData
-                ? 'border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
-                : isSearchingTmdb
-                  ? 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]'
-                  : 'border-[var(--v4-line)] text-[var(--v4-text-faint)]'
-            }`}
-          >
-            {statusLabel}
-          </span>
-          <button
-            type="button"
-            onClick={() => setTmdbManualOpen(true)}
-            className="v4-focus-ring inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] px-3 text-sm font-semibold text-[var(--v4-text)] transition-colors hover:bg-[var(--v4-accent-soft)]"
-          >
-            <Search className="h-3.5 w-3.5" aria-hidden="true" />
-            {tmdbData ? '更改' : needsTitleInput ? '补充片名' : '搜索'}
-          </button>
-        </div>
-      </div>
+      </section>
 
       <AnimatePresence initial={false}>
         {showInlineNotice && filmNotice && (
