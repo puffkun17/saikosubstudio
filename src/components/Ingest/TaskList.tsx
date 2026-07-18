@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { useStudioStore, TaskPair, Subfile } from '@/store/useStudioStore';
-import { ArrowRight, Check, CircleAlert, GripVertical, Paintbrush, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
+import { useStudioStore, Subfile } from '@/store/useStudioStore';
+import { Check, CircleAlert, GripVertical, Paintbrush, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { parseSrt, decodeBuffer, detectSubtitleLanguage, StyleSettings } from '@/utils/subtitleCore';
 import { motion } from 'framer-motion';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
@@ -10,6 +10,7 @@ import { CreditTool } from '@/components/Ingest/CreditTool';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { FileFormatIcon, LanguageMark } from '@/components/ui/FileFormatIcon';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
+import { useWorkflowChrome } from '@/components/Global/WorkflowChrome';
 import { getSubtitleTermHint } from '@/utils/subtitleTerminology';
 import { getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
 import { AssStylePreview } from '@/components/Ingest/AssStylePreview';
@@ -26,6 +27,7 @@ export const TaskList: React.FC = () => {
   const zhRowRef = useRef<HTMLDivElement>(null);
   const enRowRef = useRef<HTMLDivElement>(null);
   const draggingTrackRef = useRef<'zh' | 'en' | null>(null);
+  const { setEdgeNext } = useWorkflowChrome();
   const {
     tasks,
     selectedTaskId,
@@ -125,21 +127,6 @@ export const TaskList: React.FC = () => {
     } catch {
       return 0;
     }
-  };
-
-  const getProcessBtnText = (task: TaskPair, bypassMetadata = false) => {
-    if (bypassMetadata) {
-      return '跳过影片匹配，继续';
-    }
-    if (task.isBilingualSingle) {
-      return '下一步';
-    }
-    const hasZh = !!task.zh;
-    const hasEn = !!task.en;
-    if (hasZh && hasEn) {
-      return '下一步';
-    }
-    return '下一步';
   };
 
   const getFilenameSourceLabel = () => {
@@ -253,11 +240,34 @@ export const TaskList: React.FC = () => {
     };
   }, [draggingTrack, activeTask, swapPrimaryTracks]);
 
+  const needsTitleInput = Boolean(activeTask?.title.includes('待补充片名'));
+  const canProceed = Boolean(activeTask && (activeTask.zh || activeTask.en) && !isProcessing);
+  const edgeLabel = isProcessing
+    ? '正在准备…'
+    : needsTitleInput
+      ? '跳过匹配'
+      : '下一步';
+
+  useEffect(() => {
+    if (!activeTask) {
+      setEdgeNext(null);
+      return;
+    }
+    setEdgeNext({
+      label: edgeLabel,
+      disabled: !canProceed,
+      onClick: () => {
+        if (!canProceed) return;
+        void runSubtitleMerge();
+      },
+    });
+    return () => setEdgeNext(null);
+  }, [activeTask, canProceed, edgeLabel, runSubtitleMerge, setEdgeNext]);
+
   if (!activeTask) return null;
 
   const zhCount = getSubTitleCount(activeTask.zh);
   const enCount = getSubTitleCount(activeTask.en);
-  const needsTitleInput = activeTask.title.includes('待补充片名');
   const isFoundAssStyleApplied = Boolean(foundAssStyle && Object.entries(foundAssStyle).every(
     ([key, value]) => customStyle[key as keyof StyleSettings] === value,
   ));
@@ -711,28 +721,6 @@ export const TaskList: React.FC = () => {
                   </div>
                 </div>
               )}
-
-              {/* Action Button */}
-              <div className="w-full lg:w-72 shrink-0">
-                  <button
-                    className={`w-full h-12 rounded-xl font-semibold text-center text-base transition-all flex items-center justify-center gap-2 cursor-pointer
-                    ${(!activeTask.zh && !activeTask.en) || isProcessing
-                      ? 'bg-white/[0.02] text-white/20 border border-white/5 cursor-not-allowed'
-                      : needsTitleInput
-                        ? 'action-bypass-button'
-                        : 'bg-[#e5e7eb] hover:bg-[#ffffff] text-black border border-[#9ca3af]/45 hover:border-[#ffffff]/60 shadow-[0_4px_20px_rgba(156,163,175,0.16)] hover:scale-[1.01]'}`}
-                  disabled={(!activeTask.zh && !activeTask.en) || isProcessing}
-                  onClick={runSubtitleMerge}
-                  title={needsTitleInput ? '可先跳过影片匹配，进入工作台' : undefined}
-                >
-                  {isProcessing ? (
-                    <span className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin shrink-0" />
-                  ) : (
-                  <ArrowRight className={`h-4 w-4 shrink-0 ${(!activeTask.zh && !activeTask.en) ? 'text-white/20' : needsTitleInput ? 'text-white/80' : 'text-black'}`} />
-                  )}
-                  {isProcessing ? '正在准备…' : getProcessBtnText(activeTask, needsTitleInput)}
-                </button>
-              </div>
 
             </div>
           </div>

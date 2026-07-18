@@ -7,7 +7,8 @@ import { AlignmentDiffPanel } from '@/components/Workbench/AlignmentDiffPanel';
 import { SourceMatchPanel } from '@/components/Workbench/SourceMatchPanel';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
-import { ChevronDown, ChevronLeft, GitCompareArrows, MonitorCheck, SlidersHorizontal } from 'lucide-react';
+import { useWorkflowChrome } from '@/components/Global/WorkflowChrome';
+import { ChevronDown, GitCompareArrows, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { analyzeAlignmentDiff } from '@/utils/timeline/alignmentDiff';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
@@ -22,6 +23,7 @@ export const WorkbenchStep: React.FC = () => {
     isSettingsOpen,
     setIsSettingsOpen
   } = useStudioStore();
+  const { setInfoBar, setEdgeNext } = useWorkflowChrome();
 
   const [showBackConfirm, setShowBackConfirm] = useState(false);
   const [sourceDurationMs, setSourceDurationMs] = useState<number | undefined>(undefined);
@@ -30,14 +32,6 @@ export const WorkbenchStep: React.FC = () => {
     () => processedSubs ? analyzeAlignmentDiff(processedSubs) : null,
     [processedSubs]
   );
-
-  const handleBack = () => {
-    if (processedSubs && processedSubs.length > 0) {
-      setShowBackConfirm(true);
-    } else {
-      setWorkflowStep(1);
-    }
-  };
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -49,60 +43,46 @@ export const WorkbenchStep: React.FC = () => {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isSettingsOpen, setIsSettingsOpen, showBackConfirm]);
 
-  return (
-    <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[var(--v4-canvas)]">
-      {/* Top Navbar */}
-      <div className="relative z-[var(--z-raised)] flex flex-shrink-0 flex-col items-center justify-between gap-4 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-6 py-4 md:flex-row md:px-8">
-        <div className="flex shrink-0 items-center gap-4 text-left">
-          <div>
-            <motion.button 
-              whileHover={{ scale: 1.03, y: -0.5 }}
-              whileTap={{ scale: 0.97 }}
-              className="v4-focus-ring flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-accent-strong)] hover:bg-[var(--v4-panel)]"
-              onClick={handleBack}
-              aria-label="返回导入页"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </motion.button>
-          </div>
-          
-          <div className="min-w-0 max-w-[720px]">
-            <h2 className="pl-0.5 text-xl font-semibold tracking-tight text-[var(--v4-text)]">字幕工作台</h2>
-            <p className="mt-0.5 whitespace-normal break-words pl-0.5 text-sm leading-relaxed text-[var(--v4-text-muted)]" title={customFilename}>
-              <span className="font-semibold text-[var(--v4-text)]">{processedSubs?.length || 0} 行</span>
-              <span className="mx-2 text-[var(--v4-text-faint)]">/</span>
-              <span>{customFilename || '未命名字幕'}</span>
-            </p>
-          </div>
-        </div>
-
-        <div className="flex w-full flex-1 flex-wrap items-center justify-end gap-2.5 md:w-auto">
-          <motion.button 
-            whileHover={{ scale: 1.02, y: -0.5 }}
-            whileTap={{ scale: 0.98 }}
-            className={`v4-focus-ring flex cursor-pointer items-center gap-1.5 rounded-md border px-4 py-2.5 text-sm font-semibold transition-all
+  useEffect(() => {
+    setInfoBar({
+      title: '字幕工作台',
+      subtitle: `${processedSubs?.length || 0} 行 / ${customFilename || '未命名字幕'}`,
+      onBack: () => {
+        if (processedSubs && processedSubs.length > 0) {
+          setShowBackConfirm(true);
+        } else {
+          setWorkflowStep(1);
+        }
+      },
+      actions: (
+        <>
+          <button
+            type="button"
+            className={`v4-focus-ring inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3.5 py-2 text-sm font-semibold transition-all
               ${isSettingsOpen ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]'}`}
             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
             title="调整字幕样式"
           >
-            <SlidersHorizontal className="w-4 h-4 text-[var(--v4-accent-strong)]" />
+            <SlidersHorizontal className="h-4 w-4 text-[var(--v4-accent-strong)]" />
             字幕样式
-          </motion.button>
-
+          </button>
           <ExportDropdown variant="ghost" />
+        </>
+      ),
+    });
+    return () => setInfoBar(null);
+  }, [processedSubs, customFilename, isSettingsOpen, setInfoBar, setIsSettingsOpen, setWorkflowStep]);
 
-          <motion.button 
-            whileHover={{ scale: 1.02, y: -0.5 }}
-            whileTap={{ scale: 0.98 }}
-            className="v4-focus-ring group flex cursor-pointer items-center gap-2 rounded-md bg-[var(--v4-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--v4-accent-ink)] transition-colors hover:bg-[var(--v4-accent-strong)]"
-            onClick={() => setWorkflowStep(3)}
-          >
-            <MonitorCheck className="w-4 h-4" />
-            打开预览
-          </motion.button>
-        </div>
-      </div>
+  useEffect(() => {
+    setEdgeNext({
+      label: '打开预览',
+      onClick: () => setWorkflowStep(3),
+    });
+    return () => setEdgeNext(null);
+  }, [setEdgeNext, setWorkflowStep]);
 
+  return (
+    <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[var(--v4-canvas)]">
       {/* Main Split stage */}
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* Center Panel: Subtitle sequence list */}

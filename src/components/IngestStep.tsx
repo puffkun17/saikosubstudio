@@ -6,6 +6,7 @@ import { DragZone } from '@/components/Ingest/DragZone';
 import { TaskList } from '@/components/Ingest/TaskList';
 import { TmdbPanel } from '@/components/Ingest/TmdbPanel';
 import { SourceIdentityStrip } from '@/components/Ingest/SourceIdentityStrip';
+import { useWorkflowChrome } from '@/components/Global/WorkflowChrome';
 import { Database, Trash2, Calendar, FolderClock, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -19,12 +20,25 @@ export const IngestStep: React.FC = () => {
     setLibraryOpen,
     isIngestClearing,
   } = useStudioStore();
+  const { setInfoBar } = useWorkflowChrome();
 
   const shellState: 'empty' | 'clearing' | 'ready' = isIngestClearing
     ? 'clearing'
     : tasks.length === 0
       ? 'empty'
       : 'ready';
+
+  useEffect(() => {
+    if (shellState !== 'ready') {
+      // empty / clearing: DragZone owns the info bar
+      return;
+    }
+    setInfoBar({
+      title: '核对清单',
+      subtitle: `请确认字幕轨与导出名称 · ${tasks.length} 个任务`,
+    });
+    return () => setInfoBar(null);
+  }, [shellState, tasks.length, setInfoBar]);
 
   useEffect(() => {
     if (!isLibraryOpen) return;
@@ -37,43 +51,6 @@ export const IngestStep: React.FC = () => {
 
   return (
     <div className="ingest-shell relative z-0 flex h-full w-full flex-1 flex-col overflow-y-auto p-5 md:p-8 lg:p-10 2xl:p-12">
-      {shellState === 'ready' ? (
-        <div className="z-20 mb-4 flex flex-shrink-0 items-end justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-semibold tracking-tight text-[var(--v4-text)] md:text-[1.75rem]">核对清单</h1>
-            <p className="mt-1 text-sm text-[var(--v4-text-muted)]">请确认字幕轨与导出名称，完成后即可进入下一步。</p>
-          </div>
-          <span className="shrink-0 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-xs font-medium text-[var(--v4-text-muted)]">
-            {tasks.length} 个任务
-          </span>
-        </div>
-      ) : shellState === 'clearing' ? (
-        <div className="ingest-heading z-20 mb-5 flex flex-shrink-0 items-end justify-between gap-5 md:mb-6">
-          <div className="min-w-0 text-left">
-            <h1 className="text-2xl font-semibold tracking-tight text-[var(--v4-text)] md:text-3xl">正在整理</h1>
-            <p className="mt-2 max-w-xl text-base leading-7 text-[var(--v4-text-muted)]">
-              正在本地识别字幕轨、按集归组，并尝试匹配影片资料。
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="ingest-heading z-20 mb-5 flex flex-shrink-0 items-end justify-between gap-5 md:mb-7">
-          <div className="min-w-0 text-left">
-            <p
-              className="mb-2 font-mono text-[11px] font-medium tracking-[0.14em] text-[var(--v4-accent-strong)] uppercase"
-            >
-              Bay 01 · 取用
-            </p>
-            <h1 className="text-balance text-3xl font-semibold leading-tight tracking-tight text-[var(--v4-text)] md:text-[2.35rem]">
-              片源文件先进台面
-            </h1>
-            <p className="mt-2 max-w-lg text-pretty text-[15px] leading-7 text-[var(--v4-text-muted)]">
-              命名、压缩包、文件夹都从这里开始。松手只入清单，不会立刻处理。
-            </p>
-          </div>
-        </div>
-      )}
-
       <AnimatePresence mode="wait">
         {shellState === 'ready' ? (
           <motion.div 
@@ -83,7 +60,6 @@ export const IngestStep: React.FC = () => {
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
             className="z-10 mx-auto flex w-full max-w-[1120px] flex-1 flex-col gap-3"
           >
-            {/* Identity bar above tasks — compact strip, not a tall left card. */}
             <SourceIdentityStrip />
             <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
               <TaskList />
@@ -97,7 +73,7 @@ export const IngestStep: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="ingest-empty mx-auto flex w-full max-w-6xl flex-1 flex-col items-stretch justify-start gap-5 py-1 md:py-2"
+            className="ingest-empty mx-auto flex w-full max-w-6xl flex-1 flex-col items-stretch justify-center gap-5 py-1 md:py-2"
           >
             <DragZone />
           </motion.div>

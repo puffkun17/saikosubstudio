@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useRef, useState } from 'react';
-import { Activity, AlertTriangle, CheckCircle2, Clapperboard, HardDrive, XCircle } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle2, HardDrive, MonitorPlay, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { SubRow } from '@/utils/subtitleCore';
 import { createSourceMatchReport, type SourceMatchFinding, type SourceMatchReport } from '@/utils/timeline/sourceMatch';
@@ -156,7 +156,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
               onClick={() => inputRef.current?.click()}
               className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[#8fa3d1]/20 bg-[#8fa3d1]/[0.045] px-3.5 py-2.5 text-xs font-medium text-[#dce2ef] transition hover:border-[#8fa3d1]/38 hover:bg-[#8fa3d1]/[0.09] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8fa3d1]/70 active:translate-y-px cursor-pointer"
             >
-              <Clapperboard className="h-3.5 w-3.5" />
+              <MonitorPlay className="h-3.5 w-3.5" />
               {isMatchMode ? '更换片源' : '加入片源'}
             </button>
             <input

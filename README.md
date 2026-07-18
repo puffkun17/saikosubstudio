@@ -50,7 +50,7 @@ These assets keep Theater preview usable even without TMDB data.
 
 ## Version
 
-Current app version: `v4.0.0-beta.1`.
+Current app version: `v4.1.0`.
 
 The previous interface baseline is archived at Git tag `v3.0.0-ui-archive`.
 

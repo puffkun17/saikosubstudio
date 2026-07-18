@@ -2,28 +2,15 @@
 
 import React from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 
 const CONTEXTUAL_NOTICE_IDS = new Set(['media-match', 'media-identity']);
 
-const logStyles: Record<'info' | 'success' | 'error', {
-  shell: string;
-  icon: React.ReactNode;
-}> = {
-  info: {
-    shell: 'border-[var(--v4-line)] bg-[color:rgba(18,16,14,0.94)] text-[var(--v4-text)]',
-    icon: <Info className="h-3.5 w-3.5 text-[var(--v4-text-muted)]" />,
-  },
-  success: {
-    shell: 'border-[color:rgba(208,164,111,0.28)] bg-[color:rgba(28,22,14,0.96)] text-[#f0e2cf]',
-    icon: <CheckCircle2 className="h-3.5 w-3.5 text-[var(--v4-accent-strong)]" />,
-  },
-  error: {
-    shell: 'border-[color:rgba(201,138,134,0.32)] bg-[color:rgba(28,16,15,0.96)] text-[#f0d9d7]',
-    icon: <AlertTriangle className="h-3.5 w-3.5 text-[var(--v4-danger)]" />,
-  },
+const errorLogStyle = {
+  shell: 'border-[color:rgba(201,138,134,0.32)] bg-[color:rgba(28,16,15,0.96)] text-[#f0d9d7]',
+  icon: <AlertTriangle className="h-3.5 w-3.5 text-[var(--v4-danger)]" />,
 };
 
 const noticeStyles = {
@@ -35,8 +22,9 @@ const noticeStyles = {
 } as const;
 
 /**
- * Floating dock = short system tips only (bottom-center).
- * Film-match notices render inline in SourceIdentityStrip — never as overlays.
+ * Floating dock = strong notices + errors only.
+ * Soft info/success logs flip in the bottom tray marquee.
+ * Media-match notices render inline in SourceIdentityStrip.
  */
 export const FeedbackCenter: React.FC = () => {
   const {
@@ -90,24 +78,21 @@ export const FeedbackCenter: React.FC = () => {
           )}
         </AnimatePresence>
 
-        <aside aria-label="短暂提示" className="flex flex-col gap-2">
+        <aside aria-label="重要提示" className="flex flex-col gap-2">
           <AnimatePresence initial={false}>
-            {logs.map((log) => {
-              const styles = logStyles[log.type];
-              return (
+            {logs.filter((log) => log.type === 'error').map((log) => (
                 <motion.div
                   key={log.id}
                   initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
                   animate={{ opacity: log.fade ? 0 : 1, y: log.fade ? 4 : 0 }}
                   exit={shouldReduceMotion ? undefined : { opacity: 0, y: 6 }}
                   transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                  className={`pointer-events-auto flex items-start gap-2.5 rounded-lg border px-3.5 py-2.5 text-sm font-medium leading-relaxed shadow-[0_10px_28px_rgba(0,0,0,0.34)] ${styles.shell}`}
+                  className={`pointer-events-auto flex items-start gap-2.5 rounded-lg border px-3.5 py-2.5 text-sm font-medium leading-relaxed shadow-[0_10px_28px_rgba(0,0,0,0.34)] ${errorLogStyle.shell}`}
                 >
-                  <span className="mt-0.5 shrink-0">{styles.icon}</span>
+                  <span className="mt-0.5 shrink-0">{errorLogStyle.icon}</span>
                   <span className="min-w-0 flex-1 break-words">{log.msg}</span>
                 </motion.div>
-              );
-            })}
+            ))}
           </AnimatePresence>
         </aside>
       </div>

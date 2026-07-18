@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useStudioStore, type TmdbSuggestion } from '@/store/useStudioStore';
-import { Search, Film, Star, Sparkles, X, CheckCircle2, CircleAlert, FileText, Languages } from 'lucide-react';
+import { Search, Image as ImageIcon, Star, Sparkles, X, CheckCircle2, CircleAlert, FileText, Languages } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseSrt } from '@/utils/subtitleCore';
 import { AssStylePreview } from '@/components/Ingest/AssStylePreview';
@@ -450,7 +450,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                                 <img src={posterUrl} alt={s.title || s.name} className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-white/25">
-                                  <Film className="w-4 h-4" />
+                                  <ImageIcon className="w-4 h-4" />
                                 </div>
                               )}
                             </div>

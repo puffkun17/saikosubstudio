@@ -77,6 +77,9 @@
 
   /* Twin trays: top nav + bottom ops deck. */
   --tray-h: 72px;
+  /* Info bar under top tray; 0 when idle (set by WorkflowChrome). */
+  --info-bar-h: 0px;
+  --edge-next-w: 0px;
 
   /* Stacking: nav < feedback < overlay/modal. Never mount modals inside nav. */
   --z-raised: 10;
@@ -159,310 +162,29 @@ body {
   max-width: 44rem;
 }
 
-/* 取用 bay: wide work surface, not a centered SaaS upload card. */
 .ingest-stage.is-empty {
-  max-width: min(52rem, 100%);
-  min-height: min(26rem, 62vh);
+  max-width: min(36rem, 100%);
+  min-height: min(18rem, 48vh);
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
   padding-inline: clamp(1rem, 3vw, 2rem);
-  padding-block: clamp(1.5rem, 4vh, 2.75rem);
+  padding-block: clamp(1.25rem, 3vh, 2rem);
 }
 
-/*
- * Film gate — CSS-only sprocket rails (background-position).
- * Idle: slow transport · drag: faster · reduced-motion: static.
- */
-.ingest-focus {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-  border-radius: 0.5rem;
-  border: 1px solid color-mix(in srgb, var(--v4-line-strong) 55%, transparent);
-  background:
-    linear-gradient(
-      105deg,
-      color-mix(in srgb, var(--v4-panel) 88%, transparent) 0%,
-      color-mix(in srgb, var(--v4-canvas) 40%, transparent) 42%,
-      transparent 72%
-    ),
-    radial-gradient(
-      ellipse 70% 80% at 18% 50%,
-      var(--v4-desk-glow),
-      transparent 68%
-    );
-  transition:
-    background var(--v4-dur) var(--v4-ease),
-    border-color var(--v4-dur) var(--v4-ease),
-    opacity var(--v4-dur) var(--v4-ease);
+.ingest-stage.is-dragging .ingest-start-card {
+  border-color: color-mix(in srgb, var(--v4-accent) 35%, transparent);
+  background: color-mix(in srgb, var(--v4-panel-raised) 70%, transparent);
 }
 
-.ingest-film {
-  position: absolute;
-  inset: 0;
-}
-
-.ingest-film__rail {
-  position: absolute;
-  top: -20%;
-  bottom: -20%;
-  width: 1.35rem;
-  opacity: 0.55;
-  background-color: color-mix(in srgb, #1a1410 88%, var(--v4-accent));
-  /* Sprocket holes punched through the strip */
-  background-image: radial-gradient(
-    ellipse 38% 28% at 50% 50%,
-    var(--v4-canvas) 0 62%,
-    transparent 66%
-  );
-  background-size: 100% 1.55rem;
-  background-repeat: repeat-y;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v4-accent) 12%, transparent);
-  animation: ingest-film-run 2.8s linear infinite;
-  will-change: background-position;
-}
-
-.ingest-film__rail--left {
-  left: 0;
-  border-radius: 0.5rem 0 0 0.5rem;
-}
-
-.ingest-film__rail--right {
-  right: 0;
-  border-radius: 0 0.5rem 0.5rem 0;
-  animation-direction: reverse;
-}
-
-.ingest-film__frame {
-  position: absolute;
-  inset: 0.85rem 1.85rem;
-  border: 1px solid color-mix(in srgb, var(--v4-line) 90%, transparent);
-  border-radius: 2px;
-  background:
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--v4-accent) 6%, transparent),
-      transparent 28%
-    ),
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 4.5rem,
-      color-mix(in srgb, var(--v4-line) 45%, transparent) 4.5rem,
-      color-mix(in srgb, var(--v4-line) 45%, transparent) calc(4.5rem + 1px)
-    );
-  background-size: 100% 100%, 100% 4.55rem;
-  animation: ingest-film-frames 2.8s linear infinite;
-  opacity: 0.4;
-  will-change: background-position;
-}
-
-.ingest-focus__mark {
-  position: absolute;
-  z-index: 1;
-  width: 0.95rem;
-  height: 0.95rem;
-  border-color: color-mix(in srgb, var(--v4-accent) 42%, transparent);
-  border-style: solid;
-  border-width: 0;
-  opacity: 0.7;
-  transition:
-    border-color var(--v4-dur) var(--v4-ease),
-    opacity var(--v4-dur) var(--v4-ease),
-    width var(--v4-dur) var(--v4-ease),
-    height var(--v4-dur) var(--v4-ease);
-}
-
-.ingest-focus__mark--tl {
-  top: 0.7rem;
-  left: 1.75rem;
-  border-top-width: 1.5px;
-  border-left-width: 1.5px;
-}
-
-.ingest-focus__mark--tr {
-  top: 0.7rem;
-  right: 1.75rem;
-  border-top-width: 1.5px;
-  border-right-width: 1.5px;
-}
-
-.ingest-focus__mark--bl {
-  bottom: 0.7rem;
-  left: 1.75rem;
-  border-bottom-width: 1.5px;
-  border-left-width: 1.5px;
-}
-
-.ingest-focus__mark--br {
-  bottom: 0.7rem;
-  right: 1.75rem;
-  border-bottom-width: 1.5px;
-  border-right-width: 1.5px;
-}
-
-@keyframes ingest-film-run {
-  to { background-position-y: 1.55rem; }
-}
-
-@keyframes ingest-film-frames {
-  to { background-position: 0 0, 0 4.55rem; }
-}
-
-.ingest-stage.is-dragging .ingest-focus {
-  border-color: color-mix(in srgb, var(--v4-accent) 42%, transparent);
-  background:
-    linear-gradient(
-      105deg,
-      color-mix(in srgb, var(--v4-panel-raised) 90%, transparent) 0%,
-      color-mix(in srgb, var(--v4-canvas) 30%, transparent) 48%,
-      transparent 78%
-    ),
-    radial-gradient(
-      ellipse 72% 90% at 22% 50%,
-      color-mix(in srgb, var(--v4-accent) 20%, transparent),
-      transparent 70%
-    );
-}
-
-.ingest-stage.is-dragging .ingest-film__rail {
-  opacity: 0.85;
-  animation-duration: 0.85s;
-}
-
-.ingest-stage.is-dragging .ingest-film__frame {
-  opacity: 0.55;
-  animation-duration: 0.85s;
-}
-
-.ingest-stage.is-dragging .ingest-focus__mark {
-  width: 1.35rem;
-  height: 1.35rem;
-  opacity: 1;
-  border-color: color-mix(in srgb, var(--v4-accent-strong) 82%, transparent);
-}
-
-.ingest-stage.is-accepting .ingest-focus {
-  background: radial-gradient(
-    ellipse 60% 50% at 50% 46%,
-    color-mix(in srgb, var(--v4-accent) 26%, transparent),
-    transparent 70%
-  );
-}
-
-.ingest-stage.is-accepting .ingest-film__rail,
-.ingest-stage.is-accepting .ingest-film__frame {
-  animation-duration: 0.35s;
-  opacity: 1;
-}
-
-.ingest-empty-copy {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: none;
-  padding: clamp(1.25rem, 3vw, 2.25rem) clamp(1.5rem, 4vw, 3rem);
-  transition:
-    transform var(--v4-dur) var(--v4-ease),
-    opacity var(--v4-dur-fast) ease;
-}
-
-.ingest-bay {
-  display: grid;
-  gap: 1.75rem;
-  width: 100%;
-  text-align: left;
-}
-
-@media (min-width: 840px) {
-  .ingest-bay {
-    grid-template-columns: minmax(0, 1fr) minmax(11rem, 14rem);
-    gap: 2.5rem;
-    align-items: end;
-  }
-}
-
-.ingest-bay__main {
-  min-width: 0;
-}
-
-.ingest-bay__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  padding-top: 0.15rem;
-  border-top: 1px solid var(--v4-line);
-}
-
-@media (min-width: 840px) {
-  .ingest-bay__meta {
-    border-top: 0;
-    border-left: 1px solid var(--v4-line);
-    padding-top: 0;
-    padding-left: 1.5rem;
-    min-height: 9.5rem;
-    justify-content: flex-end;
-  }
-}
-
-.ingest-bay__layer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.35rem 0.75rem;
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--v4-text-faint);
-}
-
-.ingest-bay__layer strong {
-  color: var(--v4-accent-strong);
-  font-weight: 600;
-}
-
-.ingest-bay__layer span[aria-hidden='true'] {
-  color: var(--v4-line-strong);
-}
-
-.ingest-stage.is-dragging .ingest-empty-copy {
-  transform: translateY(2px);
-}
-
-.ingest-stage.is-accepting .ingest-empty-copy {
-  opacity: 0;
-  transform: translateY(-6px);
+.ingest-stage.is-accepting .ingest-start-card {
+  opacity: 0.45;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ingest-film__rail,
-  .ingest-film__frame {
-    animation: none !important;
-  }
-
-  .ingest-focus,
-  .ingest-focus__mark,
-  .ingest-empty-copy {
-    transition: none !important;
-  }
-
-  .ingest-stage.is-dragging .ingest-empty-copy,
-  .ingest-stage.is-accepting .ingest-empty-copy {
-    transform: none;
-  }
-
-  .ingest-stage.is-accepting .ingest-empty-copy {
-    opacity: 0.45;
-  }
-
-  .ingest-film__rail,
-  .ingest-film__frame {
-    opacity: 0.35;
+  .ingest-stage.is-accepting .ingest-start-card {
+    opacity: 0.55;
   }
 }
 
@@ -531,8 +253,8 @@ body {
 }
 
 /*
- * Floating tips: bottom-center only.
- * Film-match feedback is inline in SourceIdentityStrip — never in this dock.
+ * Floating tips: bottom-center only (errors / strong notices).
+ * Soft info/success live in SoftLogMarquee (bottom tray).
  */
 .feedback-dock {
   pointer-events: none;
@@ -541,7 +263,7 @@ body {
   left: 50%;
   z-index: var(--z-feedback);
   display: flex;
-  width: min(24rem, calc(100vw - 2rem));
+  width: min(24rem, calc(100vw - 2rem - var(--edge-next-w)));
   transform: translateX(-50%);
   flex-direction: column-reverse;
   gap: 0.5rem;
@@ -551,6 +273,158 @@ body {
   .feedback-dock {
     bottom: calc(var(--tray-h) + 1rem);
   }
+}
+
+.workflow-info-bar {
+  position: fixed;
+  top: var(--tray-h);
+  left: 0;
+  right: var(--edge-next-w);
+  z-index: calc(var(--z-nav) - 1);
+  height: var(--info-bar-h);
+  border-bottom: 1px solid var(--v4-line);
+  background: color-mix(in srgb, var(--v4-canvas-raised) 94%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.workflow-info-bar__inner {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 1.25rem 0 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .workflow-info-bar__inner {
+    padding: 0 1.75rem 0 2rem;
+  }
+}
+
+.workflow-edge-next {
+  position: fixed;
+  top: var(--tray-h);
+  right: 0;
+  bottom: var(--tray-h);
+  z-index: calc(var(--z-nav) - 1);
+  width: var(--edge-next-w);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  border: 0;
+  border-left: 1px solid var(--v4-line);
+  background: color-mix(in srgb, var(--v4-canvas-raised) 88%, transparent);
+  color: var(--v4-accent-strong);
+  cursor: pointer;
+  transition:
+    background var(--v4-dur) var(--v4-ease),
+    color var(--v4-dur) var(--v4-ease),
+    border-color var(--v4-dur) var(--v4-ease);
+}
+
+.workflow-edge-next:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--v4-accent-soft) 80%, var(--v4-canvas-raised));
+  border-left-color: color-mix(in srgb, var(--v4-accent) 40%, var(--v4-line));
+}
+
+.workflow-edge-next.is-disabled,
+.workflow-edge-next:disabled {
+  color: var(--v4-text-faint);
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.workflow-edge-next__rail {
+  position: absolute;
+  inset: 12% auto 12% 0;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--v4-accent) 55%, transparent),
+    transparent
+  );
+  opacity: 0.7;
+}
+
+.workflow-edge-next__glyph {
+  display: grid;
+  place-items: center;
+}
+
+.workflow-edge-next__label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+
+.soft-log-marquee {
+  min-width: 0;
+  max-width: min(28rem, 42vw);
+  overflow: hidden;
+  height: 1.25rem;
+}
+
+.soft-log-marquee__text {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  color: var(--v4-text-muted);
+}
+
+.ingest-start-card {
+  width: min(28rem, 100%);
+  margin-inline: auto;
+  padding: 2.25rem 1.75rem 2rem;
+  text-align: center;
+  border-radius: 1.15rem;
+  border: 1px solid color-mix(in srgb, var(--v4-line) 18%, transparent);
+  background: color-mix(in srgb, var(--v4-panel) 42%, transparent);
+  box-shadow: 0 22px 56px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(12px);
+  transition:
+    border-color var(--v4-dur) var(--v4-ease),
+    background var(--v4-dur) var(--v4-ease),
+    box-shadow var(--v4-dur) var(--v4-ease);
+}
+
+.ingest-start-card__title {
+  margin: 0;
+  font-size: clamp(1.65rem, 3vw, 1.95rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--v4-text);
+}
+
+.ingest-start-card__cta {
+  margin-top: 1.5rem;
+}
+
+.ingest-start-card__hint {
+  margin: 1rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--v4-text-faint);
+}
+
+.app-main-pad {
+  box-sizing: border-box;
+  display: flex;
+  height: 100dvh;
+  flex-direction: column;
+  overflow: hidden;
+  padding-top: calc(var(--tray-h) + var(--info-bar-h));
+  padding-bottom: var(--tray-h);
+  padding-right: var(--edge-next-w);
 }
 
 .ui-overlay {

@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { ArrowLeft, FolderClock, MessageSquareText, RotateCcw, ShieldCheck } from 'lucide-react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
+import { SoftLogMarquee } from '@/components/Global/SoftLogMarquee';
 
 const STEP_LABEL: Record<number, string> = {
   1: '导入',
@@ -287,8 +288,8 @@ export const SystemTray = () => {
         aria-label="操作台"
         className={`system-tray system-tray--bottom fixed bottom-0 z-[var(--z-nav)] border-t ${trayChrome}`}
       >
-        <div className="flex min-w-0 items-center justify-start gap-2">
-          {/* Scene primary actions land here later */}
+        <div className="flex min-w-0 flex-1 items-center justify-start gap-2 pr-3">
+          <SoftLogMarquee />
         </div>
 
         {/* Container = remaining deck width (generous when left is empty). */}

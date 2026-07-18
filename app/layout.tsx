@@ -3,6 +3,7 @@ import "./globals.css";
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import { SystemTray } from "@/components/Global/SystemTray";
+import { AppChrome } from "@/components/Global/AppChrome";
 
 export const metadata: Metadata = {
   title: "SaikoSubStudio",
@@ -26,10 +27,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="zh-CN" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="app-canvas font-sans h-dvh overflow-hidden">
-        <SystemTray />
-        <div className="box-border flex h-dvh flex-col overflow-hidden pt-[var(--tray-h)] pb-[var(--tray-h)]">
-          {children}
-        </div>
+        <AppChrome>
+          <SystemTray />
+          <div className="app-main-pad">
+            {children}
+          </div>
+        </AppChrome>
       </body>
     </html>
   );

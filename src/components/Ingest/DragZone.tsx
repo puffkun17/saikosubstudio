@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
 import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
-import { ArrowRight, ChevronDown, FilePlus, FolderPlus, HardDrive, Plus, Trash2, X } from 'lucide-react';
+import { ChevronDown, FilePlus, FolderPlus, HardDrive, Plus, Trash2, X } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { CLIENT_IMPORT_LIMITS, getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
 import {
@@ -14,6 +14,7 @@ import {
   warmLocalArchiveEngine,
 } from '@/utils/localArchive';
 import { FileFormatIcon, LanguageMark, resolveFileFormat } from '@/components/ui/FileFormatIcon';
+import { useWorkflowChrome } from '@/components/Global/WorkflowChrome';
 
 type ParseStatus = 'reading' | 'analyzing' | 'success' | 'warning' | 'skipped';
 
@@ -73,8 +74,6 @@ const PHASE_COPY: Record<IngestPhase, string> = {
   needs_review: '部分轨道或影片信息需要确认',
   error: '部分内容需要处理',
 };
-
-const FORMAT_MARKS = ['SRT', 'ASS', 'ZIP', 'RAR', '7Z'];
 
 const formatBytes = (bytes: number) => {
   if (bytes < 1024) return `${bytes} B`;
@@ -200,6 +199,7 @@ const describeTrack = (file: Subfile) => {
 
 export const DragZone: React.FC = () => {
   const { isDragging, setIsDragging, processFiles, addLog, setIngestClearing } = useStudioStore();
+  const { setEdgeNext, setInfoBar } = useWorkflowChrome();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
@@ -207,7 +207,7 @@ export const DragZone: React.FC = () => {
 
   // Parsing states
   const [isParsing, setIsParsing] = useState(false);
-  const [parsingFiles, setParsingFiles] = useState<ParsingFileState[]>([]);
+  const [, setParsingFiles] = useState<ParsingFileState[]>([]);
   const [ingestPhase, setIngestPhase] = useState<IngestPhase>('idle');
   const [ingestMessage, setIngestMessage] = useState(PHASE_COPY.idle);
   const [resultChips, setResultChips] = useState<string[]>([]);
@@ -236,6 +236,22 @@ export const DragZone: React.FC = () => {
     document.addEventListener('mousedown', onPointerDown);
     return () => document.removeEventListener('mousedown', onPointerDown);
   }, [addMenuOpen]);
+
+  // Clearing → progress lives in the global info bar
+  useEffect(() => {
+    if (!isParsing) return;
+    const activeStepIndex = Math.max(0, PHASE_STEPS.findIndex((step) => step.id === ingestPhase));
+    const stepLabel = PHASE_STEPS.map((step, index) => {
+      const mark = activeStepIndex >= index || ingestPhase === 'ready' ? '●' : '○';
+      return `${mark}${step.label}`;
+    }).join('  ');
+    const chipSummary = resultChips.length > 0 ? resultChips.slice(0, 3).join(' · ') : undefined;
+    setInfoBar({
+      title: ingestMessage,
+      subtitle: chipSummary ? `${stepLabel} · ${chipSummary}` : stepLabel,
+    });
+    return () => setInfoBar(null);
+  }, [isParsing, ingestPhase, ingestMessage, resultChips, setInfoBar]);
 
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -276,7 +292,7 @@ export const DragZone: React.FC = () => {
         if (row.archivePeekStatus !== 'loading') return row;
         return {
           ...row,
-          note: '读取较慢，可直接点开始整理',
+          note: '读取较慢，可先继续',
         };
       }));
     }, 8_000);
@@ -697,6 +713,27 @@ export const DragZone: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (isParsing || queuedItems.length === 0) {
+      setEdgeNext(null);
+      return;
+    }
+    const acceptedCount = queuedItems.filter((item) => item.accepted).length;
+    const disabled = acceptedCount === 0 || Boolean(queueIssue);
+    const files = queuedItems.map((item) => item.file);
+    setEdgeNext({
+      label: '下一步',
+      disabled,
+      onClick: () => {
+        if (disabled) return;
+        void handleFilesProcess(files);
+      },
+    });
+    return () => setEdgeNext(null);
+    // handleFilesProcess closes over current ingest helpers; rebind when queue changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on queue snapshot
+  }, [isParsing, queuedItems, queueIssue, setEdgeNext]);
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
@@ -748,66 +785,19 @@ export const DragZone: React.FC = () => {
   };
 
   if (isParsing) {
-    const activeStepIndex = Math.max(0, PHASE_STEPS.findIndex(step => step.id === ingestPhase));
     return (
-      <div className="relative mx-auto flex w-full max-w-3xl min-h-[420px] flex-col items-center justify-center px-2">
-        <div className="ingest-receive-surface relative z-10 w-full overflow-hidden rounded-lg px-6 py-10 md:px-10 md:py-12">
-          <motion.div
-            key={ingestMessage}
-            initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-            className="mx-auto max-w-xl text-center"
-          >
-            <h3 className="text-2xl font-semibold tracking-tight text-[var(--v4-text)] md:text-[1.85rem]">
-              {ingestMessage}
-            </h3>
-            <p className="mt-3 text-sm leading-6 text-[var(--v4-text-muted)]">
-              请保持页面开启；文件不会离开这台设备。
-            </p>
-          </motion.div>
-
-          <ol
-            className="mx-auto mt-9 flex w-full max-w-md items-center justify-between gap-1"
-            aria-label={`整理进度 ${activeStepIndex + 1} / ${PHASE_STEPS.length}`}
-          >
-            {PHASE_STEPS.map((step, index) => {
-              const complete = activeStepIndex >= index || ingestPhase === 'ready';
-              const current = activeStepIndex === index && ingestPhase !== 'ready';
-              return (
-                <li key={step.id} className="flex min-w-0 flex-1 flex-col items-center gap-2">
-                  <span
-                    className={`h-1 w-full rounded-full transition-colors duration-500 ${
-                      complete || current ? 'bg-[var(--v4-accent)]' : 'bg-[var(--v4-line-strong)]'
-                    }`}
-                  />
-                  <span className={`text-[11px] font-medium ${complete || current ? 'text-[var(--v4-text)]' : 'text-[var(--v4-text-faint)]'}`}>
-                    {step.label}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-
-          <div className="mx-auto mt-8 flex max-w-lg flex-wrap items-center justify-center gap-2">
-            {(resultChips.length > 0 ? resultChips : parsingFiles.slice(0, 4).map(file => file.note || file.name)).map((chip, index) => (
-              <motion.span
-                key={`${chip}-${index}`}
-                initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: shouldReduceMotion ? 0 : index * 0.04, duration: 0.22 }}
-                className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-xs text-[var(--v4-text-muted)]"
-              >
-                {chip}
-              </motion.span>
-            ))}
-          </div>
+      <div className="relative mx-auto flex w-full max-w-lg min-h-[280px] flex-col items-center justify-center px-2">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <span
+            className="h-9 w-9 rounded-full border-2 border-[var(--v4-line-strong)] border-t-[var(--v4-accent)] animate-spin"
+            aria-hidden="true"
+          />
+          <p className="text-sm text-[var(--v4-text-muted)]">文件仅在本机处理</p>
         </div>
       </div>
     );
   }
 
-  const acceptedItems = queuedItems.filter(item => item.accepted);
   const rejectedItems = queuedItems.filter(item => !item.accepted);
   const looseSubtitleCount = queuedItems.filter(item => item.kind === 'subtitle').length;
   const peekedTrackCount = queuedItems.reduce((sum, item) => sum + (item.archiveEntries?.length || 0), 0);
@@ -838,20 +828,6 @@ export const DragZone: React.FC = () => {
           queuedItems.length > 0 ? 'has-queue' : 'is-empty'
         } ${isDragging ? 'is-dragging' : ''} ${isAccepting ? 'is-accepting' : ''}`}
       >
-        {queuedItems.length === 0 && (
-          <div className="ingest-focus" aria-hidden="true">
-            <div className="ingest-film">
-              <div className="ingest-film__rail ingest-film__rail--left" />
-              <div className="ingest-film__frame" />
-              <div className="ingest-film__rail ingest-film__rail--right" />
-            </div>
-            <span className="ingest-focus__mark ingest-focus__mark--tl" />
-            <span className="ingest-focus__mark ingest-focus__mark--tr" />
-            <span className="ingest-focus__mark ingest-focus__mark--bl" />
-            <span className="ingest-focus__mark ingest-focus__mark--br" />
-          </div>
-        )}
-
         <AnimatePresence mode="wait">
           {queuedItems.length === 0 ? (
             <motion.div
@@ -860,75 +836,29 @@ export const DragZone: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={shouldReduceMotion ? undefined : { opacity: 0, y: -6 }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.24, ease: [0.16, 1, 0.3, 1] }}
-              className="ingest-empty-copy"
+              className="flex w-full justify-center"
             >
-              <div className="ingest-bay">
-                <div className="ingest-bay__main">
-                  <h3 className="text-balance text-[1.65rem] font-semibold leading-snug tracking-tight text-[var(--v4-text)] md:text-[1.85rem]">
-                    {isDragging ? '松手，放上台面' : '把字幕拖进片门'}
-                  </h3>
-                  <p className="mt-2.5 max-w-md text-pretty text-[15px] leading-7 text-[var(--v4-text-muted)]">
-                    {isDragging
-                      ? '只加入清单，仍可增删，不会立刻开整。'
-                      : '单轨、压缩包或整夹都行。先取用，再决定命名、拆包或对齐。'}
-                  </p>
-
-                  <div
-                    className={`mt-7 flex flex-wrap items-center gap-x-5 gap-y-3 transition-opacity duration-[var(--v4-dur)] ${
-                      isDragging ? 'pointer-events-none opacity-35' : 'opacity-100'
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="v4-focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[var(--v4-accent)] px-5 text-sm font-semibold text-[var(--v4-accent-ink)] transition-colors duration-[var(--v4-dur-fast)] hover:bg-[var(--v4-accent-strong)]"
-                    >
-                      <FilePlus className="h-[18px] w-[18px] shrink-0 stroke-[2.25]" aria-hidden="true" />
-                      放入文件
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => folderInputRef.current?.click()}
-                      className="v4-focus-ring inline-flex h-10 items-center gap-1.5 text-sm font-medium text-[var(--v4-text-muted)] transition-colors duration-[var(--v4-dur-fast)] hover:text-[var(--v4-text)]"
-                    >
-                      <FolderPlus className="h-4 w-4 shrink-0 stroke-[2]" aria-hidden="true" />
-                      选择文件夹
-                    </button>
-                  </div>
-
-                  <p
-                    className={`mt-6 font-mono text-[11px] tracking-[0.12em] text-[var(--v4-text-faint)] transition-opacity duration-[var(--v4-dur)] ${
-                      isDragging ? 'opacity-0' : 'opacity-100'
-                    }`}
-                    aria-label="支持的格式"
-                  >
-                    {FORMAT_MARKS.join('  ·  ')}
-                  </p>
-                </div>
-
-                <aside
-                  className={`ingest-bay__meta transition-opacity duration-[var(--v4-dur)] ${
-                    isDragging ? 'opacity-0' : 'opacity-100'
+              <div className="ingest-start-card">
+                <h3 className="ingest-start-card__title">
+                  {isDragging ? '松开即可加入' : '让我们开始'}
+                </h3>
+                <div
+                  className={`ingest-start-card__cta transition-opacity duration-[var(--v4-dur)] ${
+                    isDragging ? 'pointer-events-none opacity-40' : 'opacity-100'
                   }`}
-                  aria-label="取用层能力"
                 >
-                  <p className="ingest-bay__layer">
-                    <strong>取用</strong>
-                    <span aria-hidden="true">/</span>
-                    <span>命名</span>
-                    <span aria-hidden="true">·</span>
-                    <span>拆包</span>
-                    <span aria-hidden="true">·</span>
-                    <span>元数据</span>
-                  </p>
-                  <p className="text-[13px] leading-6 text-[var(--v4-text-muted)]">
-                    表面处理先完成；匹配与样式在后续台面。
-                  </p>
-                  <p className="inline-flex items-center gap-2 text-[12px] text-[var(--v4-text-faint)]">
-                    <HardDrive className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden="true" />
-                    仅本机读取，不上传
-                  </p>
-                </aside>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="v4-focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[var(--v4-accent)] px-6 text-sm font-semibold text-[var(--v4-accent-ink)] transition-colors duration-[var(--v4-dur-fast)] hover:bg-[var(--v4-accent-strong)]"
+                  >
+                    <FilePlus className="h-[18px] w-[18px] shrink-0 stroke-[2.25]" aria-hidden="true" />
+                    选择字幕
+                  </button>
+                </div>
+                <p className="ingest-start-card__hint">
+                  支持 SRT / ASS，以及 ZIP、RAR、7Z。也可拖入文件或文件夹。
+                </p>
               </div>
             </motion.div>
           ) : (
@@ -942,7 +872,7 @@ export const DragZone: React.FC = () => {
             >
               {isDragging && (
                 <p className="mb-4 px-1 text-sm font-medium text-[var(--v4-accent-strong)]">
-                  松手继续加入 · 不会立刻整理
+                  松开以继续添加
                 </p>
               )}
               <header className="mb-5 flex flex-wrap items-end justify-between gap-3 px-1">
@@ -1093,21 +1023,10 @@ export const DragZone: React.FC = () => {
                     {queueIssue || `${rejectedItems.length} 项无法处理，可移除后继续。`}
                   </p>
                 )}
-                <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
-                  <span className="inline-flex items-center gap-2 text-xs text-[var(--v4-text-muted)]">
-                    <HardDrive className="h-3.5 w-3.5" aria-hidden="true" />
-                    仅在本机读取，不会上传
-                  </span>
-                  <button
-                    type="button"
-                    disabled={acceptedItems.length === 0 || Boolean(queueIssue)}
-                    onClick={() => handleFilesProcess(queuedItems.map(item => item.file))}
-                    className="v4-focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[var(--v4-accent)] px-5 text-sm font-semibold text-[var(--v4-accent-ink)] transition-colors hover:bg-[var(--v4-accent-strong)] disabled:cursor-not-allowed disabled:opacity-35"
-                  >
-                    开始整理
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </div>
+                <span className="inline-flex items-center gap-2 text-xs text-[var(--v4-text-muted)]">
+                  <HardDrive className="h-3.5 w-3.5" aria-hidden="true" />
+                  仅在本机读取，不会上传
+                </span>
               </footer>
             </motion.div>
           )}

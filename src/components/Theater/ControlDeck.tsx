@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
-import { Captions, ChevronLeft, ChevronRight, Film, Ratio } from 'lucide-react';
+import { Captions, ChevronLeft, ChevronRight, Image as ImageIcon, Ratio } from 'lucide-react';
 import type { StyleSettings } from '@/utils/subtitleCore';
 
 type Preset = {
@@ -120,7 +120,7 @@ export const ControlDeck: React.FC = () => {
         label="预览画面"
         value={tmdbBackdrop ? '影片剧照' : '默认背景'}
         description={tmdbBackdrop ? '已使用影片剧照' : '未匹配影片时的默认背景'}
-        icon={<Film className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />}
+        icon={<ImageIcon className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />}
         onPrevious={tmdbBackdropList.length > 1 ? shuffleBackdrop : undefined}
         onNext={tmdbBackdropList.length > 1 ? shuffleBackdrop : undefined}
         disabled={tmdbBackdropList.length <= 1}

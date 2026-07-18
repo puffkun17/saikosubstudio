@@ -2,11 +2,11 @@
 
 import React from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
-import { Film, Search, LoaderCircle, X, Star } from 'lucide-react';
+import { Image as ImageIcon, Search, LoaderCircle, X, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
- * Compact film identity bar — horizontal strip (not a tall left card).
+ * Compact media identity bar — horizontal strip (not a tall left card).
  * Poster + title/meta + CTA in one row; overview stays to one line.
  */
 export const SourceIdentityStrip: React.FC = () => {
@@ -74,7 +74,7 @@ export const SourceIdentityStrip: React.FC = () => {
                   {isSearchingTmdb ? (
                     <LoaderCircle className="h-4 w-4 animate-spin text-[var(--v4-accent-strong)]" aria-hidden="true" />
                   ) : (
-                    <Film className="h-5 w-5" aria-hidden="true" />
+                    <ImageIcon className="h-5 w-5" aria-hidden="true" />
                   )}
                 </motion.div>
               )}
