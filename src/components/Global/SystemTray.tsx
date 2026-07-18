@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -46,7 +46,12 @@ const getDefaultScale = () => {
   return 1.0;
 };
 
+const EMPTY_LOCAL_STAMP = { zoneShort: 'LOCAL', zoneCity: '' };
+
+let cachedLocalStamp: { zoneShort: string; zoneCity: string } | null = null;
+
 const readLocalStamp = () => {
+  if (cachedLocalStamp) return cachedLocalStamp;
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
     const city = tz.includes('/') ? tz.split('/').pop()?.replace(/_/g, ' ') : '';
@@ -54,19 +59,26 @@ const readLocalStamp = () => {
       .formatToParts(new Date())
       .find((part) => part.type === 'timeZoneName')
       ?.value;
-    return {
+    cachedLocalStamp = {
       zoneShort: short || 'LOCAL',
       zoneCity: city || '',
     };
   } catch {
-    return { zoneShort: 'LOCAL', zoneCity: '' };
+    cachedLocalStamp = EMPTY_LOCAL_STAMP;
   }
+  return cachedLocalStamp;
 };
+
+/** Client timezone differs from SSR; useSyncExternalStore avoids React #418 on conditional zoneCity. */
+const subscribeNoop = () => () => {};
 
 export const SystemTray = () => {
   const [time, setTime] = useState('');
-  // Defer locale stamp to client — SSR TZ often differs and `{zoneCity ? <span/> : null}` causes React #418.
-  const [{ zoneShort, zoneCity }, setLocalStamp] = useState({ zoneShort: 'LOCAL', zoneCity: '' });
+  const { zoneShort, zoneCity } = useSyncExternalStore(
+    subscribeNoop,
+    readLocalStamp,
+    () => EMPTY_LOCAL_STAMP,
+  );
   const [scale, setScale] = useState(getDefaultScale);
   const [pendingReset, setPendingReset] = useState(false);
   const pathname = usePathname();
@@ -140,7 +152,6 @@ export const SystemTray = () => {
   };
 
   useEffect(() => {
-    setLocalStamp(readLocalStamp());
     const tick = () => {
       const now = new Date();
       const hh = String(now.getHours()).padStart(2, '0');
