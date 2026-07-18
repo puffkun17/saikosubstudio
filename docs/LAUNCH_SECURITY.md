@@ -6,6 +6,7 @@
 - `/api/tmdb/*` 仅允许应用实际使用的检索、详情和图片端点；路径与参数均经过校验。
 - 代理在单个运行实例内限制突发请求，并为可缓存的 TMDB 数据返回缓存策略。
 - 静态资源通过 `public/_headers` 增加防嗅探、防嵌入、引用来源和浏览器权限限制。
+- CSP 允许 `script-src 'wasm-unsafe-eval'` 与 `worker-src 'self' blob:`，供本机 RAR/7z（libarchive WASM worker）读取；缺少该项时压缩包预览会永久卡住。
 - 导入仅在浏览器本地进行；单文件、批次、ZIP 条目和解压总量均有限制，避免异常文件耗尽浏览器内存。
 
 ## Cloudflare Pages 上线前手动配置

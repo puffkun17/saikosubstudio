@@ -259,25 +259,26 @@ export const DragZone: React.FC = () => {
 
   const peekArchiveContents = async (item: PreflightItem) => {
     const key = getQueueKey(item.file);
-    const markPeekError = (message: string) => {
+    /** Keep the file accepted so「开始整理」仍可走解压路径；预览失败不等于不可导入。 */
+    const markPeekDeferred = (message: string, soft = false) => {
       setQueuedItems(current => current.map(row => {
         if (getQueueKey(row.file) !== key) return row;
         if (row.archivePeekStatus !== 'loading') return row;
         return {
           ...row,
-          accepted: row.kind === 'zip' || row.kind === 'archive' ? false : row.accepted,
-          archivePeekStatus: 'error',
+          accepted: true,
+          archivePeekStatus: soft ? 'ready' : 'error',
           archiveEntries: [],
-          archivePeekError: message,
-          note: message,
+          archivePeekError: soft ? undefined : message,
+          note: soft ? '包内字幕将在开始整理时读取' : message,
         };
       }));
     };
 
-    // UI watchdog: never leave "正在读取包内字幕…" forever if a worker stalls.
-    const watchdog = window.setTimeout(() => {
-      markPeekError('读取超时，请重试或先在本地解压后导入');
-    }, 28_000);
+    // Soft defer quickly so the queue never looks permanently stuck.
+    const softWatchdog = window.setTimeout(() => {
+      markPeekDeferred('包内字幕将在开始整理时读取', true);
+    }, 8_000);
 
     try {
       let names: string[] = [];
@@ -303,7 +304,7 @@ export const DragZone: React.FC = () => {
 
       setQueuedItems(current => current.map(row => {
         if (getQueueKey(row.file) !== key) return row;
-        if (row.archivePeekStatus !== 'loading') return row;
+        // Soft watchdog may have already deferred; still upgrade if we got a real listing.
         if (archiveEntries.length === 0) {
           return {
             ...row,
@@ -316,6 +317,7 @@ export const DragZone: React.FC = () => {
         }
         return {
           ...row,
+          accepted: true,
           archivePeekStatus: 'ready',
           archiveEntries,
           archivePeekError: undefined,
@@ -323,14 +325,37 @@ export const DragZone: React.FC = () => {
         };
       }));
     } catch (error: unknown) {
-      const message = error instanceof LocalArchiveError
-        ? error.code === 'encrypted'
-          ? '压缩包已加密，请先在本地解压'
-          : error.message
-        : '无法预览压缩包内容';
-      markPeekError(message);
+      const encrypted = error instanceof LocalArchiveError && error.code === 'encrypted';
+      const message = encrypted
+        ? '压缩包已加密，请先在本地解压'
+        : error instanceof LocalArchiveError
+          ? error.message
+          : '预览失败；包内字幕将在开始整理时读取';
+      addLog(`${item.name}: ${message}`, encrypted ? 'error' : 'info');
+      setQueuedItems(current => current.map(row => {
+        if (getQueueKey(row.file) !== key) return row;
+        if (encrypted) {
+          return {
+            ...row,
+            accepted: false,
+            archivePeekStatus: 'error',
+            archiveEntries: [],
+            archivePeekError: message,
+            note: message,
+          };
+        }
+        // Soft failure / timeout: stay importable; extract happens on「开始整理」.
+        return {
+          ...row,
+          accepted: true,
+          archivePeekStatus: 'ready',
+          archiveEntries: row.archiveEntries?.length ? row.archiveEntries : [],
+          archivePeekError: undefined,
+          note: row.archiveEntries?.length ? row.note : '包内字幕将在开始整理时读取',
+        };
+      }));
     } finally {
-      window.clearTimeout(watchdog);
+      window.clearTimeout(softWatchdog);
     }
   };
 

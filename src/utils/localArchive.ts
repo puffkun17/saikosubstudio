@@ -1,12 +1,8 @@
 /**
  * Browser-local RAR/7z reading via libarchive.js (WASM worker).
  *
- * Common hang causes we guard against:
- * - Cold-start: first worker + WASM compile can exceed short deadlines
- * - hasEncryptedData() often returns `null` for 7z; probing can also stall the
- *   single worker — never probe before listing, and never leave a timed-out
- *   call on a still-busy worker (close/terminate and reopen instead)
- * - Listing uses getFilesArray (header-only via listFiles); extract only as needed
+ * Production note: CF Pages CSP must allow `script-src 'wasm-unsafe-eval'`
+ * and `worker-src 'self'`, or the worker never becomes ready and open() hangs.
  */
 
 export interface LocalArchiveLimits {
@@ -33,10 +29,10 @@ const subtitleExtension = (name: string) => {
 
 const basenameFromArchivePath = (name: string) => name.split('/').pop() || name;
 
-/** Cold WASM + first 7z open often needs more than a few seconds on slower devices. */
-const OPEN_TIMEOUT_MS = 25_000;
-const LIST_TIMEOUT_MS = 20_000;
+const OPEN_TIMEOUT_MS = 20_000;
+const LIST_TIMEOUT_MS = 15_000;
 const EXTRACT_TIMEOUT_MS = 30_000;
+const INIT_TIMEOUT_MS = 15_000;
 
 type ArchiveListEntry = {
   file?: { name: string; size: number; extract: () => Promise<File> } | string;
@@ -46,25 +42,12 @@ type ArchiveListEntry = {
 
 type ArchiveReader = {
   getFilesArray: () => Promise<ArchiveListEntry[]>;
-  extractSingleFile?: (path: string) => Promise<File>;
   hasEncryptedData: () => Promise<boolean | null>;
   close: () => Promise<void>;
 };
 
 let archiveReady: Promise<typeof import('libarchive.js')> | null = null;
-/** Serialize all archive ops — one WASM worker call at a time. */
 let archiveQueue: Promise<unknown> = Promise.resolve();
-
-const getArchiveApi = async () => {
-  if (!archiveReady) {
-    archiveReady = (async () => {
-      const mod = await import('libarchive.js');
-      mod.Archive.init({ workerUrl: '/libarchive/worker-bundle.js' });
-      return mod;
-    })();
-  }
-  return archiveReady;
-};
 
 const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> => {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -81,6 +64,34 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, label: str
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
   }
+};
+
+const resetArchiveApi = () => {
+  archiveReady = null;
+};
+
+const resolveWorkerUrl = (): URL => {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return new URL('/libarchive/worker-bundle.js', window.location.origin);
+  }
+  return new URL('/libarchive/worker-bundle.js', 'http://127.0.0.1');
+};
+
+const getArchiveApi = async () => {
+  if (!archiveReady) {
+    archiveReady = (async () => {
+      const mod = await import('libarchive.js');
+      mod.Archive.init({
+        workerUrl: resolveWorkerUrl(),
+        getWorker: () => new Worker(resolveWorkerUrl(), { type: 'module' }),
+      });
+      return mod;
+    })().catch((error) => {
+      resetArchiveApi();
+      throw error;
+    });
+  }
+  return withTimeout(archiveReady, INIT_TIMEOUT_MS, '初始化压缩包引擎');
 };
 
 const runExclusive = async <T>(task: () => Promise<T>): Promise<T> => {
@@ -102,7 +113,7 @@ const safeClose = async (reader: ArchiveReader | null) => {
   try {
     await reader.close();
   } catch {
-    // Worker may already be terminated after a timed-out call.
+    // ignore
   }
 };
 
@@ -119,12 +130,17 @@ const entrySize = (entry: ArchiveListEntry): number => {
 
 const openArchive = async (archiveFile: File): Promise<ArchiveReader> => {
   const { Archive } = await getArchiveApi();
-  return withTimeout(Archive.open(archiveFile) as Promise<ArchiveReader>, OPEN_TIMEOUT_MS, '打开压缩包');
+  try {
+    return await withTimeout(Archive.open(archiveFile) as Promise<ArchiveReader>, OPEN_TIMEOUT_MS, '打开压缩包');
+  } catch (error) {
+    // A stalled worker leaves the singleton unusable — force a fresh init next time.
+    resetArchiveApi();
+    throw error;
+  }
 };
 
 /**
  * Lists subtitle entry names inside a local RAR/7z without extracting payloads.
- * Skips encryption probe — that call can stall the worker and block listing.
  */
 export const listLocalArchiveSubtitles = async (
   archiveFile: File,
@@ -170,19 +186,8 @@ export const extractLocalArchiveSubtitles = async (
   try {
     reader = await openArchive(archiveFile);
 
-    // Encryption probe only at extract time, with a hard close+reopen if it stalls.
-    let encrypted: boolean | null = null;
-    try {
-      encrypted = await withTimeout(reader.hasEncryptedData(), 5_000, '检查压缩包加密状态');
-    } catch {
-      await safeClose(reader);
-      reader = await openArchive(archiveFile);
-      encrypted = null;
-    }
-    if (encrypted === true) {
-      throw new LocalArchiveError('encrypted', '压缩包已加密，请先在本地解压');
-    }
-
+    // Skip encryption probe by default — it can stall the worker on some 7z files.
+    // Encrypted archives typically fail at extract() with a clearer error path.
     const entries = await withTimeout(reader.getFilesArray(), LIST_TIMEOUT_MS, '读取压缩包目录');
     if (entries.length > limits.maxEntries) {
       throw new LocalArchiveError('limits', `压缩包条目超过 ${limits.maxEntries} 项`);
@@ -212,12 +217,20 @@ export const extractLocalArchiveSubtitles = async (
     for (const entry of subtitleEntries) {
       const compressedFile = entry.file;
       if (!compressedFile || typeof compressedFile === 'string') continue;
-      const extracted = await withTimeout(compressedFile.extract(), EXTRACT_TIMEOUT_MS, `解压 ${compressedFile.name}`);
-      extractedBytes += extracted.size;
-      if (extracted.size > limits.maxSubtitleBytes || extractedBytes > limits.maxUncompressedBytes) {
-        throw new LocalArchiveError('limits', '压缩包解压后体积超出安全限制');
+      try {
+        const extracted = await withTimeout(compressedFile.extract(), EXTRACT_TIMEOUT_MS, `解压 ${compressedFile.name}`);
+        extractedBytes += extracted.size;
+        if (extracted.size > limits.maxSubtitleBytes || extractedBytes > limits.maxUncompressedBytes) {
+          throw new LocalArchiveError('limits', '压缩包解压后体积超出安全限制');
+        }
+        files.push(extracted);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '';
+        if (/password|encrypt|passphrase/i.test(message)) {
+          throw new LocalArchiveError('encrypted', '压缩包已加密，请先在本地解压');
+        }
+        throw error;
       }
-      files.push(extracted);
     }
 
     return { files, ignoredEntries: entries.length - subtitleEntries.length };
