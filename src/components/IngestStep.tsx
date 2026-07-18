@@ -57,16 +57,18 @@ export const IngestStep: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="ingest-heading z-20 mb-6 flex flex-shrink-0 items-end justify-between gap-5 md:mb-8">
+        <div className="ingest-heading z-20 mb-5 flex flex-shrink-0 items-end justify-between gap-5 md:mb-7">
           <div className="min-w-0 text-left">
-            <h1 className="flex max-w-full flex-wrap items-baseline gap-3 text-3xl font-semibold leading-tight tracking-tight text-[var(--v4-text)] md:text-[2.5rem]">
-              导入字幕
-              <span className="rounded border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-2 py-0.5 font-mono text-xs font-semibold text-[var(--v4-accent-strong)]">
-                v4.0 Beta
-              </span>
+            <p
+              className="mb-2 font-mono text-[11px] font-medium tracking-[0.14em] text-[var(--v4-accent-strong)] uppercase"
+            >
+              Bay 01 · 取用
+            </p>
+            <h1 className="text-balance text-3xl font-semibold leading-tight tracking-tight text-[var(--v4-text)] md:text-[2.35rem]">
+              片源文件先进台面
             </h1>
-            <p className="mt-2 max-w-xl text-base leading-7 text-[var(--v4-text-muted)]">
-              先加入清单并确认内容，再开始整理。松手不会立即处理。
+            <p className="mt-2 max-w-lg text-pretty text-[15px] leading-7 text-[var(--v4-text-muted)]">
+              命名、压缩包、文件夹都从这里开始。松手只入清单，不会立刻处理。
             </p>
           </div>
         </div>
@@ -95,7 +97,7 @@ export const IngestStep: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="ingest-empty mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-start gap-6 py-2 md:py-4"
+            className="ingest-empty mx-auto flex w-full max-w-6xl flex-1 flex-col items-stretch justify-start gap-5 py-1 md:py-2"
           >
             <DragZone />
           </motion.div>

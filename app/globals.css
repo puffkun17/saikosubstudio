@@ -69,6 +69,12 @@
   --v4-desk-glow: rgba(208, 164, 111, 0.08);
   --v4-desk-veil: linear-gradient(165deg, rgba(28, 24, 20, 0.92) 0%, rgba(12, 11, 10, 0.98) 48%, #0c0b0a 100%);
 
+  /* Shared motion — trays, ingest bay, overlays use the same curve family. */
+  --v4-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --v4-dur-fast: 160ms;
+  --v4-dur: 240ms;
+  --v4-dur-slow: 420ms;
+
   /* Twin trays: top nav + bottom ops deck. */
   --tray-h: 72px;
 
@@ -145,21 +151,24 @@ body {
   max-width: 36rem;
   margin-inline: auto;
   transition:
-    max-width 0.42s cubic-bezier(0.16, 1, 0.3, 1),
-    padding 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width var(--v4-dur-slow) var(--v4-ease),
+    padding var(--v4-dur) var(--v4-ease);
 }
 
 .ingest-stage.has-queue {
   max-width: 44rem;
 }
 
+/* 取用 bay: wide work surface, not a centered SaaS upload card. */
 .ingest-stage.is-empty {
-  max-width: min(40rem, 100%);
-  min-height: min(22rem, 58vh);
+  max-width: min(52rem, 100%);
+  min-height: min(26rem, 62vh);
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
+  padding-inline: clamp(1rem, 3vw, 2rem);
+  padding-block: clamp(1.5rem, 4vh, 2.75rem);
 }
 
 /*
@@ -168,17 +177,28 @@ body {
  */
 .ingest-focus {
   position: absolute;
-  inset: 6% 0 8%;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  border-radius: 0.75rem;
-  background: radial-gradient(
-    ellipse 68% 56% at 50% 42%,
-    var(--v4-desk-glow),
-    transparent 74%
-  );
-  transition: background 0.22s ease, opacity 0.22s ease;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--v4-line-strong) 55%, transparent);
+  background:
+    linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--v4-panel) 88%, transparent) 0%,
+      color-mix(in srgb, var(--v4-canvas) 40%, transparent) 42%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 70% 80% at 18% 50%,
+      var(--v4-desk-glow),
+      transparent 68%
+    );
+  transition:
+    background var(--v4-dur) var(--v4-ease),
+    border-color var(--v4-dur) var(--v4-ease),
+    opacity var(--v4-dur) var(--v4-ease);
 }
 
 .ingest-film {
@@ -207,79 +227,80 @@ body {
 }
 
 .ingest-film__rail--left {
-  left: 0.35rem;
+  left: 0;
+  border-radius: 0.5rem 0 0 0.5rem;
 }
 
 .ingest-film__rail--right {
-  right: 0.35rem;
+  right: 0;
+  border-radius: 0 0.5rem 0.5rem 0;
   animation-direction: reverse;
 }
 
 .ingest-film__frame {
   position: absolute;
-  inset: 0.65rem 2.1rem;
-  border: 1px solid color-mix(in srgb, var(--v4-line-strong) 70%, transparent);
+  inset: 0.85rem 1.85rem;
+  border: 1px solid color-mix(in srgb, var(--v4-line) 90%, transparent);
   border-radius: 2px;
   background:
     linear-gradient(
-      180deg,
-      transparent 0,
-      transparent calc(100% - 1px),
-      color-mix(in srgb, var(--v4-line) 80%, transparent) 100%
+      90deg,
+      color-mix(in srgb, var(--v4-accent) 6%, transparent),
+      transparent 28%
     ),
     repeating-linear-gradient(
       to bottom,
       transparent 0,
       transparent 4.5rem,
-      color-mix(in srgb, var(--v4-line) 55%, transparent) 4.5rem,
-      color-mix(in srgb, var(--v4-line) 55%, transparent) calc(4.5rem + 1px)
+      color-mix(in srgb, var(--v4-line) 45%, transparent) 4.5rem,
+      color-mix(in srgb, var(--v4-line) 45%, transparent) calc(4.5rem + 1px)
     );
   background-size: 100% 100%, 100% 4.55rem;
   animation: ingest-film-frames 2.8s linear infinite;
-  opacity: 0.35;
+  opacity: 0.4;
   will-change: background-position;
 }
 
 .ingest-focus__mark {
   position: absolute;
   z-index: 1;
-  width: 1.1rem;
-  height: 1.1rem;
-  border-color: color-mix(in srgb, var(--v4-accent) 48%, transparent);
+  width: 0.95rem;
+  height: 0.95rem;
+  border-color: color-mix(in srgb, var(--v4-accent) 42%, transparent);
   border-style: solid;
   border-width: 0;
-  opacity: 0.75;
+  opacity: 0.7;
   transition:
-    border-color 0.22s ease,
-    opacity 0.22s ease,
-    width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    height 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    border-color var(--v4-dur) var(--v4-ease),
+    opacity var(--v4-dur) var(--v4-ease),
+    width var(--v4-dur) var(--v4-ease),
+    height var(--v4-dur) var(--v4-ease);
 }
 
 .ingest-focus__mark--tl {
-  top: 0.55rem;
-  left: 2rem;
+  top: 0.7rem;
+  left: 1.75rem;
   border-top-width: 1.5px;
   border-left-width: 1.5px;
 }
 
 .ingest-focus__mark--tr {
-  top: 0.55rem;
-  right: 2rem;
+  top: 0.7rem;
+  right: 1.75rem;
   border-top-width: 1.5px;
   border-right-width: 1.5px;
 }
 
 .ingest-focus__mark--bl {
-  bottom: 0.55rem;
-  left: 2rem;
+  bottom: 0.7rem;
+  left: 1.75rem;
   border-bottom-width: 1.5px;
   border-left-width: 1.5px;
 }
 
 .ingest-focus__mark--br {
-  bottom: 0.55rem;
-  right: 2rem;
+  bottom: 0.7rem;
+  right: 1.75rem;
   border-bottom-width: 1.5px;
   border-right-width: 1.5px;
 }
@@ -293,11 +314,19 @@ body {
 }
 
 .ingest-stage.is-dragging .ingest-focus {
-  background: radial-gradient(
-    ellipse 78% 64% at 50% 44%,
-    color-mix(in srgb, var(--v4-accent) 18%, transparent),
-    transparent 74%
-  );
+  border-color: color-mix(in srgb, var(--v4-accent) 42%, transparent);
+  background:
+    linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--v4-panel-raised) 90%, transparent) 0%,
+      color-mix(in srgb, var(--v4-canvas) 30%, transparent) 48%,
+      transparent 78%
+    ),
+    radial-gradient(
+      ellipse 72% 90% at 22% 50%,
+      color-mix(in srgb, var(--v4-accent) 20%, transparent),
+      transparent 70%
+    );
 }
 
 .ingest-stage.is-dragging .ingest-film__rail {
@@ -335,18 +364,79 @@ body {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 34rem;
-  padding: 1.75rem 1.25rem;
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  max-width: none;
+  padding: clamp(1.25rem, 3vw, 2.25rem) clamp(1.5rem, 4vw, 3rem);
+  transition:
+    transform var(--v4-dur) var(--v4-ease),
+    opacity var(--v4-dur-fast) ease;
+}
+
+.ingest-bay {
+  display: grid;
+  gap: 1.75rem;
+  width: 100%;
+  text-align: left;
+}
+
+@media (min-width: 840px) {
+  .ingest-bay {
+    grid-template-columns: minmax(0, 1fr) minmax(11rem, 14rem);
+    gap: 2.5rem;
+    align-items: end;
+  }
+}
+
+.ingest-bay__main {
+  min-width: 0;
+}
+
+.ingest-bay__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-top: 0.15rem;
+  border-top: 1px solid var(--v4-line);
+}
+
+@media (min-width: 840px) {
+  .ingest-bay__meta {
+    border-top: 0;
+    border-left: 1px solid var(--v4-line);
+    padding-top: 0;
+    padding-left: 1.5rem;
+    min-height: 9.5rem;
+    justify-content: flex-end;
+  }
+}
+
+.ingest-bay__layer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--v4-text-faint);
+}
+
+.ingest-bay__layer strong {
+  color: var(--v4-accent-strong);
+  font-weight: 600;
+}
+
+.ingest-bay__layer span[aria-hidden='true'] {
+  color: var(--v4-line-strong);
 }
 
 .ingest-stage.is-dragging .ingest-empty-copy {
-  transform: scale(0.985);
+  transform: translateY(2px);
 }
 
 .ingest-stage.is-accepting .ingest-empty-copy {
   opacity: 0;
-  transform: scale(0.96);
+  transform: translateY(-6px);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -368,6 +458,11 @@ body {
 
   .ingest-stage.is-accepting .ingest-empty-copy {
     opacity: 0.45;
+  }
+
+  .ingest-film__rail,
+  .ingest-film__frame {
+    opacity: 0.35;
   }
 }
 

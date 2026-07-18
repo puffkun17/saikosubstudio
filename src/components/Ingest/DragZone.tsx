@@ -856,61 +856,80 @@ export const DragZone: React.FC = () => {
           {queuedItems.length === 0 ? (
             <motion.div
               key="empty"
-              initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={shouldReduceMotion ? undefined : { opacity: 0, y: -4 }}
-              transition={{ duration: shouldReduceMotion ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="ingest-empty-copy mx-auto text-center"
+              exit={shouldReduceMotion ? undefined : { opacity: 0, y: -6 }}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.24, ease: [0.16, 1, 0.3, 1] }}
+              className="ingest-empty-copy"
             >
-              <h3 className="text-balance text-[1.75rem] font-semibold leading-snug tracking-tight text-[var(--v4-text)] md:text-[2rem]">
-                {isDragging ? '松手加入清单' : '把字幕拖到这里'}
-              </h3>
-              <p className="mx-auto mt-3 max-w-md text-pretty text-base leading-7 text-[var(--v4-text-muted)]">
-                {isDragging
-                  ? '不会立刻整理，之后仍可增删。'
-                  : '单轨、压缩包或整夹都行。先入清单，确认后再整理。'}
-              </p>
-              <p
-                className={`mt-5 text-[12px] tracking-[0.16em] text-[var(--v4-text-muted)] transition-opacity duration-200 ${
-                  isDragging ? 'opacity-0' : 'opacity-100'
-                }`}
-                style={{ fontFamily: 'var(--font-geist-mono), ui-monospace, monospace' }}
-                aria-label="支持的格式"
-              >
-                {FORMAT_MARKS.join(' · ')}
-              </p>
+              <div className="ingest-bay">
+                <div className="ingest-bay__main">
+                  <h3 className="text-balance text-[1.65rem] font-semibold leading-snug tracking-tight text-[var(--v4-text)] md:text-[1.85rem]">
+                    {isDragging ? '松手，放上台面' : '把字幕拖进片门'}
+                  </h3>
+                  <p className="mt-2.5 max-w-md text-pretty text-[15px] leading-7 text-[var(--v4-text-muted)]">
+                    {isDragging
+                      ? '只加入清单，仍可增删，不会立刻开整。'
+                      : '单轨、压缩包或整夹都行。先取用，再决定命名、拆包或对齐。'}
+                  </p>
 
-              <div
-                className={`mx-auto mt-8 inline-flex max-w-full overflow-hidden rounded-md border border-[var(--v4-line-strong)] shadow-[0_1px_0_rgba(255,244,226,0.04)] transition-opacity duration-200 ${
-                  isDragging ? 'pointer-events-none opacity-30' : 'opacity-100'
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="v4-focus-ring inline-flex h-11 items-center justify-center gap-2 bg-[var(--v4-accent)] px-5 text-sm font-semibold text-[var(--v4-accent-ink)] transition-colors hover:bg-[var(--v4-accent-strong)] sm:px-6"
+                  <div
+                    className={`mt-7 flex flex-wrap items-center gap-x-5 gap-y-3 transition-opacity duration-[var(--v4-dur)] ${
+                      isDragging ? 'pointer-events-none opacity-35' : 'opacity-100'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="v4-focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[var(--v4-accent)] px-5 text-sm font-semibold text-[var(--v4-accent-ink)] transition-colors duration-[var(--v4-dur-fast)] hover:bg-[var(--v4-accent-strong)]"
+                    >
+                      <FilePlus className="h-[18px] w-[18px] shrink-0 stroke-[2.25]" aria-hidden="true" />
+                      放入文件
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => folderInputRef.current?.click()}
+                      className="v4-focus-ring inline-flex h-10 items-center gap-1.5 text-sm font-medium text-[var(--v4-text-muted)] transition-colors duration-[var(--v4-dur-fast)] hover:text-[var(--v4-text)]"
+                    >
+                      <FolderPlus className="h-4 w-4 shrink-0 stroke-[2]" aria-hidden="true" />
+                      选择文件夹
+                    </button>
+                  </div>
+
+                  <p
+                    className={`mt-6 font-mono text-[11px] tracking-[0.12em] text-[var(--v4-text-faint)] transition-opacity duration-[var(--v4-dur)] ${
+                      isDragging ? 'opacity-0' : 'opacity-100'
+                    }`}
+                    aria-label="支持的格式"
+                  >
+                    {FORMAT_MARKS.join('  ·  ')}
+                  </p>
+                </div>
+
+                <aside
+                  className={`ingest-bay__meta transition-opacity duration-[var(--v4-dur)] ${
+                    isDragging ? 'opacity-0' : 'opacity-100'
+                  }`}
+                  aria-label="取用层能力"
                 >
-                  <FilePlus className="h-[18px] w-[18px] shrink-0 stroke-[2.25]" aria-hidden="true" />
-                  选择文件
-                </button>
-                <button
-                  type="button"
-                  onClick={() => folderInputRef.current?.click()}
-                  className="v4-focus-ring inline-flex h-11 items-center justify-center gap-2 border-l border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] px-5 text-sm font-semibold text-[var(--v4-text)] transition-colors hover:bg-[var(--v4-accent-soft)] sm:px-6"
-                >
-                  <FolderPlus className="h-[18px] w-[18px] shrink-0 stroke-[2.25]" aria-hidden="true" />
-                  选择文件夹
-                </button>
+                  <p className="ingest-bay__layer">
+                    <strong>取用</strong>
+                    <span aria-hidden="true">/</span>
+                    <span>命名</span>
+                    <span aria-hidden="true">·</span>
+                    <span>拆包</span>
+                    <span aria-hidden="true">·</span>
+                    <span>元数据</span>
+                  </p>
+                  <p className="text-[13px] leading-6 text-[var(--v4-text-muted)]">
+                    表面处理先完成；匹配与样式在后续台面。
+                  </p>
+                  <p className="inline-flex items-center gap-2 text-[12px] text-[var(--v4-text-faint)]">
+                    <HardDrive className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden="true" />
+                    仅本机读取，不上传
+                  </p>
+                </aside>
               </div>
-
-              <p
-                className={`mt-7 inline-flex items-center justify-center gap-2 text-sm text-[var(--v4-text-muted)] transition-opacity duration-200 ${
-                  isDragging ? 'opacity-0' : 'opacity-100'
-                }`}
-              >
-                <HardDrive className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden="true" />
-                仅在当前设备读取，不上传
-              </p>
             </motion.div>
           ) : (
             <motion.div
