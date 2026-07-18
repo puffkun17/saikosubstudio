@@ -65,7 +65,8 @@ const readLocalStamp = () => {
 
 export const SystemTray = () => {
   const [time, setTime] = useState('');
-  const [{ zoneShort, zoneCity }] = useState(readLocalStamp);
+  // Defer locale stamp to client — SSR TZ often differs and `{zoneCity ? <span/> : null}` causes React #418.
+  const [{ zoneShort, zoneCity }, setLocalStamp] = useState({ zoneShort: 'LOCAL', zoneCity: '' });
   const [scale, setScale] = useState(getDefaultScale);
   const [pendingReset, setPendingReset] = useState(false);
   const pathname = usePathname();
@@ -139,6 +140,7 @@ export const SystemTray = () => {
   };
 
   useEffect(() => {
+    setLocalStamp(readLocalStamp());
     const tick = () => {
       const now = new Date();
       const hh = String(now.getHours()).padStart(2, '0');
