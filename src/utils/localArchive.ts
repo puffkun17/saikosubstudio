@@ -94,6 +94,14 @@ const getArchiveApi = async () => {
   return withTimeout(archiveReady, INIT_TIMEOUT_MS, '初始化压缩包引擎');
 };
 
+/** Prefetch the WASM worker so the first 7z/RAR peek does not hit soft-defer. */
+export const warmLocalArchiveEngine = (): void => {
+  if (typeof window === 'undefined') return;
+  void getArchiveApi().catch(() => {
+    // Warm is best-effort; real open() will surface errors.
+  });
+};
+
 const runExclusive = async <T>(task: () => Promise<T>): Promise<T> => {
   const previous = archiveQueue;
   let release!: () => void;

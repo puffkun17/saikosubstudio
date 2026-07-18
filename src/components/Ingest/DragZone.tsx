@@ -7,7 +7,12 @@ import JSZip from 'jszip';
 import { ArrowRight, ChevronDown, FilePlus, FolderPlus, HardDrive, Plus, Trash2, X } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { CLIENT_IMPORT_LIMITS, getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
-import { extractLocalArchiveSubtitles, listLocalArchiveSubtitles, LocalArchiveError } from '@/utils/localArchive';
+import {
+  extractLocalArchiveSubtitles,
+  listLocalArchiveSubtitles,
+  LocalArchiveError,
+  warmLocalArchiveEngine,
+} from '@/utils/localArchive';
 import { FileFormatIcon, LanguageMark, resolveFileFormat } from '@/components/ui/FileFormatIcon';
 
 type ParseStatus = 'reading' | 'analyzing' | 'success' | 'warning' | 'skipped';
@@ -218,6 +223,10 @@ export const DragZone: React.FC = () => {
   };
 
   useEffect(() => {
+    warmLocalArchiveEngine();
+  }, []);
+
+  useEffect(() => {
     if (!addMenuOpen) return;
     const onPointerDown = (event: MouseEvent) => {
       if (addMenuRef.current && !addMenuRef.current.contains(event.target as Node)) {
@@ -259,25 +268,17 @@ export const DragZone: React.FC = () => {
 
   const peekArchiveContents = async (item: PreflightItem) => {
     const key = getQueueKey(item.file);
-    /** Keep the file accepted so「开始整理」仍可走解压路径；预览失败不等于不可导入。 */
-    const markPeekDeferred = (message: string, soft = false) => {
-      setQueuedItems(current => current.map(row => {
+
+    // Hint only — never flip to ready/empty (that used to show「0 条字幕」as a fake success).
+    const softWatchdog = window.setTimeout(() => {
+      setQueuedItems((current) => current.map((row) => {
         if (getQueueKey(row.file) !== key) return row;
         if (row.archivePeekStatus !== 'loading') return row;
         return {
           ...row,
-          accepted: true,
-          archivePeekStatus: soft ? 'ready' : 'error',
-          archiveEntries: [],
-          archivePeekError: soft ? undefined : message,
-          note: soft ? '包内字幕将在开始整理时读取' : message,
+          note: '读取较慢，可直接点开始整理',
         };
       }));
-    };
-
-    // Soft defer quickly so the queue never looks permanently stuck.
-    const softWatchdog = window.setTimeout(() => {
-      markPeekDeferred('包内字幕将在开始整理时读取', true);
     }, 8_000);
 
     try {
@@ -304,7 +305,6 @@ export const DragZone: React.FC = () => {
 
       setQueuedItems(current => current.map(row => {
         if (getQueueKey(row.file) !== key) return row;
-        // Soft watchdog may have already deferred; still upgrade if we got a real listing.
         if (archiveEntries.length === 0) {
           return {
             ...row,
@@ -344,14 +344,14 @@ export const DragZone: React.FC = () => {
             note: message,
           };
         }
-        // Soft failure / timeout: stay importable; extract happens on「开始整理」.
+        // Stay importable, but surface the real peek error (no silent「0 条字幕」).
         return {
           ...row,
           accepted: true,
-          archivePeekStatus: 'ready',
+          archivePeekStatus: 'error',
           archiveEntries: row.archiveEntries?.length ? row.archiveEntries : [],
-          archivePeekError: undefined,
-          note: row.archiveEntries?.length ? row.note : '包内字幕将在开始整理时读取',
+          archivePeekError: `${message}（仍可开始整理）`,
+          note: message,
         };
       }));
     } finally {
@@ -522,8 +522,10 @@ export const DragZone: React.FC = () => {
           ? '压缩包已加密，请先在本地解压后导入'
           : error.code === 'limits'
             ? `压缩包超出本地导入安全限制：${error.message}`
-            : '压缩包无法读取，请先在本地解压后导入'
-        : '压缩包无法读取，请先在本地解压后导入';
+            : `压缩包无法读取：${error.message}`
+        : error instanceof Error
+          ? `压缩包无法读取：${error.message}`
+          : '压缩包无法读取，请先在本地解压后导入';
       addLog(`${message}：${archiveFile.name}`, 'error');
       return 0;
     }
@@ -1018,7 +1020,11 @@ export const DragZone: React.FC = () => {
                             </div>
                           )}
                           {isArchive && item.archivePeekStatus === 'loading' && (
-                            <p className="mt-1 text-xs font-normal text-[var(--v4-text-muted)]">正在读取包内字幕…</p>
+                            <p className="mt-1 text-xs font-normal text-[var(--v4-text-muted)]">
+                              {item.note && item.note !== '正在查看包内字幕…'
+                                ? item.note
+                                : '正在读取包内字幕…'}
+                            </p>
                           )}
                         </div>
                         <button
