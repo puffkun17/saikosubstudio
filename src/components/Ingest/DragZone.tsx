@@ -259,6 +259,26 @@ export const DragZone: React.FC = () => {
 
   const peekArchiveContents = async (item: PreflightItem) => {
     const key = getQueueKey(item.file);
+    const markPeekError = (message: string) => {
+      setQueuedItems(current => current.map(row => {
+        if (getQueueKey(row.file) !== key) return row;
+        if (row.archivePeekStatus !== 'loading') return row;
+        return {
+          ...row,
+          accepted: row.kind === 'zip' || row.kind === 'archive' ? false : row.accepted,
+          archivePeekStatus: 'error',
+          archiveEntries: [],
+          archivePeekError: message,
+          note: message,
+        };
+      }));
+    };
+
+    // UI watchdog: never leave "正在读取包内字幕…" forever if a worker stalls.
+    const watchdog = window.setTimeout(() => {
+      markPeekError('读取超时，请重试或先在本地解压后导入');
+    }, 28_000);
+
     try {
       let names: string[] = [];
       if (item.kind === 'zip') {
@@ -283,6 +303,7 @@ export const DragZone: React.FC = () => {
 
       setQueuedItems(current => current.map(row => {
         if (getQueueKey(row.file) !== key) return row;
+        if (row.archivePeekStatus !== 'loading') return row;
         if (archiveEntries.length === 0) {
           return {
             ...row,
@@ -307,16 +328,9 @@ export const DragZone: React.FC = () => {
           ? '压缩包已加密，请先在本地解压'
           : error.message
         : '无法预览压缩包内容';
-      setQueuedItems(current => current.map(row => {
-        if (getQueueKey(row.file) !== key) return row;
-        return {
-          ...row,
-          archivePeekStatus: 'error',
-          archiveEntries: [],
-          archivePeekError: message,
-          note: message,
-        };
-      }));
+      markPeekError(message);
+    } finally {
+      window.clearTimeout(watchdog);
     }
   };
 
