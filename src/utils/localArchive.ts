@@ -70,11 +70,14 @@ const resetArchiveApi = () => {
   archiveReady = null;
 };
 
+/** Versioned path so browsers drop cached worker responses that still carry the old CSP. */
+const ARCHIVE_WORKER_PATH = '/libarchive/worker-bundle.v3.js';
+
 const resolveWorkerUrl = (): URL => {
   if (typeof window !== 'undefined' && window.location?.origin) {
-    return new URL('/libarchive/worker-bundle.js', window.location.origin);
+    return new URL(ARCHIVE_WORKER_PATH, window.location.origin);
   }
-  return new URL('/libarchive/worker-bundle.js', 'http://127.0.0.1');
+  return new URL(ARCHIVE_WORKER_PATH, 'http://127.0.0.1');
 };
 
 const getArchiveApi = async () => {

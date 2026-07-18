@@ -14,9 +14,10 @@ const CONTENT_SECURITY_POLICY = [
   "img-src 'self' data: blob: https://image.tmdb.org",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
-  // wasm-unsafe-eval: libarchive.js WebAssembly worker
+  // wasm-unsafe-eval: modern browsers (Chrome 97+ / Safari 16+)
+  // unsafe-eval: fallback for engines that still gate WASM on unsafe-eval
   // cloudflareinsights: Pages Web Analytics beacon
-  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://static.cloudflareinsights.com",
+  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' https://static.cloudflareinsights.com",
   "worker-src 'self' blob:",
   "connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com https://static.cloudflareinsights.com",
 ].join('; ');
