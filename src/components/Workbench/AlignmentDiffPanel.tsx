@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, FileSearch2, GitCompareArrows, LocateFixed, Rows3, SplitSquareVertical } from 'lucide-react';
+import { ChevronDown, ChevronUp, FileSearch2, GitCompareArrows, LocateFixed, MoveHorizontal, Rows3, SplitSquareVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { SubRow } from '@/utils/subtitleCore';
 import { analyzeAlignmentDiff, type AlignmentDiffKind } from '@/utils/timeline/alignmentDiff';
@@ -12,6 +12,7 @@ type DiffFilter = 'all' | AlignmentDiffKind;
 
 const FILTERS: Array<{ id: DiffFilter; label: string }> = [
   { id: 'all', label: '全部' },
+  { id: 'shifted-match', label: '平移配对' },
   { id: 'expanded-dialogue', label: '对话组' },
   { id: 'single-track', label: '仅一轨' },
 ];
@@ -40,6 +41,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
             <div className="text-sm font-semibold text-neutral-100">对齐差异</div>
             <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-neutral-500">
               <span>直接配对 {summary.directPairCount}</span>
+              <span className={summary.shiftedMatchCount > 0 ? 'text-[#c9d4b8]' : ''}>平移 {summary.shiftedMatchCount}</span>
               <span className={summary.expandedDialogueCount > 0 ? 'text-[#d2d9e9]' : ''}>对话组 {summary.expandedDialogueCount}</span>
               <span className={summary.singleTrackCount > 0 ? 'text-[#d9c7bd]' : ''}>仅一轨 {summary.singleTrackCount}</span>
             </div>
@@ -72,7 +74,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
           >
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 md:px-6">
               <p className="text-xs leading-5 text-neutral-500">
-                此处仅标出结构差异；不会自动删除或改写任一字幕轨。
+                此处标出结构差异与整体平移配对；不会自动删除或改写任一字幕轨。
               </p>
               <div className="flex items-center gap-1 rounded-lg border border-white/[0.06] bg-black/15 p-1" role="tablist" aria-label="对齐差异筛选">
                 {FILTERS.map(item => (
@@ -100,8 +102,14 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
 
               {filteredEntries.map(entry => {
                 const isExpanded = entry.kind === 'expanded-dialogue';
+                const isShifted = entry.kind === 'shifted-match';
                 const hasSource = entry.provenance.length > 0;
                 const isSourceOpen = sourceEntryId === entry.id;
+                const badgeClass = isShifted
+                  ? 'bg-[#9aaf7a]/[0.10] text-[#c9d4b8]'
+                  : isExpanded
+                    ? 'bg-[#8fa3d1]/[0.08] text-[#d2d9e9]'
+                    : 'bg-[#c0a89a]/[0.09] text-[#dfc9bc]';
                 return (
                   <div
                     key={entry.id}
@@ -109,8 +117,8 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                   >
                     <div className="flex items-center gap-2 text-xs text-neutral-500 md:block">
                       <span className="font-mono tabular-nums text-neutral-400">{formatMsClock(entry.startMs)}</span>
-                      <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium md:mt-1.5 ${isExpanded ? 'bg-[#8fa3d1]/[0.08] text-[#d2d9e9]' : 'bg-[#c0a89a]/[0.09] text-[#dfc9bc]'}`}>
-                        {isExpanded ? <SplitSquareVertical className="h-2.5 w-2.5" /> : <Rows3 className="h-2.5 w-2.5" />}
+                      <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium md:mt-1.5 ${badgeClass}`}>
+                        {isShifted ? <MoveHorizontal className="h-2.5 w-2.5" /> : isExpanded ? <SplitSquareVertical className="h-2.5 w-2.5" /> : <Rows3 className="h-2.5 w-2.5" />}
                         {entry.label}
                       </span>
                     </div>

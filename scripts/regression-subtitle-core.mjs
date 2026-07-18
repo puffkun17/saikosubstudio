@@ -16,8 +16,12 @@ mkdirSync(outDir, { recursive: true });
 execFileSync('npx', [
   'tsc',
   'src/utils/subtitleCore.ts',
+  'src/utils/mediaIdentity.ts',
+  'src/utils/releaseNamingRules.ts',
   'src/utils/importSafety.ts',
   'src/utils/timeline/alignmentDiff.ts',
+  'src/utils/timeline/offsetDiagnosis.ts',
+  'src/utils/timeline/timecode.ts',
   'src/store/useStudioStore.ts',
   '--target',
   'ES2020',
@@ -40,6 +44,7 @@ const {
   classifySubtitleCue,
   classifyAuxiliaryCue,
   CUE_MATCH_POLICY,
+  smartDetectTitle,
   detectLanguageByContent,
   detectLanguageByFilename,
   detectSubtitleLanguage,
@@ -126,6 +131,24 @@ const assertIncludes = (items, expected, message) => {
   assert.equal(parsed.title, 'Alien Earth');
   assert.equal(parsed.episodeKey, 'S01E02');
   assert.deepEqual(buildTmdbSearchQueries(sample, 8), ['Alien Earth']);
+}
+
+{
+  // Prefer strong identity titles over noisy common-token joins from mismatched release names.
+  assert.equal(
+    smartDetectTitle(
+      'The_Battle_Of_Algiers_1966_BluRay_Criterion_Collection_1080p_AVC.srt',
+      'The.Battle.of.Algiers.1966.REMASTERED.CUSTOM.MULTi.VFF.1080p.BluRay.srt',
+    ).toLowerCase(),
+    'the battle of algiers 1966',
+  );
+  assert.equal(
+    smartDetectTitle(
+      'Movie.Sample.2024.en.srt',
+      'Movie.Sample.2024.zh-CN.srt',
+    ),
+    'Movie Sample 2024',
+  );
 }
 
 {
@@ -447,15 +470,39 @@ const makeRegressionTs = (startMs) => {
     ts: makeRegressionTs(index * 1000 + 40),
     text: `English ${index}`,
   }));
-  assert.ok(primary.length * secondary.length > CUE_MATCH_POLICY.maxAlignmentCells, 'Fallback fixture must exceed the shared matrix limit.');
+  assert.ok(primary.length * secondary.length > CUE_MATCH_POLICY.maxAlignmentCells, 'Banded fixture must exceed the shared matrix limit.');
+  let fallback = null;
+  const logs = [];
+  const aligned = alignSubtitlesIndustrial(primary, secondary, [], message => logs.push(message), {
+    onFallback: (info) => { fallback = info; },
+  });
+  assert.ok(fallback, 'Oversized alignment matrices must surface an onFallback signal.');
+  assert.equal(fallback.reason, 'banded', 'Typical film-length tracks should stay in industrial mode via banded DP.');
+  assert.ok(typeof fallback.bandHalfWidth === 'number' && fallback.bandHalfWidth >= CUE_MATCH_POLICY.minBandHalfWidth);
+  assert.ok(logs.some(message => /带状 DP/.test(message)), 'Banded mode should be logged explicitly.');
+  assert.equal(logs.some(message => /低内存快速合并/.test(message)), false, 'Banded mode must not fall through to low-memory merge for 3k×3k tracks.');
+  assert.ok(aligned.filter(row => row.type === 'merged').length >= 2900, 'Banded industrial align should still pair nearly all in-sync cues.');
+}
+
+{
+  // Extreme cue counts: minimum band fill still exceeds budget → true low-memory fallback.
+  // M * (2*minBandHalfWidth+1) > maxAlignmentCells  ⇒  M > ~82k
+  const extremeCount = 90_000;
+  const primary = Array.from({ length: extremeCount }, (_, index) => ({
+    ts: makeRegressionTs(index * 40),
+    text: `中文 ${index}`,
+  }));
+  const secondary = Array.from({ length: extremeCount }, (_, index) => ({
+    ts: makeRegressionTs(index * 40 + 10),
+    text: `English ${index}`,
+  }));
   let fallback = null;
   const logs = [];
   alignSubtitlesIndustrial(primary, secondary, [], message => logs.push(message), {
     onFallback: (info) => { fallback = info; },
   });
-  assert.ok(fallback, 'Oversized alignment matrices must surface an onFallback signal.');
-  assert.equal(fallback.reason, 'matrix_too_large');
-  assert.ok(logs.some(message => /低内存快速合并/.test(message)), 'Oversized matrices should still log the low-memory fallback.');
+  assert.equal(fallback?.reason, 'matrix_too_large', 'Pathological track sizes should still escape to fast merge.');
+  assert.ok(logs.some(message => /低内存快速合并/.test(message)));
 }
 
 {
@@ -522,9 +569,50 @@ const makeRegressionTs = (startMs) => {
   assert.equal(summary.directPairCount, 1, 'Direct bilingual rows should stay out of the review queue.');
   assert.equal(summary.expandedDialogueCount, 1, 'Expanded dialogue rows should remain reviewable.');
   assert.equal(summary.singleTrackCount, 2, 'Unpaired dialogue should be surfaced without being deleted.');
+  assert.equal(summary.shiftedMatchCount, 0);
   assert.equal(summary.entries[1].kind, 'single-track');
   assert.deepEqual(summary.entries[1].rowIndexes, [3, 4], 'Continuous single-track cues should be grouped for review.');
   assert.equal(summary.entries[0].provenance[0].primary?.text, '-你好吗？-很好。', 'The diff view should retain source text for expanded dialogue review.');
+}
+
+{
+  const summary = analyzeAlignmentDiff([
+    {
+      index: 1,
+      ts: '00:10:00,000 --> 00:10:02,000',
+      text: '你好\nHello',
+      type: 'merged',
+      alignment: 'shifted-match',
+      provenance: {
+        method: 'shifted-match',
+        timingSource: 'primary',
+        confidence: 0.9,
+        offsetMs: 4000,
+        primary: { cueIndex: 1, ts: '00:10:00,000 --> 00:10:02,000', text: '你好' },
+        secondary: { cueIndex: 1, ts: '00:10:04,000 --> 00:10:06,000', text: 'Hello' },
+      },
+    },
+    {
+      index: 2,
+      ts: '00:10:03,000 --> 00:10:05,000',
+      text: '再见\nBye',
+      type: 'merged',
+      alignment: 'shifted-match',
+      provenance: {
+        method: 'shifted-match',
+        timingSource: 'primary',
+        confidence: 0.9,
+        offsetMs: 4000,
+        primary: { cueIndex: 2, ts: '00:10:03,000 --> 00:10:05,000', text: '再见' },
+        secondary: { cueIndex: 2, ts: '00:10:07,000 --> 00:10:09,000', text: 'Bye' },
+      },
+    },
+  ]);
+  assert.equal(summary.shiftedMatchCount, 2);
+  assert.equal(summary.directPairCount, 0, 'Shifted pairs must not be counted as ordinary direct pairs.');
+  assert.equal(summary.entries.length, 1, 'Consecutive shifted pairs with the same offset should group for review.');
+  assert.equal(summary.entries[0].kind, 'shifted-match');
+  assert.match(summary.entries[0].detail, /\+4000ms/);
 }
 
 {

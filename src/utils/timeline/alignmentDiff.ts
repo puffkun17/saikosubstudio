@@ -1,7 +1,7 @@
 import type { AlignmentProvenance, SubRow } from '../subtitleCore';
 import { parseSubtitleRange } from './timecode';
 
-export type AlignmentDiffKind = 'expanded-dialogue' | 'single-track';
+export type AlignmentDiffKind = 'expanded-dialogue' | 'single-track' | 'shifted-match';
 
 export interface AlignmentDiffEntry {
   id: string;
@@ -22,6 +22,7 @@ export interface AlignmentDiffSummary {
   directPairCount: number;
   expandedDialogueCount: number;
   singleTrackCount: number;
+  shiftedMatchCount: number;
   entries: AlignmentDiffEntry[];
 }
 
@@ -36,6 +37,7 @@ interface TimelineRow {
 const SINGLE_TRACK_GROUP_GAP_MS = 20_000;
 const SINGLE_TRACK_GROUP_SPAN_MS = 75_000;
 const BOUNDARY_WINDOW_MS = 90_000;
+const SHIFTED_GROUP_GAP_MS = 20_000;
 
 const isCjkText = (text: string) => /[一-龥\u3040-\u30ff\u31f0-\u31ff\uac00-\ud7af]/.test(text);
 
@@ -59,7 +61,7 @@ const isStandaloneDialogue = (row: SubRow, secondaryText: string) => Boolean(
   && row.type !== 'lyrics'
   && row.type !== 'credit'
   && row.cueKind !== 'screen_text'
-  && row.cueKind !== 'narration'
+  && row.cueKind !== 'narration',
 );
 
 const toTimelineRow = (row: SubRow): TimelineRow => ({
@@ -96,6 +98,40 @@ const makeSingleTrackEntry = (group: TimelineRow[], firstStartMs: number, lastEn
   };
 };
 
+const makeShiftedMatchEntry = (group: TimelineRow[]): AlignmentDiffEntry => {
+  const first = group[0];
+  const last = group[group.length - 1];
+  const offsetMs = first.row.provenance?.offsetMs;
+  const confidence = first.row.provenance?.confidence;
+  const count = group.length;
+  const rangeLabel = count > 1 ? `连续 ${count} 行` : '1 行';
+  const offsetLabel = typeof offsetMs === 'number'
+    ? `${offsetMs >= 0 ? '+' : ''}${offsetMs}ms`
+    : '未知偏移';
+  const confidenceLabel = typeof confidence === 'number'
+    ? `置信 ${Math.round(confidence * 100)}%`
+    : '';
+
+  return {
+    id: `shifted-${first.row.index}-${last.row.index}`,
+    kind: 'shifted-match',
+    rowIndexes: group.map(item => item.row.index),
+    ts: `${first.row.ts} ~ ${last.row.ts}`,
+    startMs: first.startMs,
+    endMs: last.endMs,
+    primaryText: first.primaryText,
+    secondaryText: first.secondaryText,
+    label: `整体平移配对 · ${rangeLabel}`,
+    detail: [
+      `已按检测偏移 ${offsetLabel} 完成配对`,
+      confidenceLabel,
+      '建议抽查片头片尾是否仍对齐。',
+    ].filter(Boolean).join(' · '),
+    isBoundaryCandidate: true,
+    provenance: group.flatMap(item => item.row.provenance ? [item.row.provenance] : []),
+  };
+};
+
 /** 只展示可复核差异 */
 export function analyzeAlignmentDiff(rows: SubRow[]): AlignmentDiffSummary {
   const timelineRows = rows
@@ -108,7 +144,9 @@ export function analyzeAlignmentDiff(rows: SubRow[]): AlignmentDiffSummary {
   let directPairCount = 0;
   let expandedDialogueCount = 0;
   let singleTrackCount = 0;
+  let shiftedMatchCount = 0;
   let singleTrackGroup: TimelineRow[] = [];
+  let shiftedGroup: TimelineRow[] = [];
 
   const flushSingleTrackGroup = () => {
     if (singleTrackGroup.length > 0) {
@@ -117,8 +155,34 @@ export function analyzeAlignmentDiff(rows: SubRow[]): AlignmentDiffSummary {
     }
   };
 
+  const flushShiftedGroup = () => {
+    if (shiftedGroup.length > 0) {
+      entries.push(makeShiftedMatchEntry(shiftedGroup));
+      shiftedGroup = [];
+    }
+  };
+
   for (const item of timelineRows) {
     const { row, primaryText, secondaryText } = item;
+
+    if (row.alignment === 'shifted-match') {
+      flushSingleTrackGroup();
+      shiftedMatchCount += 1;
+      const prior = shiftedGroup[shiftedGroup.length - 1];
+      const sameOffset = !prior
+        || prior.row.provenance?.offsetMs === row.provenance?.offsetMs;
+      const isConsecutive = !prior || item.startMs - prior.endMs <= SHIFTED_GROUP_GAP_MS;
+      if (sameOffset && isConsecutive) {
+        shiftedGroup.push(item);
+      } else {
+        flushShiftedGroup();
+        shiftedGroup.push(item);
+      }
+      continue;
+    }
+
+    flushShiftedGroup();
+
     const isDirectPair = row.type === 'merged' && secondaryText && row.alignment !== 'expanded-dialogue';
 
     if (isDirectPair) {
@@ -167,6 +231,13 @@ export function analyzeAlignmentDiff(rows: SubRow[]): AlignmentDiffSummary {
     flushSingleTrackGroup();
   }
 
+  flushShiftedGroup();
   flushSingleTrackGroup();
-  return { directPairCount, expandedDialogueCount, singleTrackCount, entries };
+  return {
+    directPairCount,
+    expandedDialogueCount,
+    singleTrackCount,
+    shiftedMatchCount,
+    entries,
+  };
 }

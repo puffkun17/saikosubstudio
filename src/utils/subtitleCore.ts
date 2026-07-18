@@ -1,13 +1,21 @@
 // Subtitle Processing Core Engine in TypeScript
 import {
-  type ReleaseNamingProfile,
-  RELEASE_NAMING_TAGS,
-  createReleaseTagPattern,
-  extractReleaseNamingProfile,
-  isReleaseNoiseToken,
-  normalizeReleaseToken,
-  stripContextualReleaseTail,
-} from './releaseNamingRules';
+  OFFSET_DIAGNOSIS_POLICY,
+  estimateGlobalOffsetFromStarts,
+  type GlobalOffsetDiagnosis,
+} from './timeline/offsetDiagnosis';
+
+export {
+  type ParsedMediaFilename,
+  type MediaIdentityLevel,
+  type MediaIdentityAssessment,
+  cleanFilename,
+  parseMediaFilename,
+  assessMediaIdentity,
+  buildTmdbSearchQueries,
+  smartDetectTitle,
+} from './mediaIdentity';
+export { OFFSET_DIAGNOSIS_POLICY, type GlobalOffsetDiagnosis } from './timeline/offsetDiagnosis';
 
 export type CueKind = 'dialogue' | 'screen_text' | 'sound_caption' | 'narration' | 'lyrics' | 'commentary' | 'unknown';
 export type AuxiliaryCueCategory = 'ambient_sdh' | 'semantic_sdh' | 'screen_text' | 'music' | 'speech_context' | 'unknown';
@@ -378,434 +386,7 @@ export function extractStylesFromAss(text: string): Partial<StyleSettings> | nul
   };
 }
 
-const stripSourceBracketTags = (value: string): string => value.replace(
-  /[\[【(（][^\]】)）]*(?:zmk|zimuku|subhd|assrt|shooter|opensubtitles|字幕库|收藏级|精修)[^\]】)）]*[\]】)）]/gi,
-  ' '
-);
-
-const RELEASE_TAG_PATTERN = createReleaseTagPattern(RELEASE_NAMING_TAGS);
-const RELEASE_TAG_BOUNDARY = '[\\s.\\-_/&+_(（\\[【]+';
-const RELEASE_TAG_LOOKAHEAD = '(?=[\\s.\\-_/&+_)）\\]】]|$)';
-const RELEASE_SPEC_AFTER_YEAR_PATTERN = new RegExp(
-  `^[\\s.\\-_(【\\[]*(?:${RELEASE_TAG_PATTERN})${RELEASE_TAG_LOOKAHEAD}`,
-  'i',
-);
-
-const NUMERIC_TITLE_SUFFIXES = new Set(['1917', '1984', '2001', '2012', '2046', '2049']);
-
-const shouldKeepNumericTitleSuffix = (beforeYear: string, yearToken: string): boolean =>
-  NUMERIC_TITLE_SUFFIXES.has(yearToken)
-  && beforeYear.split(/[\s.\-_/\\:+&]+/).filter(Boolean).length >= 1;
-
-const RELEASE_YEAR_TOKEN_PATTERN = /(^|[\s._\-_(【\[])(19\d{2}|20\d{2})(?=$|[\s._\-_)）\]】])/gi;
-
-const findReleaseYearAnchor = (value: string): { year: string; start: number } | null => {
-  RELEASE_YEAR_TOKEN_PATTERN.lastIndex = 0;
-  let match: RegExpExecArray | null;
-  while ((match = RELEASE_YEAR_TOKEN_PATTERN.exec(value)) !== null) {
-    const separator = match[1] || '';
-    const yearToken = match[2];
-    const yearStart = match.index + separator.length;
-    const afterYear = value.slice(yearStart + yearToken.length);
-    const beforeYear = value.slice(0, yearStart);
-    if (RELEASE_SPEC_AFTER_YEAR_PATTERN.test(afterYear) && !shouldKeepNumericTitleSuffix(beforeYear, yearToken)) {
-      return { year: yearToken, start: yearStart };
-    }
-  }
-  return null;
-};
-
-const stripReleaseTags = (value: string): string => {
-  const tagRegex = new RegExp(`${RELEASE_TAG_BOUNDARY}(?:${RELEASE_TAG_PATTERN})${RELEASE_TAG_LOOKAHEAD}`, 'gi');
-  let clean = value;
-  let prev = '';
-  while (clean !== prev) {
-    prev = clean;
-    clean = clean.replace(tagRegex, ' ');
-  }
-  return stripContextualReleaseTail(clean);
-};
-
-export function cleanFilename(n: string): string {
-  if (!n) return '';
-  let title = n.replace(/_merged_\d{8}_\d{6}/gi, '');
-  title = title.replace(/\.(srt|ass|txt|zip|rar|7z|vtt)$/i, '');
-  title = stripSourceBracketTags(title);
-  const parsedTitle = parseMediaFilename(title);
-  const hasEpisodeKey = Boolean(parsedTitle.episodeKey);
-  
-  // Movie year match. Episode filenames often include documentary/source years
-  // before SxxExx; those should not become part of the searchable series title.
-  if (!hasEpisodeKey) {
-    const yearAnchor = findReleaseYearAnchor(title);
-    if (yearAnchor) title = title.slice(0, yearAnchor.start) + yearAnchor.year;
-  }
-
-  // TV Show episode match (S01E01, S01, EP01)
-  const tvMatch = title.match(/^(.*?)[\s._\-_(【\[]*(?:s\d{1,4}[\s._-]*e\d{1,4}|s\d{1,4}|ep\d{1,4})(?=$|[\s._\-_)）\]】])(.*)$/i);
-  if (tvMatch) {
-      title = tvMatch[1];
-      const colonParts = title.split(/\s*[:：]\s*/).filter(Boolean);
-      if (colonParts.length > 1) {
-        const tail = colonParts[colonParts.length - 1];
-        if (tail.split(/[\s.\-_]+/).filter(Boolean).length >= 2) {
-          title = tail;
-        }
-      }
-      title = title.replace(/\b(19\d{2}|20\d{2})\b/g, ' ');
-  }
-
-  title = stripReleaseTags(title);
-  
-  // Strip trailing release group e.g. -SuccessfulCrab
-  title = title.replace(/-[a-zA-Z0-9]+$/g, '');
-  
-  title = title.replace(/[([【（][\s)*\]】）]/g, ' ');
-  title = title.replace(/[\s.\-_/\\:+&]+/g, ' ');
-  return title.trim();
-}
-
-const HAN_NUMERAL_MAP: Record<string, number> = {
-  零: 0,
-  〇: 0,
-  一: 1,
-  二: 2,
-  两: 2,
-  三: 3,
-  四: 4,
-  五: 5,
-  六: 6,
-  七: 7,
-  八: 8,
-  九: 9,
-};
-
-const parseLooseNumber = (value: string): number | null => {
-  const raw = value.trim();
-  if (!raw) return null;
-  if (/^\d+$/.test(raw)) return parseInt(raw, 10);
-
-  let total = 0;
-  let section = 0;
-  let hasUnit = false;
-
-  for (const char of raw) {
-    if (char === '十') {
-      hasUnit = true;
-      section = (section || 1) * 10;
-      total += section;
-      section = 0;
-      continue;
-    }
-    const digit = HAN_NUMERAL_MAP[char];
-    if (digit === undefined) return null;
-    section = digit;
-  }
-
-  const parsed = total + section;
-  return hasUnit || raw.length === 1 ? parsed : null;
-};
-
-const normalizeEpisodeKey = (season: number | null, episode: number | null) => {
-  if (!episode && !season) return undefined;
-  if (season && episode) return `S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`;
-  if (season) return `S${String(season).padStart(2, '0')}`;
-  if (episode) return `E${String(episode).padStart(2, '0')}`;
-  return undefined;
-};
-
-const stripKnownMediaTags = (value: string) => {
-  return stripReleaseTags(value);
-};
-
-export type ParsedMediaFilename = {
-  rawBase: string;
-  title: string;
-  releaseProfile: ReleaseNamingProfile;
-  episodeKey?: string;
-  season?: number;
-  episode?: number;
-  year?: string;
-  hasUsableTitle: boolean;
-  mediaHint: 'tv' | 'movie' | 'unknown';
-};
-
-export type MediaIdentityLevel = 'strong' | 'partial' | 'weak';
-
-export type MediaIdentityAssessment = {
-  level: MediaIdentityLevel;
-  title: string;
-  episodeKey?: string;
-  reason: string;
-  shouldAutoSearchTmdb: boolean;
-};
-
-const normalizeSearchText = (value: string): string => value
-  .replace(/&amp;/gi, ' ')
-  .replace(/[._\-_/\\:+&]+/g, ' ')
-  .replace(/\s+/g, ' ')
-  .trim();
-
-const isLikelySearchNoiseToken = (token: string): boolean => {
-  const normalized = normalizeReleaseToken(token);
-  if (!normalized) return true;
-  return normalized === 'xxx' || isReleaseNoiseToken(token);
-};
-
-const meaningfulTokenCount = (value: string): number => value
-  .split(/\s+/)
-  .filter(token => token && !isLikelySearchNoiseToken(token))
-  .length;
-
-export function buildTmdbSearchQueries(input: string, maxQueries = 10): string[] {
-  const base = normalizeSearchText(cleanFilename(input));
-  if (!base) return [];
-
-  const rawParsed = parseMediaFilename(input);
-  const baseParsed = parseMediaFilename(base);
-  const parsed = rawParsed.mediaHint === 'movie' && rawParsed.hasUsableTitle ? rawParsed : baseParsed;
-  if (!parsed.hasUsableTitle) return [];
-
-  const candidates: string[] = [];
-  const add = (value: string) => {
-    const clean = normalizeSearchText(cleanFilename(value));
-    if (!clean || clean.length < 2) return;
-    if (meaningfulTokenCount(clean) === 0) return;
-    if (!candidates.some(item => item.toLowerCase() === clean.toLowerCase())) {
-      candidates.push(clean);
-    }
-  };
-
-  add(parsed.title);
-  add(base);
-
-  const tokens = base.split(/\s+/).filter(Boolean);
-  const hasHan = /[\u4e00-\u9fff]/.test(base);
-  // Mixed Chinese + Latin titles: also search each script alone (e.g. 新攻壳… + Ghost in the Shell).
-  if (hasHan) {
-    const hanOnly = normalizeSearchText((base.match(/[\u4e00-\u9fff]+/g) || []).join(' '));
-    const latinOnly = normalizeSearchText((base.match(/[A-Za-z][A-Za-z'’]*(?:\s+[A-Za-z][A-Za-z'’]*)*/g) || []).join(' '));
-    add(hanOnly);
-    add(latinOnly);
-  }
-  if (!hasHan && tokens.length >= 3) {
-    let trimmedTokens = [...tokens];
-    while (trimmedTokens.length >= 2 && isLikelySearchNoiseToken(trimmedTokens[trimmedTokens.length - 1])) {
-      trimmedTokens = trimmedTokens.slice(0, -1);
-      add(trimmedTokens.join(' '));
-    }
-
-    for (let len = Math.min(tokens.length - 1, 6); len >= 2; len -= 1) {
-      add(tokens.slice(0, len).join(' '));
-    }
-
-    for (let len = Math.min(tokens.length - 1, 6); len >= 2; len -= 1) {
-      add(tokens.slice(tokens.length - len).join(' '));
-    }
-
-    for (let len = Math.min(5, tokens.length - 1); len >= 2; len -= 1) {
-      for (let start = 1; start + len <= tokens.length - 1; start += 1) {
-        const window = tokens.slice(start, start + len);
-        if (window.some(token => !isLikelySearchNoiseToken(token))) {
-          add(window.join(' '));
-        }
-      }
-    }
-  }
-
-  return candidates.slice(0, maxQueries);
-}
-
-export function parseMediaFilename(name: string): ParsedMediaFilename {
-  const rawBase = (name || '')
-    .replace(/_merged_\d{8}_\d{6}/gi, '')
-    .replace(/\.(srt|ass|txt|zip|rar|7z|vtt)$/i, '')
-    .trim();
-  const releaseProfile = extractReleaseNamingProfile(rawBase);
-
-  let working = stripSourceBracketTags(rawBase);
-  let season: number | null = null;
-  let episode: number | null = null;
-
-  const seasonEpisodeMatch = working.match(/(^|[\s._\-_(【\[])(S(\d{1,4})[\s._-]*E(\d{1,4}))(?=$|[\s._\-_)）\]】])/i);
-  if (seasonEpisodeMatch) {
-    season = parseInt(seasonEpisodeMatch[3], 10);
-    episode = parseInt(seasonEpisodeMatch[4], 10);
-    working = working.replace(seasonEpisodeMatch[2], ' ');
-  }
-
-  if (!episode) {
-    const seasonOnlyMatch = working.match(/(^|[\s._\-_(【\[])(S(\d{1,4}))(?=$|[\s._\-_)）\]】])/i);
-    const episodeOnlyMatch = working.match(/(^|[\s._\-_(【\[])((?:EP|E)(\d{1,4}))(?=$|[\s._\-_)）\]】])/i);
-    if (seasonOnlyMatch) {
-      season = parseInt(seasonOnlyMatch[3], 10);
-      working = working.replace(seasonOnlyMatch[2], ' ');
-    }
-    if (episodeOnlyMatch) {
-      episode = parseInt(episodeOnlyMatch[3], 10);
-      working = working.replace(episodeOnlyMatch[2], ' ');
-    }
-  }
-
-  const chineseSeasonEpisodeMatch = working.match(/第?([零〇一二两三四五六七八九十\d]{1,4})季\s*第?([零〇一二两三四五六七八九十\d]{1,4})[集话話]/);
-  if (chineseSeasonEpisodeMatch) {
-    season = parseLooseNumber(chineseSeasonEpisodeMatch[1]);
-    episode = parseLooseNumber(chineseSeasonEpisodeMatch[2]);
-    working = working.replace(chineseSeasonEpisodeMatch[0], ' ');
-  } else {
-    const chineseSeasonMatch = working.match(/第?([零〇一二两三四五六七八九十\d]{1,4})季/);
-    const chineseEpisodeMatch = working.match(/第?([零〇一二两三四五六七八九十\d]{1,4})[集话話]/);
-    if (chineseSeasonMatch) {
-      season = parseLooseNumber(chineseSeasonMatch[1]);
-      working = working.replace(chineseSeasonMatch[0], ' ');
-    }
-    if (chineseEpisodeMatch) {
-      episode = parseLooseNumber(chineseEpisodeMatch[1]);
-      working = working.replace(chineseEpisodeMatch[0], ' ');
-    }
-  }
-
-  const bracketEpisodeMatch = working.match(/[\[【](\d{1,4})[\]】]/);
-  if (!episode && bracketEpisodeMatch) {
-    episode = parseInt(bracketEpisodeMatch[1], 10);
-    working = working.replace(bracketEpisodeMatch[0], ' ');
-  }
-
-  const episodeKey = normalizeEpisodeKey(season, episode);
-  const isEpisode = Boolean(episodeKey);
-  let year = '';
-  const yearAnchor = !isEpisode ? findReleaseYearAnchor(working) : null;
-  if (yearAnchor) {
-    year = yearAnchor.year;
-    working = working.slice(0, yearAnchor.start);
-  } else if (isEpisode) {
-    working = working.replace(/\b(19\d{2}|20\d{2})\b/g, ' ');
-  }
-
-  const colonParts = working.split(/\s*[:：]\s*/).filter(Boolean);
-  if (colonParts.length > 1) {
-    const tail = colonParts[colonParts.length - 1];
-    if (tail.split(/[\s.\-_]+/).filter(Boolean).length >= 2) {
-      working = tail;
-    }
-  }
-
-  let title = stripKnownMediaTags(working);
-  title = title.replace(/[\[【(（][^\]】)）]*[\]】)）]/g, ' ');
-  title = title.replace(/-[a-zA-Z0-9]+$/g, ' ');
-  title = title.replace(/[([【（][\s)*\]】）]/g, ' ');
-  title = title.replace(/[\s.\-_/\\:+]+/g, ' ').trim();
-
-  const hasLettersOrChinese = /[a-zA-Z\u4e00-\u9fff]/.test(title);
-  const looksOnlyEpisode = /^(?:s?\d{1,4}|e?\d{1,4})$/i.test(title.replace(/\s+/g, ''));
-  const hasUsableTitle = title.length >= 2 && hasLettersOrChinese && !looksOnlyEpisode;
-
-  return {
-    rawBase,
-    title,
-    releaseProfile,
-    episodeKey,
-    season: season || undefined,
-    episode: episode || undefined,
-    year: year || undefined,
-    hasUsableTitle,
-    mediaHint: isEpisode ? 'tv' : year ? 'movie' : 'unknown',
-  };
-}
-
-const isSearchableTitle = (value: string): boolean => {
-  const title = normalizeSearchText(value);
-  if (!title) return false;
-  const hasText = /[a-zA-Z\u4e00-\u9fff]/.test(title);
-  const looksLikeBareYear = /^(?:19\d{2}|20\d{2})$/.test(title);
-  const looksOnlyEpisode = /^(?:s?\d{1,4}|e?\d{1,4}|s\d{1,4}e\d{1,4})$/i.test(title.replace(/\s+/g, ''));
-  return title.length >= 2 && hasText && !looksLikeBareYear && !looksOnlyEpisode && meaningfulTokenCount(title) > 0;
-};
-
-export function assessMediaIdentity(input: string, fallbackTitle = ''): MediaIdentityAssessment {
-  const parsed = parseMediaFilename(input);
-  const fallbackParsed = fallbackTitle ? parseMediaFilename(fallbackTitle) : null;
-  const title = isSearchableTitle(parsed.title)
-    ? parsed.title
-    : fallbackParsed && isSearchableTitle(fallbackParsed.title)
-      ? fallbackParsed.title
-      : '';
-  const episodeKey = parsed.episodeKey || fallbackParsed?.episodeKey;
-
-  if (title) {
-    return {
-      level: 'strong',
-      title,
-      episodeKey,
-      reason: episodeKey ? '已识别片名与集数信息' : '已识别可检索片名',
-      shouldAutoSearchTmdb: true,
-    };
-  }
-
-  if (episodeKey) {
-    return {
-      level: 'partial',
-      title: '',
-      episodeKey,
-      reason: '仅识别到集数，缺少片名',
-      shouldAutoSearchTmdb: false,
-    };
-  }
-
-  return {
-    level: 'weak',
-    title: '',
-    episodeKey: undefined,
-    reason: '文件名只包含年份、规格或发布参数',
-    shouldAutoSearchTmdb: false,
-  };
-}
-
-/**
- * Intelligent Title Detector.
- */
-export function smartDetectTitle(name1: string, name2: string, content1 = '', content2 = ''): string {
-  const scan = (text: string): string | null => {
-    if (!text) return null;
-    const lines = text.split('\n');
-    const head = lines.slice(0, 100);
-    const tail = lines.slice(-100);
-    const all = [...head, ...tail];
-    
-    for (const line of all) {
-      const match = line.match(/(?:Title|Name|Series|Film|Works|作品|标题)\s*[:：=]\s*(.+)/i);
-      if (match && match[1]) {
-        const t = match[1].trim().replace(/\{[^}]+\}/g, '').replace(/[\[\]]/g, '');
-        if (t.length > 2 && t.length < 50) return t;
-      }
-    }
-    return null;
-  };
-
-  const metadataTitle = scan(content1) || scan(content2);
-  
-  const s1 = cleanFilename(name1).split(/[.\s_\-]/).filter(Boolean);
-  const s2 = cleanFilename(name2).split(/[.\s_\-]/).filter(Boolean);
-  
-  const commonWords = s1.filter(w => s2.includes(w));
-  const suggested = commonWords.join(' ');
-
-  // 1. If we have common words between filenames, prioritize it
-  if (suggested.length > 3) return suggested;
-  
-  // 2. If one of the filenames is non-empty, prioritize its cleaned filename over dirty metadata
-  const clean1 = cleanFilename(name1);
-  const clean2 = cleanFilename(name2);
-  const primaryClean = clean1 || clean2;
-  if (primaryClean && primaryClean.length > 3) {
-    return primaryClean;
-  }
-
-  // 3. Fallback to subtitle internal metadata
-  if (metadataTitle && metadataTitle.length > 3) return metadataTitle;
-  
-  return cleanFilename(name1 || name2);
-}
+// Filename / TMDB identity lives in mediaIdentity.ts (re-exported above).
 
 export function cleanSubtitleContent(text: string, isEnglish = false): string {
   if (!text) return "";
@@ -1331,70 +912,15 @@ const shouldAttemptCueMerge = (primary: PreprocessedRow, secondary: Preprocessed
   getCueMergeCompatibility(primary, secondary).canMerge
 );
 
-interface GlobalOffsetDiagnosis {
-  offsetMs: number;
-  confidence: number;
-  sampleCount: number;
-  medianDeviationMs: number;
-  shouldApply: boolean;
-  reason: string;
-}
-
-const medianNumber = (values: number[]): number => {
-  if (values.length === 0) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-};
-
 const getStartMs = (row: PreprocessedRow): number => timeToMs(row.ts.split(' --> ')[0] || '');
 
-const estimateGlobalOffset = (primaryRows: PreprocessedRow[], secondaryRows: PreprocessedRow[]): GlobalOffsetDiagnosis => {
-  const minCount = Math.min(primaryRows.length, secondaryRows.length);
-  const ratio = minCount > 0 ? Math.max(primaryRows.length, secondaryRows.length) / minCount : Infinity;
-  if (minCount < 20) {
-    return { offsetMs: 0, confidence: 0, sampleCount: minCount, medianDeviationMs: 0, shouldApply: false, reason: '样本不足' };
-  }
-  if (ratio > 1.35) {
-    return { offsetMs: 0, confidence: 0, sampleCount: minCount, medianDeviationMs: 0, shouldApply: false, reason: '行数差异较大' };
-  }
-
-  const sampleCount = Math.min(120, minCount);
-  const deltas: number[] = [];
-  for (let index = 0; index < sampleCount; index += 1) {
-    const primaryIndex = Math.round((index / Math.max(1, sampleCount - 1)) * (primaryRows.length - 1));
-    const secondaryIndex = Math.round((index / Math.max(1, sampleCount - 1)) * (secondaryRows.length - 1));
-    const primaryStart = getStartMs(primaryRows[primaryIndex]);
-    const secondaryStart = getStartMs(secondaryRows[secondaryIndex]);
-    if (!Number.isNaN(primaryStart) && !Number.isNaN(secondaryStart)) {
-      deltas.push(secondaryStart - primaryStart);
-    }
-  }
-
-  if (deltas.length < 20) {
-    return { offsetMs: 0, confidence: 0, sampleCount: deltas.length, medianDeviationMs: 0, shouldApply: false, reason: '有效样本不足' };
-  }
-
-  const offsetMs = Math.round(medianNumber(deltas));
-  const deviations = deltas.map(delta => Math.abs(delta - offsetMs));
-  const medianDeviationMs = Math.round(medianNumber(deviations));
-  const stableCount = deviations.filter(value => value <= 650).length;
-  const confidence = Math.round((stableCount / deltas.length) * 100) / 100;
-  const absOffset = Math.abs(offsetMs);
-  const shouldApply = absOffset >= 1200
-    && absOffset <= 30_000
-    && medianDeviationMs <= 650
-    && confidence >= 0.72;
-
-  return {
-    offsetMs,
-    confidence,
-    sampleCount: deltas.length,
-    medianDeviationMs,
-    shouldApply,
-    reason: shouldApply ? '稳定整体偏移' : '偏移不稳定或超出自动范围',
-  };
-};
+const estimateGlobalOffset = (
+  primaryRows: PreprocessedRow[],
+  secondaryRows: PreprocessedRow[],
+): GlobalOffsetDiagnosis => estimateGlobalOffsetFromStarts(
+  primaryRows.map(getStartMs),
+  secondaryRows.map(getStartMs),
+);
 
 interface AlignmentStep {
   zhIdx: number | null;
@@ -1568,6 +1094,9 @@ export const CUE_MATCH_POLICY = {
   looseOverlap: 0.2,
   looseStartMs: 1500,
   maxAlignmentCells: 8_000_000,
+  /** Sakoe–Chiba half-width when the full M×N matrix exceeds maxAlignmentCells. */
+  minBandHalfWidth: 48,
+  maxBandHalfWidth: 160,
 } as const;
 
 export function isTemporalCueMatch(overlap: number, startDiffMs: number): boolean {
@@ -1579,14 +1108,187 @@ export function isTemporalCueMatch(overlap: number, startDiffMs: number): boolea
 }
 
 export type AlignmentFallbackInfo = {
-  reason: 'matrix_too_large';
+  reason: 'matrix_too_large' | 'banded';
   cells: number;
   limit: number;
+  bandHalfWidth?: number;
 };
 
 export type AlignSubtitlesOptions = {
   onFallback?: (info: AlignmentFallbackInfo) => void;
 };
+
+const ALIGNMENT_NEG = -1e15;
+
+/** Expected secondary column on the proportional diagonal for DP row `row` (1..M). */
+function expectedAlignmentColumn(row: number, M: number, N: number): number {
+  if (M <= 0) return 0;
+  return Math.round((row * N) / M);
+}
+
+function resolveBandHalfWidth(M: number, N: number): number | null {
+  const cells = M * N;
+  if (cells <= CUE_MATCH_POLICY.maxAlignmentCells) return null;
+
+  const slope = Math.max(
+    1,
+    Math.ceil(Math.max(N, 1) / Math.max(M, 1)),
+    Math.ceil(Math.max(M, 1) / Math.max(N, 1)),
+  );
+  let half = Math.min(
+    CUE_MATCH_POLICY.maxBandHalfWidth,
+    Math.max(CUE_MATCH_POLICY.minBandHalfWidth, slope * 3 + 32),
+  );
+  const bandCells = M * (2 * half + 1);
+  if (bandCells > CUE_MATCH_POLICY.maxAlignmentCells) {
+    half = Math.max(
+      CUE_MATCH_POLICY.minBandHalfWidth,
+      Math.floor(CUE_MATCH_POLICY.maxAlignmentCells / (2 * Math.max(M, 1))),
+    );
+  }
+  return half;
+}
+
+/**
+ * Needleman–Wunsch path. When `halfBand` is set, only cells near the proportional
+ * diagonal are scored (Sakoe–Chiba), keeping large tracks in industrial mode.
+ */
+function computeAlignmentPath(
+  M: number,
+  N: number,
+  getPairScore: (zhIdx: number, enIdx: number) => number,
+  halfBand: number | null,
+): AlignmentStep[] {
+  const gapPenalty = -6;
+  let previousScores = new Float64Array(N + 1);
+  let currentScores = new Float64Array(N + 1);
+  previousScores[0] = 0;
+  for (let column = 1; column <= N; column += 1) {
+    previousScores[column] = column * gapPenalty;
+  }
+
+  const useBand = halfBand != null;
+  const bandWidth = useBand ? 2 * halfBand + 1 : N + 1;
+  const jLo = new Int32Array(M + 1);
+  const directions = new Int8Array((M + 1) * bandWidth);
+  directions.fill(-1);
+
+  const setDir = (row: number, col: number, dir: number) => {
+    if (!useBand) {
+      directions[row * (N + 1) + col] = dir;
+      return;
+    }
+    const idx = col - jLo[row];
+    if (idx < 0 || idx >= bandWidth) return;
+    directions[row * bandWidth + idx] = dir;
+  };
+
+  const getDir = (row: number, col: number): number => {
+    if (!useBand) return directions[row * (N + 1) + col];
+    const idx = col - jLo[row];
+    if (idx < 0 || idx >= bandWidth) return -1;
+    return directions[row * bandWidth + idx];
+  };
+
+  if (!useBand) {
+    jLo[0] = 0;
+    for (let column = 1; column <= N; column += 1) setDir(0, column, 2);
+    for (let row = 1; row <= M; row += 1) {
+      jLo[row] = 0;
+      currentScores[0] = row * gapPenalty;
+      setDir(row, 0, 1);
+      for (let column = 1; column <= N; column += 1) {
+        const scoreMatch = previousScores[column - 1] + getPairScore(row - 1, column - 1);
+        const scoreGapZh = previousScores[column] + gapPenalty;
+        const scoreGapEn = currentScores[column - 1] + gapPenalty;
+        if (scoreMatch >= scoreGapZh && scoreMatch >= scoreGapEn) {
+          currentScores[column] = scoreMatch;
+          setDir(row, column, 0);
+        } else if (scoreGapZh >= scoreGapEn) {
+          currentScores[column] = scoreGapZh;
+          setDir(row, column, 1);
+        } else {
+          currentScores[column] = scoreGapEn;
+          setDir(row, column, 2);
+        }
+      }
+      [previousScores, currentScores] = [currentScores, previousScores];
+    }
+  } else {
+    jLo[0] = 0;
+    for (let row = 1; row <= M; row += 1) {
+      const center = expectedAlignmentColumn(row, M, N);
+      const storeLo = Math.max(0, center - halfBand);
+      const storeHi = Math.min(N, center + halfBand);
+      jLo[row] = storeLo;
+
+      currentScores.fill(ALIGNMENT_NEG);
+      currentScores[0] = row * gapPenalty;
+      if (storeLo === 0) setDir(row, 0, 1);
+
+      for (let column = Math.max(1, storeLo); column <= storeHi; column += 1) {
+        const prevDiag = previousScores[column - 1];
+        const prevUp = previousScores[column];
+        const prevLeft = currentScores[column - 1];
+        const scoreMatch = prevDiag > ALIGNMENT_NEG / 2
+          ? prevDiag + getPairScore(row - 1, column - 1)
+          : ALIGNMENT_NEG;
+        const scoreGapZh = prevUp > ALIGNMENT_NEG / 2 ? prevUp + gapPenalty : ALIGNMENT_NEG;
+        const scoreGapEn = prevLeft > ALIGNMENT_NEG / 2 ? prevLeft + gapPenalty : ALIGNMENT_NEG;
+
+        if (scoreMatch >= scoreGapZh && scoreMatch >= scoreGapEn && scoreMatch > ALIGNMENT_NEG / 2) {
+          currentScores[column] = scoreMatch;
+          setDir(row, column, 0);
+        } else if (scoreGapZh >= scoreGapEn && scoreGapZh > ALIGNMENT_NEG / 2) {
+          currentScores[column] = scoreGapZh;
+          setDir(row, column, 1);
+        } else if (scoreGapEn > ALIGNMENT_NEG / 2) {
+          currentScores[column] = scoreGapEn;
+          setDir(row, column, 2);
+        }
+      }
+      [previousScores, currentScores] = [currentScores, previousScores];
+    }
+  }
+
+  const path: AlignmentStep[] = [];
+  let i = M;
+  let j = N;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0) {
+      const direction = getDir(i, j);
+      if (direction === 0) {
+        path.push({ zhIdx: i - 1, enIdx: j - 1 });
+        i -= 1;
+        j -= 1;
+      } else if (direction === 1) {
+        path.push({ zhIdx: i - 1, enIdx: null });
+        i -= 1;
+      } else if (direction === 2) {
+        path.push({ zhIdx: null, enIdx: j - 1 });
+        j -= 1;
+      } else {
+        // Outside the scored band: walk toward the proportional diagonal.
+        const center = expectedAlignmentColumn(i, M, N);
+        if (j > center) {
+          path.push({ zhIdx: null, enIdx: j - 1 });
+          j -= 1;
+        } else {
+          path.push({ zhIdx: i - 1, enIdx: null });
+          i -= 1;
+        }
+      }
+    } else if (i > 0) {
+      path.push({ zhIdx: i - 1, enIdx: null });
+      i -= 1;
+    } else {
+      path.push({ zhIdx: null, enIdx: j - 1 });
+      j -= 1;
+    }
+  }
+  path.reverse();
+  return path;
+}
 
 type ExpandedDialoguePlan = {
   rows: ExpandedDialogueRow[];
@@ -1792,16 +1494,31 @@ export function alignSubtitlesIndustrial(
   const secondaryOffsetMs = offsetDiagnosis.shouldApply ? offsetDiagnosis.offsetMs : 0;
   
   const alignmentCells = M * N;
-  if (alignmentCells > CUE_MATCH_POLICY.maxAlignmentCells) {
-    addLog(`[工业级合并] 对齐矩阵约 ${Math.round(alignmentCells / 1_000_000)}M 单元，已切换为低内存快速合并`, 'info');
+  const halfBand = resolveBandHalfWidth(M, N);
+  if (halfBand != null) {
+    const bandCells = M * (2 * halfBand + 1);
+    // Extreme tracks: banded fill still exceeds the cell budget → low-memory escape hatch.
+    if (bandCells > CUE_MATCH_POLICY.maxAlignmentCells) {
+      addLog(`[工业级合并] 对齐矩阵约 ${Math.round(alignmentCells / 1_000_000)}M 单元，已切换为低内存快速合并`, 'info');
+      options.onFallback?.({
+        reason: 'matrix_too_large',
+        cells: alignmentCells,
+        limit: CUE_MATCH_POLICY.maxAlignmentCells,
+      });
+      return mergeSubtitles(zhSubs, enSubs, commSubs, addLog);
+    }
+    addLog(
+      `[工业级合并] 对齐矩阵约 ${Math.round(alignmentCells / 1_000_000)}M 单元，启用带宽 ${2 * halfBand + 1} 的带状 DP`,
+      'info',
+    );
     options.onFallback?.({
-      reason: 'matrix_too_large',
+      reason: 'banded',
       cells: alignmentCells,
       limit: CUE_MATCH_POLICY.maxAlignmentCells,
+      bandHalfWidth: halfBand,
     });
-    return mergeSubtitles(zhSubs, enSubs, commSubs, addLog);
   }
-  if (Math.abs(offsetDiagnosis.offsetMs) >= 1200) {
+  if (Math.abs(offsetDiagnosis.offsetMs) >= OFFSET_DIAGNOSIS_POLICY.logAbsMs) {
     addLog(
       offsetDiagnosis.shouldApply
         ? `[时间轴诊断] 检测到稳定整体偏移 ${offsetDiagnosis.offsetMs}ms，已用于对齐判断`
@@ -1810,7 +1527,6 @@ export function alignSubtitlesIndustrial(
     );
   }
   
-  const gapPenalty = -6;
   const mismatchPenalty = -15;
   
   // Score matrix calculation between Chinese and English nodes
@@ -1835,66 +1551,8 @@ export function alignSubtitlesIndustrial(
     }
     return mismatchPenalty;
   };
-  
-  // 滚动分数，保留方向
-  let previousScores = new Float64Array(N + 1);
-  let currentScores = new Float64Array(N + 1);
-  const directions = new Int8Array((M + 1) * (N + 1));
-  for (let column = 1; column <= N; column += 1) {
-    previousScores[column] = column * gapPenalty;
-    directions[column] = 2;
-  }
-  for (let row = 1; row <= M; row += 1) {
-    currentScores[0] = row * gapPenalty;
-    directions[row * (N + 1)] = 1;
-    for (let column = 1; column <= N; column += 1) {
-      const scoreMatch = previousScores[column - 1] + getPairScore(row - 1, column - 1);
-      const scoreGapZh = previousScores[column] + gapPenalty;
-      const scoreGapEn = currentScores[column - 1] + gapPenalty;
-      const directionIndex = row * (N + 1) + column;
-      if (scoreMatch >= scoreGapZh && scoreMatch >= scoreGapEn) {
-        currentScores[column] = scoreMatch;
-        directions[directionIndex] = 0;
-      } else if (scoreGapZh >= scoreGapEn) {
-        currentScores[column] = scoreGapZh;
-        directions[directionIndex] = 1;
-      } else {
-        currentScores[column] = scoreGapEn;
-        directions[directionIndex] = 2;
-      }
-    }
-    [previousScores, currentScores] = [currentScores, previousScores];
-  }
-  
-  // Backtracking path extraction
-  const path: AlignmentStep[] = [];
-  let i = M;
-  let j = N;
-  
-  while (i > 0 || j > 0) {
-    if (i > 0 && j > 0) {
-      const direction = directions[i * (N + 1) + j];
-      if (direction === 0) {
-        path.push({ zhIdx: i - 1, enIdx: j - 1 });
-        i -= 1;
-        j -= 1;
-      } else if (direction === 1) {
-        path.push({ zhIdx: i - 1, enIdx: null });
-        i -= 1;
-      } else {
-        path.push({ zhIdx: null, enIdx: j - 1 });
-        j -= 1;
-      }
-    } else if (i > 0) {
-      path.push({ zhIdx: i - 1, enIdx: null });
-      i--;
-    } else {
-      path.push({ zhIdx: null, enIdx: j - 1 });
-      j--;
-    }
-  }
-  
-  path.reverse();
+
+  const path = computeAlignmentPath(M, N, getPairScore, halfBand);
   
   const mergedDialogues: Array<{ ts: string; text: string; type: string; cueKind?: CueKind; auxiliary?: AuxiliaryCueClassification; alignment?: SubRow['alignment']; provenance?: AlignmentProvenance }> = [];
   const skippedEn = new Set<number>();

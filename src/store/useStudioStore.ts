@@ -1655,6 +1655,15 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const merged = alignmentMode === 'industrial'
           ? alignSubtitlesIndustrial(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t), {
               onFallback: (info) => {
+                if (info.reason === 'banded') {
+                  get().setStatusNotice({
+                    id: 'alignment-banded',
+                    tone: 'notice',
+                    title: '已启用带状对齐',
+                    message: `字幕体量较大（约 ${Math.round(info.cells / 1_000_000)}M 对齐单元），使用带宽 ${((info.bandHalfWidth ?? 0) * 2) + 1} 的工业对齐以控制内存。`,
+                  });
+                  return;
+                }
                 get().setStatusNotice({
                   id: 'alignment-fallback',
                   tone: 'notice',

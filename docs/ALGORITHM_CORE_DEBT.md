@@ -53,12 +53,31 @@
 3. **分类阈值表 `AUXILIARY_CLASSIFY_SCORES`**  
    music / screenText / speechContext / ambient / bracket / unknownBase 集中命名，分类器只读表。
 
-## 未做（刻意留 P2+）
+4. **带状 DP（Sakoe–Chiba）** — 2026-07-18 续  
+   - `M*N > maxAlignmentCells` 时不再默认快速合并，改为对角线附近带宽 `2*half+1`（半宽夹在 `minBandHalfWidth`…`maxBandHalfWidth`）的工业 DP。  
+   - `onFallback.reason = 'banded'` → UI「已启用带状对齐」；仅极端体量（最小带宽仍超预算）才 `matrix_too_large` → 快速合并。  
+   - 路径计算抽到 `computeAlignmentPath`；带外回溯沿比例对角线步行。
 
-- 分窗 / banded DP（大矩阵真正工业对齐）
-- `subtitleCore.ts` 拆模块
-- 解析器多阶段与置信度驱动人工复核 UI
-- 文件名 `parseMediaFilename` / `smartDetectTitle` 加固（另文）
+## P2 落地（2026-07-18）
+
+1. **`mediaIdentity.ts` 抽出**  
+   `cleanFilename` / `parseMediaFilename` / `assessMediaIdentity` / `buildTmdbSearchQueries` / `smartDetectTitle` 迁出；`subtitleCore` re-export 保兼容。
+
+2. **文件名身份加固**  
+   - `cleanFilename` 只读 `parseMediaFilename`（电影保留年份），消灭双路径。  
+   - `smartDetectTitle` 优先 `assessMediaIdentity` 强身份；噪声 token 的 common-join 降级；补回归。
+
+3. **`OFFSET_DIAGNOSIS_POLICY` + `offsetDiagnosis.ts`**  
+   阈值集中；`estimateGlobalOffsetFromStarts` 可单测；工业路径日志门控读政策表。
+
+4. **对齐差异复核：`shifted-match`**  
+   `analyzeAlignmentDiff` 将整体平移配对从「直接配对」拆出并分组；`AlignmentDiffPanel` 增加「平移配对」筛选与计数。
+
+## 仍留后续（P2+/P3）
+
+- 继续拆 `parse` / `classify` / `align` / `export` 模块
+- 低置信度队列（非 shifted）与解析器多阶段
+- 分窗拼接（window stitch）作为带状之外的第二种大矩阵策略
 
 ## 验证
 
@@ -71,5 +90,8 @@ npm run lint
 ## 追溯索引
 
 - 政策与展开：`src/utils/subtitleCore.ts`（`CUE_MATCH_POLICY`、`tryExpandPackedDialogueAtPath`、`classifyAuxiliaryCue`）
+- 身份：`src/utils/mediaIdentity.ts`
+- 偏移：`src/utils/timeline/offsetDiagnosis.ts`
+- 差异复核：`src/utils/timeline/alignmentDiff.ts`、`AlignmentDiffPanel.tsx`
 - 降级通知：`src/store/useStudioStore.ts` → `runSubtitleMerge`
 - 回归：`scripts/regression-subtitle-core.mjs`
