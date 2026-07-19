@@ -46,10 +46,10 @@ export const IngestStep: React.FC = () => {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="z-10 mx-auto grid w-full max-w-[1180px] flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(200px,240px)_minmax(0,1fr)] lg:items-start lg:gap-5"
+            className="z-10 mx-auto grid w-full max-w-[1180px] flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(220px,260px)_minmax(0,1fr)] lg:items-stretch lg:gap-5"
           >
             <SourceIdentityStrip />
-            <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+            <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col">
               <TaskList />
             </div>
             <TmdbPanel mode="modal-only" />

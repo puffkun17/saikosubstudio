@@ -295,209 +295,207 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="glass-panel-ar flex max-h-[85vh] w-full max-w-2xl flex-col gap-0 overflow-hidden rounded-lg shadow-[0_24px_70px_rgba(0,0,0,0.46)]"
+              className="glass-panel-ar flex max-h-[min(78vh,640px)] w-full max-w-xl flex-col overflow-hidden rounded-lg shadow-[0_24px_70px_rgba(0,0,0,0.46)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="tmdb-search-title"
               aria-describedby={needsTitleInput ? 'tmdb-search-description' : undefined}
             >
               {/* Modal Header */}
-              <div className="flex justify-between items-center px-6 py-5 border-b border-white/5">
-                <div>
-                  <h2 id="tmdb-search-title" className="text-xl font-semibold text-white tracking-tight">{needsTitleInput ? '补充片名' : '手动检索'}</h2>
-                  {needsTitleInput && <p id="tmdb-search-description" className="mt-1 text-sm text-[#aab7d5]">确认后将用于片源资料与导出命名。</p>}
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/5 px-4 py-3">
+                <div className="min-w-0">
+                  <h2 id="tmdb-search-title" className="text-base font-semibold tracking-tight text-white">
+                    {needsTitleInput ? '补充片名' : '手动检索'}
+                  </h2>
+                  {needsTitleInput && (
+                    <p id="tmdb-search-description" className="mt-0.5 text-xs text-[#aab7d5]">
+                      确认后将用于片源资料与导出命名。
+                    </p>
+                  )}
                 </div>
                 <button
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition cursor-pointer"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/5 text-white/50 transition hover:bg-white/10 hover:text-white cursor-pointer"
                   onClick={handleClose}
                   type="button"
                   aria-label="关闭片源检索"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
 
-              <form onSubmit={handleManualSearch} className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
-                <div className="flex flex-col gap-4">
-                  <label htmlFor="tmdb-title-input" className="flex flex-col gap-2 text-sm font-medium text-white/78">
+              <form onSubmit={handleManualSearch} className="flex min-h-0 flex-1 flex-col">
+                <div className="flex shrink-0 flex-col gap-2.5 border-b border-white/[0.04] px-4 py-3">
+                  <label htmlFor="tmdb-title-input" className="flex flex-col gap-1.5 text-xs font-medium text-white/78">
                     片名
                     <span className="relative">
-                    <input
-                      id="tmdb-title-input"
-                      type="text"
-                      className={`w-full bg-white/[0.02] border rounded-xl py-4 pl-12 pr-4 text-white text-base outline-none transition-all ${needsTitleInput ? 'border-[#8295c5]/35 focus:bg-[#8295c5]/[0.04] focus:border-[#9aaad3]' : 'border-white/[0.07] focus:bg-white/[0.04] focus:border-[#9ca3af]/35'}`}
-                      value={tmdbManualInput.title}
-                      onChange={e => setTmdbManualInput({ ...tmdbManualInput, title: e.target.value })}
-                      placeholder="输入电影或剧集名称"
-                      required
-                      autoFocus
-                    />
-                    <Search className="w-5 h-5 text-white/40 absolute left-4 top-1/2 -translate-y-1/2" aria-hidden="true" />
+                      <input
+                        id="tmdb-title-input"
+                        type="text"
+                        className={`w-full rounded-lg border bg-white/[0.02] py-2.5 pl-10 pr-3 text-sm text-white outline-none transition-all ${needsTitleInput ? 'border-[#8295c5]/35 focus:border-[#9aaad3] focus:bg-[#8295c5]/[0.04]' : 'border-white/[0.07] focus:border-[#9ca3af]/35 focus:bg-white/[0.04]'}`}
+                        value={tmdbManualInput.title}
+                        onChange={e => setTmdbManualInput({ ...tmdbManualInput, title: e.target.value })}
+                        placeholder="输入电影或剧集名称"
+                        required
+                        autoFocus
+                      />
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" aria-hidden="true" />
                     </span>
                   </label>
 
-                  <div className="grid grid-cols-[minmax(0,1fr)_minmax(8rem,0.55fr)] gap-3">
-                    <label htmlFor="tmdb-type-input" className="flex min-w-0 flex-col gap-2 text-sm font-medium text-white/78">
+                  <div className="grid grid-cols-[minmax(0,1fr)_minmax(5.5rem,0.45fr)] gap-2">
+                    <label htmlFor="tmdb-type-input" className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-white/78">
                       类型
-                    <select
-                      id="tmdb-type-input"
-                      className="bg-white/[0.02] border border-white/[0.07] focus:border-[#9ca3af]/35 focus:bg-white/[0.04] rounded-xl py-3.5 px-4 text-white text-base outline-none transition-all cursor-pointer flex-1"
-                      value={tmdbManualInput.type}
-                      onChange={e => setTmdbManualInput({ ...tmdbManualInput, type: e.target.value as 'movie' | 'tv' })}
-                    >
-                      <option value="movie" className="bg-[#0b0b12] text-white">电影</option>
-                      <option value="tv" className="bg-[#0b0b12] text-white">剧集</option>
-                    </select>
+                      <select
+                        id="tmdb-type-input"
+                        className="cursor-pointer rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2 text-sm text-white outline-none transition-all focus:border-[#9ca3af]/35 focus:bg-white/[0.04]"
+                        value={tmdbManualInput.type}
+                        onChange={e => setTmdbManualInput({ ...tmdbManualInput, type: e.target.value as 'movie' | 'tv' })}
+                      >
+                        <option value="movie" className="bg-[#0b0b12] text-white">电影</option>
+                        <option value="tv" className="bg-[#0b0b12] text-white">剧集</option>
+                      </select>
                     </label>
-                    <label htmlFor="tmdb-year-input" className="flex min-w-0 flex-col gap-2 text-sm font-medium text-white/78">
-                      年份 <span className="sr-only">可选</span>
-                    <input
-                      id="tmdb-year-input"
-                      type="number"
-                      min="1888"
-                      max="2100"
-                      inputMode="numeric"
-                      className="w-full bg-white/[0.02] border border-white/[0.07] focus:border-[#9ca3af]/35 focus:bg-white/[0.04] rounded-xl py-3.5 px-4 text-white text-base font-mono tabular-nums outline-none transition-all placeholder:text-white/28"
-                      value={tmdbManualInput.year}
-                      onChange={e => setTmdbManualInput({ ...tmdbManualInput, year: e.target.value })}
-                      placeholder="年份"
-                    />
+                    <label htmlFor="tmdb-year-input" className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-white/78">
+                      年份
+                      <input
+                        id="tmdb-year-input"
+                        type="number"
+                        min="1888"
+                        max="2100"
+                        inputMode="numeric"
+                        className="w-full rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2 font-mono text-sm tabular-nums text-white outline-none transition-all placeholder:text-white/28 focus:border-[#9ca3af]/35 focus:bg-white/[0.04]"
+                        value={tmdbManualInput.year}
+                        onChange={e => setTmdbManualInput({ ...tmdbManualInput, year: e.target.value })}
+                        placeholder="可选"
+                      />
                     </label>
                   </div>
 
                   {tmdbManualInput.type === 'tv' && (
-                    <div className="rounded-xl border border-white/[0.07] bg-white/[0.012] p-3.5" role="group" aria-labelledby="episode-location-label">
-                      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                        <span id="episode-location-label" className="text-sm font-medium text-white/78">集数定位</span>
-                        <span className="text-xs text-white/38">用于单集剧照与导出命名</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <label className="group flex min-w-0 items-center rounded-lg border border-white/[0.075] bg-black/20 transition-colors focus-within:border-[#8fa3d1]/48 focus-within:bg-[#8fa3d1]/[0.035]">
-                          <span className="shrink-0 pl-3.5 text-sm text-white/48">第</span>
-                          <input
-                            type="number"
-                            min="1"
-                            max="999"
-                            inputMode="numeric"
-                            aria-label="季数"
-                            className="no-spin min-w-0 flex-1 bg-transparent px-2 py-3 text-center font-mono text-base font-semibold tabular-nums text-white outline-none"
-                            value={tmdbManualInput.season || ''}
-                            onChange={e => setTmdbManualInput({ ...tmdbManualInput, season: e.target.value })}
-                          />
-                          <span className="shrink-0 border-l border-white/[0.06] px-3.5 py-1 text-sm font-medium text-[#9aaad3]">季</span>
-                        </label>
-                        <label className="group flex min-w-0 items-center rounded-lg border border-white/[0.075] bg-black/20 transition-colors focus-within:border-[#8fa3d1]/48 focus-within:bg-[#8fa3d1]/[0.035]">
-                          <span className="shrink-0 pl-3.5 text-sm text-white/48">第</span>
-                          <input
-                            type="number"
-                            min="1"
-                            max="9999"
-                            inputMode="numeric"
-                            aria-label="集数"
-                            className="no-spin min-w-0 flex-1 bg-transparent px-2 py-3 text-center font-mono text-base font-semibold tabular-nums text-white outline-none"
-                            value={tmdbManualInput.episode || ''}
-                            onChange={e => setTmdbManualInput({ ...tmdbManualInput, episode: e.target.value })}
-                          />
-                          <span className="shrink-0 border-l border-white/[0.06] px-3.5 py-1 text-sm font-medium text-[#9aaad3]">集</span>
-                        </label>
-                      </div>
+                    <div className="grid grid-cols-2 gap-2" role="group" aria-labelledby="episode-location-label">
+                      <span id="episode-location-label" className="sr-only">集数定位</span>
+                      <label className="flex min-w-0 items-center rounded-lg border border-white/[0.075] bg-black/20 transition-colors focus-within:border-[#8fa3d1]/48">
+                        <span className="shrink-0 pl-2.5 text-xs text-white/48">第</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="999"
+                          inputMode="numeric"
+                          aria-label="季数"
+                          className="no-spin min-w-0 flex-1 bg-transparent px-1.5 py-2 text-center font-mono text-sm font-semibold tabular-nums text-white outline-none"
+                          value={tmdbManualInput.season || ''}
+                          onChange={e => setTmdbManualInput({ ...tmdbManualInput, season: e.target.value })}
+                        />
+                        <span className="shrink-0 border-l border-white/[0.06] px-2.5 py-1 text-xs font-medium text-[#9aaad3]">季</span>
+                      </label>
+                      <label className="flex min-w-0 items-center rounded-lg border border-white/[0.075] bg-black/20 transition-colors focus-within:border-[#8fa3d1]/48">
+                        <span className="shrink-0 pl-2.5 text-xs text-white/48">第</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="9999"
+                          inputMode="numeric"
+                          aria-label="集数"
+                          className="no-spin min-w-0 flex-1 bg-transparent px-1.5 py-2 text-center font-mono text-sm font-semibold tabular-nums text-white outline-none"
+                          value={tmdbManualInput.episode || ''}
+                          onChange={e => setTmdbManualInput({ ...tmdbManualInput, episode: e.target.value })}
+                        />
+                        <span className="shrink-0 border-l border-white/[0.06] px-2.5 py-1 text-xs font-medium text-[#9aaad3]">集</span>
+                      </label>
                     </div>
                   )}
 
                   <button
                     type="submit"
-                    className={`w-full py-4 font-semibold text-base rounded-xl transition-all hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer ${shouldHighlightSearch ? 'action-required-button' : 'bg-[#e5e7eb] hover:bg-[#ffffff] text-black shadow-[0_4px_20px_rgba(156,163,175,0.16)]'}`}
+                    className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg text-sm font-semibold transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${shouldHighlightSearch ? 'action-required-button' : 'bg-[#e5e7eb] text-black hover:bg-white'}`}
                     disabled={isSearchingTmdb || isApplyingSuggestion || !tmdbManualInput.title.trim()}
                   >
                     {isSearchingTmdb ? (
-                      <span className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black" />
                     ) : (
-                      <Search className="w-4 h-4" />
+                      <Search className="h-4 w-4" />
                     )}
-                    {isSearchingTmdb ? '检索中...' : '开始检索'}
+                    {isSearchingTmdb ? '检索中…' : '开始检索'}
                   </button>
                 </div>
 
-                {/* Candidates List */}
-                {tmdbSuggestions.length > 0 && (
-                  <div className="flex flex-col gap-3 mt-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm text-white/75 font-medium">匹配结果 ({tmdbSuggestions.length})</span>
-                      <span className="text-xs text-white/35">选择正确片名后应用</span>
-                    </div>
+                {/* Candidates — scroll within remaining viewport */}
+                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+                  {tmdbSuggestions.length > 0 ? (
                     <div className="flex flex-col gap-2">
-                      {tmdbSuggestions.map(s => {
-                        const isChosen = pendingSuggestion?.id === s.id || (!pendingSuggestion && selectedSuggestion?.id === s.id);
-                        const year = s.release_date ? s.release_date.slice(0, 4) : s.first_air_date ? s.first_air_date.slice(0, 4) : '';
-                        const mediaType = s.media_type === 'movie' ? '电影' : '剧集';
-                        const posterUrl = s.poster_path ? `https://image.tmdb.org/t/p/w92${s.poster_path}` : null;
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs font-medium text-white/75">匹配结果 ({tmdbSuggestions.length})</span>
+                        <span className="text-[11px] text-white/35">点选后应用</span>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        {tmdbSuggestions.map(s => {
+                          const isChosen = pendingSuggestion?.id === s.id || (!pendingSuggestion && selectedSuggestion?.id === s.id);
+                          const year = s.release_date ? s.release_date.slice(0, 4) : s.first_air_date ? s.first_air_date.slice(0, 4) : '';
+                          const mediaType = s.media_type === 'movie' ? '电影' : '剧集';
+                          const posterUrl = s.poster_path ? `https://image.tmdb.org/t/p/w92${s.poster_path}` : null;
 
-                        return (
-                          <button
-                            key={s.id}
-                            type="button"
-                            aria-pressed={isChosen}
-                            className={`w-full p-3 rounded-xl flex items-center gap-4 text-left transition-all border cursor-pointer
-                            ${isChosen
-                                ? 'border-[#8295c5]/45 bg-[#8295c5]/[0.07] shadow-[inset_3px_0_0_#8295c5]'
-                                : 'bg-white/[0.015] border-white/5 hover:bg-white/[0.035]'
-                              }`}
-                            onClick={() => setPendingSuggestion(s)}
-                          >
-                            <div className="flex-shrink-0 w-10 h-14 rounded-md overflow-hidden bg-black/50 border border-white/10">
-                              {posterUrl ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={posterUrl} alt={s.title || s.name} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-white/25">
-                                  <ImageIcon className="w-4 h-4" />
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="flex min-w-0 flex-1 flex-col justify-center">
-                              <span className={`truncate font-sans text-base font-semibold ${isChosen ? 'text-[#e5e7eb]' : 'text-white/90'}`}>
-                                {s.title || s.name}
-                              </span>
-                              {((s.original_title && s.original_title !== s.title) || (s.original_name && s.original_name !== s.name)) && (
-                                <span
-                                  className="mt-0.5 truncate whitespace-nowrap text-[12px] font-medium tracking-[0.02em] text-white/45"
-                                  style={{ fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }}
-                                  title={s.original_title || s.original_name}
-                                >
-                                  {s.original_title || s.original_name}
-                                </span>
-                              )}
-                              <div className="mt-1 flex items-center gap-2">
-                                {year && <span className="font-mono text-xs text-white/40">{year}</span>}
-                                <span className="rounded bg-white/5 px-1.5 py-0.5 text-xs font-medium text-white/50">
-                                  {mediaType}
-                                </span>
-                                {(s.vote_average ?? 0) > 0 && (
-                                  <span className="flex items-center gap-1 font-mono text-xs text-[#e5e7eb]">
-                                    <Star className="h-3.5 w-3.5 fill-current stroke-[2]" aria-hidden="true" />
-                                    {(s.vote_average ?? 0).toFixed(1)}
-                                  </span>
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              aria-pressed={isChosen}
+                              className={`flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition-all
+                              ${isChosen
+                                  ? 'border-[#8295c5]/45 bg-[#8295c5]/[0.07] shadow-[inset_2px_0_0_#8295c5]'
+                                  : 'border-white/5 bg-white/[0.015] hover:bg-white/[0.035]'
+                                }`}
+                              onClick={() => setPendingSuggestion(s)}
+                            >
+                              <div className="h-11 w-8 flex-shrink-0 overflow-hidden rounded bg-black/50 border border-white/10">
+                                {posterUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={posterUrl} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center text-white/25">
+                                    <ImageIcon className="h-3.5 w-3.5" />
+                                  </div>
                                 )}
                               </div>
-                            </div>
 
-                            <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border ${isChosen ? 'border-[#8fa3d1]/55 bg-[#8fa3d1]/15 text-[#d2d9e9]' : 'border-white/[0.09] text-transparent'}`}>
-                              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                            </span>
-                          </button>
-                        );
-                      })}
+                              <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
+                                <span className={`truncate text-sm font-semibold ${isChosen ? 'text-[#e5e7eb]' : 'text-white/90'}`}>
+                                  {s.title || s.name}
+                                </span>
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-white/45">
+                                  {year && <span className="font-mono tabular-nums">{year}</span>}
+                                  <span>{mediaType}</span>
+                                  {(s.vote_average ?? 0) > 0 && (
+                                    <span className="inline-flex items-center gap-0.5 font-mono text-[#e5e7eb]">
+                                      <Star className="h-3 w-3 fill-current" aria-hidden="true" />
+                                      {(s.vote_average ?? 0).toFixed(1)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border ${isChosen ? 'border-[#8fa3d1]/55 bg-[#8fa3d1]/15 text-[#d2d9e9]' : 'border-white/[0.09] text-transparent'}`}>
+                                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <p className="py-6 text-center text-xs text-white/35">
+                      {isSearchingTmdb ? '正在检索…' : '输入片名后开始检索'}
+                    </p>
+                  )}
+                </div>
               </form>
 
               {/* Modal Footer */}
-              <div className="flex flex-col gap-3 border-t border-white/5 bg-[#070708]/95 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0 text-sm text-white/50">
+              <div className="flex shrink-0 flex-col gap-2 border-t border-white/5 bg-[#070708]/95 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 text-xs text-white/50">
                   {pendingSuggestion ? (
-                    <span className="block truncate text-white">已选择 <strong className="text-[#9aaad3]">{pendingSuggestion.title || pendingSuggestion.name}</strong></span>
+                    <span className="block truncate text-white">
+                      已选择 <strong className="text-[#9aaad3]">{pendingSuggestion.title || pendingSuggestion.name}</strong>
+                    </span>
                   ) : (
                     '请选择匹配项'
                   )}
@@ -505,7 +503,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                 <div className="flex shrink-0 items-center gap-2">
                   <button
                     type="button"
-                    className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white/72 hover:text-white rounded-xl transition text-sm font-semibold cursor-pointer"
+                    className="cursor-pointer rounded-lg bg-white/5 px-3 py-2 text-sm font-semibold text-white/72 transition hover:bg-white/10 hover:text-white"
                     onClick={handleClose}
                     disabled={isApplyingSuggestion}
                   >
@@ -513,12 +511,12 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                   </button>
                   <button
                     type="button"
-                    className="action-required-button inline-flex min-w-36 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-35"
+                    className="action-required-button inline-flex min-w-[8.5rem] items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-35"
                     onClick={() => pendingSuggestion && void handleApplySuggestion(pendingSuggestion)}
                     disabled={!pendingSuggestion || isApplyingSuggestion}
                   >
                     {isApplyingSuggestion ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black" /> : <CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
-                    {isApplyingSuggestion ? '正在应用' : '应用所选片名'}
+                    {isApplyingSuggestion ? '正在应用' : '应用所选'}
                   </button>
                 </div>
               </div>
