@@ -61,7 +61,7 @@ export const InfoHint: React.FC<InfoHintProps> = ({
         onMouseLeave={() => setIsOpen(false)}
         onFocus={() => setIsOpen(true)}
         onBlur={() => setIsOpen(false)}
-        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.025] text-neutral-500 transition-colors hover:border-white/[0.16] hover:text-neutral-200 focus-visible:border-white/25 focus-visible:text-neutral-100 focus-visible:outline-none"
+        className="v4-focus-ring inline-flex h-5 w-5 items-center justify-center rounded-full border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] transition-colors hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-accent-strong)] focus-visible:border-[var(--v4-accent)] focus-visible:text-[var(--v4-text)] focus-visible:outline-none"
       >
         <Info className="h-3.5 w-3.5" />
       </button>

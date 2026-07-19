@@ -95,15 +95,7 @@ export const SourceIdentityStrip: React.FC = () => {
               >
                 {displayTitle}
               </h3>
-              <span
-                className={`inline-flex shrink-0 items-center rounded-md border px-2 py-0.5 text-xs font-semibold ${
-                  tmdbData
-                    ? 'border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
-                    : isSearchingTmdb
-                      ? 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]'
-                      : 'border-[var(--v4-line)] text-[var(--v4-text-faint)]'
-                }`}
-              >
+              <span className="rd-chip rd-chip--tight shrink-0">
                 {statusLabel}
               </span>
             </div>
@@ -126,21 +118,18 @@ export const SourceIdentityStrip: React.FC = () => {
             {(metaBits.length > 0 || hasScore || (tmdbData?.genres?.length ?? 0) > 0) && (
               <div className="mt-3 flex flex-wrap items-center gap-1.5">
                 {metaBits.length > 0 && (
-                  <span className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-[12px] font-medium tabular-nums text-[var(--v4-text)]">
+                  <span className="rd-chip tabular-nums">
                     {metaBits.join(' · ')}
                   </span>
                 )}
                 {hasScore && (
-                  <span className="inline-flex items-center gap-1 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-[12px] font-semibold tabular-nums text-[var(--v4-text)]">
+                  <span className="rd-chip tabular-nums font-semibold">
                     <Star className="h-3.5 w-3.5 fill-[var(--v4-accent)] text-[var(--v4-accent)]" aria-hidden="true" />
                     {tmdbData!.voteAverage.toFixed(1)}
                   </span>
                 )}
                 {tmdbData?.genres?.slice(0, 4).map((genre) => (
-                  <span
-                    key={genre}
-                    className="rounded-md border border-[var(--v4-line)] bg-black/20 px-2.5 py-1 text-[12px] font-medium text-[var(--v4-text-muted)]"
-                  >
+                  <span key={genre} className="rd-chip text-[var(--v4-text-muted)]">
                     {genre}
                   </span>
                 ))}
@@ -164,19 +153,19 @@ export const SourceIdentityStrip: React.FC = () => {
                 transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                 className="overflow-hidden"
               >
-                <div className="rounded-lg border border-[color:rgba(197,164,114,0.28)] bg-[color:rgba(28,22,14,0.72)] px-3 py-2.5">
+                <div className="rounded-lg border border-[color:rgba(196,137,58,0.28)] bg-[var(--v4-panel-muted)] px-3 py-2.5">
                   <div className="flex items-start gap-2">
-                    <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-[#f0e6d4]">
+                    <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-[var(--v4-text)]">
                       <span className="font-semibold">{filmNotice.title}</span>
                       {filmNotice.message && (
-                        <span className="text-[color:rgba(240,230,212,0.78)]"> · {filmNotice.message}</span>
+                        <span className="text-[var(--v4-text-muted)]"> · {filmNotice.message}</span>
                       )}
                     </p>
                     <button
                       type="button"
                       aria-label="关闭提示"
                       onClick={() => dismissStatusNotice(filmNotice.id)}
-                      className="v4-focus-ring grid h-7 w-7 shrink-0 place-items-center rounded-md text-[color:rgba(240,230,212,0.5)] hover:bg-white/[0.05] hover:text-[#f0e6d4]"
+                      className="v4-focus-ring grid h-7 w-7 shrink-0 place-items-center rounded-md text-[var(--v4-text-faint)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -185,7 +174,7 @@ export const SourceIdentityStrip: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setTmdbManualOpen(true)}
-                      className="v4-focus-ring mt-2 inline-flex h-8 w-full items-center justify-center rounded-md border border-[color:rgba(208,164,111,0.28)] bg-[var(--v4-accent-soft)] px-2.5 text-xs font-semibold text-[var(--v4-accent-strong)]"
+                      className="v4-focus-ring mt-2 inline-flex h-8 w-full items-center justify-center rounded-md border border-[color:rgba(239,141,95,0.28)] bg-[var(--v4-accent-soft)] px-2.5 text-xs font-semibold text-[var(--v4-accent-strong)]"
                     >
                       {filmNotice.actionLabel}
                     </button>
@@ -200,7 +189,7 @@ export const SourceIdentityStrip: React.FC = () => {
           <button
             type="button"
             onClick={() => setTmdbManualOpen(true)}
-            className="v4-focus-ring inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-3 text-sm font-semibold text-[var(--v4-accent-strong)] transition-colors hover:bg-[color:rgba(208,164,111,0.22)]"
+            className="v4-focus-ring inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-3 text-sm font-semibold text-[var(--v4-accent-strong)] transition-colors hover:bg-[color:rgba(239,141,95,0.22)]"
           >
             <Search className="h-3.5 w-3.5" aria-hidden="true" />
             {rematchLabel}

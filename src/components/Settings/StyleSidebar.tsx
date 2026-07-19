@@ -40,9 +40,9 @@ const FontFamilySelect = ({
   onChange: (v: string) => void
 }) => (
   <div className="flex items-center justify-between gap-3 py-2">
-    <span className="text-sm text-neutral-300 font-medium shrink-0">{label}</span>
+    <span className="text-sm text-[var(--v4-text-muted)] font-medium shrink-0">{label}</span>
     <select
-      className="min-w-0 bg-black/25 border border-white/[0.08] focus:border-white/20 rounded-lg text-sm px-2.5 py-2 text-neutral-200 outline-none cursor-pointer transition-all w-40 text-right"
+      className="min-w-0 w-40 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-2 text-right text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-white cursor-pointer"
       value={value}
       onChange={e => onChange(e.target.value)}
     >
@@ -74,16 +74,16 @@ const ColorPicker = ({
         onClick={onToggle}
         aria-expanded={isOpen}
       >
-        <span className="text-sm text-neutral-300 font-medium">{label}</span>
+        <span className="text-sm text-[var(--v4-text-muted)] font-medium">{label}</span>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-neutral-500 tabular-nums">{value}</span>
+          <span className="text-xs font-mono text-[var(--v4-text-faint)] tabular-nums">{value}</span>
           <div
-            className="w-5 h-5 rounded-full border border-white/15 shadow-sm relative transition-all duration-200 group-hover:scale-105"
+            className="w-5 h-5 rounded-full border border-[var(--v4-line-strong)] shadow-sm relative transition-all duration-200 group-hover:scale-105"
             style={{ backgroundColor: value }}
           >
             {isOpen && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full">
-                <div className="w-1.5 h-1.5 bg-white rounded-full" />
+              <div className="absolute inset-0 flex items-center justify-center bg-[var(--v4-text)]/20 rounded-full">
+                <div className="w-1.5 h-1.5 bg-[var(--v4-accent-ink)] rounded-full" />
               </div>
             )}
           </div>
@@ -99,18 +99,18 @@ const ColorPicker = ({
             transition={{ type: "spring", stiffness: 350, damping: 28 }}
             className="overflow-hidden"
           >
-            <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-white/[0.04]">
+            <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-[var(--v4-line)]">
               {PRESET_COLORS.map(c => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => onChange(c)}
-                  className={`h-5 w-5 rounded-full border transition-all cursor-pointer ${value === c ? 'border-[#e5e7eb] shadow-[0_0_8px_rgba(156,163,175,0.35)] scale-105' : 'border-white/[0.10] hover:border-white/25 hover:scale-105'}`}
+                  className={`h-5 w-5 rounded-full border transition-all cursor-pointer ${value === c ? 'border-[var(--v4-accent-strong)] shadow-[0_0_8px_color-mix(in_srgb,var(--v4-accent)_35%,transparent)] scale-105' : 'border-[var(--v4-line)] hover:border-[var(--v4-line-strong)] hover:scale-105'}`}
                   style={{ backgroundColor: c }}
                 />
               ))}
               <div
-                className="relative h-5 w-5 rounded-full overflow-hidden border border-white/[0.10] hover:border-white/25 hover:scale-105 shrink-0 cursor-pointer transition-all"
+                className="relative h-5 w-5 rounded-full overflow-hidden border border-[var(--v4-line)] hover:border-[var(--v4-line-strong)] hover:scale-105 shrink-0 cursor-pointer transition-all"
                 title="自定义颜色"
               >
                 <div className="absolute inset-0 bg-[conic-gradient(red,yellow,green,cyan,blue,magenta,red)] opacity-80" />
@@ -140,9 +140,9 @@ const SettingSection = ({
   action?: React.ReactNode;
   icon?: React.ReactNode;
 }) => (
-  <section className="border-t border-white/[0.07] pt-4 first:border-t-0 first:pt-0">
+  <section className="border-t border-[var(--v4-line)] pt-4 first:border-t-0 first:pt-0">
     <div className="flex items-center justify-between gap-3 mb-3">
-      <h4 className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-100 tracking-tight">
+      <h4 className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--v4-text)] tracking-tight">
         {icon}
         {title}
       </h4>
@@ -172,9 +172,9 @@ const SliderControl = ({
   onChange: (value: number) => void;
 }) => (
   <div className="flex flex-col gap-1.5">
-    <div className="flex justify-between text-sm font-medium text-neutral-300 select-none">
+    <div className="flex justify-between text-sm font-medium text-[var(--v4-text-muted)] select-none">
       <span>{label}</span>
-      <span className="font-mono text-neutral-100 font-semibold text-xs tabular-nums">
+      <span className="font-mono text-[var(--v4-text)] font-semibold text-xs tabular-nums">
         {suffix === 'x' ? value.toFixed(2) : value}{suffix}
       </span>
     </div>
@@ -188,7 +188,7 @@ const SliderControl = ({
       className="w-full glass-slider-input"
       aria-label={label}
     />
-    {hint && <div className="text-xs text-neutral-500 leading-relaxed">{hint}</div>}
+    {hint && <div className="text-xs text-[var(--v4-text-faint)] leading-relaxed">{hint}</div>}
   </div>
 );
 
@@ -252,7 +252,6 @@ export const StyleSidebar: React.FC = () => {
       aspectRatio: '16:9' as const,
       globalScale: 1.0,
       auxiliaryMode: 'keep' as const,
-      // 阅片环境字体协调默认值
       zhFontFamily: 'system-ui, "PingFang SC", "Noto Sans SC", sans-serif',
       enFontFamily: 'Helvetica Neue, Arial, "Inter", sans-serif'
     };
@@ -284,16 +283,16 @@ export const StyleSidebar: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full w-full flex-col overflow-y-auto bg-[#08080a]/72 p-5 text-left scrollbar-thin">
-      <div className="mb-5 flex flex-shrink-0 items-start justify-between gap-4 border-b border-white/[0.07] pb-4">
+    <div data-surface="cream" className="flex h-full w-full flex-col overflow-y-auto bg-[var(--v5-cream)] p-5 text-left text-[var(--v4-text)] scrollbar-thin">
+      <div className="mb-5 flex flex-shrink-0 items-start justify-between gap-4 border-b border-[var(--v4-line)] pb-4">
         <div className="min-w-0 select-none">
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4 text-neutral-200" />
-            <h3 className="text-lg font-semibold tracking-tight text-neutral-50">
+            <SlidersHorizontal className="h-4 w-4 text-[var(--v4-text-muted)]" />
+            <h3 className="text-lg font-semibold tracking-tight text-[var(--v4-text)]">
               样式参数
             </h3>
           </div>
-          <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+          <p className="mt-1 text-xs leading-relaxed text-[var(--v4-text-faint)]">
             调整字幕在预览与导出中的呈现
           </p>
         </div>
@@ -303,8 +302,8 @@ export const StyleSidebar: React.FC = () => {
             type="button"
             className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-all cursor-pointer
               ${showGuides
-                ? 'border-white/15 bg-white/[0.08] text-neutral-100'
-                : 'border-white/[0.07] bg-white/[0.02] text-neutral-500 hover:text-neutral-200 hover:bg-white/[0.05]'}`}
+                ? 'border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-text)]'
+                : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] hover:text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)]'}`}
             onClick={() => setShowGuides(!showGuides)}
             aria-pressed={showGuides}
           >
@@ -314,7 +313,7 @@ export const StyleSidebar: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsSettingsOpen(false)}
-            className="grid h-9 w-9 place-items-center rounded-lg border border-white/[0.07] bg-white/[0.02] text-neutral-500 transition-colors hover:bg-white/[0.06] hover:text-white"
+            className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] transition-colors hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]"
             aria-label="关闭样式参数"
           >
             <X className="h-4 w-4" aria-hidden="true" />
@@ -334,7 +333,7 @@ export const StyleSidebar: React.FC = () => {
             role="tab"
             aria-selected={activePanel === item.id}
             onClick={() => setActivePanel(item.id)}
-            className={`v4-focus-ring h-9 rounded-md text-sm font-semibold transition-colors ${activePanel === item.id ? 'bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-muted)] hover:bg-white/[0.04] hover:text-white'}`}
+            className={`v4-focus-ring h-9 rounded-md text-sm font-semibold transition-colors ${activePanel === item.id ? 'bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel-muted)] hover:text-[var(--v4-text)]'}`}
           >
             {item.label}
           </button>
@@ -345,10 +344,10 @@ export const StyleSidebar: React.FC = () => {
         {activePanel === 'template' && (
         <SettingSection
           title="模板"
-          icon={<Paintbrush className="h-4 w-4 text-[#9aaad3]" aria-hidden="true" />}
+          icon={<Paintbrush className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}
           action={
             <button
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-300 transition-colors hover:text-white cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)] cursor-pointer"
               onClick={() => {
                 setTemplateNameInput(`自定义模板 ${customTemplates.length + 1}`);
                 setShowTemplateSave(v => !v);
@@ -375,12 +374,12 @@ export const StyleSidebar: React.FC = () => {
                     value={templateNameInput}
                     onChange={e => setTemplateNameInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleSaveTemplate(); if (e.key === 'Escape') setShowTemplateSave(false); }}
-                    className="min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-black/25 px-3 py-2 text-sm text-neutral-200 outline-none transition-all focus:border-white/20"
+              className="min-w-0 flex-1 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2 text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-white"
                     placeholder="模板名称"
                   />
                   <button
                     onClick={handleSaveTemplate}
-                    className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-black transition hover:bg-neutral-200 cursor-pointer"
+                    className="rounded-lg bg-[var(--v4-accent)] px-3 py-2 text-sm font-semibold text-[var(--v4-accent-ink)] transition hover:bg-[var(--v4-accent-strong)] cursor-pointer"
                   >
                     确定
                   </button>
@@ -400,7 +399,7 @@ export const StyleSidebar: React.FC = () => {
                   if (tpl) handleApplyPreset(tpl);
                 }
               }}
-              className="h-10 min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-black/25 px-3 text-sm text-neutral-200 outline-none transition-all focus:border-white/20 cursor-pointer"
+              className="h-10 min-w-0 flex-1 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-white cursor-pointer"
             >
               <option value="classic">默认经典样式</option>
               {customTemplates.map(tpl => (
@@ -413,7 +412,7 @@ export const StyleSidebar: React.FC = () => {
             {activePreset !== 'classic' && activePreset !== 'custom' && (
               <button
                 onClick={() => deleteCustomTemplate(activePreset)}
-                className="grid h-10 w-10 place-items-center rounded-lg border border-white/[0.07] bg-white/[0.02] text-neutral-500 transition-colors hover:bg-white/[0.05] hover:text-neutral-200 cursor-pointer"
+                className="grid h-10 w-10 place-items-center rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] transition-colors hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text-muted)] cursor-pointer"
                 title="删除当前模板"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -425,7 +424,7 @@ export const StyleSidebar: React.FC = () => {
 
         {activePanel === 'type' && (
           <>
-        <SettingSection title="文字尺寸" icon={<ALargeSmall className="h-4 w-4 text-[#9aaad3]" aria-hidden="true" />}>
+        <SettingSection title="文字尺寸" icon={<ALargeSmall className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}>
           <SliderControl
             label="整体缩放"
             value={customStyle.globalScale ?? 1}
@@ -465,7 +464,7 @@ export const StyleSidebar: React.FC = () => {
           />
         </SettingSection>
 
-        <SettingSection title="字体" icon={<FileType className="h-4 w-4 text-[#9aaad3]" aria-hidden="true" />}>
+        <SettingSection title="字体" icon={<FileType className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}>
           <FontFamilySelect
             label="中文"
             value={customStyle.zhFontFamily || FONT_FAMILIES_ZH[0].value}
@@ -480,7 +479,7 @@ export const StyleSidebar: React.FC = () => {
           />
         </SettingSection>
 
-        <SettingSection title="颜色" icon={<Pipette className="h-4 w-4 text-[#9aaad3]" aria-hidden="true" />}>
+        <SettingSection title="颜色" icon={<Pipette className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}>
           <ColorPicker
             label="中文文字"
             value={customStyle.zhColor}
@@ -515,15 +514,15 @@ export const StyleSidebar: React.FC = () => {
 
         {activePanel === 'output' && (
           <>
-        <SettingSection title="输出" icon={<SquareArrowRightExit className="h-4 w-4 text-[#9aaad3]" aria-hidden="true" />}>
+        <SettingSection title="输出" icon={<SquareArrowRightExit className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}>
           <div className="flex flex-col gap-2.5">
-            <span className="text-sm font-medium text-neutral-300 inline-flex items-center gap-1.5">
+            <span className="text-sm font-medium text-[var(--v4-text-muted)] inline-flex items-center gap-1.5">
               辅助字幕策略
               <InfoHint label="辅助字幕说明" side="left">
                 指声音说明、画面文字、歌词或非对白表达。完整保留最安全；智能精简会隐藏明确低价值环境音；清洁对白更适合普通观影导出。
               </InfoHint>
             </span>
-            <div className="grid grid-cols-3 gap-1 rounded-xl border border-white/[0.07] bg-black/25 p-1">
+            <div className="grid grid-cols-3 gap-1 rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-1">
               {([
                 { value: 'keep', label: '完整', desc: '全保留' },
                 { value: 'smart', label: '智能', desc: '隐去环境音' },
@@ -535,33 +534,33 @@ export const StyleSidebar: React.FC = () => {
                   aria-pressed={(customStyle.auxiliaryMode || 'keep') === item.value}
                   className={`min-h-11 rounded-lg px-1.5 py-1.5 text-left transition-all cursor-pointer
                     ${(customStyle.auxiliaryMode || 'keep') === item.value
-                      ? 'bg-[#9aaad3] text-black shadow-[0_0_18px_rgba(154, 170, 211,0.14)]'
-                      : 'text-neutral-500 hover:bg-white/[0.05] hover:text-neutral-200'}`}
+                      ? 'bg-[var(--v4-accent)] text-[var(--v4-accent-ink)] shadow-[0_0_18px_color-mix(in_srgb,var(--v4-accent)_14%,transparent)]'
+                      : 'text-[var(--v4-text-faint)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text-muted)]'}`}
                   onClick={() => handleStyleChange('auxiliaryMode', item.value)}
                 >
                   <span className="block text-center text-xs font-semibold leading-tight">{item.label}</span>
-                  <span className={`mt-0.5 block text-center text-xs leading-tight ${(customStyle.auxiliaryMode || 'keep') === item.value ? 'text-black/55' : 'text-neutral-600'}`}>
+                  <span className={`mt-0.5 block text-center text-xs leading-tight ${(customStyle.auxiliaryMode || 'keep') === item.value ? 'text-[var(--v4-accent-ink)]/55' : 'text-[var(--v4-text-faint)]'}`}>
                     {item.desc}
                   </span>
                 </button>
               ))}
             </div>
             {auxiliaryCount > 0 && (
-              <p className="text-xs leading-relaxed text-neutral-500">
+              <p className="text-xs leading-relaxed text-[var(--v4-text-faint)]">
                 检测到 {auxiliaryCount} 条辅助内容；智能精简预计隐去 {smartHiddenCount} 条环境音说明。
               </p>
             )}
           </div>
 
           <div className="flex items-center justify-between gap-3">
-            <span className="text-sm font-medium text-neutral-300 inline-flex items-center gap-1.5">
+            <span className="text-sm font-medium text-[var(--v4-text-muted)] inline-flex items-center gap-1.5">
               画面规格
               <InfoHint label="画面规格说明" side="left">
                 用作 ASS 字幕样式的参考画布尺寸，影响字号、边距和描边换算；不会改变视频文件本身的分辨率。
               </InfoHint>
             </span>
             <select
-              className="h-10 w-36 rounded-lg border border-white/[0.08] bg-black/25 px-3 text-right text-sm text-neutral-200 outline-none transition-all focus:border-white/20 cursor-pointer"
+              className="h-10 w-36 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-right text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-white cursor-pointer"
               value={customStyle.resolution || '1080p'}
               onChange={e => handleStyleChange('resolution', e.target.value as StyleSettings['resolution'])}
             >
@@ -578,7 +577,7 @@ export const StyleSidebar: React.FC = () => {
             action={
               <button
                 type="button"
-                className="rounded-md border border-white/[0.08] bg-white/[0.02] p-1 text-neutral-400 transition-colors hover:bg-white/[0.05] hover:text-neutral-100 cursor-pointer"
+                className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-1 text-[var(--v4-text-faint)] transition-colors hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)] cursor-pointer"
                 onClick={() => setIsLyricsExpanded(!isLyricsExpanded)}
               >
                 {isLyricsExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -611,9 +610,9 @@ export const StyleSidebar: React.FC = () => {
                       onChange={(c) => handleStyleChange('lyricColor', c)}
                     />
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium text-neutral-300">位置</span>
+                      <span className="text-sm font-medium text-[var(--v4-text-muted)]">位置</span>
                       <select
-                        className="h-10 w-32 rounded-lg border border-white/[0.08] bg-black/25 px-3 text-right text-sm text-neutral-200 outline-none transition-all focus:border-white/20 cursor-pointer"
+                        className="h-10 w-32 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-right text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-white cursor-pointer"
                         value={customStyle.lyricPosition ?? 'top'}
                         onChange={e => handleStyleChange('lyricPosition', e.target.value as StyleSettings['lyricPosition'])}
                       >
@@ -625,8 +624,8 @@ export const StyleSidebar: React.FC = () => {
                       type="button"
                       className={`h-9 rounded-lg border px-3 text-sm font-semibold transition-all cursor-pointer
                         ${customStyle.lyricItalic ?? true
-                          ? 'border-white/15 bg-white/[0.08] text-neutral-100'
-                          : 'border-white/[0.07] bg-white/[0.02] text-neutral-500 hover:text-neutral-200'}`}
+                          ? 'border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-text)]'
+                          : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] hover:text-[var(--v4-text-muted)]'}`}
                       onClick={() => handleStyleChange('lyricItalic', !(customStyle.lyricItalic ?? true))}
                     >
                       斜体歌词

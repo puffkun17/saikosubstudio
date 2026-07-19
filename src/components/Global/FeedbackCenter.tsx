@@ -9,16 +9,16 @@ import { OverlayPortal } from '@/components/Global/OverlayPortal';
 const CONTEXTUAL_NOTICE_IDS = new Set(['media-match', 'media-identity']);
 
 const errorLogStyle = {
-  shell: 'border-[color:rgba(201,138,134,0.32)] bg-[color:rgba(28,16,15,0.96)] text-[#f0d9d7]',
+  shell: 'border-[color:rgba(196,91,85,0.28)] bg-[color:rgba(255,252,247,0.96)] text-[var(--v4-danger)]',
   icon: <AlertTriangle className="h-3.5 w-3.5 text-[var(--v4-danger)]" />,
 };
 
 const noticeStyles = {
-  message: 'border-[var(--v4-line-strong)] bg-[color:rgba(18,16,14,0.97)] text-[var(--v4-text)]',
-  success: 'border-[color:rgba(208,164,111,0.32)] bg-[color:rgba(28,22,14,0.97)] text-[#f0e2cf]',
-  notice: 'border-[color:rgba(208,164,111,0.28)] bg-[color:rgba(24,20,16,0.97)] text-[#efe4d4]',
-  warning: 'border-[color:rgba(197,164,114,0.34)] bg-[color:rgba(28,22,14,0.97)] text-[#f0e6d4]',
-  alert: 'border-[color:rgba(201,138,134,0.36)] bg-[color:rgba(28,16,15,0.97)] text-[#f0d9d7]',
+  message: 'border-[var(--v4-line-strong)] bg-[color:rgba(255,252,247,0.96)] text-[var(--v4-text)]',
+  success: 'border-[color:rgba(239,141,95,0.32)] bg-[color:rgba(255,252,247,0.96)] text-[var(--v4-text)]',
+  notice: 'border-[color:rgba(26,61,55,0.16)] bg-[color:rgba(255,252,247,0.96)] text-[var(--v4-text)]',
+  warning: 'border-[color:rgba(196,137,58,0.34)] bg-[color:rgba(255,252,247,0.96)] text-[var(--v4-text)]',
+  alert: 'border-[color:rgba(196,91,85,0.32)] bg-[color:rgba(255,252,247,0.96)] text-[var(--v4-danger)]',
 } as const;
 
 /**
@@ -51,7 +51,7 @@ export const FeedbackCenter: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={shouldReduceMotion ? undefined : { opacity: 0, y: 6 }}
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className={`pointer-events-auto rounded-lg border px-3.5 py-3 shadow-[0_12px_32px_rgba(0,0,0,0.42)] backdrop-blur-md ${noticeStyles[latestNotice.tone]}`}
+              className={`pointer-events-auto rounded-xl border px-3.5 py-3 shadow-[0_12px_32px_rgba(26,61,55,0.12)] backdrop-blur-md ${noticeStyles[latestNotice.tone]}`}
             >
               <div className="flex items-start gap-2.5">
                 <div className="min-w-0 flex-1">
@@ -87,7 +87,7 @@ export const FeedbackCenter: React.FC = () => {
                   animate={{ opacity: log.fade ? 0 : 1, y: log.fade ? 4 : 0 }}
                   exit={shouldReduceMotion ? undefined : { opacity: 0, y: 6 }}
                   transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                  className={`pointer-events-auto flex items-start gap-2.5 rounded-lg border px-3.5 py-2.5 text-sm font-medium leading-relaxed shadow-[0_10px_28px_rgba(0,0,0,0.34)] ${errorLogStyle.shell}`}
+                  className={`pointer-events-auto flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-sm font-medium leading-relaxed shadow-[0_10px_28px_rgba(26,61,55,0.12)] ${errorLogStyle.shell}`}
                 >
                   <span className="mt-0.5 shrink-0">{errorLogStyle.icon}</span>
                   <span className="min-w-0 flex-1 break-words">{log.msg}</span>

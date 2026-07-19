@@ -50,9 +50,10 @@ These assets keep Theater preview usable even without TMDB data.
 
 ## Version
 
-Current app version: `v4.1.0`.
+Current app version: `v5.0.0-beta.1` (Ridgeline).
 
-The previous interface baseline is archived at Git tag `v3.0.0-ui-archive`.
+- v4 tungsten gold palette: [`docs/V4_TUNGSTEN_ARCHIVE.md`](docs/V4_TUNGSTEN_ARCHIVE.md)
+- v3 interface baseline: Git tag `v3.0.0-ui-archive`
 
 ## Local Dev
 

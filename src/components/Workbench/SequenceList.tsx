@@ -5,7 +5,6 @@ import { useStudioStore } from '@/store/useStudioStore';
 import { isLyricText } from '@/utils/subtitleCore';
 import type { SubRow } from '@/utils/subtitleCore';
 import { Check, Captions, ChevronDown, Music2, Pencil, Redo2, Undo2, Volume2, X } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { TimelineControls } from '@/components/Workbench/TimelineControls';
 
 interface SequenceListProps {
@@ -131,33 +130,33 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
   return (
     <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)]">
       {total > 0 && (
-        <div className="flex flex-col gap-3 px-5 md:px-6 py-3.5 border-b border-white/[0.055] bg-white/[0.008] flex-shrink-0">
+        <div className="flex flex-col gap-3 px-5 md:px-6 py-3.5 border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] flex-shrink-0">
             <div className="flex items-center justify-between gap-4">
             <div className="min-w-0 flex items-center gap-3">
-              <span className="text-sm tracking-normal text-neutral-100 font-semibold whitespace-nowrap">
+              <span className="text-sm tracking-normal text-[var(--v4-text)] font-semibold whitespace-nowrap">
                 时间轴
               </span>
-              <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-xs tabular-nums text-neutral-400">
+              <span className="rounded-full border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-xs tabular-nums text-[var(--v4-text-muted)]">
                 {isOverlimit && !showAllSubs ? `${LIMIT} / ${total} 行` : `${total} 行`}
               </span>
               {isOverlimit && !showAllSubs && (
-                <span className="hidden sm:inline text-xs text-neutral-500 truncate">
+                <span className="hidden sm:inline text-xs text-[var(--v4-text-faint)] truncate">
                   当前只显示前 {LIMIT} 行，拖动进度时会自动展开
                 </span>
               )}
             </div>
               <div className="flex shrink-0 items-center gap-1.5">
-                <button type="button" onClick={undoEdit} disabled={undoStack.length === 0} className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-muted)] hover:bg-white/[0.05] hover:text-white disabled:cursor-not-allowed disabled:opacity-25" aria-label="撤销字幕文本修改" title="撤销">
+                <button type="button" onClick={undoEdit} disabled={undoStack.length === 0} className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] disabled:cursor-not-allowed disabled:opacity-25" aria-label="撤销字幕文本修改" title="撤销">
                   <Undo2 className="h-4 w-4" aria-hidden="true" />
                 </button>
-                <button type="button" onClick={redoEdit} disabled={redoStack.length === 0} className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-muted)] hover:bg-white/[0.05] hover:text-white disabled:cursor-not-allowed disabled:opacity-25" aria-label="重做字幕文本修改" title="重做">
+                <button type="button" onClick={redoEdit} disabled={redoStack.length === 0} className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] disabled:cursor-not-allowed disabled:opacity-25" aria-label="重做字幕文本修改" title="重做">
                   <Redo2 className="h-4 w-4" aria-hidden="true" />
                 </button>
                 {hasMore && (
                   <button
                     type="button"
                     onClick={() => setShowAllSubs(true)}
-                    className="v4-focus-ring flex h-9 items-center gap-1 rounded-md border border-[var(--v4-line)] px-2.5 text-sm font-medium text-[var(--v4-text-muted)] hover:bg-white/[0.045] hover:text-white"
+                    className="v4-focus-ring flex h-9 items-center gap-1 rounded-md border border-[var(--v4-line)] px-2.5 text-sm font-medium text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]"
                   >
                     <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
                     显示全部
@@ -191,9 +190,9 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
               const endTime = sub.ts.split(' --> ')[1]?.replace(',', '.').trim() || '';
 
-              const rowClass = `relative grid grid-cols-[7.25rem_minmax(0,1fr)_3.5rem] md:grid-cols-[170px_minmax(0,1fr)_96px] gap-3 md:gap-5 py-4 px-4 md:px-7 border-b border-white/[0.04] cursor-pointer text-left overflow-hidden transition-colors duration-200
-                ${isActive ? 'glass-lens-active' : 'bg-transparent hover:bg-white/[0.015]'}
-                ${isLyric && !isActive ? 'bg-[#9ca3af]/[0.01]' : ''}
+              const rowClass = `relative grid grid-cols-[7.25rem_minmax(0,1fr)_3.5rem] md:grid-cols-[170px_minmax(0,1fr)_96px] gap-3 md:gap-5 py-4 px-4 md:px-7 border-b border-[var(--v4-line)] cursor-pointer text-left overflow-hidden transition-colors duration-200
+                ${isActive ? 'glass-lens-active' : 'bg-transparent hover:bg-[var(--v4-panel-muted)]'}
+                ${isLyric && !isActive ? 'bg-[var(--v4-panel-muted)]/50' : ''}
                 ${sub.index > 30 ? 'timeline-row-deferred' : ''}`;
 
               return (
@@ -216,27 +215,19 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                   aria-label={`第 ${sub.index} 行字幕，按 F2 编辑`}
                   className={rowClass}
                 >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeSubIndicator"
-                      className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#8fa3d1] shadow-[0_0_12px_rgba(143, 163, 209,0.5)]"
-                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                    />
-                  )}
-
-                  <div className="font-mono text-xs text-neutral-300 self-center flex items-center gap-3 select-none">
+                  <div className="font-mono text-xs text-[var(--v4-text-muted)] self-center flex items-center gap-3 select-none">
                     <div className="relative flex flex-col items-center self-stretch">
-                      <span className={`mt-1 h-2.5 w-2.5 rounded-full border ${isActive ? 'bg-[#c2cce3] border-[#c2cce3] shadow-[0_0_10px_rgba(143, 163, 209,0.4)]' : 'bg-[#8fa3d1]/12 border-[#8fa3d1]/25'}`} />
-                      <span className="mt-1 flex-1 w-px bg-white/[0.08]" />
+                      <span className={`mt-1 h-2.5 w-2.5 rounded-full border ${isActive ? 'bg-[var(--v4-accent-strong)] border-[var(--v4-accent-strong)] shadow-[0_0_10px_color-mix(in_srgb,var(--v4-accent)_40%,transparent)]' : 'bg-[var(--v4-accent-soft)] border-[var(--v4-line-strong)]'}`} />
+                      <span className="mt-1 flex-1 w-px bg-[var(--v4-line)]" />
                     </div>
                     {isLyric && (
-                      <span className="inline-flex select-none text-[#8fa3d1]">
+                      <span className="inline-flex select-none text-[var(--v4-accent-strong)]">
                         <Music2 className="w-3 h-3" />
                       </span>
                     )}
-                    <div className={`flex flex-col leading-tight tabular-nums ${isActive ? 'text-[#e5e7eb] font-semibold' : 'text-neutral-500'}`}>
+                    <div className={`flex flex-col leading-tight tabular-nums ${isActive ? 'text-[var(--v4-accent-strong)] font-semibold' : 'text-[var(--v4-text-faint)]'}`}>
                       <span>{startTime}</span>
-                      <span className="mt-1 text-white/22">{endTime}</span>
+                      <span className="mt-1 text-[var(--v4-text-faint)]">{endTime}</span>
                     </div>
                   </div>
 
@@ -251,7 +242,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                             if (e.key === 'Enter') commitEditing();
                             if (e.key === 'Escape') cancelEditing();
                           }}
-                          className="bg-white/[0.02] border border-white/[0.08] text-sm font-medium leading-relaxed text-neutral-100 rounded-lg px-3 py-1.5 w-full outline-none focus:border-[#8fa3d1]/55 focus:bg-[#8fa3d1]/[0.04] transition-all"
+                          className="bg-[var(--v4-panel-muted)] border border-[var(--v4-line)] text-sm font-medium leading-relaxed text-[var(--v4-text)] rounded-lg px-3 py-1.5 w-full outline-none focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)] transition-all"
                           placeholder="中文字幕文本"
                           autoFocus
                         />
@@ -264,12 +255,12 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                               if (e.key === 'Enter') commitEditing();
                               if (e.key === 'Escape') cancelEditing();
                             }}
-                            className="bg-white/[0.015] border border-white/[0.06] text-xs font-normal leading-relaxed text-[#e5e7eb]/90 rounded-lg px-3 py-1.5 w-full outline-none focus:border-[#8fa3d1]/55 focus:bg-[#8fa3d1]/[0.035] transition-all"
+                            className="bg-[var(--v4-panel-muted)] border border-[var(--v4-line)] text-xs font-normal leading-relaxed text-[var(--v4-text-muted)] rounded-lg px-3 py-1.5 w-full outline-none focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)] transition-all"
                             placeholder="第二语言字幕文本"
                           />
                         )}
                         <div className="flex justify-end gap-2 mt-1">
-                          <button type="button" className="v4-focus-ring inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-sm text-[var(--v4-text-muted)] hover:bg-white/[0.05] hover:text-white" onClick={(e) => { e.stopPropagation(); cancelEditing(); }}>
+                          <button type="button" className="v4-focus-ring inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-sm text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]" onClick={(e) => { e.stopPropagation(); cancelEditing(); }}>
                             <X className="h-3.5 w-3.5" aria-hidden="true" />取消
                           </button>
                           <button
@@ -284,34 +275,34 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     ) : (
                       <>
                         {isExpandedDialogue && (
-                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[#8fa3d1]/20 bg-[#8fa3d1]/[0.055] px-2 py-0.5 text-xs font-medium text-[#d2d9e9]">
+                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[var(--v4-accent)]/20 bg-[var(--v4-accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--v4-accent-strong)]">
                             对话组
                           </span>
                         )}
                         {sub.cueKind === 'screen_text' && (
-                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[#a8b7a3]/20 bg-[#a8b7a3]/[0.055] px-2 py-0.5 text-xs font-medium text-[#cbd6c7]">
+                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-muted)] px-2 py-0.5 text-xs font-medium text-[var(--v4-text-muted)]">
                             <Captions className="mr-1 h-3 w-3" />
                             画面文字
                           </span>
                         )}
                         {isSoundCaption && (
-                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-white/[0.08] bg-white/[0.025] px-2 py-0.5 text-xs font-medium text-neutral-400">
+                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2 py-0.5 text-xs font-medium text-[var(--v4-text-muted)]">
                             <Volume2 className="mr-1 h-3 w-3" />
                             声音说明
                           </span>
                         )}
                         {isAuxiliarySemantic && (
-                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[#9aaad3]/20 bg-[#9aaad3]/[0.055] px-2 py-0.5 text-xs font-medium text-[#d2d9e9]">
+                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[var(--v4-accent)]/20 bg-[var(--v4-accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--v4-accent-strong)]">
                             <Captions className="mr-1 h-3 w-3" />
                             辅助信息
                           </span>
                         )}
-                        <div className={`font-sans text-sm font-medium leading-6 break-words ${isActive ? 'text-white' : 'text-neutral-200'}`}>
+                        <div className={`font-sans text-sm font-medium leading-6 break-words ${isActive ? 'text-[var(--v4-text)]' : 'text-[var(--v4-text-muted)]'}`}>
                           {zhText}
                         </div>
                         {enText && (
                           <div
-                            className={`mt-0.5 text-xs font-normal leading-5 break-words tracking-[0.01em] ${isActive ? 'text-[#e5e7eb]/90' : 'text-neutral-400'}`}
+                            className={`mt-0.5 text-xs font-normal leading-5 break-words tracking-[0.01em] ${isActive ? 'text-[var(--v4-text-muted)]' : 'text-[var(--v4-text-faint)]'}`}
                             style={{ fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }}
                           >
                             {enText}
@@ -325,7 +316,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     {editingIndex !== sub.index && (
                       <button
                         type="button"
-                        className={`v4-focus-ring inline-flex h-8 items-center gap-1 rounded-md px-2 text-sm transition-colors ${isActive ? 'text-[var(--v4-text)] hover:bg-white/[0.07]' : 'text-[var(--v4-text-faint)] hover:bg-white/[0.05] hover:text-[var(--v4-text)]'}`}
+                        className={`v4-focus-ring inline-flex h-8 items-center gap-1 rounded-md px-2 text-sm transition-colors ${isActive ? 'text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)]' : 'text-[var(--v4-text-faint)] hover:bg-[var(--v4-panel-muted)] hover:text-[var(--v4-text)]'}`}
                         onClick={(event) => { event.stopPropagation(); beginEditing(sub); }}
                         aria-label={`编辑第 ${sub.index} 行`}
                       >
@@ -333,7 +324,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                         <span className="hidden md:inline">编辑</span>
                       </button>
                     )}
-                    <span className={`font-mono tabular-nums ${isActive ? 'text-[#e5e7eb] font-semibold' : 'text-neutral-600'}`}>
+                    <span className={`font-mono tabular-nums ${isActive ? 'text-[var(--v4-accent-strong)] font-semibold' : 'text-[var(--v4-text-faint)]'}`}>
                       #{sub.index}
                     </span>
                   </div>
@@ -345,7 +336,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               <button
                 type="button"
                 onClick={() => setShowAllSubs(true)}
-                className="flex cursor-pointer items-center justify-center gap-2 border-t border-[var(--v4-line)] bg-[var(--v4-panel-muted)] py-4 text-sm font-medium text-[var(--v4-text-muted)] transition-colors hover:bg-[var(--v4-panel)] hover:text-white"
+                className="flex cursor-pointer items-center justify-center gap-2 border-t border-[var(--v4-line)] bg-[var(--v4-panel-muted)] py-4 text-sm font-medium text-[var(--v4-text-muted)] transition-colors hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]"
               >
                 <ChevronDown className="w-4 h-4" />
                 显示剩余 {total - LIMIT} 行
@@ -353,7 +344,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
             )}
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-neutral-400 text-xs tracking-wide py-24 select-none">
+          <div className="flex-1 flex items-center justify-center text-[var(--v4-text-muted)] text-xs tracking-wide py-24 select-none">
             当前没有可预览的字幕
           </div>
         )}

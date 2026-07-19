@@ -52,7 +52,7 @@ const DialControl = ({ label, value, description, icon, onPrevious, onNext, disa
           type="button"
           onClick={onPrevious}
           disabled={disabled}
-          className="grid h-8 w-8 place-items-center text-[var(--v4-text-muted)] transition-colors hover:bg-white/[0.05] hover:text-white disabled:cursor-default disabled:opacity-35"
+          className="grid h-8 w-8 place-items-center text-[var(--v4-text-muted)] transition-colors hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] disabled:cursor-default disabled:opacity-35"
           aria-label={`上一项：${label}`}
         >
           <ChevronLeft className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />
@@ -61,7 +61,7 @@ const DialControl = ({ label, value, description, icon, onPrevious, onNext, disa
           type="button"
           onClick={onNext}
           disabled={disabled}
-          className="grid h-8 w-8 place-items-center border-l border-[var(--v4-line)] text-[var(--v4-text-muted)] transition-colors hover:bg-white/[0.05] hover:text-white disabled:cursor-default disabled:opacity-35"
+          className="grid h-8 w-8 place-items-center border-l border-[var(--v4-line)] text-[var(--v4-text-muted)] transition-colors hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] disabled:cursor-default disabled:opacity-35"
           aria-label={`下一项：${label}`}
         >
           <ChevronRight className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />

@@ -47,33 +47,75 @@
 }
 
 :root {
-  /* Handoff desk / projection booth: warm ink + tungsten accent (not cool SaaS blue). */
-  --background: #0c0b0a;
-  --foreground: #f3ebe2;
-  --v4-canvas: #0c0b0a;
-  --v4-canvas-raised: #131110;
-  --v4-panel: #171412;
-  --v4-panel-raised: #1e1a17;
-  --v4-panel-muted: #12100e;
-  --v4-line: rgba(232, 214, 190, 0.1);
-  --v4-line-strong: rgba(232, 214, 190, 0.18);
-  --v4-text: #f3ebe2;
-  --v4-text-muted: #a89b8c;
-  --v4-text-faint: #6f655a;
-  --v4-accent: #d0a46f;
-  --v4-accent-strong: #e0b984;
-  --v4-accent-soft: rgba(208, 164, 111, 0.14);
-  --v4-accent-ink: #17120d;
-  --v4-danger: #c98a86;
-  --v4-warning: #c5a472;
-  --v4-desk-glow: rgba(208, 164, 111, 0.08);
-  --v4-desk-veil: linear-gradient(165deg, rgba(28, 24, 20, 0.92) 0%, rgba(12, 11, 10, 0.98) 48%, #0c0b0a 100%);
+  /*
+   * SaikoSubStudio 5.0 Beta — Ridgeline
+   * Triad: cream #f5f1ea · forest #1a3d37 · citrus #ef8d5f
+   * Live names are --v5-*; --v4-* aliases keep existing class hooks working.
+   * Sealed tungsten: docs/V4_TUNGSTEN_ARCHIVE.md
+   */
+  --v5-cream: #f5f1ea;
+  --v5-green: #1a3d37;
+  --v5-orange: #ef8d5f;
+  --v5-orange-strong: #f0a07a;
+  --v5-orange-deep: #e07845;
 
-  /* Shared motion — trays, ingest bay, overlays use the same curve family. */
-  --v4-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --v4-dur-fast: 160ms;
-  --v4-dur: 240ms;
-  --v4-dur-slow: 420ms;
+  --background: var(--v5-cream);
+  --foreground: var(--v5-green);
+
+  --v5-canvas: #f5f1ea;
+  --v5-canvas-raised: #fffcf7;
+  --v5-panel: #fffcf7;
+  --v5-panel-raised: #ffffff;
+  --v5-panel-muted: #efebe3;
+  --v5-line: rgba(26, 61, 55, 0.12);
+  --v5-line-strong: rgba(26, 61, 55, 0.22);
+  --v5-text: #1a3d37;
+  --v5-text-muted: rgba(26, 61, 55, 0.68);
+  --v5-text-faint: rgba(26, 61, 55, 0.42);
+  --v5-accent: #ef8d5f;
+  --v5-accent-strong: #e07845;
+  --v5-accent-soft: rgba(239, 141, 95, 0.16);
+  --v5-accent-ink: #ffffff;
+  --v5-danger: #c45b55;
+  --v5-warning: #c4893a;
+  --v5-desk-glow: rgba(26, 61, 55, 0.06);
+  --v5-desk-veil: linear-gradient(
+    165deg,
+    rgba(255, 252, 247, 0.96) 0%,
+    rgba(245, 241, 234, 0.98) 48%,
+    #f5f1ea 100%
+  );
+  --v5-radius-panel: 1.25rem;
+  --v5-radius-control: 0.75rem;
+
+  --v5-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --v5-dur-fast: 160ms;
+  --v5-dur: 240ms;
+  --v5-dur-slow: 420ms;
+
+  /* Compat aliases — prefer --v5-* in new code. */
+  --v4-canvas: var(--v5-canvas);
+  --v4-canvas-raised: var(--v5-canvas-raised);
+  --v4-panel: var(--v5-panel);
+  --v4-panel-raised: var(--v5-panel-raised);
+  --v4-panel-muted: var(--v5-panel-muted);
+  --v4-line: var(--v5-line);
+  --v4-line-strong: var(--v5-line-strong);
+  --v4-text: var(--v5-text);
+  --v4-text-muted: var(--v5-text-muted);
+  --v4-text-faint: var(--v5-text-faint);
+  --v4-accent: var(--v5-accent);
+  --v4-accent-strong: var(--v5-accent-strong);
+  --v4-accent-soft: var(--v5-accent-soft);
+  --v4-accent-ink: var(--v5-accent-ink);
+  --v4-danger: var(--v5-danger);
+  --v4-warning: var(--v5-warning);
+  --v4-desk-glow: var(--v5-desk-glow);
+  --v4-desk-veil: var(--v5-desk-veil);
+  --v4-ease: var(--v5-ease);
+  --v4-dur-fast: var(--v5-dur-fast);
+  --v4-dur: var(--v5-dur);
+  --v4-dur-slow: var(--v5-dur-slow);
 
   /* Twin trays: top nav + bottom ops deck. */
   --tray-h: 72px;
@@ -131,7 +173,7 @@ body {
 .v4-panel {
   border: 1px solid var(--v4-line);
   background: var(--v4-panel);
-  box-shadow: 0 1px 0 rgba(255, 248, 235, 0.02);
+  box-shadow: 0 1px 0 rgba(26, 61, 55, 0.04);
 }
 
 /* Parsing / progress card (not the empty→queue handoff). */
@@ -141,9 +183,79 @@ body {
   border: 1px solid var(--v4-line);
   background:
     radial-gradient(780px 300px at 50% -8%, var(--v4-desk-glow), transparent 68%),
-    linear-gradient(180deg, rgba(255, 244, 226, 0.03), transparent 38%),
+    linear-gradient(180deg, rgba(26, 61, 55, 0.03), transparent 38%),
     var(--v4-panel);
-  box-shadow: inset 0 1px 0 rgba(255, 244, 226, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+/* Ridgeline twin trays: forest green chrome both ends. */
+.system-tray--top,
+.system-tray--bottom {
+  background: var(--v5-green);
+  border-color: rgba(245, 241, 234, 0.1);
+  color: rgba(245, 241, 234, 0.8);
+  backdrop-filter: none;
+}
+
+.system-tray--top .soft-log-marquee__text,
+.system-tray--bottom .soft-log-marquee__text {
+  color: rgba(245, 241, 234, 0.62);
+}
+
+.system-tray__ctrl {
+  border: 1px solid rgba(245, 241, 234, 0.12);
+  background: rgba(245, 241, 234, 0.08);
+  color: rgba(245, 241, 234, 0.78);
+}
+
+.system-tray__ctrl:hover {
+  border-color: rgba(245, 241, 234, 0.22);
+  background: rgba(245, 241, 234, 0.14);
+  color: var(--v5-cream);
+}
+
+.system-tray__accent {
+  color: var(--v5-orange);
+}
+
+/* Forest panels (theater chrome only): remap cream tokens to on-green. */
+[data-surface="forest"] {
+  --v4-canvas: #1a3d37;
+  --v4-canvas-raised: #214942;
+  --v4-panel: rgba(245, 241, 234, 0.06);
+  --v4-panel-raised: rgba(245, 241, 234, 0.1);
+  --v4-panel-muted: rgba(245, 241, 234, 0.05);
+  --v4-line: rgba(245, 241, 234, 0.12);
+  --v4-line-strong: rgba(245, 241, 234, 0.22);
+  --v4-text: #f5f1ea;
+  --v4-text-muted: rgba(245, 241, 234, 0.68);
+  --v4-text-faint: rgba(245, 241, 234, 0.42);
+  --v4-accent: #ef8d5f;
+  --v4-accent-strong: #f0a07a;
+  --v4-accent-soft: rgba(239, 141, 95, 0.18);
+  --v4-accent-ink: #ffffff;
+  color: var(--v4-text);
+  background: var(--v5-green);
+}
+
+/* Style drawer & light panels: force cream even when nested in forest theater. */
+[data-surface="cream"] {
+  --v4-canvas: #f5f1ea;
+  --v4-canvas-raised: #fffcf7;
+  --v4-panel: #fffcf7;
+  --v4-panel-raised: #ffffff;
+  --v4-panel-muted: #efebe3;
+  --v4-line: rgba(26, 61, 55, 0.12);
+  --v4-line-strong: rgba(26, 61, 55, 0.22);
+  --v4-text: #1a3d37;
+  --v4-text-muted: rgba(26, 61, 55, 0.68);
+  --v4-text-faint: rgba(26, 61, 55, 0.42);
+  --v4-accent: #ef8d5f;
+  --v4-accent-strong: #e07845;
+  --v4-accent-soft: rgba(239, 141, 95, 0.16);
+  --v4-accent-ink: #ffffff;
+  color: var(--v4-text);
+  background: var(--v5-cream);
 }
 
 /* Shared handoff stage: empty + queue share one field — no panel hard-cut. */
@@ -382,15 +494,14 @@ body {
 }
 
 .ingest-start-card {
-  width: min(28rem, 100%);
+  width: min(32rem, 100%);
   margin-inline: auto;
-  padding: 2.25rem 1.75rem 2rem;
+  padding: 3.5rem 2rem 2.5rem;
   text-align: center;
-  border-radius: 1.15rem;
-  border: 1px solid color-mix(in srgb, var(--v4-line) 18%, transparent);
-  background: color-mix(in srgb, var(--v4-panel) 42%, transparent);
-  box-shadow: 0 22px 56px rgba(0, 0, 0, 0.32);
-  backdrop-filter: blur(12px);
+  border-radius: var(--v5-radius-panel);
+  border: 2px solid color-mix(in srgb, var(--v5-green) 10%, transparent);
+  background: transparent;
+  box-shadow: none;
   transition:
     border-color var(--v4-dur) var(--v4-ease),
     background var(--v4-dur) var(--v4-ease),
@@ -399,8 +510,8 @@ body {
 
 .ingest-start-card__title {
   margin: 0;
-  font-size: clamp(1.65rem, 3vw, 1.95rem);
-  font-weight: 600;
+  font-size: clamp(1.85rem, 3.4vw, 2.25rem);
+  font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--v4-text);
 }
@@ -414,6 +525,52 @@ body {
   font-size: 0.8125rem;
   line-height: 1.6;
   color: var(--v4-text-faint);
+}
+
+/* Blank fields on cream panels — white rest, orange focus ring, no cream fill. */
+.rd-field {
+  border: 1px solid var(--v4-line);
+  background: #ffffff;
+  color: var(--v4-text);
+  transition:
+    border-color var(--v4-dur-fast) var(--v4-ease),
+    box-shadow var(--v4-dur-fast) var(--v4-ease),
+    background-color var(--v4-dur-fast) var(--v4-ease);
+}
+
+.rd-field::placeholder {
+  color: var(--v4-text-faint);
+}
+
+.rd-field:hover {
+  border-color: var(--v4-line-strong);
+}
+
+.rd-field:focus {
+  border-color: var(--v4-accent);
+  background: #ffffff;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--v4-accent) 45%, transparent);
+}
+
+/* Boxed meta chips — same fill as episode/year badges (not hollow, not orange). */
+.rd-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--v4-line);
+  background: var(--v4-panel-muted);
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--v4-text);
+  white-space: nowrap;
+}
+
+.rd-chip--tight {
+  padding: 0.125rem 0.5rem;
+  font-weight: 600;
 }
 
 .app-main-pad {
@@ -754,12 +911,13 @@ body {
     0 0 16px rgba(143, 163, 209, 0.12) !important;
 }
 
-/* Glass Range Input */
+/* Range input — Ridgeline cream panels */
 .glass-slider-input {
   -webkit-appearance: none;
+  appearance: none;
   width: 100%;
   height: 5px;
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--v5-green) 14%, transparent);
   border-radius: 2px;
   outline: none;
   cursor: pointer;
@@ -768,29 +926,45 @@ body {
 .glass-slider-input::-webkit-slider-runnable-track {
   width: 100%;
   height: 5px;
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--v5-green) 14%, transparent);
   border-radius: 2px;
 }
 
 .glass-slider-input::-webkit-slider-thumb {
   -webkit-appearance: none;
+  appearance: none;
   width: 16px;
   height: 16px;
   border-radius: 50%;
   background: #ffffff;
-  border: 2.5px solid #9ca3af;
-  box-shadow: 0 0 10px rgba(229, 231, 235, 0.22);
+  border: 2.5px solid var(--v5-orange);
+  box-shadow: 0 0 10px rgba(239, 141, 95, 0.28);
   margin-top: -5.5px;
-  transition: transform 0.15s ease, background-color 0.15s ease;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .glass-slider-input::-webkit-slider-thumb:hover {
-  transform: scale(1.25);
+  transform: scale(1.15);
 }
 
 .glass-slider-input::-webkit-slider-thumb:active {
   transform: scale(0.95);
-  background: #e5e7eb;
+  background: var(--v5-cream);
+}
+
+.glass-slider-input::-moz-range-track {
+  height: 5px;
+  background: color-mix(in srgb, var(--v5-green) 14%, transparent);
+  border-radius: 2px;
+}
+
+.glass-slider-input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2.5px solid var(--v5-orange);
+  box-shadow: 0 0 10px rgba(239, 141, 95, 0.28);
 }
 
 /* Glass recessed slot */
@@ -801,12 +975,12 @@ body {
 }
 
 .glass-lens-active {
-  background: rgba(130, 149, 197, 0.055) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  background: rgba(239, 141, 95, 0.08) !important;
+  box-shadow: inset 4px 0 0 var(--v5-orange);
   transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Custom Slim Scrollbar for AR theme */
+/* Custom Slim Scrollbar — Ridgeline cream canvas */
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -815,12 +989,12 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(26, 61, 55, 0.18);
   border-radius: 999px;
   transition: all 0.3s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(143, 163, 209, 0.42) !important;
+  background: rgba(239, 141, 95, 0.55) !important;
 }
 
 /* ==========================================================================

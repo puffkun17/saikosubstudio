@@ -10,17 +10,17 @@ import { InfoHint } from '@/components/ui/InfoHint';
 import { useStudioStore } from '@/store/useStudioStore';
 
 const GRADE_META: Record<SourceMatchReport['grade'], { label: string; tone: string }> = {
-  matched: { label: '跨度接近', tone: 'text-neutral-100' },
-  fixable: { label: '建议抽查', tone: 'text-[#a8b7a3]' },
-  complex: { label: '跨度有差异', tone: 'text-[#c0a89a]' },
-  poor: { label: '差异较大', tone: 'text-[#b98982]' },
+  matched: { label: '跨度接近', tone: 'text-[var(--v4-text)]' },
+  fixable: { label: '建议抽查', tone: 'text-[var(--v4-text-muted)]' },
+  complex: { label: '跨度有差异', tone: 'text-[var(--v4-warning)]' },
+  poor: { label: '差异较大', tone: 'text-[var(--v4-danger)]' },
 };
 
 const severityClass: Record<SourceMatchFinding['severity'], string> = {
-  ok: 'border-white/[0.07] bg-white/[0.018] text-neutral-300',
-  notice: 'border-[#a8b7a3]/18 bg-[#a8b7a3]/[0.035] text-[#d7ded2]',
-  warning: 'border-[#c0a89a]/22 bg-[#c0a89a]/[0.04] text-[#eaded4]',
-  severe: 'border-[#9f6f68]/28 bg-[#9f6f68]/[0.055] text-[#efcfca]',
+  ok: 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]',
+  notice: 'border-[var(--v4-line-strong)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]',
+  warning: 'border-[var(--v4-warning)]/25 bg-[var(--v4-warning)]/10 text-[var(--v4-warning)]',
+  severe: 'border-[var(--v4-danger)]/28 bg-[var(--v4-danger)]/10 text-[var(--v4-danger)]',
 };
 
 const getChartPath = (values: number[], width: number, height: number, offset = 0) => {
@@ -39,9 +39,9 @@ const buildAreaPath = (linePath: string, width: number, height: number) => {
 };
 
 const FindingIcon = ({ severity }: { severity: SourceMatchFinding['severity'] }) => {
-  if (severity === 'ok') return <CheckCircle2 className="h-4 w-4 text-[#8fa3d1]" />;
-  if (severity === 'severe') return <XCircle className="h-4 w-4 text-[#b98982]" />;
-  return <AlertTriangle className={`h-4 w-4 ${severity === 'warning' ? 'text-[#c0a89a]' : 'text-[#8fa3d1]'}`} />;
+  if (severity === 'ok') return <CheckCircle2 className="h-4 w-4 text-[var(--v4-accent-strong)]" />;
+  if (severity === 'severe') return <XCircle className="h-4 w-4 text-[var(--v4-danger)]" />;
+  return <AlertTriangle className={`h-4 w-4 ${severity === 'warning' ? 'text-[var(--v4-warning)]' : 'text-[var(--v4-accent-strong)]'}`} />;
 };
 
 const formatCount = (value: number) => new Intl.NumberFormat('zh-CN').format(value);
@@ -140,21 +140,21 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
   return (
     <section className="w-full overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)]">
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] gap-0">
-        <div className="border-b xl:border-b-0 xl:border-r border-white/[0.055] px-5 py-4 md:px-6 md:py-5">
+        <div className="border-b xl:border-b-0 xl:border-r border-[var(--v4-line)] px-5 py-4 md:px-6 md:py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <div className="flex items-center gap-2 text-sm font-semibold tracking-normal text-neutral-100">
-                <Activity className="h-4 w-4 text-[#8fa3d1]" />
+              <div className="flex items-center gap-2 text-sm font-semibold tracking-normal text-[var(--v4-text)]">
+                <Activity className="h-4 w-4 text-[var(--v4-accent-strong)]" />
                 {isMatchMode ? '片源时长参照' : '字幕概览'}
               </div>
-              <p className="mt-1 max-w-[28ch] text-xs leading-5 text-neutral-400">
+              <p className="mt-1 max-w-[28ch] text-xs leading-5 text-[var(--v4-text-muted)]">
                 {isMatchMode ? '已读取片源时长，用于检查字幕覆盖范围。' : '先确认字幕规模与分布，再加入本地片源检查时长覆盖。'}
               </p>
             </div>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[#8fa3d1]/20 bg-[#8fa3d1]/[0.045] px-3.5 py-2.5 text-xs font-medium text-[#dce2ef] transition hover:border-[#8fa3d1]/38 hover:bg-[#8fa3d1]/[0.09] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8fa3d1]/70 active:translate-y-px cursor-pointer"
+              className="v4-focus-ring inline-flex shrink-0 items-center gap-2 rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-3.5 py-2.5 text-xs font-medium text-[var(--v4-accent-strong)] transition hover:border-[var(--v4-accent)] hover:bg-[var(--v4-accent-soft)] active:translate-y-px cursor-pointer"
             >
               <MonitorPlay className="h-3.5 w-3.5" />
               {isMatchMode ? '更换片源' : '加入片源'}
@@ -169,7 +169,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
           </div>
 
           {isMatchMode ? (
-            <div className="mt-5 flex items-end justify-between gap-4 border-y border-white/[0.055] py-4">
+            <div className="mt-5 flex items-end justify-between gap-4 border-y border-[var(--v4-line)] py-4">
               <div>
                 <motion.div
                   key={report.coverageRatio}
@@ -179,7 +179,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                 >
                   {report.coverageRatio ? `${Math.round(report.coverageRatio * 100)}%` : '--'}
                 </motion.div>
-                <div className="mt-1 inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-[0.12em] text-neutral-500">
+                <div className="mt-1 inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-[0.12em] text-[var(--v4-text-faint)]">
                   字幕跨度占比
                   <InfoHint label="时间覆盖说明">
                     这里只比较字幕起止范围与片源总时长，不读取音频，也不代表对白已经合轴。
@@ -188,56 +188,56 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
               </div>
               <div className="text-right">
                 <div className={`text-sm font-semibold ${meta.tone}`}>{meta.label}</div>
-                <div className="mt-1 text-xs text-neutral-500">依据：时长与字幕时间轴</div>
+                <div className="mt-1 text-xs text-[var(--v4-text-faint)]">依据：时长与字幕时间轴</div>
               </div>
             </div>
           ) : (
-            <dl className="mt-5 grid grid-cols-3 gap-0 overflow-hidden rounded-lg border border-white/[0.06] bg-white/[0.016]">
+            <dl className="mt-5 grid grid-cols-3 gap-0 overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]">
               <div className="min-w-0 px-3 py-3">
-                <dt className="whitespace-nowrap text-xs text-neutral-500">文本量</dt>
-                <dd className="mt-1.5 whitespace-nowrap text-lg leading-none font-semibold tabular-nums text-neutral-100">{formatCount(report.stats.characterCount)}</dd>
+                <dt className="whitespace-nowrap text-xs text-[var(--v4-text-faint)]">文本量</dt>
+                <dd className="mt-1.5 whitespace-nowrap text-lg leading-none font-semibold tabular-nums text-[var(--v4-text)]">{formatCount(report.stats.characterCount)}</dd>
               </div>
-              <div className="min-w-0 border-l border-white/[0.055] px-3 py-3">
-                <dt className="whitespace-nowrap text-xs text-neutral-500">时间跨度</dt>
-                <dd className="mt-1.5 whitespace-nowrap text-lg leading-none font-semibold tabular-nums text-neutral-100">{formatMsClock(report.stats.spanMs)}</dd>
+              <div className="min-w-0 border-l border-[var(--v4-line)] px-3 py-3">
+                <dt className="whitespace-nowrap text-xs text-[var(--v4-text-faint)]">时间跨度</dt>
+                <dd className="mt-1.5 whitespace-nowrap text-lg leading-none font-semibold tabular-nums text-[var(--v4-text)]">{formatMsClock(report.stats.spanMs)}</dd>
               </div>
-              <div className="min-w-0 border-l border-white/[0.055] px-3 py-3">
-                <dt className="inline-flex items-center gap-1 whitespace-nowrap text-xs text-neutral-500">
+              <div className="min-w-0 border-l border-[var(--v4-line)] px-3 py-3">
+                <dt className="inline-flex items-center gap-1 whitespace-nowrap text-xs text-[var(--v4-text-faint)]">
                   字幕密度
                   <InfoHint label="字幕密度说明">
                     每分钟字幕行数，用于观察字幕分布是否异常。声音说明、歌词和画面文字也会影响这个指标。
                   </InfoHint>
                 </dt>
-                <dd className="mt-1.5 whitespace-nowrap text-lg leading-none font-semibold tabular-nums text-[#8fa3d1]">{report.stats.densityPerMinute}</dd>
+                <dd className="mt-1.5 whitespace-nowrap text-lg leading-none font-semibold tabular-nums text-[var(--v4-accent-strong)]">{report.stats.densityPerMinute}</dd>
               </div>
             </dl>
           )}
 
           <div className="mt-4">
-            <div className="text-sm font-semibold tracking-normal text-neutral-100">{report.title}</div>
-            <p className="mt-1.5 max-w-[36ch] text-xs leading-5 text-neutral-400">{report.summary}</p>
+            <div className="text-sm font-semibold tracking-normal text-[var(--v4-text)]">{report.title}</div>
+            <p className="mt-1.5 max-w-[36ch] text-xs leading-5 text-[var(--v4-text-muted)]">{report.summary}</p>
           </div>
 
-          <div className="mt-4 flex items-center gap-2 text-xs text-neutral-500">
-            <HardDrive className="h-3.5 w-3.5 shrink-0 text-neutral-500" />
+          <div className="mt-4 flex items-center gap-2 text-xs text-[var(--v4-text-faint)]">
+            <HardDrive className="h-3.5 w-3.5 shrink-0 text-[var(--v4-text-faint)]" />
             <span className="min-w-0 truncate">
               {videoName ? `${videoName}${videoDurationMs ? ` · ${formatMsClock(videoDurationMs)}` : ''}` : '本地读取元数据，不上传文件'}
             </span>
           </div>
-          {metadataError && <div className="mt-2 text-xs text-[#c0a89a]">{metadataError}</div>}
+          {metadataError && <div className="mt-2 text-xs text-[var(--v4-warning)]">{metadataError}</div>}
         </div>
 
         <div className="px-5 py-4 md:px-6 md:py-5 min-w-0">
           <figure className="overflow-visible">
-            <figcaption className="flex items-start justify-between gap-3 pb-2 text-xs text-neutral-500">
+            <figcaption className="flex items-start justify-between gap-3 pb-2 text-xs text-[var(--v4-text-faint)]">
               <div>
-                <div className="text-xs font-medium text-neutral-300 inline-flex items-center gap-1.5">
+                <div className="text-xs font-medium text-[var(--v4-text-muted)] inline-flex items-center gap-1.5">
                   {isMatchMode ? '统一时间轴上的字幕分布' : '字幕时间分布'}
                   <InfoHint label="字幕分布图说明">
                     曲线、跨度条和下方时间线共用同一时间刻度。加入片源后，较长的一方决定横轴终点，避免隐藏字幕越界。
                   </InfoHint>
                 </div>
-                <div className="mt-0.5 text-xs text-neutral-500">{report.stats.distributionLabel} · {formatCount(report.stats.lineCount)} 行</div>
+                <div className="mt-0.5 text-xs text-[var(--v4-text-faint)]">{report.stats.distributionLabel} · {formatCount(report.stats.lineCount)} 行</div>
               </div>
               <span className="shrink-0 tabular-nums">{report.stats.densityPerMinute} 行/分钟</span>
             </figcaption>
@@ -246,8 +246,8 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                 <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label={isMatchMode ? '片源覆盖与字幕活动图' : '字幕时间分布图'} className="h-[142px] w-full overflow-visible">
                   <defs>
                     <linearGradient id="subtitleArea" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0%" stopColor="#8fa3d1" stopOpacity="0.24" />
-                      <stop offset="100%" stopColor="#8fa3d1" stopOpacity="0.015" />
+                      <stop offset="0%" stopColor="var(--v4-accent)" stopOpacity="0.24" />
+                      <stop offset="100%" stopColor="var(--v4-accent)" stopOpacity="0.015" />
                     </linearGradient>
                   </defs>
                   {Array.from({ length: 7 }).map((_, index) => (
@@ -257,7 +257,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                       x2={(chartWidth / 6) * index}
                       y1="12"
                       y2={chartHeight - 8}
-                      stroke="rgba(143, 163, 209,0.07)"
+                      stroke="var(--v4-line)"
                       strokeWidth="1"
                     />
                   ))}
@@ -265,7 +265,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                   <motion.path
                     d={subtitlePath}
                     fill="none"
-                    stroke="#8fa3d1"
+                    stroke="var(--v4-accent)"
                     strokeWidth="2"
                     strokeLinecap="round"
                     initial={{ pathLength: 0, opacity: 0 }}
@@ -278,7 +278,8 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                       x2={videoEnd * chartWidth}
                       y1="12"
                       y2={chartHeight - 8}
-                      stroke="rgba(192, 168, 154, 0.72)"
+                      stroke="var(--v4-warning)"
+                      strokeOpacity="0.72"
                       strokeWidth="1.5"
                       strokeDasharray="4 5"
                     />
@@ -288,7 +289,8 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                     x2={activeX}
                     y1="8"
                     y2={chartHeight - 4}
-                    stroke="rgba(225, 231, 245, 0.56)"
+                    stroke="var(--v4-accent-strong)"
+                    strokeOpacity="0.56"
                     strokeWidth="1"
                     animate={{ x1: activeX, x2: activeX }}
                     transition={{ duration: 0.18, ease: 'easeOut' }}
@@ -296,8 +298,8 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                   <motion.circle
                     cy={chartHeight - 7}
                     r="4"
-                    fill="#dce2ef"
-                    stroke="#0a0b0f"
+                    fill="var(--v4-accent-strong)"
+                    stroke="var(--v4-canvas)"
                     strokeWidth="2"
                     animate={{ cx: activeX }}
                     transition={{ duration: 0.18, ease: 'easeOut' }}
@@ -315,29 +317,30 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                 />
               </div>
 
-              <div className="mt-1 grid grid-cols-3 font-mono text-[11px] tabular-nums text-neutral-600">
+              <div className="mt-1 grid grid-cols-3 font-mono text-[11px] tabular-nums text-[var(--v4-text-faint)]">
                 <span>00:00</span>
                 <span className="text-center">{formatMsClock(timelineDurationMs / 2)}</span>
                 <span className="text-right">{formatMsClock(timelineDurationMs)}</span>
               </div>
 
-              <div className="mt-3 border-t border-white/[0.05] pt-3">
-                <div className="mb-2.5 flex items-center justify-between gap-3 text-xs text-neutral-500">
+              <div className="mt-3 border-t border-[var(--v4-line)] pt-3">
+                <div className="mb-2.5 flex items-center justify-between gap-3 text-xs text-[var(--v4-text-faint)]">
                   <span>{isMatchMode ? '片源与字幕跨度' : '字幕跨度'}</span>
                   <span className="tabular-nums">
                     当前 {formatMsClock(activeTimeMs)} · 字幕 {formatMsClock(report.subtitleStartMs)} - {formatMsClock(report.subtitleEndMs)}
                   </span>
                 </div>
                 <div className="relative py-1.5">
-                  <div className="relative h-2 overflow-hidden rounded-full bg-white/[0.045]">
+                  <div className="relative h-2 overflow-hidden rounded-full bg-[var(--v4-panel-muted)]">
                     {videoEnd !== undefined && (
                       <div
-                        className="absolute inset-y-0 left-0 bg-white/[0.09]"
+                        className="absolute inset-y-0 left-0 bg-[var(--v4-line-strong)]"
                         style={{ width: `${videoEnd * 100}%` }}
                       />
                     )}
                     <motion.div
-                      className="absolute inset-y-0 rounded-full bg-[#8fa3d1]/78"
+                      className="absolute inset-y-0 rounded-full bg-[var(--v4-accent)]"
+                      style={{ opacity: 0.78 }}
                       initial={{ left: `${coverageStart * 100}%`, right: `${100 - coverageStart * 100}%` }}
                       animate={{ left: `${coverageStart * 100}%`, right: `${100 - coverageEnd * 100}%` }}
                       transition={{ duration: 0.6, ease: 'easeOut' }}
@@ -345,13 +348,13 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                   </div>
                   {videoEnd !== undefined && videoEnd < 0.999 && (
                     <span
-                      className="absolute top-0 h-5 w-px bg-[#c0a89a]/80"
-                      style={{ left: `${videoEnd * 100}%` }}
+                      className="absolute top-0 h-5 w-px bg-[var(--v4-warning)]"
+                      style={{ left: `${videoEnd * 100}%`, opacity: 0.8 }}
                       title={`片源结束于 ${formatMsClock(report.videoDurationMs || 0)}`}
                     />
                   )}
                   <motion.span
-                    className="absolute top-0 h-5 w-px bg-[#dce2ef] shadow-[0_0_8px_rgba(220,226,239,0.45)]"
+                    className="absolute top-0 h-5 w-px bg-[var(--v4-accent-strong)] shadow-[0_0_8px_color-mix(in_srgb,var(--v4-accent)_45%,transparent)]"
                     animate={{ left: `${activePosition * 100}%` }}
                     transition={{ duration: 0.18, ease: 'easeOut' }}
                   />
@@ -375,7 +378,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
               ))}
             </div>
           ) : (
-            <p className="mt-3 text-xs leading-5 text-neutral-500">
+            <p className="mt-3 text-xs leading-5 text-[var(--v4-text-faint)]">
               这张图只描述字幕自身的时间分布。加入片源后也只检查时长覆盖，不会分析声音。
             </p>
           )}

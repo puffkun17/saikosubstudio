@@ -73,7 +73,7 @@ export const TheaterStep: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 w-full h-full flex flex-col overflow-hidden relative bg-[var(--v4-canvas)]">
+    <div data-surface="forest" className="relative flex h-full w-full flex-1 flex-col overflow-hidden">
       
       {/* 顶部导航栏 */}
       <div className="relative z-[var(--z-raised)] flex flex-col gap-3 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-5 py-4 md:px-8">

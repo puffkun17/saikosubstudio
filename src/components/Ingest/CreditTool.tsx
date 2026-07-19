@@ -15,19 +15,19 @@ export const CreditTool: React.FC = () => {
   } = useStudioStore();
 
   return (
-    <section className="rounded-lg border border-white/[0.07] bg-white/[0.012] px-3 py-2.5">
+    <section className="rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2.5">
       <div className="flex items-center gap-1.5">
         <PenLine className="h-3.5 w-3.5 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
-        <h4 className="text-sm font-semibold text-neutral-200">署名</h4>
-        <span className="text-xs text-neutral-500">
+        <h4 className="text-sm font-semibold text-[var(--v4-text)]">署名</h4>
+        <span className="text-xs text-[var(--v4-text-faint)]">
           {detectedAttributions.length > 0 ? `${detectedAttributions.length} 条来源` : '可选'}
         </span>
       </div>
 
       <div className="mt-3 grid gap-3">
         <div>
-          <div className="flex items-center gap-2 text-xs font-medium text-neutral-400">
-            <BadgeCheck className="h-3.5 w-3.5 text-[#8fa3d1]" aria-hidden="true" />
+          <div className="flex items-center gap-2 text-xs font-medium text-[var(--v4-text-muted)]">
+            <BadgeCheck className="h-3.5 w-3.5 text-[var(--v4-accent-strong)]" aria-hidden="true" />
             来源署名
           </div>
           {detectedAttributions.length > 0 ? (
@@ -35,23 +35,23 @@ export const CreditTool: React.FC = () => {
               {detectedAttributions.map((item) => (
                 <span
                   key={`${item.role}-${item.value}`}
-                  className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-[#8fa3d1]/18 bg-[#8fa3d1]/[0.045] px-2.5 py-1 text-xs text-[#d2d9e9]"
+                  className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-[var(--v4-accent)]/18 bg-[var(--v4-accent-soft)] px-2.5 py-1 text-xs text-[var(--v4-accent-strong)]"
                   title={`${item.label}: ${item.value}`}
                 >
-                  <span className="shrink-0 text-[#8fa3d1]">{item.label}</span>
-                  <span className="truncate text-neutral-200">{item.value}</span>
+                  <span className="shrink-0 text-[var(--v4-accent-strong)]">{item.label}</span>
+                  <span className="truncate text-[var(--v4-text-muted)]">{item.value}</span>
                 </span>
               ))}
             </div>
           ) : (
-            <p className="mt-2 text-xs leading-relaxed text-neutral-500">
+            <p className="mt-2 text-xs leading-relaxed text-[var(--v4-text-faint)]">
               未在当前字幕中发现明确署名行。
             </p>
           )}
         </div>
 
         <div className="min-w-0">
-          <label className="text-xs font-medium text-neutral-400" htmlFor="creator-credit">
+          <label className="text-xs font-medium text-[var(--v4-text-muted)]" htmlFor="creator-credit">
             片尾制作署名
           </label>
           <input
@@ -60,9 +60,9 @@ export const CreditTool: React.FC = () => {
             value={creatorCredit}
             onChange={(event) => setCreatorCredit(event.target.value)}
             placeholder="例如：Nexus Studio"
-            className="mt-1.5 h-10 w-full rounded-lg border border-white/[0.08] bg-black/25 px-3 text-sm text-neutral-100 outline-none transition placeholder:text-neutral-600 focus:border-[var(--v4-accent)]/45 focus:bg-white/[0.025]"
+            className="rd-field mt-1.5 h-10 w-full rounded-lg px-3 text-sm text-[var(--v4-text)] outline-none transition placeholder:text-[var(--v4-text-faint)]"
           />
-          <label className="mt-2 flex cursor-pointer items-start gap-2 text-xs leading-relaxed text-neutral-400">
+          <label className="mt-2 flex cursor-pointer items-start gap-2 text-xs leading-relaxed text-[var(--v4-text-muted)]">
             <input
               type="checkbox"
               checked={appendCreatorCredit}

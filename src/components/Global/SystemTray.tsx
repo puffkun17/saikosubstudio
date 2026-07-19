@@ -22,11 +22,11 @@ const WORKFLOW_STEPS = [
 ];
 
 const trayChrome =
-  'flex h-[var(--tray-h)] w-full items-center gap-3 border-[var(--v4-line)] bg-[color:rgba(12,11,10,0.92)] px-4 backdrop-blur-md transition-colors duration-300 sm:px-6 md:px-8';
+  'flex h-[var(--tray-h)] w-full items-center gap-3 border-[var(--v4-line)] px-4 backdrop-blur-md transition-colors duration-300 sm:px-6 md:px-8';
 
 /** Icon+label control: never squash copy — hide label via container query instead. */
 const trayCtrl =
-  'v4-focus-ring inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-[15px] font-medium text-[var(--v4-text-muted)] transition-colors hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)] hover:text-white';
+  'system-tray__ctrl v4-focus-ring inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 text-[15px] font-medium transition-colors';
 
 /**
  * Labels appear from available deck width (parent @container), not control width —
@@ -185,7 +185,7 @@ export const SystemTray = () => {
           <button
             type="button"
             onClick={() => handleStepClick(1)}
-            className="v4-focus-ring flex shrink-0 cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-md text-[17px] font-semibold text-[var(--v4-text)] transition-colors duration-150 hover:text-white"
+            className="v4-focus-ring flex shrink-0 cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl text-[17px] font-semibold text-[var(--v5-cream)] transition-colors duration-150 hover:text-white"
             aria-label="返回导入页"
           >
             <Image
@@ -194,13 +194,13 @@ export const SystemTray = () => {
               aria-hidden="true"
               width={32}
               height={32}
-              className="h-8 w-8 rounded-[9px] shadow-[0_1px_2px_rgba(0,0,0,0.45)]"
+              className="h-8 w-8 rounded-2xl bg-[var(--v5-cream)] shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
             />
             <span className="hidden whitespace-nowrap min-[420px]:inline">SubStudio</span>
           </button>
 
           {!isInfoPage && (
-            <div className="hidden items-center gap-1 border-l border-[var(--v4-line)] pl-3 min-[720px]:flex">
+            <div className="hidden items-center gap-1.5 border-l border-[color:rgba(245,241,234,0.12)] pl-3 min-[720px]:flex">
               {WORKFLOW_STEPS.map((step) => {
                 const isActive = workflowStep === step.id;
                 const disabled =
@@ -211,12 +211,12 @@ export const SystemTray = () => {
                     key={step.id}
                     type="button"
                     onClick={() => handleStepClick(step.id)}
-                    className={`v4-focus-ring cursor-pointer whitespace-nowrap rounded-md px-4 py-2 text-[15px] font-semibold transition-all ${
+                    className={`v4-focus-ring cursor-pointer whitespace-nowrap rounded-full px-5 py-2 text-[15px] font-semibold transition-all ${
                       isActive
-                        ? 'bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
+                        ? 'bg-[var(--v5-cream)] text-[var(--v5-green)]'
                         : disabled
-                          ? 'cursor-help text-[var(--v4-text-faint)]'
-                          : 'text-[var(--v4-text-muted)] hover:bg-white/[0.04] hover:text-white'
+                          ? 'cursor-help text-[color:rgba(245,241,234,0.35)]'
+                          : 'bg-[color:rgba(245,241,234,0.08)] text-[color:rgba(245,241,234,0.7)] hover:bg-[color:rgba(245,241,234,0.14)] hover:text-[var(--v5-cream)]'
                     }`}
                     aria-current={isActive ? 'step' : undefined}
                     aria-disabled={disabled}
@@ -231,7 +231,7 @@ export const SystemTray = () => {
           {isInfoPage && (
             <Link
               href="/"
-              className={`${trayCtrl} border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)] hover:border-[var(--v4-accent)]`}
+              className={`${trayCtrl} text-[var(--v5-orange)]`}
               aria-label="返回首页"
             >
               <ArrowLeft className="h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
@@ -240,7 +240,7 @@ export const SystemTray = () => {
           )}
 
           {!isInfoPage && (
-            <span className="truncate text-[15px] font-medium text-white/45 min-[720px]:hidden">
+            <span className="truncate text-[15px] font-medium text-[color:rgba(245,241,234,0.45)] min-[720px]:hidden">
               {STEP_LABEL[workflowStep]}
             </span>
           )}
@@ -254,27 +254,27 @@ export const SystemTray = () => {
             title="调节网页整体缩放"
             aria-label={`网页缩放 ${Math.round(scale * 100)}%`}
           >
-            <span className="text-[13px] font-bold tracking-wide text-[var(--v4-accent-strong)]">A±</span>
-            <span className="font-bold text-[var(--v4-text)]" suppressHydrationWarning>
+            <span className="system-tray__accent text-[13px] font-bold tracking-wide">A±</span>
+            <span className="font-bold text-[var(--v5-cream)]" suppressHydrationWarning>
               {Math.round(scale * 100)}%
             </span>
           </button>
 
           <div
-            className="inline-flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3"
+            className="inline-flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[color:rgba(245,241,234,0.12)] bg-[color:rgba(245,241,234,0.08)] px-3"
             aria-label={`本地时间 ${zoneShort} ${time}`}
           >
-            <span className="rounded border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-1.5 py-0.5 font-mono text-[11px] font-semibold tracking-[0.12em] text-[var(--v4-accent-strong)]">
+            <span className="rounded-full bg-[var(--v4-accent-soft)] px-1.5 py-0.5 font-mono text-[11px] font-semibold tracking-[0.12em] text-[var(--v5-orange)]">
               LOCAL
             </span>
-            <span className="text-[15px] font-medium tabular-nums text-[var(--v4-text)]" suppressHydrationWarning>
+            <span className="text-[15px] font-medium tabular-nums text-[var(--v5-cream)]" suppressHydrationWarning>
               {time || '--:--:--'}
             </span>
-            <span className="hidden font-mono text-[12px] text-[var(--v4-text-muted)] min-[900px]:inline" suppressHydrationWarning>
+            <span className="hidden font-mono text-[12px] text-[color:rgba(245,241,234,0.55)] min-[900px]:inline" suppressHydrationWarning>
               {zoneShort}
             </span>
             {zoneCity ? (
-              <span className="hidden text-[12px] text-[var(--v4-text-faint)] min-[1100px]:inline" suppressHydrationWarning>
+              <span className="hidden text-[12px] text-[color:rgba(245,241,234,0.4)] min-[1100px]:inline" suppressHydrationWarning>
                 {zoneCity}
               </span>
             ) : null}
@@ -303,21 +303,21 @@ export const SystemTray = () => {
                 title="历史存档字幕"
                 aria-label="历史存档"
               >
-                <FolderClock className="h-5 w-5 shrink-0 stroke-[2.2] text-[var(--v4-accent-strong)]" aria-hidden="true" />
+                <FolderClock className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.2]" aria-hidden="true" />
                 <span className={trayLabelLong}>历史存档</span>
                 {libraryList.length > 0 && (
-                  <span className="inline-flex min-w-5 items-center justify-center rounded bg-[var(--v4-accent-soft)] px-1.5 py-0.5 text-xs font-semibold text-[var(--v4-accent-strong)]">
+                  <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-[color:rgba(239,141,95,0.22)] px-1.5 py-0.5 text-xs font-semibold text-[var(--v5-orange)]">
                     {libraryList.length}
                   </span>
                 )}
               </button>
             )}
             <Link href="/about" className={trayCtrl} title="隐私与版权" aria-label="隐私与版权">
-              <ShieldCheck className="h-5 w-5 shrink-0 stroke-[2.2] text-[var(--v4-accent-strong)]" aria-hidden="true" />
+              <ShieldCheck className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.2]" aria-hidden="true" />
               <span className={trayLabelLong}>隐私与版权</span>
             </Link>
             <Link href="/feedback" className={trayCtrl} title="提交反馈" aria-label="反馈">
-              <MessageSquareText className="h-5 w-5 shrink-0 stroke-[2.2] text-[var(--v4-accent-strong)]" aria-hidden="true" />
+              <MessageSquareText className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.2]" aria-hidden="true" />
               <span className={trayLabelShort}>反馈</span>
             </Link>
           </div>

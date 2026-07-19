@@ -419,7 +419,7 @@ export const TaskList: React.FC = () => {
 
       {/* Task tab switcher (if multiple tasks exist) */}
       {tasks.length > 1 && (
-        <div className="flex gap-2 pb-2 border-b border-white/[0.04] overflow-x-auto scrollbar-none flex-shrink-0">
+        <div className="flex gap-2 pb-2 border-b border-[var(--v4-line)] overflow-x-auto scrollbar-none flex-shrink-0">
           {tasks.map(t => {
             const isActive = t.id === activeTask.id;
             return (
@@ -427,8 +427,8 @@ export const TaskList: React.FC = () => {
                 key={t.id}
                 className={`max-w-[220px] cursor-pointer truncate rounded-xl border px-4 py-2 font-sans text-sm transition-all
                   ${isActive
-                    ? 'border-[#9ca3af]/30 bg-[#9ca3af]/10 font-semibold text-[#e5e7eb] shadow-[0_0_12px_rgba(156,163,175,0.12)]'
-                    : 'border-white/[0.04] bg-white/[0.01] text-neutral-400 hover:bg-white/[0.04] hover:text-neutral-200'}`}
+                    ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] font-semibold text-[var(--v4-accent-strong)] shadow-[0_0_12px_color-mix(in_srgb,var(--v4-accent)_12%,transparent)]'
+                    : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]'}`}
                 onClick={() => selectTask(t.id)}
               >
                 {t.title}
@@ -439,7 +439,7 @@ export const TaskList: React.FC = () => {
       )}
 
       {/* Main workspace — hug content; sticky dock without stretching voids */}
-      <div className="relative flex min-h-0 flex-col gap-4 overflow-x-visible overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-white/[0.03]">
+      <div className="relative flex min-h-0 flex-col gap-4 overflow-x-visible overflow-y-auto pr-1 select-none scrollbar-thin">
 
         {needsTitleInput && (
           <div className="relative flex flex-shrink-0 items-center gap-2.5 rounded-lg border border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] px-3 py-2.5">
@@ -462,24 +462,24 @@ export const TaskList: React.FC = () => {
         <div className="flex min-h-0 flex-col gap-3.5 overflow-visible">
           <div className="relative flex flex-col gap-3 overflow-visible">
             <div className="flex items-center gap-2">
-              <h4 className="block select-none text-base font-semibold text-neutral-100">
+              <h4 className="block select-none text-base font-semibold text-[var(--v4-text)]">
                 字幕轨
               </h4>
               <InfoHint label="字幕轨说明">
                 选择要处理的字幕文件。双语单文件会自动识别；分开的中文与第二语言轨将按时间轴合并。
               </InfoHint>
               {activeTask.isBilingualSingle && (
-                <span className="rounded-md border border-white/[0.08] bg-white/[0.025] px-2 py-0.5 text-xs font-medium text-neutral-400">
+                <span className="rd-chip rd-chip--tight text-[var(--v4-text-muted)]">
                   双语 · {zhCount} 行
                 </span>
               )}
               {!activeTask.isBilingualSingle && activeTask.zh && activeTask.en && (
-                <span className="ml-auto text-xs font-normal text-neutral-500">
+                <span className="ml-auto text-xs font-normal text-[var(--v4-text-faint)]">
                   按住六点拖动可对调主副轨
                 </span>
               )}
             </div>
-            <div className="relative flex flex-col gap-2.5 overflow-visible rounded-lg bg-black/20 p-3">
+            <div className="relative flex flex-col gap-2.5 overflow-visible rounded-lg bg-[var(--v4-panel-muted)] p-3">
               {(() => {
                 const trackOptions = uploadedFiles.map(f => ({
                   id: f.id,
@@ -521,15 +521,15 @@ export const TaskList: React.FC = () => {
                         }}
                         aria-label={canReorderTracks ? `拖动以对调${trackKey === 'zh' ? '主字幕' : '第二语言'}顺序` : undefined}
                         title={canReorderTracks ? '按住拖动，对调主副轨' : undefined}
-                        className={`grid h-11 w-7 shrink-0 place-items-center rounded-md text-neutral-500 transition-colors touch-none ${
+                        className={`grid h-11 w-7 shrink-0 place-items-center rounded-md text-[var(--v4-text-faint)] transition-colors touch-none ${
                           canReorderTracks
-                            ? 'cursor-grab hover:bg-white/[0.05] hover:text-neutral-200 active:cursor-grabbing'
+                            ? 'cursor-grab hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] active:cursor-grabbing'
                             : 'cursor-default opacity-25'
                         }`}
                       >
                         <GripVertical className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
                       </span>
-                      <span className="inline-flex w-[4.75rem] shrink-0 items-center gap-1 text-left text-sm font-semibold text-neutral-200">
+                      <span className="inline-flex w-[4.75rem] shrink-0 items-center gap-1 text-left text-sm font-semibold text-[var(--v4-text-muted)]">
                         {label}
                       </span>
                       <TrackSelect
@@ -569,7 +569,7 @@ export const TaskList: React.FC = () => {
                         )}
 
                         <div className="flex flex-row items-center gap-1.5 overflow-visible pl-7">
-                          <span className="inline-flex w-[4.75rem] shrink-0 items-center gap-1 text-left text-sm font-semibold text-neutral-200">
+                          <span className="inline-flex w-[4.75rem] shrink-0 items-center gap-1 text-left text-sm font-semibold text-[var(--v4-text-muted)]">
                             旁白导评
                             <InfoHint label="旁白与导评说明" side="right">
                               {getSubtitleTermHint('narration')} 导评通常不是正片对白。
@@ -599,16 +599,16 @@ export const TaskList: React.FC = () => {
                             initial={{ opacity: 0.85, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1.03 }}
                             transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
-                            className="flex items-center gap-2 rounded-xl border border-[var(--v4-accent)]/40 bg-[#12100e]/95 px-3 py-2.5 shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur-md"
+                            className="flex items-center gap-2 rounded-xl border border-[var(--v4-accent)]/40 bg-[var(--v4-panel-raised)] px-3 py-2.5 shadow-[0_18px_40px_rgba(26,61,55,0.12)] backdrop-blur-md"
                             style={{ height: dragCardSize.h }}
                           >
                             <GripVertical className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
                             <FileFormatIcon name={dragFile.name} size="sm" />
                             <LanguageMark lang={dragFile.lang} languagePair={dragFile.languagePair} />
-                            <span className="min-w-0 flex-1 truncate font-mono text-sm text-neutral-100">
+                            <span className="min-w-0 flex-1 truncate font-mono text-sm text-[var(--v4-text)]">
                               {dragFile.name}
                             </span>
-                            <span className="shrink-0 rounded-md border border-white/[0.08] bg-black/30 px-2 py-0.5 font-mono text-xs text-neutral-400">
+                            <span className="shrink-0 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2 py-0.5 font-mono text-xs text-[var(--v4-text-muted)]">
                               {getSubTitleCount(dragFile)}行
                             </span>
                           </motion.div>
@@ -625,21 +625,21 @@ export const TaskList: React.FC = () => {
           <div className="flex flex-shrink-0 flex-col gap-3">
             <CreditTool />
 
-            <div className="rounded-lg border border-white/[0.07] bg-white/[0.012] px-3 py-2.5">
+            <div className="rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2.5">
               <div className="flex items-center justify-between gap-2">
-                <label className="inline-flex select-none items-center gap-1.5 text-sm font-semibold text-neutral-200">
+                <label className="inline-flex select-none items-center gap-1.5 text-sm font-semibold text-[var(--v4-text-muted)]">
                   导出名称
                   <InfoHint label="导出文件名称说明">
                     默认留空。可勾选从片源信息或主副字幕文件名填充，也可直接输入。
                   </InfoHint>
                 </label>
-                <span className="shrink-0 rounded-md border border-white/[0.08] bg-white/[0.025] px-2 py-0.5 text-xs font-medium text-neutral-400">
+                <span className="rd-chip rd-chip--tight shrink-0 text-[var(--v4-text-muted)]">
                   {getFilenameSourceLabel()}
                 </span>
               </div>
 
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
-                <label className={`inline-flex items-center gap-2 text-xs ${tmdbData ? 'cursor-pointer text-neutral-300' : 'cursor-not-allowed text-neutral-600'}`}>
+                <label className={`inline-flex items-center gap-2 text-xs ${tmdbData ? 'cursor-pointer text-[var(--v4-text-muted)]' : 'cursor-not-allowed text-[var(--v4-text-faint)]'}`}>
                   <input
                     type="checkbox"
                     className="h-3.5 w-3.5 accent-[var(--v4-accent)]"
@@ -652,7 +652,7 @@ export const TaskList: React.FC = () => {
                   />
                   <span>使用片源信息</span>
                 </label>
-                <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-neutral-300">
+                <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-[var(--v4-text-muted)]">
                   <input
                     type="checkbox"
                     className="h-3.5 w-3.5 accent-[var(--v4-accent)]"
@@ -669,7 +669,7 @@ export const TaskList: React.FC = () => {
               <div className="relative mt-2.5">
                 <input
                   type="text"
-                  className="v4-focus-ring h-10 w-full rounded-lg border border-white/[0.09] bg-[#020204] px-3 font-mono text-sm text-white outline-none transition-all placeholder:text-white/35 focus:border-[var(--v4-accent)]/45 focus:bg-white/[0.025]"
+                  className="rd-field v4-focus-ring h-10 w-full rounded-lg px-3 font-mono text-sm outline-none"
                   value={customFilename}
                   onChange={e => setCustomFilename(e.target.value, 'manual')}
                   onFocus={() => setIsFilenameFocused(true)}
@@ -677,7 +677,7 @@ export const TaskList: React.FC = () => {
                   placeholder="输入导出文件名"
                 />
                 {customFilename.length > 42 && !isFilenameFocused && (
-                  <div className="pointer-events-none absolute inset-y-px left-px right-px flex items-center overflow-hidden rounded-lg bg-[#020204] px-3 font-mono text-sm text-white">
+                  <div className="pointer-events-none absolute inset-y-px left-px right-px flex items-center overflow-hidden rounded-lg bg-white px-3 font-mono text-sm text-[var(--v4-text)]">
                     {renderMarqueeText(customFilename, 'w-full')}
                   </div>
                 )}
@@ -686,37 +686,37 @@ export const TaskList: React.FC = () => {
           </div>
 
           {/* Configuration & Process Dock — sticky, no mt-auto void */}
-          <div className="sticky bottom-0 z-10 mt-3 flex flex-col gap-3 overflow-visible border-t border-white/[0.06] bg-[var(--v4-panel)]/95 pt-3 backdrop-blur-sm">
+          <div className="sticky bottom-0 z-10 mt-3 flex flex-col gap-3 overflow-visible border-t border-[var(--v4-line)] bg-[var(--v4-panel)]/95 pt-3 backdrop-blur-sm">
 
             {/* Source ASS style preview and explicit adoption decision. */}
             {foundAssStyle && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.018]"
+                className="overflow-hidden rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]"
               >
                 <div className="grid gap-0 md:grid-cols-[minmax(220px,0.72fr)_minmax(0,1fr)]">
-                  <AssStylePreview style={foundAssStyle} className="min-h-36 rounded-none border-0 border-b border-white/[0.07] md:border-b-0 md:border-r" />
+                  <AssStylePreview style={foundAssStyle} className="min-h-36 rounded-none border-0 border-b border-[var(--v4-line)] md:border-b-0 md:border-r" />
                   <div className="flex min-w-0 flex-col justify-between gap-4 p-4 md:p-5">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <Paintbrush className="h-4 w-4 text-[#8fa3d1]" aria-hidden="true" />
-                        <h5 className="text-sm font-semibold text-neutral-100">文件内嵌样式</h5>
+                        <Paintbrush className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />
+                        <h5 className="text-sm font-semibold text-[var(--v4-text)]">文件内嵌样式</h5>
                         {isFoundAssStyleApplied && !showAssHint && (
-                          <span className="inline-flex items-center gap-1 rounded-md border border-[#8fa3d1]/20 bg-[#8fa3d1]/[0.06] px-2 py-0.5 text-xs font-medium text-[#d2d9e9]">
+                          <span className="inline-flex items-center gap-1 rounded-md border border-[var(--v4-accent)]/20 bg-[var(--v4-accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--v4-accent-strong)]">
                             <Check className="h-3 w-3" />
                             已用于导出
                           </span>
                         )}
                       </div>
-                      <p className="mt-1.5 text-xs leading-relaxed text-neutral-500">
+                      <p className="mt-1.5 text-xs leading-relaxed text-[var(--v4-text-faint)]">
                         预览来自当前 ASS 文件。字体按当前设备可用版本近似呈现。
                       </p>
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-400">
-                        <span className="rounded-md border border-white/[0.07] bg-black/20 px-2 py-1">
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-[var(--v4-text-muted)]">
+                        <span className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel)] px-2 py-1">
                           中文 {foundAssStyle.zhFontSize || '--'} px
                         </span>
-                        <span className="rounded-md border border-white/[0.07] bg-black/20 px-2 py-1">
+                        <span className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel)] px-2 py-1">
                           第二语言 {foundAssStyle.enFontSize || '--'} px
                         </span>
                       </div>
@@ -726,7 +726,7 @@ export const TaskList: React.FC = () => {
                       {(showAssHint || !isFoundAssStyleApplied) && (
                         <button
                           type="button"
-                          className="inline-flex h-9 items-center justify-center rounded-lg border border-[#8fa3d1]/25 bg-[#8fa3d1]/10 px-3 text-xs font-semibold text-[#d9efea] transition hover:bg-[#8fa3d1]/16 active:translate-y-px"
+                          className="v4-focus-ring inline-flex h-9 items-center justify-center rounded-lg border border-[var(--v4-accent)]/25 bg-[var(--v4-accent-soft)] px-3 text-xs font-semibold text-[var(--v4-accent-strong)] transition hover:bg-[var(--v4-accent)] hover:text-[var(--v4-accent-ink)] active:translate-y-px"
                           onClick={() => {
                             setCustomStyle({ ...customStyle, ...foundAssStyle } as StyleSettings);
                             setActivePreset('ass_native');
@@ -740,7 +740,7 @@ export const TaskList: React.FC = () => {
                       {showAssHint && (
                         <button
                           type="button"
-                          className="inline-flex h-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 text-xs font-medium text-neutral-300 transition hover:bg-white/[0.06] hover:text-white active:translate-y-px"
+                          className="v4-focus-ring inline-flex h-9 items-center justify-center rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)] px-3 text-xs font-medium text-[var(--v4-text-muted)] transition hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] active:translate-y-px"
                           onClick={() => {
                             setShowAssHint(false);
                             addLog('已保留当前字幕样式', 'info');
@@ -759,34 +759,34 @@ export const TaskList: React.FC = () => {
               {/* Alignment Mode Selection */}
               {!activeTask.isBilingualSingle && (
                 <div className="flex flex-col gap-1.5 w-full lg:w-60 shrink-0">
-                  <label className="text-sm text-neutral-200 font-semibold select-none inline-flex items-center gap-1.5">
+                  <label className="text-sm text-[var(--v4-text-muted)] font-semibold select-none inline-flex items-center gap-1.5">
                     对齐方式
                     <InfoHint label="对齐方式说明" side="left">
                       智能模式适合常规双语轨合并；细致模式会尝试处理插入、删减或断句不一致，但耗时略高。
                     </InfoHint>
                   </label>
-                  <div className="grid grid-cols-2 gap-0.5 p-0.5 rounded-xl bg-[#020204] border border-white/[0.07] relative shadow-[inset_0_2px_4px_rgba(0,0,0,0.85)] h-12 items-center">
+                  <div className="grid grid-cols-2 gap-0.5 p-0.5 rounded-xl bg-[var(--v4-panel-muted)] border border-[var(--v4-line)] relative h-12 items-center">
                     <button
-                      className={`relative z-10 py-1.5 rounded-md text-sm font-semibold transition-all duration-105 cursor-pointer ${alignmentMode === 'standard' ? 'text-white' : 'text-neutral-300 hover:text-neutral-100'}`}
+                      className={`relative z-10 py-1.5 rounded-md text-sm font-semibold transition-all duration-105 cursor-pointer ${alignmentMode === 'standard' ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-faint)] hover:text-[var(--v4-text-muted)]'}`}
                       onClick={() => setAlignmentMode('standard')}
                     >
                       {alignmentMode === 'standard' && (
                         <motion.div
                           layoutId="activeEngine"
-                          className="absolute inset-0 bg-white/[0.05] border border-white/[0.08] shadow-[0_1.5px_3px_rgba(0,0,0,0.3)] rounded-md -z-10"
+                          className="absolute inset-0 bg-[var(--v4-accent-soft)] border border-[var(--v4-accent)]/25 rounded-md -z-10"
                           transition={{ type: "spring", stiffness: 400, damping: 25 }}
                         />
                       )}
                       智能
                     </button>
                     <button
-                      className={`relative z-10 py-1.5 rounded-md text-sm font-semibold transition-all duration-105 cursor-pointer ${alignmentMode === 'industrial' ? 'text-[#e5e7eb]' : 'text-neutral-300 hover:text-neutral-100'}`}
+                      className={`relative z-10 py-1.5 rounded-md text-sm font-semibold transition-all duration-105 cursor-pointer ${alignmentMode === 'industrial' ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-faint)] hover:text-[var(--v4-text-muted)]'}`}
                       onClick={() => setAlignmentMode('industrial')}
                     >
                       {alignmentMode === 'industrial' && (
                         <motion.div
                           layoutId="activeEngine"
-                          className="absolute inset-0 bg-[#9ca3af]/10 border border-[#9ca3af]/25 shadow-[0_1.5px_6px_rgba(156,163,175,0.14)] rounded-md -z-10"
+                          className="absolute inset-0 bg-[var(--v4-accent-soft)] border border-[var(--v4-accent)]/25 rounded-md -z-10"
                           transition={{ type: "spring", stiffness: 400, damping: 25 }}
                         />
                       )}

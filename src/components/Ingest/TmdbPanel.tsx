@@ -118,7 +118,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
 
       <div className="z-10 flex items-center justify-between gap-4 border-b border-[var(--v4-line)] pb-4">
         <div className="flex items-center gap-3.5">
-          <h3 className="text-[22px] font-semibold text-neutral-100 tracking-tight font-sans">
+          <h3 className="text-[22px] font-semibold text-[var(--v4-text)] tracking-tight font-sans">
             {tmdbData ? '片源信息' : '字幕概览'}
           </h3>
           {tmdbData && <a
@@ -128,7 +128,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
             className="flex h-8 items-center gap-2 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 transition-colors hover:border-[var(--v4-line-strong)]"
             title="Powered by The Movie Database"
           >
-            <span className="text-xs text-white/45 font-medium">Powered by</span>
+            <span className="text-xs text-[var(--v4-text-faint)] font-medium">Powered by</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/tmdb_logo_blue_square.svg" alt="TMDB Logo" className="h-full w-auto object-contain brightness-100 contrast-110 filter drop-shadow-[0_0_4px_rgba(59,130,246,0.6)]" />
           </a>}
@@ -163,18 +163,18 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                   className="aspect-[2/3] h-auto w-32 shrink-0 cursor-pointer rounded-md border border-[var(--v4-line-strong)] object-cover shadow-[0_12px_24px_rgba(0,0,0,0.28)] transition-all duration-300 sm:w-36 xl:w-40"
                 />
               ) : (
-                <div className="flex aspect-[2/3] w-32 flex-shrink-0 items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-neutral-600 sm:w-36 xl:w-40" />
+                <div className="flex aspect-[2/3] w-32 flex-shrink-0 items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] sm:w-36 xl:w-40" />
               )}
 
               {/* Movie metadata (Title + Badges) */}
               <div className="flex-1 flex flex-col gap-3.5 min-w-0 text-left pt-1">
                 <div>
-                  <h4 className="font-sans text-[1.35rem] font-semibold leading-tight tracking-normal text-neutral-100">
+                  <h4 className="font-sans text-[1.35rem] font-semibold leading-tight tracking-normal text-[var(--v4-text)]">
                     {tmdbData.title}
                   </h4>
                   {tmdbData.originalTitle && tmdbData.originalTitle !== tmdbData.title && (
                     <p
-                      className="mt-1 truncate whitespace-nowrap text-sm font-medium tracking-[0.02em] text-neutral-400"
+                      className="mt-1 truncate whitespace-nowrap text-sm font-medium tracking-[0.02em] text-[var(--v4-text-muted)]"
                       style={{ fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }}
                       title={tmdbData.originalTitle}
                     >
@@ -185,30 +185,30 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
 
                 <div className="flex flex-wrap items-center gap-1.5 select-none">
                   {tmdbData.year && (
-                    <span className="px-2.5 py-1 bg-white/[0.03] border border-white/[0.06] rounded-md text-xs font-bold text-neutral-200">
+                    <span className="px-2.5 py-1 bg-[var(--v4-panel-muted)] border border-[var(--v4-line)] rounded-md text-xs font-bold text-[var(--v4-text-muted)]">
                       {tmdbData.year}
                     </span>
                   )}
                   {tmdbData.voteAverage > 0 && (
-                    <span className="px-2.5 py-1 bg-[#9ca3af]/10 text-[#e5e7eb] border border-[#9ca3af]/18 rounded-md text-xs font-mono font-bold flex items-center gap-1.5">
-                      <Star className="w-3.5 h-3.5 fill-[#e5e7eb] text-[#e5e7eb]" />
+                    <span className="px-2.5 py-1 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)] border border-[var(--v4-accent)]/18 rounded-md text-xs font-mono font-bold flex items-center gap-1.5">
+                      <Star className="w-3.5 h-3.5 fill-[var(--v4-accent-strong)] text-[var(--v4-accent-strong)]" />
                       {tmdbData.voteAverage.toFixed(1)}
                     </span>
                   )}
                   {rtScore && (
-                    <span className="px-2.5 py-1 bg-red-500/10 text-red-400 border border-red-500/15 rounded-md text-xs font-mono font-bold flex items-center gap-1.5 shadow-[0_0_8px_rgba(239,68,68,0.08)]">
+                    <span className="px-2.5 py-1 bg-[var(--v4-danger)]/10 text-[var(--v4-danger)] border border-[var(--v4-danger)]/15 rounded-md text-xs font-mono font-bold flex items-center gap-1.5">
                       RT {rtScore}%
                     </span>
                   )}
                   {tmdbData.genres && tmdbData.genres.map((g: string, i: number) => (
-                    <span key={i} className="px-2.5 py-1 bg-white/[0.025] border border-white/[0.05] text-xs rounded-md font-semibold text-neutral-300">
+                    <span key={i} className="px-2.5 py-1 bg-[var(--v4-panel-muted)] border border-[var(--v4-line)] text-xs rounded-md font-semibold text-[var(--v4-text-muted)]">
                       {g}
                     </span>
                   ))}
                 </div>
 
                 {tmdbData.isAnime && (
-                  <div className="mt-1 px-2.5 py-0.5 bg-[#9ca3af]/10 text-[#e5e7eb] border border-[#9ca3af]/20 rounded-md text-xs font-semibold w-max flex items-center gap-1.5 select-none">
+                  <div className="mt-1 px-2.5 py-0.5 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)] border border-[var(--v4-accent)]/20 rounded-md text-xs font-semibold w-max flex items-center gap-1.5 select-none">
                     <motion.span
                       animate={{ scale: [1, 1.12, 1], y: [0, -1.5, 0] }}
                       transition={{
@@ -226,51 +226,51 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
             </div>
 
             {/* Bottom Row: Synopsis text - consistent scale, better CJK leading for readability */}
-            <div className="py-1 text-left font-sans text-[15.5px] leading-[1.78] text-neutral-300 line-clamp-6 lg:line-clamp-7 min-h-0 w-full">
+            <div className="py-1 text-left font-sans text-[15.5px] leading-[1.78] text-[var(--v4-text-muted)] line-clamp-6 lg:line-clamp-7 min-h-0 w-full">
               {tmdbData.overview || '暂无剧情简介...'}
             </div>
           </motion.div>
         ) : (
           <div className="flex flex-1 flex-col gap-4 text-left">
-            <div className="rounded-xl border border-white/[0.07] bg-black/20 p-4">
+            <div className="rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-4">
               <div className="flex min-w-0 items-center gap-2.5">
-                <FileText className="h-5 w-5 shrink-0 text-neutral-400" aria-hidden="true" />
-                <span className="truncate text-sm font-medium text-neutral-200" title={summaryFile?.name}>
+                <FileText className="h-5 w-5 shrink-0 text-[var(--v4-text-faint)]" aria-hidden="true" />
+                <span className="truncate text-sm font-medium text-[var(--v4-text-muted)]" title={summaryFile?.name}>
                   {summaryFile?.name || '等待字幕轨'}
                 </span>
               </div>
 
-              <div className="mt-4 grid grid-cols-3 divide-x divide-white/[0.06] border-t border-white/[0.06] pt-4">
+              <div className="mt-4 grid grid-cols-3 divide-x divide-[var(--v4-line)] border-t border-[var(--v4-line)] pt-4">
                 <div>
-                  <span className="block text-xs text-neutral-600">格式</span>
-                  <strong className="mt-1 block text-sm font-semibold text-neutral-300">{summaryFormat}</strong>
+                  <span className="block text-xs text-[var(--v4-text-faint)]">格式</span>
+                  <strong className="mt-1 block text-sm font-semibold text-[var(--v4-text-muted)]">{summaryFormat}</strong>
                 </div>
                 <div className="pl-3">
-                  <span className="block text-xs text-neutral-600">结构</span>
-                  <strong className="mt-1 block text-sm font-semibold text-neutral-300">{summaryLanguage}</strong>
+                  <span className="block text-xs text-[var(--v4-text-faint)]">结构</span>
+                  <strong className="mt-1 block text-sm font-semibold text-[var(--v4-text-muted)]">{summaryLanguage}</strong>
                 </div>
                 <div className="pl-3">
-                  <span className="block text-xs text-neutral-600">字幕行</span>
-                  <strong className="mt-1 block text-sm font-semibold tabular-nums text-neutral-300">{summaryCount}</strong>
+                  <span className="block text-xs text-[var(--v4-text-faint)]">字幕行</span>
+                  <strong className="mt-1 block text-sm font-semibold tabular-nums text-[var(--v4-text-muted)]">{summaryCount}</strong>
                 </div>
               </div>
             </div>
 
             {foundAssStyle && (
-              <div className="overflow-hidden rounded-xl border border-white/[0.07] bg-[#050607]">
+              <div className="overflow-hidden rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]">
                 <AssStylePreview style={foundAssStyle} compact className="rounded-none border-0" />
-                <div className="flex items-center justify-between border-t border-white/[0.06] px-3.5 py-2.5 text-xs text-neutral-500">
+                <div className="flex items-center justify-between border-t border-[var(--v4-line)] px-3.5 py-2.5 text-xs text-[var(--v4-text-faint)]">
                   <span>检测到源样式</span>
                   <span className="font-mono tabular-nums">{foundAssStyle.zhFontSize || '--'} / {foundAssStyle.enFontSize || '--'} px</span>
                 </div>
               </div>
             )}
 
-            <div className="mt-auto flex items-start gap-2 border-t border-white/[0.06] pt-4 text-xs leading-relaxed text-neutral-500">
+            <div className="mt-auto flex items-start gap-2 border-t border-[var(--v4-line)] pt-4 text-xs leading-relaxed text-[var(--v4-text-faint)]">
               {needsTitleInput ? (
-                <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#9aaad3]/70" aria-hidden="true" />
+                <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
               ) : (
-                <Languages className="mt-0.5 h-4 w-4 shrink-0 text-neutral-600" aria-hidden="true" />
+                <Languages className="mt-0.5 h-4 w-4 shrink-0 text-[var(--v4-text-faint)]" aria-hidden="true" />
               )}
               <span>{needsTitleInput ? '确认片名后，这里将切换为片源资料。' : '片源资料尚未关联，当前显示字幕本身的信息。'}</span>
             </div>
@@ -295,26 +295,26 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="glass-panel-ar flex max-h-[min(78vh,640px)] w-full max-w-xl flex-col overflow-hidden rounded-lg shadow-[0_24px_70px_rgba(0,0,0,0.46)]"
+              className="flex max-h-[min(78vh,640px)] w-full max-w-xl flex-col overflow-hidden rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] shadow-[0_24px_70px_rgba(26,61,55,0.18)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="tmdb-search-title"
               aria-describedby={needsTitleInput ? 'tmdb-search-description' : undefined}
             >
               {/* Modal Header */}
-              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/5 px-4 py-3">
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--v4-line)] px-4 py-3">
                 <div className="min-w-0">
-                  <h2 id="tmdb-search-title" className="text-base font-semibold tracking-tight text-white">
+                  <h2 id="tmdb-search-title" className="text-base font-semibold tracking-tight text-[var(--v4-text)]">
                     {needsTitleInput ? '补充片名' : '手动检索'}
                   </h2>
                   {needsTitleInput && (
-                    <p id="tmdb-search-description" className="mt-0.5 text-xs text-[#aab7d5]">
+                    <p id="tmdb-search-description" className="mt-0.5 text-xs text-[var(--v4-text-muted)]">
                       确认后将用于片源资料与导出命名。
                     </p>
                   )}
                 </div>
                 <button
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/5 text-white/50 transition hover:bg-white/10 hover:text-white cursor-pointer"
+                  className="v4-focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] transition hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] cursor-pointer"
                   onClick={handleClose}
                   type="button"
                   aria-label="关闭片源检索"
@@ -324,38 +324,38 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
               </div>
 
               <form onSubmit={handleManualSearch} className="flex min-h-0 flex-1 flex-col">
-                <div className="flex shrink-0 flex-col gap-2.5 border-b border-white/[0.04] px-4 py-3">
-                  <label htmlFor="tmdb-title-input" className="flex flex-col gap-1.5 text-xs font-medium text-white/78">
+                <div className="flex shrink-0 flex-col gap-2.5 border-b border-[var(--v4-line)] px-4 py-3">
+                  <label htmlFor="tmdb-title-input" className="flex flex-col gap-1.5 text-xs font-medium text-[var(--v4-text-muted)]">
                     片名
                     <span className="relative">
                       <input
                         id="tmdb-title-input"
                         type="text"
-                        className={`w-full rounded-lg border bg-white/[0.02] py-2.5 pl-10 pr-3 text-sm text-white outline-none transition-all ${needsTitleInput ? 'border-[#8295c5]/35 focus:border-[#9aaad3] focus:bg-[#8295c5]/[0.04]' : 'border-white/[0.07] focus:border-[#9ca3af]/35 focus:bg-white/[0.04]'}`}
+                        className={`v4-focus-ring w-full rounded-lg border bg-[var(--v4-panel-muted)] py-2.5 pl-10 pr-3 text-sm text-[var(--v4-text)] outline-none transition-all ${needsTitleInput ? 'border-[var(--v4-accent)]/35 focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]' : 'border-[var(--v4-line)] focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]'}`}
                         value={tmdbManualInput.title}
                         onChange={e => setTmdbManualInput({ ...tmdbManualInput, title: e.target.value })}
                         placeholder="输入电影或剧集名称"
                         required
                         autoFocus
                       />
-                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" aria-hidden="true" />
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--v4-text-faint)]" aria-hidden="true" />
                     </span>
                   </label>
 
                   <div className="grid grid-cols-[minmax(0,1fr)_minmax(5.5rem,0.45fr)] gap-2">
-                    <label htmlFor="tmdb-type-input" className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-white/78">
+                    <label htmlFor="tmdb-type-input" className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-[var(--v4-text-muted)]">
                       类型
                       <select
                         id="tmdb-type-input"
-                        className="cursor-pointer rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2 text-sm text-white outline-none transition-all focus:border-[#9ca3af]/35 focus:bg-white/[0.04]"
+                        className="v4-focus-ring cursor-pointer rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2 text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]"
                         value={tmdbManualInput.type}
                         onChange={e => setTmdbManualInput({ ...tmdbManualInput, type: e.target.value as 'movie' | 'tv' })}
                       >
-                        <option value="movie" className="bg-[#0b0b12] text-white">电影</option>
-                        <option value="tv" className="bg-[#0b0b12] text-white">剧集</option>
+                        <option value="movie">电影</option>
+                        <option value="tv">剧集</option>
                       </select>
                     </label>
-                    <label htmlFor="tmdb-year-input" className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-white/78">
+                    <label htmlFor="tmdb-year-input" className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-[var(--v4-text-muted)]">
                       年份
                       <input
                         id="tmdb-year-input"
@@ -363,7 +363,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                         min="1888"
                         max="2100"
                         inputMode="numeric"
-                        className="w-full rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2 font-mono text-sm tabular-nums text-white outline-none transition-all placeholder:text-white/28 focus:border-[#9ca3af]/35 focus:bg-white/[0.04]"
+                        className="v4-focus-ring w-full rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2 font-mono text-sm tabular-nums text-[var(--v4-text)] outline-none transition-all placeholder:text-[var(--v4-text-faint)] focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]"
                         value={tmdbManualInput.year}
                         onChange={e => setTmdbManualInput({ ...tmdbManualInput, year: e.target.value })}
                         placeholder="可选"
@@ -374,44 +374,44 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                   {tmdbManualInput.type === 'tv' && (
                     <div className="grid grid-cols-2 gap-2" role="group" aria-labelledby="episode-location-label">
                       <span id="episode-location-label" className="sr-only">集数定位</span>
-                      <label className="flex min-w-0 items-center rounded-lg border border-white/[0.075] bg-black/20 transition-colors focus-within:border-[#8fa3d1]/48">
-                        <span className="shrink-0 pl-2.5 text-xs text-white/48">第</span>
+                      <label className="flex min-w-0 items-center rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] transition-colors focus-within:border-[var(--v4-accent)]">
+                        <span className="shrink-0 pl-2.5 text-xs text-[var(--v4-text-faint)]">第</span>
                         <input
                           type="number"
                           min="1"
                           max="999"
                           inputMode="numeric"
                           aria-label="季数"
-                          className="no-spin min-w-0 flex-1 bg-transparent px-1.5 py-2 text-center font-mono text-sm font-semibold tabular-nums text-white outline-none"
+                          className="no-spin min-w-0 flex-1 bg-transparent px-1.5 py-2 text-center font-mono text-sm font-semibold tabular-nums text-[var(--v4-text)] outline-none"
                           value={tmdbManualInput.season || ''}
                           onChange={e => setTmdbManualInput({ ...tmdbManualInput, season: e.target.value })}
                         />
-                        <span className="shrink-0 border-l border-white/[0.06] px-2.5 py-1 text-xs font-medium text-[#9aaad3]">季</span>
+                        <span className="shrink-0 border-l border-[var(--v4-line)] px-2.5 py-1 text-xs font-medium text-[var(--v4-accent-strong)]">季</span>
                       </label>
-                      <label className="flex min-w-0 items-center rounded-lg border border-white/[0.075] bg-black/20 transition-colors focus-within:border-[#8fa3d1]/48">
-                        <span className="shrink-0 pl-2.5 text-xs text-white/48">第</span>
+                      <label className="flex min-w-0 items-center rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] transition-colors focus-within:border-[var(--v4-accent)]">
+                        <span className="shrink-0 pl-2.5 text-xs text-[var(--v4-text-faint)]">第</span>
                         <input
                           type="number"
                           min="1"
                           max="9999"
                           inputMode="numeric"
                           aria-label="集数"
-                          className="no-spin min-w-0 flex-1 bg-transparent px-1.5 py-2 text-center font-mono text-sm font-semibold tabular-nums text-white outline-none"
+                          className="no-spin min-w-0 flex-1 bg-transparent px-1.5 py-2 text-center font-mono text-sm font-semibold tabular-nums text-[var(--v4-text)] outline-none"
                           value={tmdbManualInput.episode || ''}
                           onChange={e => setTmdbManualInput({ ...tmdbManualInput, episode: e.target.value })}
                         />
-                        <span className="shrink-0 border-l border-white/[0.06] px-2.5 py-1 text-xs font-medium text-[#9aaad3]">集</span>
+                        <span className="shrink-0 border-l border-[var(--v4-line)] px-2.5 py-1 text-xs font-medium text-[var(--v4-accent-strong)]">集</span>
                       </label>
                     </div>
                   )}
 
                   <button
                     type="submit"
-                    className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg text-sm font-semibold transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${shouldHighlightSearch ? 'action-required-button' : 'bg-[#e5e7eb] text-black hover:bg-white'}`}
+                    className={`v4-focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg text-sm font-semibold transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${shouldHighlightSearch ? 'action-required-button' : 'bg-[var(--v4-accent)] text-[var(--v4-accent-ink)] hover:bg-[var(--v4-accent-strong)]'}`}
                     disabled={isSearchingTmdb || isApplyingSuggestion || !tmdbManualInput.title.trim()}
                   >
                     {isSearchingTmdb ? (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--v4-accent-ink)]/20 border-t-[var(--v4-accent-ink)]" />
                     ) : (
                       <Search className="h-4 w-4" />
                     )}
@@ -424,8 +424,8 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                   {tmdbSuggestions.length > 0 ? (
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs font-medium text-white/75">匹配结果 ({tmdbSuggestions.length})</span>
-                        <span className="text-[11px] text-white/35">点选后应用</span>
+                        <span className="text-xs font-medium text-[var(--v4-text-muted)]">匹配结果 ({tmdbSuggestions.length})</span>
+                        <span className="text-[11px] text-[var(--v4-text-faint)]">点选后应用</span>
                       </div>
                       <div className="flex flex-col gap-1.5">
                         {tmdbSuggestions.map(s => {
@@ -439,33 +439,33 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                               key={s.id}
                               type="button"
                               aria-pressed={isChosen}
-                              className={`flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition-all
+                              className={`v4-focus-ring flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition-all
                               ${isChosen
-                                  ? 'border-[#8295c5]/45 bg-[#8295c5]/[0.07] shadow-[inset_2px_0_0_#8295c5]'
-                                  : 'border-white/5 bg-white/[0.015] hover:bg-white/[0.035]'
+                                  ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] shadow-[inset_2px_0_0_var(--v4-accent)]'
+                                  : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] hover:bg-[var(--v4-accent-soft)]'
                                 }`}
                               onClick={() => setPendingSuggestion(s)}
                             >
-                              <div className="h-11 w-8 flex-shrink-0 overflow-hidden rounded bg-black/50 border border-white/10">
+                              <div className="h-11 w-8 flex-shrink-0 overflow-hidden rounded bg-[var(--v4-panel)] border border-[var(--v4-line)]">
                                 {posterUrl ? (
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img src={posterUrl} alt="" className="h-full w-full object-cover" />
                                 ) : (
-                                  <div className="flex h-full w-full items-center justify-center text-white/25">
+                                  <div className="flex h-full w-full items-center justify-center text-[var(--v4-text-faint)]">
                                     <ImageIcon className="h-3.5 w-3.5" />
                                   </div>
                                 )}
                               </div>
 
                               <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-                                <span className={`truncate text-sm font-semibold ${isChosen ? 'text-[#e5e7eb]' : 'text-white/90'}`}>
+                                <span className={`truncate text-sm font-semibold ${isChosen ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text)]'}`}>
                                   {s.title || s.name}
                                 </span>
-                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-white/45">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[var(--v4-text-faint)]">
                                   {year && <span className="font-mono tabular-nums">{year}</span>}
                                   <span>{mediaType}</span>
                                   {(s.vote_average ?? 0) > 0 && (
-                                    <span className="inline-flex items-center gap-0.5 font-mono text-[#e5e7eb]">
+                                    <span className="inline-flex items-center gap-0.5 font-mono text-[var(--v4-text-muted)]">
                                       <Star className="h-3 w-3 fill-current" aria-hidden="true" />
                                       {(s.vote_average ?? 0).toFixed(1)}
                                     </span>
@@ -473,7 +473,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                                 </div>
                               </div>
 
-                              <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border ${isChosen ? 'border-[#8fa3d1]/55 bg-[#8fa3d1]/15 text-[#d2d9e9]' : 'border-white/[0.09] text-transparent'}`}>
+                              <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border ${isChosen ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'border-[var(--v4-line)] text-transparent'}`}>
                                 <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                               </span>
                             </button>
@@ -482,7 +482,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                       </div>
                     </div>
                   ) : (
-                    <p className="py-6 text-center text-xs text-white/35">
+                    <p className="py-6 text-center text-xs text-[var(--v4-text-faint)]">
                       {isSearchingTmdb ? '正在检索…' : '输入片名后开始检索'}
                     </p>
                   )}
@@ -490,11 +490,11 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
               </form>
 
               {/* Modal Footer */}
-              <div className="flex shrink-0 flex-col gap-2 border-t border-white/5 bg-[#070708]/95 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0 text-xs text-white/50">
+              <div className="flex shrink-0 flex-col gap-2 border-t border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 text-xs text-[var(--v4-text-faint)]">
                   {pendingSuggestion ? (
-                    <span className="block truncate text-white">
-                      已选择 <strong className="text-[#9aaad3]">{pendingSuggestion.title || pendingSuggestion.name}</strong>
+                    <span className="block truncate text-[var(--v4-text)]">
+                      已选择 <strong className="text-[var(--v4-accent-strong)]">{pendingSuggestion.title || pendingSuggestion.name}</strong>
                     </span>
                   ) : (
                     '请选择匹配项'
@@ -503,7 +503,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                 <div className="flex shrink-0 items-center gap-2">
                   <button
                     type="button"
-                    className="cursor-pointer rounded-lg bg-white/5 px-3 py-2 text-sm font-semibold text-white/72 transition hover:bg-white/10 hover:text-white"
+                    className="v4-focus-ring cursor-pointer rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)] px-3 py-2 text-sm font-semibold text-[var(--v4-text-muted)] transition hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]"
                     onClick={handleClose}
                     disabled={isApplyingSuggestion}
                   >
@@ -511,11 +511,11 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                   </button>
                   <button
                     type="button"
-                    className="action-required-button inline-flex min-w-[8.5rem] items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-35"
+                    className="action-required-button v4-focus-ring inline-flex min-w-[8.5rem] items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-35"
                     onClick={() => pendingSuggestion && void handleApplySuggestion(pendingSuggestion)}
                     disabled={!pendingSuggestion || isApplyingSuggestion}
                   >
-                    {isApplyingSuggestion ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black" /> : <CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
+                    {isApplyingSuggestion ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--v4-accent-ink)]/20 border-t-[var(--v4-accent-ink)]" /> : <CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
                     {isApplyingSuggestion ? '正在应用' : '应用所选'}
                   </button>
                 </div>

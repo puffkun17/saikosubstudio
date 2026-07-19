@@ -88,13 +88,13 @@ export const IngestStep: React.FC = () => {
               aria-modal="true"
               aria-labelledby="library-title"
             >
-              <div className="flex justify-between items-center px-6 py-5 border-b border-white/5 flex-shrink-0">
+              <div className="flex justify-between items-center px-6 py-5 border-b border-[var(--v4-line)] flex-shrink-0">
                 <div className="flex items-center gap-3">
-                  <FolderClock className="w-5 h-5 text-[#e5e7eb]" />
-                  <h2 id="library-title" className="text-base font-bold text-white tracking-wide">历史存档字幕</h2>
+                  <FolderClock className="w-5 h-5 text-[var(--v4-accent-strong)]" />
+                  <h2 id="library-title" className="text-base font-bold text-[var(--v4-text)] tracking-wide">历史存档字幕</h2>
                 </div>
                 <button
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition cursor-pointer"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--v4-panel-muted)] hover:bg-[var(--v4-accent-soft)] text-[var(--v4-text-faint)] hover:text-[var(--v4-text)] transition cursor-pointer"
                   onClick={() => setLibraryOpen(false)}
                   type="button"
                   aria-label="关闭历史存档"
@@ -121,29 +121,29 @@ export const IngestStep: React.FC = () => {
                             />
                           )}
 
-                          <button type="button" className="min-w-0 flex-1 rounded-lg border border-transparent p-3 text-left transition-colors duration-200 group-hover:border-[var(--v4-line-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8fa3d1]/70" onClick={() => { loadFromLibrary(item); setLibraryOpen(false); }}>
-                            <h4 className="text-base font-bold text-white/90 group-hover:text-white truncate transition-colors pl-3">
+                          <button type="button" className="v4-focus-ring min-w-0 flex-1 rounded-lg border border-transparent p-3 text-left transition-colors duration-200 group-hover:border-[var(--v4-line-strong)]" onClick={() => { loadFromLibrary(item); setLibraryOpen(false); }}>
+                            <h4 className="text-base font-bold text-[var(--v4-text)] group-hover:text-[var(--v4-accent-strong)] truncate transition-colors pl-3">
                               {item.name}
                             </h4>
-                            <div className="flex items-center gap-3 mt-2 text-xs text-neutral-450 font-mono pl-3">
+                            <div className="flex items-center gap-3 mt-2 text-xs text-[var(--v4-text-faint)] font-mono pl-3">
                               <span className="flex items-center gap-1.5">
-                                <Calendar className="w-3.5 h-3.5 text-white/40" />
+                                <Calendar className="w-3.5 h-3.5 text-[var(--v4-text-faint)]" />
                                 {item.date}
                               </span>
-                              <span className="w-1 h-1 rounded-full bg-white/20" />
-                              <span className="text-white/60 font-sans font-medium">
+                              <span className="w-1 h-1 rounded-full bg-[var(--v4-line-strong)]" />
+                              <span className="text-[var(--v4-text-muted)] font-sans font-medium">
                                 {isBilingual ? '双语轨' : '单轨'}
                               </span>
                             </div>
                           </button>
 
                           <div className="flex items-center gap-4 z-10">
-                            <span className="text-white/50 font-mono text-xs">
+                            <span className="text-[var(--v4-text-faint)] font-mono text-xs">
                               {item.subs.length} 行
                             </span>
                             <button
                               type="button"
-                              className="text-white/25 hover:text-rose-400 p-2 rounded-xl hover:bg-white/5 transition cursor-pointer"
+                              className="text-[var(--v4-text-faint)] hover:text-[var(--v4-danger)] p-2 rounded-xl hover:bg-[var(--v4-accent-soft)] transition cursor-pointer"
                               onClick={(e) => { e.stopPropagation(); deleteFromLibrary(item.id); }}
                               aria-label={`删除存档：${item.name}`}
                             >
@@ -155,7 +155,7 @@ export const IngestStep: React.FC = () => {
                     })}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-white/30">
+                  <div className="flex flex-col items-center justify-center py-20 text-[var(--v4-text-faint)]">
                     <Database className="w-12 h-12 mb-4 opacity-50" />
                     <p className="font-medium text-sm">暂无存档的字幕项目</p>
                   </div>

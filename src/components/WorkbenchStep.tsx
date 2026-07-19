@@ -189,7 +189,7 @@ export const WorkbenchStep: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    className="rounded-md border border-[color:rgba(208,164,111,0.32)] bg-[var(--v4-accent-soft)] px-4 py-2.5 text-sm font-semibold text-[var(--v4-accent-strong)] hover:bg-[color:rgba(208,164,111,0.22)]"
+                    className="rounded-md border border-[color:rgba(239,141,95,0.32)] bg-[var(--v4-accent-soft)] px-4 py-2.5 text-sm font-semibold text-[var(--v4-accent-strong)] hover:bg-[color:rgba(239,141,95,0.22)]"
                     onClick={() => { setShowBackConfirm(false); setProcessedSubs(null); setWorkflowStep(1); }}
                   >
                     返回导入
