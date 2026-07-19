@@ -20,6 +20,8 @@ export type EdgeNextConfig = {
 export type InfoBarConfig = {
   title: string;
   subtitle?: string;
+  /** Highlighted season/episode or short identity chip next to the title. */
+  badge?: string;
   onBack?: () => void;
   actions?: React.ReactNode;
 } | null;
@@ -99,7 +101,7 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
     <AnimatePresence>
       {config && (
         <motion.div
-          key={`${config.title}:${config.subtitle || ''}`}
+          key={`${config.title}:${config.badge || ''}:${config.subtitle || ''}`}
           role="region"
           aria-label="信息栏"
           initial={shouldReduceMotion ? false : { opacity: 0, y: -6 }}
@@ -121,9 +123,16 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
                 </button>
               )}
               <div className="min-w-0">
-                <h2 className="truncate text-[17px] font-semibold tracking-tight text-[var(--v4-text)]">
-                  {config.title}
-                </h2>
+                <div className="flex min-w-0 items-center gap-2">
+                  <h2 className="truncate text-[17px] font-semibold tracking-tight text-[var(--v4-text)]">
+                    {config.title}
+                  </h2>
+                  {config.badge && (
+                    <span className="inline-flex shrink-0 items-center rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-2 py-0.5 font-mono text-[12px] font-semibold tracking-wide text-[var(--v4-accent-strong)]">
+                      {config.badge}
+                    </span>
+                  )}
+                </div>
                 {config.subtitle && (
                   <p className="mt-0.5 truncate text-[13px] text-[var(--v4-text-muted)]" title={config.subtitle}>
                     {config.subtitle}

@@ -6,7 +6,6 @@ import { DragZone } from '@/components/Ingest/DragZone';
 import { TaskList } from '@/components/Ingest/TaskList';
 import { TmdbPanel } from '@/components/Ingest/TmdbPanel';
 import { SourceIdentityStrip } from '@/components/Ingest/SourceIdentityStrip';
-import { useWorkflowChrome } from '@/components/Global/WorkflowChrome';
 import { Database, Trash2, Calendar, FolderClock, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -20,7 +19,6 @@ export const IngestStep: React.FC = () => {
     setLibraryOpen,
     isIngestClearing,
   } = useStudioStore();
-  const { setInfoBar } = useWorkflowChrome();
 
   const shellState: 'empty' | 'clearing' | 'ready' = isIngestClearing
     ? 'clearing'
@@ -28,17 +26,7 @@ export const IngestStep: React.FC = () => {
       ? 'empty'
       : 'ready';
 
-  useEffect(() => {
-    if (shellState !== 'ready') {
-      // empty / clearing: DragZone owns the info bar
-      return;
-    }
-    setInfoBar({
-      title: '核对清单',
-      subtitle: `请确认字幕轨与导出名称 · ${tasks.length} 个任务`,
-    });
-    return () => setInfoBar(null);
-  }, [shellState, tasks.length, setInfoBar]);
+  // Ready-state info bar is owned by TaskList (show name / episode + file actions).
 
   useEffect(() => {
     if (!isLibraryOpen) return;
@@ -58,7 +46,7 @@ export const IngestStep: React.FC = () => {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="z-10 mx-auto flex w-full max-w-[1120px] flex-1 flex-col gap-3"
+            className="z-10 mx-auto grid w-full max-w-[1180px] flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(200px,240px)_minmax(0,1fr)] lg:items-start lg:gap-5"
           >
             <SourceIdentityStrip />
             <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">

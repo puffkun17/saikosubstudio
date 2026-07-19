@@ -1121,8 +1121,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         ? `S${String(tmdbManualInput.season).padStart(2, '0')}E${String(tmdbManualInput.episode).padStart(2, '0')}`
         : undefined;
       const formattedName = formatTmdbOutputName(meta, epKey || manualEpisodeKey);
-      set({ customFilename: formattedName, filenameSource: 'tmdb' });
-
+      // Export name stays blank until user opts in via checklist checkboxes.
       if (selectedTaskId) {
         set(state => ({
           tasks: state.tasks.map(t => t.id === selectedTaskId ? { ...t, title: formattedName, tmdbData: meta, tmdbBackdrop: chosenBackdrop, tmdbBackdropList: backdrops } : t)
@@ -1220,10 +1219,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     const parsedTitle = fileIdentities.find(item => item.shouldAutoSearchTmdb);
     const detectedIdentity = detectTitle ? assessMediaIdentity(detectTitle) : null;
     const detectedTitle = detectedIdentity?.shouldAutoSearchTmdb ? cleanFilename(detectTitle) || detectedIdentity.title : '';
-    const displayTitle = inheritedMetadata
-      ? formatTmdbOutputName(inheritedMetadata, task.epKey)
-      : cleanedFromFiles || detectedTitle || cleanFilename(parsedTitle?.title || '') || task.title;
-    set({ customFilename: displayTitle, filenameSource: 'auto' });
+    // Export filename is filled via checklist checkboxes, not auto-seeded here.
 
     const cleanName = (cleanedFromFiles || detectedTitle || cleanFilename(parsedTitle?.title || '')).replace(/\.[^/.]+$/, "").trim();
     // Pre-fill type and season/episode if epKey exists

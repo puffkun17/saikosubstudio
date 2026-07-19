@@ -27,7 +27,7 @@ export const TaskList: React.FC = () => {
   const zhRowRef = useRef<HTMLDivElement>(null);
   const enRowRef = useRef<HTMLDivElement>(null);
   const draggingTrackRef = useRef<'zh' | 'en' | null>(null);
-  const { setEdgeNext } = useWorkflowChrome();
+  const { setEdgeNext, setInfoBar } = useWorkflowChrome();
   const {
     tasks,
     selectedTaskId,
@@ -52,7 +52,8 @@ export const TaskList: React.FC = () => {
     addLog,
     alignmentMode,
     setAlignmentMode,
-    setTmdbManualOpen
+    setTmdbManualOpen,
+    tmdbData,
   } = useStudioStore();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -132,16 +133,52 @@ export const TaskList: React.FC = () => {
   const getFilenameSourceLabel = () => {
     switch (filenameSource) {
       case 'tmdb':
-        return '影片资料';
+        return '片源信息';
       case 'auto':
-        return '自动识别';
+        return '字幕文件名';
       case 'manual':
-        return '手动编辑';
+        return '手动输入';
       case 'library':
         return '历史存档';
       default:
-        return '待命名';
+        return '待填写';
     }
+  };
+
+  const stripSubtitleExt = (name: string) => name.replace(/\.(srt|ass)$/i, '').trim();
+
+  const buildSourceFilename = () => {
+    if (!tmdbData) return '';
+    const parts = [tmdbData.title, tmdbData.year, activeTask?.epKey?.toUpperCase()].filter(Boolean);
+    return parts.join('.');
+  };
+
+  const buildTrackFilename = () => {
+    if (!activeTask) return '';
+    const stems = [activeTask.zh?.name, activeTask.en?.name]
+      .filter(Boolean)
+      .map((name) => stripSubtitleExt(name as string));
+    if (stems.length === 0) {
+      const fallback = activeTask.title.replace(/待补充片名.*/g, '').trim();
+      return fallback;
+    }
+    if (stems.length === 1) return stems[0];
+    // Prefer shared prefix; otherwise keep primary stem.
+    const [a, b] = stems;
+    let i = 0;
+    const limit = Math.min(a.length, b.length);
+    while (i < limit && a[i] === b[i]) i += 1;
+    const shared = a.slice(0, i).replace(/[.\-_\[\(]+$/g, '').trim();
+    return shared.length >= 6 ? shared : a;
+  };
+
+  const applyFilenameFromSource = (source: 'tmdb' | 'auto') => {
+    const next = source === 'tmdb' ? buildSourceFilename() : buildTrackFilename();
+    if (!next) {
+      addLog(source === 'tmdb' ? '暂无可用片源命名' : '暂无可用字幕文件名', 'info');
+      return;
+    }
+    setCustomFilename(next, source);
   };
 
   const renderMarqueeText = (text: string, className = '') => {
@@ -264,77 +301,121 @@ export const TaskList: React.FC = () => {
     return () => setEdgeNext(null);
   }, [activeTask, canProceed, edgeLabel, runSubtitleMerge, setEdgeNext]);
 
-  if (!activeTask) return null;
-
-  const zhCount = getSubTitleCount(activeTask.zh);
-  const enCount = getSubTitleCount(activeTask.en);
-  const isFoundAssStyleApplied = Boolean(foundAssStyle && Object.entries(foundAssStyle).every(
-    ([key, value]) => customStyle[key as keyof StyleSettings] === value,
-  ));
-  let diffBadge = null;
-  if (activeTask.zh && activeTask.en) {
-    const max = Math.max(zhCount, enCount);
-    const diffRatio = max > 0 ? Math.abs(zhCount - enCount) / max : 0;
-    if (diffRatio <= 0.05) {
-      diffBadge = <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-xs font-semibold rounded flex-shrink-0 select-none shadow-[0_0_10px_rgba(16,185,129,0.15)]">已匹配</span>;
-    } else if (diffRatio <= 0.15) {
-      diffBadge = <span className="px-2 py-0.5 bg-[#9f897b]/16 text-[#eadfd8] border border-[#c0a89a]/25 text-xs font-semibold rounded flex-shrink-0 select-none">需检查</span>;
-    } else {
-      diffBadge = <span className="px-2 py-0.5 bg-rose-500/10 text-rose-300 border border-rose-500/20 text-xs font-semibold rounded flex-shrink-0 select-none">待确认</span>;
+  const identityTitle = (() => {
+    if (!activeTask) return '核对清单';
+    if (tmdbData?.title) return tmdbData.title;
+    if (needsTitleInput) return '片名待确认';
+    const raw = activeTask.title.replace(/待补充片名.*/g, '').trim();
+    if (activeTask.epKey) {
+      const withoutEp = raw.replace(new RegExp(activeTask.epKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), '').replace(/[.\-_]+$/g, '').trim();
+      if (withoutEp) return withoutEp;
     }
-  }
+    return raw || '字幕任务';
+  })();
 
-  return (
-    <div className="v4-panel relative flex flex-col gap-4 rounded-lg p-5 md:p-6">
+  const identityBadge = activeTask?.epKey?.toUpperCase() || tmdbData?.year || undefined;
 
-      {/* Header section */}
-      <div className="flex flex-shrink-0 select-none items-center justify-between gap-3 border-b border-[var(--v4-line)] pb-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div>
-            <h3 className="whitespace-nowrap font-sans text-xl font-semibold tracking-tight text-neutral-100">字幕文件</h3>
-          </div>
-          <span className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-sm font-semibold text-[var(--v4-text)]">
-            {tasks.length}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
+  useEffect(() => {
+    if (!activeTask) {
+      setInfoBar(null);
+      return;
+    }
+    setInfoBar({
+      title: identityTitle,
+      badge: identityBadge,
+      subtitle: `字幕文件 · ${tasks.length} 个任务`,
+      actions: (
+        <>
           {pendingCancelUpload ? (
-            <div className="flex items-center gap-1.5">
+            <>
               <button
                 type="button"
-                className="px-3.5 py-2.5 rounded-xl text-xs font-semibold text-rose-300 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/18 transition cursor-pointer"
+                className="v4-focus-ring inline-flex h-9 items-center rounded-md border border-rose-500/25 bg-rose-500/10 px-3 text-xs font-semibold text-rose-300 transition-colors hover:bg-rose-500/18"
                 onClick={() => { cancelCurrentUpload(); setPendingCancelUpload(false); }}
               >
                 清空本次导入
               </button>
               <button
                 type="button"
-                className="px-3.5 py-2.5 rounded-xl text-xs font-semibold text-neutral-400 bg-white/[0.025] border border-white/[0.06] hover:text-white hover:bg-white/[0.05] transition cursor-pointer"
+                className="v4-focus-ring inline-flex h-9 items-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-xs font-semibold text-[var(--v4-text-muted)] hover:text-[var(--v4-text)]"
                 onClick={() => setPendingCancelUpload(false)}
               >
                 返回
               </button>
-            </div>
+            </>
           ) : (
             <button
               type="button"
-              className="v4-focus-ring group flex cursor-pointer items-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3.5 py-2.5 text-sm transition-colors hover:bg-[var(--v4-panel-raised)]"
+              className="v4-focus-ring inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-xs font-semibold text-[var(--v4-text-muted)] transition-colors hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]"
               onClick={() => setPendingCancelUpload(true)}
               title="取消本次导入并返回上传入口"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-neutral-400 group-hover:text-rose-300 transition-colors" />
-              取消本次导入
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">取消本次导入</span>
+              <span className="sm:hidden">取消</span>
             </button>
           )}
           <button
-            className="v4-focus-ring group flex cursor-pointer items-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3.5 py-2.5 text-sm transition-colors hover:bg-[var(--v4-panel-raised)]"
+            type="button"
+            className="v4-focus-ring inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-xs font-semibold text-[var(--v4-text)] transition-colors hover:bg-[var(--v4-panel)]"
             onClick={() => fileInputRef.current?.click()}
           >
-            <Plus className="w-3.5 h-3.5 text-[#e5e7eb] group-hover:rotate-90 transition-transform duration-300" />
+            <Plus className="h-3.5 w-3.5" />
             继续添加
           </button>
-        </div>
-      </div>
+          {pendingDeleteId === activeTask.id ? (
+            <>
+              <button
+                type="button"
+                className="v4-focus-ring inline-flex h-9 items-center rounded-md border border-rose-500/25 bg-rose-500/10 px-3 text-xs font-semibold text-rose-300"
+                onClick={() => { deleteTask(activeTask.id); setPendingDeleteId(null); }}
+              >
+                确认移除
+              </button>
+              <button
+                type="button"
+                className="v4-focus-ring inline-flex h-9 items-center rounded-md border border-[var(--v4-line)] px-3 text-xs font-semibold text-[var(--v4-text-muted)]"
+                onClick={() => setPendingDeleteId(null)}
+              >
+                取消
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="v4-focus-ring inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-xs font-semibold text-[var(--v4-text-muted)] transition-colors hover:text-rose-300"
+              onClick={() => setPendingDeleteId(activeTask.id)}
+              aria-label="移除当前字幕任务"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">移除</span>
+            </button>
+          )}
+        </>
+      ),
+    });
+    return () => setInfoBar(null);
+  }, [
+    activeTask,
+    identityTitle,
+    identityBadge,
+    tasks.length,
+    pendingCancelUpload,
+    pendingDeleteId,
+    cancelCurrentUpload,
+    deleteTask,
+    setInfoBar,
+  ]);
+
+  if (!activeTask) return null;
+
+  const zhCount = getSubTitleCount(activeTask.zh);
+  const isFoundAssStyleApplied = Boolean(foundAssStyle && Object.entries(foundAssStyle).every(
+    ([key, value]) => customStyle[key as keyof StyleSettings] === value,
+  ));
+
+  return (
+    <div className="v4-panel relative flex w-full max-w-[760px] flex-col gap-4 rounded-lg p-5 md:p-6 lg:max-w-none">
 
       {/* Task tab switcher (if multiple tasks exist) */}
       {tasks.length > 1 && (
@@ -360,59 +441,22 @@ export const TaskList: React.FC = () => {
       {/* Main workspace — hug content; sticky dock without stretching voids */}
       <div className="relative flex min-h-0 flex-col gap-4 overflow-x-visible overflow-y-auto pr-1 select-none scrollbar-thin scrollbar-thumb-white/[0.03]">
 
-        {/* Compact task row */}
-        <div className={`relative flex flex-shrink-0 flex-col items-stretch justify-between gap-2 rounded-lg border px-3 py-2.5 transition-colors sm:flex-row sm:items-center ${needsTitleInput ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)]' : 'border-white/[0.07] bg-white/[0.018]'}`}>
-          <div className="flex min-w-0 flex-1 items-center gap-2.5">
-            {needsTitleInput ? (
-              <>
-                <CircleAlert className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
-                <span className="truncate text-sm font-semibold text-[var(--v4-text)]">
-                  片名待确认{activeTask.epKey ? ` · ${activeTask.epKey}` : ''}
-                </span>
-                <button
-                  type="button"
-                  className="ml-auto inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-[var(--v4-accent)] px-2.5 text-xs font-semibold text-[var(--v4-accent-ink)]"
-                  onClick={() => setTmdbManualOpen(true)}
-                >
-                  <Search className="h-3.5 w-3.5" />
-                  补充片名
-                </button>
-              </>
-            ) : (
-              <>
-                {renderMarqueeText(activeTask.title, 'min-w-0 flex-1 truncate font-sans text-sm font-semibold text-neutral-100')}
-                {diffBadge}
-              </>
-            )}
-          </div>
-
-          {pendingDeleteId === activeTask.id ? (
-            <div className="flex shrink-0 items-center gap-1.5">
-              <button
-                className="cursor-pointer rounded-md border border-rose-500/15 bg-rose-600/20 px-2.5 py-1 text-xs font-semibold text-rose-300 transition-colors hover:bg-rose-600/40"
-                onClick={(e) => { e.stopPropagation(); deleteTask(activeTask.id); setPendingDeleteId(null); }}
-              >
-                删除
-              </button>
-              <button
-                className="cursor-pointer rounded-md border border-white/5 bg-white/5 px-2.5 py-1 text-xs font-semibold text-neutral-300 transition-colors hover:bg-white/10"
-                onClick={(e) => { e.stopPropagation(); setPendingDeleteId(null); }}
-              >
-                取消
-              </button>
-            </div>
-          ) : (
+        {needsTitleInput && (
+          <div className="relative flex flex-shrink-0 items-center gap-2.5 rounded-lg border border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] px-3 py-2.5">
+            <CircleAlert className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--v4-text)]">
+              片名待确认，请先补充后再命名导出
+            </span>
             <button
               type="button"
-              className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-neutral-500 transition-colors hover:bg-white/[0.04] hover:text-rose-300"
-              onClick={(e) => { e.stopPropagation(); setPendingDeleteId(activeTask.id); }}
-              aria-label="移除当前字幕任务"
+              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-[var(--v4-accent)] px-2.5 text-xs font-semibold text-[var(--v4-accent-ink)]"
+              onClick={() => setTmdbManualOpen(true)}
             >
-              <Trash2 className="h-3.5 w-3.5" />
-              移除
+              <Search className="h-3.5 w-3.5" />
+              补充片名
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Track bindings first — primary decision before naming/credits */}
         <div className="flex min-h-0 flex-col gap-3.5 overflow-visible">
@@ -577,21 +621,52 @@ export const TaskList: React.FC = () => {
             </div>
           </div>
 
-          {/* Output name + credits — compact, after tracks */}
-          <div className="flex-shrink-0 rounded-lg border border-white/[0.07] bg-white/[0.012] px-3 py-2.5">
-            <div className="flex min-w-0 flex-col gap-1.5">
+          {/* Credit first, then export name (blank + source checkboxes) */}
+          <div className="flex flex-shrink-0 flex-col gap-3">
+            <CreditTool />
+
+            <div className="rounded-lg border border-white/[0.07] bg-white/[0.012] px-3 py-2.5">
               <div className="flex items-center justify-between gap-2">
                 <label className="inline-flex select-none items-center gap-1.5 text-sm font-semibold text-neutral-200">
                   导出名称
                   <InfoHint label="导出文件名称说明">
-                    可直接编辑。名称可来自影片资料、文件名识别或历史存档。
+                    默认留空。可勾选从片源信息或主副字幕文件名填充，也可直接输入。
                   </InfoHint>
                 </label>
                 <span className="shrink-0 rounded-md border border-white/[0.08] bg-white/[0.025] px-2 py-0.5 text-xs font-medium text-neutral-400">
                   {getFilenameSourceLabel()}
                 </span>
               </div>
-              <div className="relative">
+
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+                <label className={`inline-flex items-center gap-2 text-xs ${tmdbData ? 'cursor-pointer text-neutral-300' : 'cursor-not-allowed text-neutral-600'}`}>
+                  <input
+                    type="checkbox"
+                    className="h-3.5 w-3.5 accent-[var(--v4-accent)]"
+                    disabled={!tmdbData}
+                    checked={filenameSource === 'tmdb'}
+                    onChange={(event) => {
+                      if (event.target.checked) applyFilenameFromSource('tmdb');
+                      else if (filenameSource === 'tmdb') setCustomFilename('', 'unknown');
+                    }}
+                  />
+                  <span>使用片源信息</span>
+                </label>
+                <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-neutral-300">
+                  <input
+                    type="checkbox"
+                    className="h-3.5 w-3.5 accent-[var(--v4-accent)]"
+                    checked={filenameSource === 'auto'}
+                    onChange={(event) => {
+                      if (event.target.checked) applyFilenameFromSource('auto');
+                      else if (filenameSource === 'auto') setCustomFilename('', 'unknown');
+                    }}
+                  />
+                  <span>使用主副字幕文件名</span>
+                </label>
+              </div>
+
+              <div className="relative mt-2.5">
                 <input
                   type="text"
                   className="v4-focus-ring h-10 w-full rounded-lg border border-white/[0.09] bg-[#020204] px-3 font-mono text-sm text-white outline-none transition-all placeholder:text-white/35 focus:border-[var(--v4-accent)]/45 focus:bg-white/[0.025]"
@@ -608,7 +683,6 @@ export const TaskList: React.FC = () => {
                 )}
               </div>
             </div>
-            <CreditTool />
           </div>
 
           {/* Configuration & Process Dock — sticky, no mt-auto void */}
