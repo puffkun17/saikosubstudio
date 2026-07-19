@@ -432,14 +432,23 @@ body {
   min-height: 100%;
 }
 
+/* Keep poster box true 2:3; never force a shorter height that crops the art. */
 .source-identity-rail__poster {
-  max-height: min(42vh, 18rem);
+  aspect-ratio: 2 / 3;
+  width: 100%;
+  background: var(--v4-panel-muted);
+}
+
+.source-identity-rail__poster img {
+  object-fit: contain;
+  object-position: center;
 }
 
 @media (max-width: 1023px) {
   .source-identity-rail__poster {
-    max-height: 11rem;
-    aspect-ratio: 16 / 9;
+    /* Still full poster, just capped width-driven height on narrow screens */
+    max-width: 12rem;
+    margin-inline: auto;
   }
 }
 

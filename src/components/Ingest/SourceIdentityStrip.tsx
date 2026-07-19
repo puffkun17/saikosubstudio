@@ -49,7 +49,7 @@ export const SourceIdentityStrip: React.FC = () => {
 
   return (
     <aside className="source-identity-rail v4-panel flex h-full w-full flex-col overflow-hidden rounded-lg">
-      <div className="source-identity-rail__poster relative aspect-[2/3] w-full shrink-0 overflow-hidden border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)]">
+      <div className="source-identity-rail__poster relative w-full shrink-0 overflow-hidden border-b border-[var(--v4-line)]">
         <AnimatePresence mode="wait">
           {tmdbData?.posterUrl ? (
             <motion.img
@@ -60,7 +60,7 @@ export const SourceIdentityStrip: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0 h-full w-full object-cover object-center"
+              className="absolute inset-0 h-full w-full"
             />
           ) : (
             <motion.div
@@ -76,7 +76,7 @@ export const SourceIdentityStrip: React.FC = () => {
                 <>
                   <ImageIcon className="h-7 w-7" aria-hidden="true" />
                   <span className="px-3 text-center text-xs leading-relaxed text-[var(--v4-text-faint)]">
-                    封面按 2:3 预留
+                    封面完整显示 · 2:3
                   </span>
                 </>
               )}
