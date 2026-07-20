@@ -25,9 +25,13 @@ export const TaskList: React.FC = () => {
   const [dragPointer, setDragPointer] = useState<{ x: number; y: number } | null>(null);
   const [dragCardSize, setDragCardSize] = useState<{ w: number; h: number }>({ w: 320, h: 52 });
   const [dragOffset, setDragOffset] = useState({ x: 16, y: 20 });
+  /** 两行布局顶距，用于让位时完美盖住空位（不在 render 里读 ref） */
+  const [slotShiftPx, setSlotShiftPx] = useState(56);
   const zhRowRef = useRef<HTMLDivElement>(null);
   const enRowRef = useRef<HTMLDivElement>(null);
   const draggingTrackRef = useRef<'zh' | 'en' | null>(null);
+  /** 拖拽开始时冻结的布局槽位（不含 transform），避免让位后命中区跟着跑造成横跳 */
+  const trackSlotsRef = useRef<{ zh: { top: number; bottom: number; left: number; right: number }; en: { top: number; bottom: number; left: number; right: number } } | null>(null);
   const { setEdgeNext, setInfoBar } = useWorkflowChrome();
   const {
     tasks,
@@ -227,21 +231,29 @@ export const TaskList: React.FC = () => {
 
   const endTrackDrag = () => {
     draggingTrackRef.current = null;
+    trackSlotsRef.current = null;
     setDraggingTrack(null);
     setDropTargetTrack(null);
     setDragPointer(null);
   };
 
+  /**
+   * 命中整行等高槽位：用拖拽开始时的布局矩形，不用变换后的 getBoundingClientRect。
+   * 两行之间的空隙按中线归属，避免指针落在 gap 里时目标来回闪。
+   */
   const hitTestTrackRow = (clientX: number, clientY: number): 'zh' | 'en' | null => {
-    const zhBox = zhRowRef.current?.getBoundingClientRect();
-    const enBox = enRowRef.current?.getBoundingClientRect();
-    if (zhBox && clientX >= zhBox.left && clientX <= zhBox.right && clientY >= zhBox.top && clientY <= zhBox.bottom) {
-      return 'zh';
-    }
-    if (enBox && clientX >= enBox.left && clientX <= enBox.right && clientY >= enBox.top && clientY <= enBox.bottom) {
-      return 'en';
-    }
-    return null;
+    const slots = trackSlotsRef.current;
+    if (!slots) return null;
+    const { zh, en } = slots;
+    const left = Math.min(zh.left, en.left);
+    const right = Math.max(zh.right, en.right);
+    const top = Math.min(zh.top, en.top);
+    const bottom = Math.max(zh.bottom, en.bottom);
+    if (clientX < left || clientX > right || clientY < top || clientY > bottom) return null;
+
+    // 上下槽位等高衔接：中线以上归主字幕槽，以下归第二语言槽
+    const midY = (zh.bottom + en.top) / 2;
+    return clientY < midY ? 'zh' : 'en';
   };
 
   const beginTrackDrag = (
@@ -252,6 +264,18 @@ export const TaskList: React.FC = () => {
     if (!canReorderTracks || !activeTask) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
+
+    // 在任何 transform 之前冻结布局槽位
+    const zhBox = zhRowRef.current?.getBoundingClientRect();
+    const enBox = enRowRef.current?.getBoundingClientRect();
+    if (zhBox && enBox) {
+      trackSlotsRef.current = {
+        zh: { top: zhBox.top, bottom: zhBox.bottom, left: zhBox.left, right: zhBox.right },
+        en: { top: enBox.top, bottom: enBox.bottom, left: enBox.left, right: enBox.right },
+      };
+      setSlotShiftPx(Math.max(1, Math.round(enBox.top - zhBox.top)));
+    }
+
     const rect = rowEl?.getBoundingClientRect();
     if (rect) {
       setDragOffset({
@@ -529,11 +553,10 @@ export const TaskList: React.FC = () => {
                   const file = trackKey === 'zh' ? activeTask.zh : activeTask.en;
                   const isDropTarget = draggingTrack != null && draggingTrack !== trackKey && dropTargetTrack === trackKey;
                   const isDragging = draggingTrack === trackKey;
-                  // macOS 式让位：拖到对方上时，对方行滑进空位（固定行距，避免 render 读 ref）
-                  const ROW_SHIFT = 56;
+                  // 让位距离 = 两行布局顶距，刚好盖住被提起行的空位
                   const liveShiftY = (() => {
                     if (!draggingTrack || !dropTargetTrack || !isDropTarget || isDragging) return 0;
-                    return draggingTrack === 'zh' ? -ROW_SHIFT : ROW_SHIFT;
+                    return draggingTrack === 'zh' ? -slotShiftPx : slotShiftPx;
                   })();
                   return (
                     <motion.div
