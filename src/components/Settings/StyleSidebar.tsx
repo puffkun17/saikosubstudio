@@ -78,7 +78,7 @@ const ColorPicker = ({
       >
         <span className="text-sm text-[var(--v4-text-muted)] font-medium">{label}</span>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-[var(--v4-text-faint)] tabular-nums">{value}</span>
+          <span className="text-xs font-mono font-medium text-[var(--v4-text-muted)] tabular-nums">{value}</span>
           <div
             className="w-5 h-5 rounded-full border border-[var(--v4-line-strong)] shadow-sm relative transition-all duration-200 group-hover:scale-105"
             style={{ backgroundColor: value }}
@@ -190,7 +190,7 @@ const SliderControl = ({
       className="w-full glass-slider-input"
       aria-label={label}
     />
-    {hint && <div className="text-xs text-[var(--v4-text-faint)] leading-relaxed">{hint}</div>}
+    {hint && <div className="text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">{hint}</div>}
   </div>
 );
 
@@ -299,7 +299,7 @@ export const StyleSidebar: React.FC = () => {
               样式参数
             </h3>
           </div>
-          <p className="mt-1 text-xs leading-relaxed text-[var(--v4-text-faint)]">
+          <p className="mt-1 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
             调整字幕在预览与导出中的呈现
           </p>
         </div>
@@ -562,7 +562,7 @@ export const StyleSidebar: React.FC = () => {
               ))}
             </div>
             {auxiliaryCount > 0 && (
-              <p className="text-xs leading-relaxed text-[var(--v4-text-faint)]">
+              <p className="text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
                 检测到 {auxiliaryCount} 条辅助内容；智能精简预计隐去 {smartHiddenCount} 条环境音说明。
               </p>
             )}

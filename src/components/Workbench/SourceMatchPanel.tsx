@@ -188,17 +188,17 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
               </div>
               <div className="text-right">
                 <div className={`text-sm font-semibold ${meta.tone}`}>{meta.label}</div>
-                <div className="mt-1 text-xs text-[var(--v4-text-faint)]">依据：时长与字幕时间轴</div>
+                <div className="mt-1 text-xs font-medium text-[var(--v4-text-muted)]">依据：时长与字幕时间轴</div>
               </div>
             </div>
           ) : (
             <dl className="mt-5 grid grid-cols-3 gap-0 overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]">
               <div className="min-w-0 px-3 py-3">
-                <dt className="whitespace-nowrap text-xs text-[var(--v4-text-faint)]">文本量</dt>
+                <dt className="whitespace-nowrap text-xs font-medium text-[var(--v4-text-muted)]">文本量</dt>
                 <dd className="mt-1.5 whitespace-nowrap text-lg leading-none font-semibold tabular-nums text-[var(--v4-text)]">{formatCount(report.stats.characterCount)}</dd>
               </div>
               <div className="min-w-0 border-l border-[var(--v4-line)] px-3 py-3">
-                <dt className="whitespace-nowrap text-xs text-[var(--v4-text-faint)]">时间跨度</dt>
+                <dt className="whitespace-nowrap text-xs font-medium text-[var(--v4-text-muted)]">时间跨度</dt>
                 <dd className="mt-1.5 whitespace-nowrap text-lg leading-none font-semibold tabular-nums text-[var(--v4-text)]">{formatMsClock(report.stats.spanMs)}</dd>
               </div>
               <div className="min-w-0 border-l border-[var(--v4-line)] px-3 py-3">

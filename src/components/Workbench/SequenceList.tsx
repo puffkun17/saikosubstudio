@@ -182,7 +182,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
       <div ref={listRef} className="flex-1 overflow-y-auto">
         {visibleSubs.length > 0 ? (
           <div className="flex flex-col relative">
-            <div className="sticky top-0 z-20 grid grid-cols-[7.25rem_minmax(0,1fr)_3.5rem] items-center border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-4 py-2.5 text-xs font-medium text-[var(--v4-text-faint)] select-none md:grid-cols-[170px_minmax(0,1fr)_96px] md:px-7">
+            <div className="sticky top-0 z-20 grid grid-cols-[7.25rem_minmax(0,1fr)_3.5rem] items-center border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-4 py-2.5 text-xs font-semibold tracking-wide text-[var(--v4-text-muted)] select-none md:grid-cols-[170px_minmax(0,1fr)_96px] md:px-7">
               <div className="pl-2">时间轴</div>
               <div>字幕内容</div>
               <div className="text-right pr-2">行号</div>
@@ -236,9 +236,9 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                         <Music2 className="w-3 h-3" />
                       </span>
                     )}
-                    <div className={`flex flex-col leading-tight tabular-nums ${isActive ? 'text-[var(--v4-accent-strong)] font-semibold' : 'text-[var(--v4-text-faint)]'}`}>
+                    <div className={`flex flex-col leading-tight tabular-nums font-medium ${isActive ? 'text-[var(--v4-accent-strong)] font-semibold' : 'text-[var(--v4-text-muted)]'}`}>
                       <span>{startTime}</span>
-                      <span className="mt-1 text-[var(--v4-text-faint)]">{endTime}</span>
+                      <span className="mt-1 opacity-80">{endTime}</span>
                     </div>
                   </div>
 
@@ -308,12 +308,12 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                             辅助信息
                           </span>
                         )}
-                        <div className={`font-sans text-sm font-medium leading-6 break-words ${isActive ? 'text-[var(--v4-text)]' : 'text-[var(--v4-text-muted)]'}`}>
+                        <div className="font-sans text-sm font-semibold leading-6 break-words text-[var(--v4-text)]">
                           {zhText}
                         </div>
                         {enText && (
                           <div
-                            className={`mt-0.5 text-xs font-normal leading-5 break-words tracking-[0.01em] ${isActive ? 'text-[var(--v4-text-muted)]' : 'text-[var(--v4-text-faint)]'}`}
+                            className="mt-0.5 text-xs font-medium leading-5 break-words tracking-[0.01em] text-[var(--v4-text-muted)]"
                             style={{ fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }}
                           >
                             {enText}
@@ -327,7 +327,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     {editingIndex !== sub.index && (
                       <button
                         type="button"
-                        className={`v4-focus-ring inline-flex h-8 items-center gap-1 rounded-md px-2 text-sm transition-colors ${isActive ? 'text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)]' : 'text-[var(--v4-text-faint)] hover:bg-[var(--v4-panel-muted)] hover:text-[var(--v4-text)]'}`}
+                        className={`v4-focus-ring inline-flex h-8 items-center gap-1 rounded-md px-2 text-sm font-medium transition-colors ${isActive ? 'text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)]' : 'text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel-muted)] hover:text-[var(--v4-text)]'}`}
                         onClick={(event) => { event.stopPropagation(); beginEditing(sub); }}
                         aria-label={`编辑第 ${sub.index} 行`}
                       >
@@ -335,7 +335,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                         <span className="hidden md:inline">编辑</span>
                       </button>
                     )}
-                    <span className={`font-mono tabular-nums ${isActive ? 'text-[var(--v4-accent-strong)] font-semibold' : 'text-[var(--v4-text-faint)]'}`}>
+                    <span className={`font-mono tabular-nums font-medium ${isActive ? 'text-[var(--v4-accent-strong)] font-semibold' : 'text-[var(--v4-text-muted)]'}`}>
                       #{sub.index}
                     </span>
                   </div>

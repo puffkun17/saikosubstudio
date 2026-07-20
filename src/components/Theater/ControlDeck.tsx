@@ -44,7 +44,7 @@ const DialControl = ({ label, value, description, icon, onPrevious, onNext, disa
       {icon}
     </div>
     <div className="min-w-0 flex-1">
-      <p className="text-xs font-medium text-[var(--v4-text-faint)]">{label}</p>
+      <p className="text-xs font-medium text-[var(--v4-text-muted)]">{label}</p>
       <p className="truncate text-sm font-semibold text-[var(--v4-text)]" title={description}>{value}</p>
     </div>
     {(onPrevious || onNext) && (

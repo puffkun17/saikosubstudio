@@ -100,7 +100,7 @@ export const SourceIdentityStrip: React.FC = () => {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h3
-                className="min-w-0 text-[1.125rem] font-semibold leading-snug tracking-tight text-[var(--v4-text)] md:text-[1.2rem]"
+                className="font-display min-w-0 text-[1.125rem] leading-snug text-[var(--v4-text)] md:text-[1.25rem]"
                 title={displayTitle}
               >
                 {displayTitle}
@@ -112,14 +112,14 @@ export const SourceIdentityStrip: React.FC = () => {
 
             {displayOriginal ? (
               <p
-                className="mt-1.5 text-[13px] font-medium leading-relaxed text-[var(--v4-text-muted)]"
+                className="prose-serif mt-1.5 text-[13px] text-[var(--v4-text-muted)]"
                 title={displayOriginal}
               >
                 {displayOriginal}
               </p>
             ) : (
               !tmdbData && (
-                <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--v4-text-muted)]">
+                <p className="mt-1.5 text-[13px] font-medium leading-relaxed text-[var(--v4-text-muted)]">
                   用于命名与预览背景，可稍后补充。
                 </p>
               )
@@ -148,7 +148,7 @@ export const SourceIdentityStrip: React.FC = () => {
           </div>
 
           {overview ? (
-            <p className="text-[13px] leading-6 text-[var(--v4-text-muted)] md:text-[14px] md:leading-7">
+            <p className="prose-serif text-[13px] text-[var(--v4-text-muted)] md:text-[14px] md:leading-7">
               {overview}
             </p>
           ) : null}

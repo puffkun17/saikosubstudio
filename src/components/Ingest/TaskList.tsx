@@ -735,7 +735,7 @@ export const TaskList: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <p className="mt-1.5 text-xs leading-relaxed text-[var(--v4-text-faint)]">
+                      <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
                         预览来自当前 ASS 文件。字体按当前设备可用版本近似呈现。
                       </p>
                       <div className="mt-3 flex flex-wrap gap-2 text-xs text-[var(--v4-text-muted)]">
