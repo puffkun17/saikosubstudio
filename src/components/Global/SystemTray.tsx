@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ArrowLeft, FolderClock, MessageSquareText, RotateCcw, ShieldCheck } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import { SoftLogMarquee } from '@/components/Global/SoftLogMarquee';
@@ -86,17 +87,23 @@ export const SystemTray = () => {
   const {
     workflowStep,
     restartSystem,
-    tasks,
-    processedSubs,
-    libraryList,
+    hasUploadData,
+    hasWorkbenchData,
+    libraryCount,
     setLibraryOpen,
     setWorkflowStep,
     setStatusNotice,
-  } = useStudioStore();
+  } = useStudioStore(useShallow((state) => ({
+    workflowStep: state.workflowStep,
+    restartSystem: state.restartSystem,
+    hasUploadData: state.tasks.length > 0,
+    hasWorkbenchData: Boolean(state.processedSubs?.length),
+    libraryCount: state.libraryList.length,
+    setLibraryOpen: state.setLibraryOpen,
+    setWorkflowStep: state.setWorkflowStep,
+    setStatusNotice: state.setStatusNotice,
+  })));
   const isInfoPage = pathname === '/about' || pathname === '/feedback';
-
-  const hasUploadData = tasks.length > 0;
-  const hasWorkbenchData = Boolean(processedSubs?.length);
   const showLibrary = !isInfoPage && workflowStep === 1;
 
   const handleStepClick = (targetStep: number) => {
@@ -305,9 +312,9 @@ export const SystemTray = () => {
               >
                 <FolderClock className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.2]" aria-hidden="true" />
                 <span className={trayLabelLong}>历史存档</span>
-                {libraryList.length > 0 && (
+                {libraryCount > 0 && (
                   <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-[color:rgba(239,141,95,0.22)] px-1.5 py-0.5 text-xs font-semibold text-[var(--v5-orange)]">
-                    {libraryList.length}
+                    {libraryCount}
                   </span>
                 )}
               </button>

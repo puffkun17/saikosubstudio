@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import { motion } from 'framer-motion';
+import { springSnappy } from '@/lib/motion';
 
 export type FileFormat = 'srt' | 'ass' | 'zip' | 'rar' | '7z' | 'folder' | 'unknown';
 
@@ -29,19 +31,23 @@ type AdobePalette = {
   ink: string;
 };
 
+/**
+ * Ridgeline 调和版：在原 Adobe 高饱和色上整体降饱和、偏暖，
+ * 让徽章融进 奶油/墨绿/柑橘 三色体系而不是像贴纸浮在纸面上。
+ */
 const ADOBE: Record<FileFormat, AdobePalette> = {
-  // Teal — plain dialogue track
-  srt: { face: '#0D9488', fold: '#0F766E', ink: '#FFFFFF' },
-  // Violet — styled / ASS track (Adobe-adjacent purple)
-  ass: { face: '#7C3AED', fold: '#6D28D9', ink: '#FFFFFF' },
-  // Warm tungsten zip
-  zip: { face: '#D97706', fold: '#B45309', ink: '#FFFFFF' },
-  // Rose archive
-  rar: { face: '#E11D48', fold: '#BE123C', ink: '#FFFFFF' },
-  // Cool slate archive
-  '7z': { face: '#6366F1', fold: '#4F46E5', ink: '#FFFFFF' },
-  folder: { face: '#CA8A04', fold: '#A16207', ink: '#FFFFFF' },
-  unknown: { face: '#78716C', fold: '#57534E', ink: '#FFFFFF' },
+  // Forest-teal — plain dialogue track（呼应墨绿主色）
+  srt: { face: '#3D8B7A', fold: '#2F7060', ink: '#FFFFFF' },
+  // Muted plum — styled / ASS track
+  ass: { face: '#8A6FC0', fold: '#7157A6', ink: '#FFFFFF' },
+  // Citrus-adjacent zip（呼应柑橘强调色）
+  zip: { face: '#D98E4F', fold: '#BC7439', ink: '#FFFFFF' },
+  // Soft brick archive
+  rar: { face: '#C9646B', fold: '#AC4E56', ink: '#FFFFFF' },
+  // Dusty indigo archive
+  '7z': { face: '#7A80B8', fold: '#62689E', ink: '#FFFFFF' },
+  folder: { face: '#B8934A', fold: '#9A7838', ink: '#FFFFFF' },
+  unknown: { face: '#857D72', fold: '#6B655B', ink: '#FFFFFF' },
 };
 
 const CODE: Record<FileFormat, string> = {
@@ -219,134 +225,48 @@ type LangVisual = {
   label: string;
   face: string;
   ink: string;
-  chipBorder: string;
-  chipBg: string;
-  chipText: string;
   mark: string;
 };
 
 /**
  * Language colors avoid file-icon hues
- * (SRT teal / ASS violet / ZIP amber / RAR rose / 7Z indigo).
+ * (SRT teal / ASS plum / ZIP citrus / RAR brick / 7Z indigo).
+ * 芯片描边 / 底色 / 文字色不再写死浅色 hex，而是用 color-mix 掺入当前表面的
+ * --v4-text / --v4-line-strong：奶油面上自动变深、墨绿面上自动变浅，两边都可读。
  */
 const LANG_VISUAL: Record<string, LangVisual> = {
-  'zh-CN': {
-    label: '简中',
-    face: '#E8C547',
-    ink: '#1A1608',
-    chipBorder: 'rgba(232,197,71,0.4)',
-    chipBg: 'rgba(232,197,71,0.12)',
-    chipText: '#E8D080',
-    mark: '简',
-  },
-  'zh-TW': {
-    label: '繁中',
-    face: '#3D9E5F',
-    ink: '#F2FFF6',
-    chipBorder: 'rgba(61,158,95,0.42)',
-    chipBg: 'rgba(61,158,95,0.12)',
-    chipText: '#A8D8B8',
-    mark: '繁',
-  },
-  zh: {
-    label: '中文',
-    face: '#C9A227',
-    ink: '#1A1608',
-    chipBorder: 'rgba(201,162,39,0.4)',
-    chipBg: 'rgba(201,162,39,0.12)',
-    chipText: '#D8C070',
-    mark: '中',
-  },
-  en: {
-    label: '英语',
-    face: '#6D6A63',
-    ink: '#F3EBE2',
-    chipBorder: 'rgba(109,106,99,0.45)',
-    chipBg: 'rgba(109,106,99,0.14)',
-    chipText: '#C8C0B4',
-    mark: 'En',
-  },
-  ja: {
-    label: '日语',
-    face: '#C45A8A',
-    ink: '#FFF7FA',
-    chipBorder: 'rgba(196,90,138,0.42)',
-    chipBg: 'rgba(196,90,138,0.12)',
-    chipText: '#E8B0C8',
-    mark: 'あ',
-  },
-  ko: {
-    label: '韩语',
-    face: '#8B6B4A',
-    ink: '#FFF8F2',
-    chipBorder: 'rgba(139,107,74,0.42)',
-    chipBg: 'rgba(139,107,74,0.12)',
-    chipText: '#D0B898',
-    mark: '한',
-  },
-  fr: {
-    label: '法语',
-    face: '#5F7A6A',
-    ink: '#F5FAF7',
-    chipBorder: 'rgba(95,122,106,0.42)',
-    chipBg: 'rgba(95,122,106,0.12)',
-    chipText: '#B0C8B8',
-    mark: 'Fr',
-  },
-  es: {
-    label: '西语',
-    face: '#9B5A6F',
-    ink: '#FFF5F8',
-    chipBorder: 'rgba(155,90,111,0.42)',
-    chipBg: 'rgba(155,90,111,0.12)',
-    chipText: '#D8B0C0',
-    mark: 'Ñ',
-  },
-  latin: {
-    label: '拉丁',
-    face: '#7A756C',
-    ink: '#F3EBE2',
-    chipBorder: 'rgba(122,117,108,0.42)',
-    chipBg: 'rgba(122,117,108,0.12)',
-    chipText: '#C0B8AC',
-    mark: 'L',
-  },
-  bilingual: {
-    label: '双语',
-    face: '#3A342E',
-    ink: '#E8C547',
-    chipBorder: 'rgba(232,197,71,0.35)',
-    chipBg: 'rgba(232,197,71,0.1)',
-    chipText: '#E8D080',
-    mark: '双',
-  },
-  commentary: {
-    label: '导评',
-    face: '#5C5650',
-    ink: '#F3EBE2',
-    chipBorder: 'rgba(92,86,80,0.42)',
-    chipBg: 'rgba(92,86,80,0.12)',
-    chipText: '#B8B0A4',
-    mark: '评',
-  },
-  unknown: {
-    label: '待识别',
-    face: '#4A4540',
-    ink: '#E8DED4',
-    chipBorder: 'rgba(74,69,64,0.42)',
-    chipBg: 'rgba(74,69,64,0.12)',
-    chipText: '#A89B8C',
-    mark: '?',
-  },
+  'zh-CN': { label: '简中', face: '#C9A430', ink: '#241C06', mark: '简' },
+  'zh-TW': { label: '繁中', face: '#3D9E5F', ink: '#F2FFF6', mark: '繁' },
+  zh: { label: '中文', face: '#B8952A', ink: '#241C06', mark: '中' },
+  en: { label: '英语', face: '#6D6A63', ink: '#F3EBE2', mark: 'En' },
+  ja: { label: '日语', face: '#C45A8A', ink: '#FFF7FA', mark: 'あ' },
+  ko: { label: '韩语', face: '#8B6B4A', ink: '#FFF8F2', mark: '한' },
+  fr: { label: '法语', face: '#5F7A6A', ink: '#F5FAF7', mark: 'Fr' },
+  es: { label: '西语', face: '#9B5A6F', ink: '#FFF5F8', mark: 'Ñ' },
+  latin: { label: '拉丁', face: '#7A756C', ink: '#F3EBE2', mark: 'L' },
+  bilingual: { label: '双语', face: '#3A342E', ink: '#E8C547', mark: '双' },
+  commentary: { label: '导评', face: '#5C5650', ink: '#F3EBE2', mark: '评' },
+  unknown: { label: '待识别', face: '#847C70', ink: '#F5F1EA', mark: '?' },
 };
 
+/** 表面自适应的芯片配色：随 data-surface（cream/forest）自动取得可读对比。 */
+const chipSurfaceStyle = (face: string): React.CSSProperties => ({
+  borderColor: `color-mix(in srgb, ${face} 42%, var(--v4-line-strong))`,
+  background: `color-mix(in srgb, ${face} 12%, transparent)`,
+  color: `color-mix(in srgb, ${face} 40%, var(--v4-text))`,
+});
+
 /** Fixed 32×32 tile — larger glyph, tighter padding, footprint unchanged. */
-const LangTile: React.FC<{ visual: LangVisual }> = ({ visual }) => {
+const LangTile: React.FC<{ visual: LangVisual; flipKey?: string }> = ({ visual, flipKey }) => {
   const { face, ink, mark } = visual;
   const isWide = mark.length > 1;
 
   return (
-    <span
+    <motion.span
+      key={flipKey ?? mark}
+      initial={{ rotateY: 75, opacity: 0 }}
+      animate={{ rotateY: 0, opacity: 1 }}
+      transition={springSnappy}
       className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md"
       aria-hidden="true"
       style={{ background: face }}
@@ -357,7 +277,7 @@ const LangTile: React.FC<{ visual: LangVisual }> = ({ visual }) => {
       >
         {mark}
       </span>
-    </span>
+    </motion.span>
   );
 };
 
@@ -375,16 +295,30 @@ export const LanguageMark: React.FC<{
     const secondary = LANG_VISUAL[secondaryKey] || LANG_VISUAL.unknown;
     return (
       <span
-        className={`inline-flex h-8 shrink-0 items-center gap-1 rounded-md border border-[color:rgba(232,197,71,0.32)] bg-[rgba(232,197,71,0.1)] pl-0.5 pr-2 ${className}`}
+        className={`inline-flex h-8 shrink-0 items-center gap-1 rounded-md border pl-0.5 pr-2 ${className}`}
+        style={chipSurfaceStyle(LANG_VISUAL.bilingual.face)}
         title={`${primary.label} / ${secondary.label}`}
       >
         <span className="relative inline-flex items-center">
-          <LangTile visual={primary} />
-          <span className="-ml-1.5">
-            <LangTile visual={secondary} />
-          </span>
+          {/* 两块语言牌相向吸合，暗示「配对成功」 */}
+          <motion.span
+            initial={{ x: -5 }}
+            animate={{ x: 0 }}
+            transition={springSnappy}
+            className="inline-flex"
+          >
+            <LangTile visual={primary} flipKey={`p-${primaryKey}`} />
+          </motion.span>
+          <motion.span
+            initial={{ x: 5 }}
+            animate={{ x: 0 }}
+            transition={springSnappy}
+            className="-ml-1.5 inline-flex"
+          >
+            <LangTile visual={secondary} flipKey={`s-${secondaryKey}`} />
+          </motion.span>
         </span>
-        <span className="font-mono text-[13px] font-semibold leading-none tracking-normal text-[#E8D080]">
+        <span className="font-mono text-[13px] font-semibold leading-none tracking-normal">
           双语
         </span>
       </span>
@@ -403,14 +337,11 @@ export const LanguageMark: React.FC<{
   return (
     <span
       className={`inline-flex h-8 shrink-0 items-center gap-1 rounded-md border pl-0.5 pr-2 ${className}`}
-      style={{
-        borderColor: visual.chipBorder,
-        background: visual.chipBg,
-        color: visual.chipText,
-      }}
+      style={chipSurfaceStyle(visual.face)}
       title={visual.label}
     >
-      <LangTile visual={visual} />
+      {/* key 变化（如 待识别 → 简中）时翻牌，提示「语言已识别」 */}
+      <LangTile visual={visual} flipKey={key} />
       <span className="font-mono text-[13px] font-semibold leading-none tracking-normal">
         {visual.label}
       </span>

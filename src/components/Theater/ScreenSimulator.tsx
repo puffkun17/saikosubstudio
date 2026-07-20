@@ -99,6 +99,8 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
             color: '#FFFFFF',
             fontWeight: 500,
             textShadow: getOutlineShadow('#000000'),
+            WebkitTextStroke: '0.6px #000000',
+            paintOrder: 'stroke fill',
             lineHeight: 1.25,
             fontFamily: style.zhFontFamily || 'system-ui, "PingFang SC", "Noto Sans SC", sans-serif',
             whiteSpace: 'pre-wrap'
@@ -121,6 +123,8 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
                 fontWeight: 600,
                 fontStyle: lyricItalic ? 'italic' : 'normal',
                 textShadow: getOutlineShadow('#000000'),
+                WebkitTextStroke: '0.5px #000000',
+                paintOrder: 'stroke fill',
                 lineHeight: 1.25,
                 fontFamily: style.zhFontFamily || 'system-ui, "PingFang SC", "Noto Sans SC", sans-serif'
               }}
@@ -137,6 +141,8 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
                 fontWeight: 600,
                 fontStyle: lyricItalic ? 'italic' : 'normal',
                 textShadow: getOutlineShadow('#000000'),
+                WebkitTextStroke: '0.4px #000000',
+                paintOrder: 'stroke fill',
                 lineHeight: 1.2,
                 transform: `scale(${style.enScale ? style.enScale / 100 : 0.9})`,
                 fontFamily: style.enFontFamily || 'Helvetica Neue, Arial, sans-serif'
@@ -166,6 +172,8 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
                 color: style.zhColor,
                 fontWeight: 700,
                 textShadow: getOutlineShadow(style.zhOutline),
+                WebkitTextStroke: `0.7px ${style.zhOutline || '#000000'}`,
+                paintOrder: 'stroke fill',
                 lineHeight: 1.25,
                 fontFamily: style.zhFontFamily || 'system-ui, "PingFang SC", "Noto Sans SC", sans-serif'
               }}
@@ -181,6 +189,8 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
                 color: style.enColor,
                 fontWeight: 600,
                 textShadow: getOutlineShadow(style.enOutline || '#000000'),
+                WebkitTextStroke: `0.5px ${style.enOutline || '#000000'}`,
+                paintOrder: 'stroke fill',
                 lineHeight: 1.2,
                 transform: `scale(${style.enScale ? style.enScale / 100 : 0.9})`,
                 fontFamily: style.enFontFamily || 'Helvetica Neue, Arial, sans-serif'
@@ -254,11 +264,11 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
   const isMagnetic = targetCqh > 0 && Math.abs(paddingBottomCqh - targetCqh) < 1.0;
 
   return (
-    <div className="relative flex h-full w-full flex-1 items-center justify-center overflow-hidden bg-[var(--v4-canvas)] p-4 md:p-8">
+    <div className="screen-sim-root relative flex h-full w-full flex-1 items-center justify-center overflow-hidden bg-[var(--v4-canvas)] p-4 md:p-8">
 
       {/* Outer wrapper constrained to the TV Mask's Aspect Ratio */}
       <div 
-        className="fade-in-up relative z-10 flex items-center justify-center overflow-hidden rounded-sm border border-[var(--v4-line-strong)] shadow-[0_18px_46px_rgba(0,0,0,0.42)]"
+        className="screen-sim-frame fade-in-up relative z-10 flex items-center justify-center overflow-hidden rounded-sm border border-[var(--v4-line-strong)] shadow-[0_18px_46px_rgba(0,0,0,0.42)]"
         style={{
           aspectRatio: maskAspect,
           maxWidth: '100%',

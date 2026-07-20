@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, Subfile } from '@/store/useStudioStore';
 import { Check, CircleAlert, GripVertical, Paintbrush, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { parseSrt, decodeBuffer, detectSubtitleLanguage, StyleSettings } from '@/utils/subtitleCore';
@@ -54,7 +55,32 @@ export const TaskList: React.FC = () => {
     setAlignmentMode,
     setTmdbManualOpen,
     tmdbData,
-  } = useStudioStore();
+  } = useStudioStore(useShallow((state) => ({
+    tasks: state.tasks,
+    selectedTaskId: state.selectedTaskId,
+    selectTask: state.selectTask,
+    bindTrack: state.bindTrack,
+    swapPrimaryTracks: state.swapPrimaryTracks,
+    deleteTask: state.deleteTask,
+    cancelCurrentUpload: state.cancelCurrentUpload,
+    uploadedFiles: state.uploadedFiles,
+    customFilename: state.customFilename,
+    filenameSource: state.filenameSource,
+    setCustomFilename: state.setCustomFilename,
+    isProcessing: state.isProcessing,
+    runSubtitleMerge: state.runSubtitleMerge,
+    showAssHint: state.showAssHint,
+    setShowAssHint: state.setShowAssHint,
+    foundAssStyle: state.foundAssStyle,
+    customStyle: state.customStyle,
+    setCustomStyle: state.setCustomStyle,
+    setActivePreset: state.setActivePreset,
+    addLog: state.addLog,
+    alignmentMode: state.alignmentMode,
+    setAlignmentMode: state.setAlignmentMode,
+    setTmdbManualOpen: state.setTmdbManualOpen,
+    tmdbData: state.tmdbData,
+  })));
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 

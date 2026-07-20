@@ -21,7 +21,8 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filter, setFilter] = useState<DiffFilter>('all');
   const [sourceEntryId, setSourceEntryId] = useState<string | null>(null);
-  const { setPreviewIndex, setJumpLineVal } = useStudioStore();
+  const setPreviewIndex = useStudioStore((state) => state.setPreviewIndex);
+  const setJumpLineVal = useStudioStore((state) => state.setJumpLineVal);
   const summary = useMemo(() => analyzeAlignmentDiff(rows), [rows]);
 
   const filteredEntries = summary.entries.filter(entry => filter === 'all' || entry.kind === filter);

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { DragZone } from '@/components/Ingest/DragZone';
 import { TaskList } from '@/components/Ingest/TaskList';
@@ -18,7 +19,15 @@ export const IngestStep: React.FC = () => {
     isLibraryOpen,
     setLibraryOpen,
     isIngestClearing,
-  } = useStudioStore();
+  } = useStudioStore(useShallow((state) => ({
+    tasks: state.tasks,
+    libraryList: state.libraryList,
+    loadFromLibrary: state.loadFromLibrary,
+    deleteFromLibrary: state.deleteFromLibrary,
+    isLibraryOpen: state.isLibraryOpen,
+    setLibraryOpen: state.setLibraryOpen,
+    isIngestClearing: state.isIngestClearing,
+  })));
 
   const shellState: 'empty' | 'clearing' | 'ready' = isIngestClearing
     ? 'clearing'

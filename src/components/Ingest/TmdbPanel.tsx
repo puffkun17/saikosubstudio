@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, type TmdbSuggestion } from '@/store/useStudioStore';
 import { Search, Image as ImageIcon, Star, Sparkles, X, CheckCircle2, CircleAlert, FileText, Languages } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -49,7 +50,21 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
     tasks,
     selectedTaskId,
     foundAssStyle
-  } = useStudioStore();
+  } = useStudioStore(useShallow((state) => ({
+    tmdbData: state.tmdbData,
+    tmdbManualOpen: state.tmdbManualOpen,
+    setTmdbManualOpen: state.setTmdbManualOpen,
+    tmdbManualInput: state.tmdbManualInput,
+    setTmdbManualInput: state.setTmdbManualInput,
+    tmdbSuggestions: state.tmdbSuggestions,
+    setTmdbSuggestions: state.setTmdbSuggestions,
+    selectedSuggestion: state.selectedSuggestion,
+    selectTmdbSuggestion: state.selectTmdbSuggestion,
+    isSearchingTmdb: state.isSearchingTmdb,
+    tasks: state.tasks,
+    selectedTaskId: state.selectedTaskId,
+    foundAssStyle: state.foundAssStyle,
+  })));
 
   const [pendingSuggestion, setPendingSuggestion] = useState<TmdbSuggestion | null>(null);
   const [isApplyingSuggestion, setIsApplyingSuggestion] = useState(false);

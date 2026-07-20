@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { BadgeCheck, PenLine } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 
 /** Fixed credit block — always visible, placed before export filename. */
@@ -12,7 +13,13 @@ export const CreditTool: React.FC = () => {
     appendCreatorCredit,
     setCreatorCredit,
     setAppendCreatorCredit,
-  } = useStudioStore();
+  } = useStudioStore(useShallow((state) => ({
+    detectedAttributions: state.detectedAttributions,
+    creatorCredit: state.creatorCredit,
+    appendCreatorCredit: state.appendCreatorCredit,
+    setCreatorCredit: state.setCreatorCredit,
+    setAppendCreatorCredit: state.setAppendCreatorCredit,
+  })));
 
   return (
     <section className="rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2.5">
