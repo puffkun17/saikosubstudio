@@ -335,7 +335,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
   }
 
   return (
-    <div className="v9-dial-slider-container flex w-full flex-col gap-2.5 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+    <div className="v9-dial-slider-container flex w-full flex-col gap-2 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
       <div className="v9-dial-slider-wrapper flex min-w-0 flex-1 items-center gap-2.5">
         {playButton}
         <input
@@ -353,7 +353,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
           className="v9-timeline-dial-slider w-full"
           aria-label="字幕时间轴位置"
         />
-        <span className="hidden min-w-[8.5rem] text-right font-mono text-xs tabular-nums text-[var(--v4-text-muted)] md:block">
+        <span className="hidden min-w-[8.5rem] text-right font-mono text-[13px] font-semibold tabular-nums text-[var(--v4-text-muted)] md:block">
           {timeReadout}
         </span>
       </div>
@@ -371,7 +371,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
           aria-label="跳转到字幕行"
         />
         <div className="h-3 w-px bg-[var(--v4-line-strong)]" />
-        <span className="v9-dial-gauge-value text-[var(--v4-accent-strong)]">{timelinePercent}%</span>
+        <span className="v9-dial-gauge-value">{timelinePercent}%</span>
       </form>
     </div>
   );

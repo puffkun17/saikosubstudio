@@ -131,7 +131,7 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
                     {config.title}
                   </h2>
                   {config.badge && (
-                    <span className="rd-chip rd-chip--tight shrink-0 font-mono tracking-wide">
+                    <span className="inline-flex h-7 shrink-0 items-center rounded-md border border-[var(--v4-accent)]/35 bg-[var(--v4-accent-soft)] px-2.5 font-mono text-[13px] font-bold tracking-wide text-[var(--v4-accent-strong)]">
                       {config.badge}
                     </span>
                   )}

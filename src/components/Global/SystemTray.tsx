@@ -23,11 +23,11 @@ const WORKFLOW_STEPS = [
 ];
 
 const trayChrome =
-  'flex h-[var(--tray-h)] w-full items-center gap-3 border-[var(--v4-line)] px-4 backdrop-blur-md transition-colors duration-300 sm:px-6 md:px-8';
+  'flex h-[var(--tray-h)] w-full items-center gap-2.5 border-[var(--v4-line)] px-3 backdrop-blur-md transition-colors duration-300 sm:px-5 md:px-6';
 
 /** Icon+label control: never squash copy — hide label via container query instead. */
 const trayCtrl =
-  'system-tray__ctrl v4-focus-ring inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 text-[15px] font-medium transition-colors';
+  'system-tray__ctrl v4-focus-ring inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 text-[15px] font-semibold transition-colors';
 
 /**
  * Labels appear from available deck width (parent @container), not control width —
@@ -188,26 +188,26 @@ export const SystemTray = () => {
         aria-label="全局导航"
         className={`system-tray system-tray--top fixed top-0 z-[var(--z-nav)] justify-between border-b ${trayChrome}`}
       >
-        <div className="flex min-w-0 items-center gap-3 tracking-tight">
+        <div className="flex min-w-0 items-center gap-2.5 tracking-tight">
           <button
             type="button"
             onClick={() => handleStepClick(1)}
-            className="v4-focus-ring flex shrink-0 cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl text-[17px] font-semibold text-[var(--v5-cream)] transition-colors duration-150 hover:text-white"
+            className="v4-focus-ring flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg text-[18px] font-semibold text-[var(--v5-cream)] transition-colors duration-150 hover:text-white"
             aria-label="返回导入页"
           >
             <Image
               src="/favicon.svg"
               alt=""
               aria-hidden="true"
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-2xl bg-[var(--v5-cream)] shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
+              width={28}
+              height={28}
+              className="h-7 w-7 rounded-xl bg-[var(--v5-cream)] shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
             />
             <span className="hidden whitespace-nowrap min-[420px]:inline">SubStudio</span>
           </button>
 
           {!isInfoPage && (
-            <div className="hidden items-center gap-1.5 border-l border-[color:rgba(245,241,234,0.12)] pl-3 min-[720px]:flex">
+            <div className="hidden items-center gap-1 border-l border-[color:rgba(245,241,234,0.12)] pl-2.5 min-[720px]:flex">
               {WORKFLOW_STEPS.map((step) => {
                 const isActive = workflowStep === step.id;
                 const disabled =
@@ -218,12 +218,12 @@ export const SystemTray = () => {
                     key={step.id}
                     type="button"
                     onClick={() => handleStepClick(step.id)}
-                    className={`v4-focus-ring cursor-pointer whitespace-nowrap rounded-full px-5 py-2 text-[15px] font-semibold transition-all ${
+                    className={`v4-focus-ring cursor-pointer whitespace-nowrap rounded-full px-4 py-1.5 text-[16px] font-semibold transition-all ${
                       isActive
                         ? 'bg-[var(--v5-cream)] text-[var(--v5-green)]'
                         : disabled
                           ? 'cursor-help text-[color:rgba(245,241,234,0.35)]'
-                          : 'bg-[color:rgba(245,241,234,0.08)] text-[color:rgba(245,241,234,0.7)] hover:bg-[color:rgba(245,241,234,0.14)] hover:text-[var(--v5-cream)]'
+                          : 'bg-[color:rgba(245,241,234,0.08)] text-[color:rgba(245,241,234,0.78)] hover:bg-[color:rgba(245,241,234,0.14)] hover:text-[var(--v5-cream)]'
                     }`}
                     aria-current={isActive ? 'step' : undefined}
                     aria-disabled={disabled}
@@ -253,7 +253,7 @@ export const SystemTray = () => {
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           <button
             type="button"
             onClick={cycleScale}
@@ -261,27 +261,27 @@ export const SystemTray = () => {
             title="调节网页整体缩放"
             aria-label={`网页缩放 ${Math.round(scale * 100)}%`}
           >
-            <span className="system-tray__accent text-[13px] font-bold tracking-wide">A±</span>
-            <span className="font-bold text-[var(--v5-cream)]" suppressHydrationWarning>
+            <span className="system-tray__accent text-[14px] font-bold tracking-wide">A±</span>
+            <span className="text-[15px] font-bold text-[var(--v5-cream)]" suppressHydrationWarning>
               {Math.round(scale * 100)}%
             </span>
           </button>
 
           <div
-            className="inline-flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[color:rgba(245,241,234,0.12)] bg-[color:rgba(245,241,234,0.08)] px-3"
+            className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[color:rgba(245,241,234,0.14)] bg-[color:rgba(245,241,234,0.1)] px-3"
             aria-label={`本地时间 ${zoneShort} ${time}`}
           >
-            <span className="rounded-full bg-[var(--v4-accent-soft)] px-1.5 py-0.5 font-mono text-[11px] font-semibold tracking-[0.12em] text-[var(--v5-orange)]">
+            <span className="rounded-full bg-[var(--v4-accent-soft)] px-1.5 py-0.5 font-mono text-[12px] font-bold tracking-[0.1em] text-[var(--v5-orange)]">
               LOCAL
             </span>
-            <span className="text-[15px] font-medium tabular-nums text-[var(--v5-cream)]" suppressHydrationWarning>
+            <span className="text-[16px] font-semibold tabular-nums text-[var(--v5-cream)]" suppressHydrationWarning>
               {time || '--:--:--'}
             </span>
-            <span className="hidden font-mono text-[12px] text-[color:rgba(245,241,234,0.55)] min-[900px]:inline" suppressHydrationWarning>
+            <span className="hidden font-mono text-[13px] text-[color:rgba(245,241,234,0.62)] min-[900px]:inline" suppressHydrationWarning>
               {zoneShort}
             </span>
             {zoneCity ? (
-              <span className="hidden text-[12px] text-[color:rgba(245,241,234,0.4)] min-[1100px]:inline" suppressHydrationWarning>
+              <span className="hidden text-[13px] text-[color:rgba(245,241,234,0.48)] min-[1100px]:inline" suppressHydrationWarning>
                 {zoneCity}
               </span>
             ) : null}
