@@ -842,7 +842,8 @@ export const DragZone: React.FC = () => {
               key="empty"
               initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={shouldReduceMotion ? undefined : { opacity: 0, y: -6 }}
+              // 快出：空态元素迅速让位，让「文件落桌」成为主角
+              exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.985, transition: { duration: 0.14 } }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.24, ease: [0.16, 1, 0.3, 1] }}
               className="flex w-full justify-center"
             >
@@ -913,10 +914,10 @@ export const DragZone: React.FC = () => {
           ) : (
             <motion.div
               key="queue"
-              initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={shouldReduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
               exit={shouldReduceMotion ? undefined : { opacity: 0 }}
-              transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
               className="flex flex-col text-left"
             >
               {isDragging && (
@@ -985,11 +986,12 @@ export const DragZone: React.FC = () => {
                   return (
                     <motion.div
                       key={getQueueKey(item.file)}
-                      initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      // 文件「落桌」：从上方轻降 + 微缩回位，像放到桌面上
+                      initial={shouldReduceMotion ? false : { opacity: 0, y: -14, scale: 1.03 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
                       transition={{
-                        duration: shouldReduceMotion ? 0 : 0.28,
-                        delay: shouldReduceMotion ? 0 : Math.min(itemIndex * 0.04, 0.16),
+                        duration: shouldReduceMotion ? 0 : 0.34,
+                        delay: shouldReduceMotion ? 0 : Math.min(itemIndex * 0.05, 0.2),
                         ease: [0.16, 1, 0.3, 1],
                       }}
                       className="min-w-0"

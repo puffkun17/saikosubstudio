@@ -75,33 +75,90 @@ export const resolveFileFormat = (nameOrExt?: string | null): FileFormat => {
   return 'unknown';
 };
 
-/** Classic Adobe document silhouette: rounded rect + top-right dog-ear. */
+/** 三类剪影：文档（折角纸）· 压缩包（带盖箱体 + 卡扣）· 文件夹（标签页）。 */
+const GLYPH_KIND: Record<FileFormat, 'document' | 'archive' | 'folder'> = {
+  srt: 'document',
+  ass: 'document',
+  unknown: 'document',
+  zip: 'archive',
+  rar: 'archive',
+  '7z': 'archive',
+  folder: 'folder',
+};
+
+const GLYPH_FONT = 'ui-sans-serif, system-ui, "Segoe UI", sans-serif';
+
 const AdobeFileGlyph: React.FC<{ format: FileFormat }> = ({ format }) => {
   const { face, fold, ink } = ADOBE[format];
   const code = CODE[format];
-  const isFolder = format === 'folder';
-  // 3-letter codes sit larger; 7Z / DIR slightly adjusted
-  const fontSize = code.length <= 2 ? 15 : code.length === 3 ? 13.5 : 11;
+  const kind = GLYPH_KIND[format];
 
-  if (isFolder) {
+  if (kind === 'folder') {
     return (
       <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="h-full w-full">
+        {/* 后板 + 标签页 */}
         <path
-          d="M6 16c0-2.2 1.8-4 4-4h8.2c1.1 0 2.1.4 2.8 1.2l1.6 1.8c.7.8 1.7 1.2 2.8 1.2H38c2.2 0 4 1.8 4 4v18c0 2.2-1.8 4-4 4H10c-2.2 0-4-1.8-4-4V16Z"
+          d="M5 14c0-2.2 1.8-4 4-4h9.4c1.1 0 2.1.4 2.8 1.2l1.8 2c.7.8 1.7 1.2 2.8 1.2H39c2.2 0 4 1.8 4 4v3H5v-7.4Z"
+          fill={fold}
+        />
+        {/* 前板：微梯形，像真实吊挂文件夹的前袋 */}
+        <path
+          d="M6.6 20.5h34.8c1.6 0 2.8 1.5 2.5 3.1l-2.3 12.9c-.3 1.9-2 3.3-3.9 3.3H10.3c-1.9 0-3.6-1.4-3.9-3.3L4.1 23.6c-.3-1.6.9-3.1 2.5-3.1Z"
           fill={face}
         />
-        <path d="M6 20h36v2.5H6V20Z" fill={fold} opacity="0.55" />
+        <path
+          d="M7.2 21.6h33.6c1 0 1.7.9 1.5 1.9l-2.2 12.5c-.2 1.3-1.4 2.3-2.7 2.3H10.6c-1.3 0-2.5-1-2.7-2.3L5.7 23.5c-.2-1 .5-1.9 1.5-1.9Z"
+          stroke="rgba(255,255,255,0.16)"
+          strokeWidth="0.75"
+          fill="none"
+        />
         <text
           x="24"
-          y="34"
+          y="33.5"
           textAnchor="middle"
           fill={ink}
-          fontSize="11"
+          fontSize="10.5"
           fontWeight="800"
-          fontFamily='ui-sans-serif, system-ui, "Segoe UI", sans-serif'
-          letterSpacing="0.04em"
+          fontFamily={GLYPH_FONT}
+          letterSpacing="0.05em"
         >
           DIR
+        </text>
+      </svg>
+    );
+  }
+
+  if (kind === 'archive') {
+    return (
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="h-full w-full">
+        {/* 箱体 */}
+        <path
+          d="M7 15h34v25c0 2.2-1.8 4-4 4H11c-2.2 0-4-1.8-4-4V15Z"
+          fill={face}
+        />
+        {/* 箱盖：比箱体略宽，压出「盖住」的层次 */}
+        <rect x="4.5" y="6.5" width="39" height="10.5" rx="2.5" fill={fold} />
+        {/* 卡扣搭在盖与箱的接缝上 */}
+        <rect x="20" y="13" width="8" height="8.5" rx="1.75" fill={fold} />
+        <rect x="22.4" y="15.4" width="3.2" height="3.7" rx="0.9" fill={ink} opacity="0.9" />
+        {/* 内侧描边 */}
+        <path
+          d="M8.1 18.2h31.8v21.4c0 1.5-1.2 2.7-2.7 2.7H10.8c-1.5 0-2.7-1.2-2.7-2.7V18.2Z"
+          stroke="rgba(255,255,255,0.13)"
+          strokeWidth="0.75"
+          fill="none"
+        />
+        <text
+          x="24"
+          y="36.5"
+          textAnchor="middle"
+          fill={ink}
+          fontSize={code.length <= 2 ? 13.5 : 12}
+          fontWeight="800"
+          fontFamily={GLYPH_FONT}
+          letterSpacing="0.06em"
+        >
+          {code}
         </text>
       </svg>
     );
@@ -129,9 +186,9 @@ const AdobeFileGlyph: React.FC<{ format: FileFormat }> = ({ format }) => {
         y="30"
         textAnchor="middle"
         fill={ink}
-        fontSize={fontSize}
+        fontSize={code.length <= 2 ? 15 : code.length === 3 ? 13.5 : 11}
         fontWeight="800"
-        fontFamily='ui-sans-serif, system-ui, "Segoe UI", sans-serif'
+        fontFamily={GLYPH_FONT}
         letterSpacing="0.06em"
       >
         {code}
@@ -166,7 +223,7 @@ export const FileFormatIcon: React.FC<FileFormatIconProps> = ({
 
   return (
     <span className={`inline-flex shrink-0 items-center gap-1.5 ${className}`} title={tip}>
-      <span style={{ width: px, height: px }} className="inline-block drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]">
+      <span style={{ width: px, height: px }} className="inline-block drop-shadow-[0_1px_1.5px_rgba(31,26,18,0.22)]">
         <AdobeFileGlyph format={resolved} />
       </span>
       {showLabel && (

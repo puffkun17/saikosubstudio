@@ -290,9 +290,7 @@ body {
 
 .ingest-stage.is-dragging .ingest-start-card {
   border-color: color-mix(in srgb, var(--v4-accent) 65%, transparent);
-  border-style: dashed;
-  background: color-mix(in srgb, var(--v4-accent-soft) 55%, var(--v4-panel-raised));
-  box-shadow: 0 18px 48px rgba(239, 141, 95, 0.16);
+  background: color-mix(in srgb, var(--v4-accent-soft) 38%, transparent);
   transform: scale(1.015);
 }
 
@@ -594,14 +592,16 @@ body {
   color: var(--v4-text-muted);
 }
 
+/* 桌面隐喻：默认无底无框，内容直接坐在奶油底上；
+   虚线框只在拖拽悬停时浮现，作为「落点」提示。 */
 .ingest-start-card {
   width: min(34rem, 100%);
   margin-inline: auto;
   padding: 2.75rem 2rem 2.25rem;
   text-align: center;
   border-radius: var(--v5-radius-panel);
-  border: 2px dashed color-mix(in srgb, var(--v5-green) 16%, transparent);
-  background: color-mix(in srgb, var(--v4-panel-raised) 42%, transparent);
+  border: 2px dashed transparent;
+  background: transparent;
   box-shadow: none;
   cursor: pointer;
   transition:
@@ -612,8 +612,11 @@ body {
 }
 
 .ingest-start-card:hover {
-  border-color: color-mix(in srgb, var(--v4-accent) 42%, transparent);
-  background: color-mix(in srgb, var(--v4-panel-raised) 72%, transparent);
+  border-color: color-mix(in srgb, var(--v5-green) 18%, transparent);
+}
+
+.ingest-start-card:hover .ingest-start-card__glyph {
+  transform: translateY(-2px);
 }
 
 .ingest-start-card:focus-visible {
@@ -650,9 +653,11 @@ body {
 
 .ingest-start-card__sub {
   margin: 0.625rem 0 0;
-  font-size: 0.9375rem;
+  font-size: 1rem;
+  font-weight: 500;
   line-height: 1.6;
-  color: var(--v4-text-muted);
+  letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--v4-text) 82%, transparent);
 }
 
 .ingest-start-card__cta {
@@ -667,8 +672,10 @@ body {
 .ingest-start-card__hint {
   margin: 1rem 0 0;
   font-size: 0.8125rem;
+  font-weight: 500;
   line-height: 1.6;
-  color: var(--v4-text-faint);
+  letter-spacing: 0.015em;
+  color: var(--v4-text-muted);
 }
 
 /* Blank fields on cream panels — white rest, orange focus ring, no cream fill. */
