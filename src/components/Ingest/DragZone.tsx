@@ -895,7 +895,7 @@ export const DragZone: React.FC = () => {
             className="h-9 w-9 rounded-full border-2 border-[var(--v4-line-strong)] border-t-[var(--v4-accent)] animate-spin"
             aria-hidden="true"
           />
-          <p className="text-sm text-[var(--v4-text-muted)]">文件仅在本机处理</p>
+          <p className="text-sm font-medium text-[var(--v4-text-muted)]">文件仅在本机处理</p>
         </div>
       </div>
     );
@@ -1079,7 +1079,7 @@ export const DragZone: React.FC = () => {
               <header className="mb-5 flex flex-wrap items-end justify-between gap-3 px-1">
                 <div className="min-w-0">
                   <h3 className="text-sm font-semibold tracking-tight text-[var(--v4-text)]">已添加</h3>
-                  <p className="mt-0.5 text-xs font-normal tabular-nums text-[var(--v4-text-muted)]">
+                  <p className="mt-0.5 text-xs font-medium tabular-nums text-[var(--v4-text-muted)]">
                     {archivePeekPending && trackCount === 0
                       ? '正在读取…'
                       : `${queuedItems.length} 项 · ${trackCount} 条字幕 · ${formatBytes(totalBytes)}`}
@@ -1157,7 +1157,7 @@ export const DragZone: React.FC = () => {
                             <p className="truncate text-[15px] font-semibold leading-snug tracking-tight text-[var(--v4-text)]" title={node.folder}>
                               {node.folder}
                             </p>
-                            <p className="mt-1 text-xs font-normal text-[var(--v4-text-muted)]">
+                            <p className="mt-1 text-xs font-medium text-[var(--v4-text-muted)]">
                               本地文件夹 · {node.items.length} 个文件
                               {subtitleCount > 0 ? ` · ${subtitleCount} 条字幕` : ''} · {formatBytes(folderBytes)}
                             </p>
@@ -1246,7 +1246,7 @@ export const DragZone: React.FC = () => {
                             {item.name}
                           </p>
                           {!isArchive && (
-                            <div className={`mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-normal ${item.accepted ? 'text-[var(--v4-text-muted)]' : 'text-[var(--v4-danger)]'}`}>
+                            <div className={`mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium ${item.accepted ? 'text-[var(--v4-text-muted)]' : 'text-[var(--v4-danger)]'}`}>
                               <span>{item.note} · {formatBytes(item.file.size)}</span>
                               {langs.length > 0 && (
                                 <>
@@ -1290,7 +1290,7 @@ export const DragZone: React.FC = () => {
                     {queueIssue || `${rejectedItems.length} 项无法处理，可移除后继续。`}
                   </p>
                 )}
-                <span className="inline-flex items-center gap-2 text-xs text-[var(--v4-text-muted)]">
+                <span className="inline-flex items-center gap-2 text-xs font-medium text-[var(--v4-text-muted)]">
                   <HardDrive className="h-3.5 w-3.5" aria-hidden="true" />
                   仅在本机读取，不会上传
                 </span>

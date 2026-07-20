@@ -26,7 +26,7 @@ export const CreditTool: React.FC = () => {
       <div className="flex items-center gap-1.5">
         <PenLine className="h-3.5 w-3.5 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
         <h4 className="text-sm font-semibold text-[var(--v4-text)]">署名</h4>
-        <span className="text-xs text-[var(--v4-text-faint)]">
+        <span className="text-xs font-medium text-[var(--v4-text-muted)]">
           {detectedAttributions.length > 0 ? `${detectedAttributions.length} 条来源` : '可选'}
         </span>
       </div>
@@ -51,7 +51,7 @@ export const CreditTool: React.FC = () => {
               ))}
             </div>
           ) : (
-            <p className="mt-2 text-xs leading-relaxed text-[var(--v4-text-faint)]">
+            <p className="mt-2 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
               未在当前字幕中发现明确署名行。
             </p>
           )}

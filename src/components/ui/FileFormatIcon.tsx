@@ -308,9 +308,11 @@ const LANG_VISUAL: Record<string, LangVisual> = {
 
 /** 表面自适应的芯片配色：随 data-surface（cream/forest）自动取得可读对比。 */
 const chipSurfaceStyle = (face: string): React.CSSProperties => ({
-  borderColor: `color-mix(in srgb, ${face} 42%, var(--v4-line-strong))`,
-  background: `color-mix(in srgb, ${face} 12%, transparent)`,
-  color: `color-mix(in srgb, ${face} 40%, var(--v4-text))`,
+  borderColor: `color-mix(in srgb, ${face} 48%, var(--v4-line-strong))`,
+  background: `color-mix(in srgb, ${face} 16%, transparent)`,
+  // 文字侧更靠近主色，避免浅奶油上「有色但发灰」
+  color: `color-mix(in srgb, ${face} 28%, var(--v4-text))`,
+  fontWeight: 600,
 });
 
 /** Fixed 32×32 tile — larger glyph, tighter padding, footprint unchanged. */

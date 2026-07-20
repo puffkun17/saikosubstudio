@@ -109,7 +109,7 @@ export const WorkbenchStep: React.FC = () => {
                     <GitCompareArrows className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold text-[var(--v4-text)]">字幕检查</span>
-                      <span className="mt-0.5 block truncate text-sm text-[var(--v4-text-muted)]">
+                      <span className="mt-0.5 block truncate text-sm font-medium text-[var(--v4-text-muted)]">
                         {alignmentSummary && alignmentSummary.entries.length > 0
                           ? `${alignmentSummary.entries.length} 处结构差异待复核`
                           : '未发现需要复核的结构差异'}

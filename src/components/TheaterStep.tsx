@@ -187,7 +187,7 @@ export const TheaterStep: React.FC = () => {
           
             <div>
               <h2 className="text-xl font-semibold tracking-tight text-[var(--v4-text)]">字幕预览</h2>
-              <p className="mt-0.5 text-sm text-[var(--v4-text-muted)]">{theaterAspect} · {tmdbBackdrop ? '影片剧照' : '默认背景'}</p>
+              <p className="mt-0.5 text-sm font-medium text-[var(--v4-text-muted)]">{theaterAspect} · {tmdbBackdrop ? '影片剧照' : '默认背景'}</p>
             </div>
           </div>
 

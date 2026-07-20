@@ -38,3 +38,6 @@ next-env.d.ts
 
 # OS
 Thumbs.db
+
+# Local scratch / browser profiles / walkthrough fixtures
+tmp/

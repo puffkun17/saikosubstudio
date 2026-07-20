@@ -137,7 +137,7 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
                   )}
                 </div>
                 {config.subtitle && (
-                  <p className="mt-0.5 truncate text-[13px] text-[var(--v4-text-muted)]" title={config.subtitle}>
+                  <p className="mt-0.5 truncate text-[13px] font-medium text-[var(--v4-text-muted)]" title={config.subtitle}>
                     {config.subtitle}
                   </p>
                 )}
