@@ -339,7 +339,11 @@ export const TaskList: React.FC = () => {
     return raw || '字幕任务';
   })();
 
-  const identityBadge = activeTask?.epKey?.toUpperCase() || tmdbData?.year || undefined;
+  const identityBadge = activeTask?.epKey?.toUpperCase() || undefined;
+  const identitySubtitle = [
+    tmdbData?.year,
+    `字幕文件 · ${tasks.length} 个任务`,
+  ].filter(Boolean).join(' · ');
 
   useEffect(() => {
     if (!activeTask) {
@@ -349,7 +353,7 @@ export const TaskList: React.FC = () => {
     setInfoBar({
       title: identityTitle,
       badge: identityBadge,
-      subtitle: `字幕文件 · ${tasks.length} 个任务`,
+      subtitle: identitySubtitle,
       actions: (
         <>
           {pendingCancelUpload ? (
@@ -425,6 +429,7 @@ export const TaskList: React.FC = () => {
     activeTask,
     identityTitle,
     identityBadge,
+    identitySubtitle,
     tasks.length,
     pendingCancelUpload,
     pendingDeleteId,
@@ -524,12 +529,24 @@ export const TaskList: React.FC = () => {
                   const file = trackKey === 'zh' ? activeTask.zh : activeTask.en;
                   const isDropTarget = draggingTrack != null && draggingTrack !== trackKey && dropTargetTrack === trackKey;
                   const isDragging = draggingTrack === trackKey;
+                  // macOS 式让位：拖到对方上时，对方行滑进空位（固定行距，避免 render 读 ref）
+                  const ROW_SHIFT = 56;
+                  const liveShiftY = (() => {
+                    if (!draggingTrack || !dropTargetTrack || !isDropTarget || isDragging) return 0;
+                    return draggingTrack === 'zh' ? -ROW_SHIFT : ROW_SHIFT;
+                  })();
                   return (
-                    <div
+                    <motion.div
                       ref={rowRef}
-                      className={`flex flex-row items-center gap-1.5 overflow-visible rounded-xl transition-[background-color,box-shadow,opacity,transform] duration-150 ${
-                        isDropTarget ? 'bg-[var(--v4-accent-soft)] ring-1 ring-[var(--v4-accent)]/40 scale-[1.01]' : ''
-                      } ${isDragging ? 'opacity-35' : ''}`}
+                      animate={{
+                        y: liveShiftY,
+                        opacity: isDragging ? 0.28 : 1,
+                        scale: isDropTarget ? 1.01 : 1,
+                      }}
+                      transition={{ type: 'spring', stiffness: 420, damping: 32, mass: 0.7 }}
+                      className={`flex flex-row items-center gap-1.5 overflow-visible rounded-xl ${
+                        isDropTarget ? 'bg-[var(--v4-accent-soft)] ring-1 ring-[var(--v4-accent)]/40' : ''
+                      }`}
                     >
                       <span
                         role="button"
@@ -565,7 +582,7 @@ export const TaskList: React.FC = () => {
                         countLabel={file ? getSubTitleCount(file) : null}
                         placeholder={placeholder}
                       />
-                    </div>
+                    </motion.div>
                   );
                 };
 
