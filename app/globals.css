@@ -11,19 +11,19 @@
   --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", var(--font-geist-sans), system-ui, sans-serif;
   --font-serif: "Noto Serif SC", "Source Han Serif SC", "思源宋体", serif;
   --font-mono: var(--font-geist-mono), "SFMono-Regular", "Cascadia Mono", ui-monospace, monospace, "PingFang SC", "Microsoft YaHei";
-  --color-accent-neon: #dfe5f2;
-  --color-accent-glow: rgba(124, 141, 187, 0.14);
-  --color-accent-muted: #8e99b5;
-  --color-accent-emerald: #8fa3d1;
-  --color-accent-emerald-glow: rgba(124, 141, 187, 0.18);
-  --color-mint: #8fa3d1;
-  --color-mint-strong: #bcc8e4;
-  --color-mint-soft: rgba(124, 141, 187, 0.12);
-  --color-action: #8295c5;
-  --color-action-strong: #9dadd3;
-  --color-action-ink: #0c1019;
-  --color-action-soft: rgba(124, 141, 187, 0.14);
-  --color-action-glow: rgba(124, 141, 187, 0.22);
+  --color-accent-neon: #f5d0bc;
+  --color-accent-glow: rgba(239, 141, 95, 0.14);
+  --color-accent-muted: #d4a08a;
+  --color-accent-emerald: #ef8d5f;
+  --color-accent-emerald-glow: rgba(239, 141, 95, 0.18);
+  --color-mint: #ef8d5f;
+  --color-mint-strong: #f0a07a;
+  --color-mint-soft: rgba(239, 141, 95, 0.16);
+  --color-action: #ef8d5f;
+  --color-action-strong: #e07845;
+  --color-action-ink: #ffffff;
+  --color-action-soft: rgba(239, 141, 95, 0.16);
+  --color-action-glow: rgba(239, 141, 95, 0.22);
   --color-bg-dark: #090b10;
   --color-bg-base: #0d1016;
   --color-surface-base: rgba(255, 255, 255, 0.025);
@@ -1054,57 +1054,57 @@ button {
 
 /* Workflow attention: one strong, contextual cue instead of scattered alerts. */
 .action-required-surface {
-  border-color: rgba(130, 149, 197, 0.55) !important;
+  border-color: color-mix(in srgb, var(--v4-accent) 55%, transparent) !important;
   background:
-    linear-gradient(90deg, rgba(130, 149, 197, 0.12), rgba(130, 149, 197, 0.03) 38%, rgba(255, 255, 255, 0.018) 72%),
-    rgba(255, 255, 255, 0.018);
+    linear-gradient(90deg, var(--v4-accent-soft), color-mix(in srgb, var(--v4-accent-soft) 30%, transparent) 38%, transparent 72%),
+    var(--v4-panel-muted);
   box-shadow:
-    inset 3px 0 0 var(--color-action),
-    0 14px 30px rgba(0, 0, 0, 0.2);
+    inset 3px 0 0 var(--v4-accent),
+    0 14px 30px rgba(26, 61, 55, 0.08);
 }
 
 .action-required-marker {
-  background: var(--color-action);
-  box-shadow: 0 0 0 5px rgba(130, 149, 197, 0.1), 0 0 16px var(--color-action-glow);
+  background: var(--v4-accent);
+  box-shadow: 0 0 0 5px var(--v4-accent-soft), 0 0 16px var(--color-action-glow);
   animation: actionBeacon 2.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
 
 .action-required-button {
-  background: var(--color-action);
-  border: 1px solid rgba(167, 180, 214, 0.38);
-  color: var(--color-action-ink);
-  box-shadow: 0 8px 20px rgba(42, 52, 78, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: var(--v4-accent);
+  border: 1px solid color-mix(in srgb, var(--v4-accent-strong) 40%, transparent);
+  color: var(--v4-accent-ink);
+  box-shadow: 0 8px 20px rgba(224, 120, 69, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .action-required-button:hover {
-  background: var(--color-action-strong);
-  box-shadow: 0 10px 24px rgba(42, 52, 78, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  background: var(--v4-accent-strong);
+  box-shadow: 0 10px 24px rgba(224, 120, 69, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
 .action-required-button:focus-visible,
 .action-required-surface:focus-within {
-  outline: 2px solid rgba(157, 173, 211, 0.88);
+  outline: 2px solid color-mix(in srgb, var(--v4-accent) 80%, transparent);
   outline-offset: 3px;
 }
 
 .action-bypass-button {
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--v4-line);
+  background: var(--v4-panel-muted);
+  color: var(--v4-text-muted);
 }
 
 .action-bypass-button:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.075);
-  color: #ffffff;
+  border-color: var(--v4-line-strong);
+  background: var(--v4-panel);
+  color: var(--v4-text);
 }
 
 @keyframes actionBeacon {
   0%, 100% {
-    box-shadow: 0 0 0 5px rgba(130, 149, 197, 0.1), 0 0 15px rgba(130, 149, 197, 0.14);
+    box-shadow: 0 0 0 5px var(--v4-accent-soft), 0 0 15px rgba(239, 141, 95, 0.14);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(130, 149, 197, 0.035), 0 0 22px rgba(130, 149, 197, 0.22);
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--v4-accent-soft) 40%, transparent), 0 0 22px rgba(239, 141, 95, 0.22);
   }
 }
 
@@ -1247,23 +1247,20 @@ button {
 }
 
 .glass-btn-ar:hover {
-  background: rgba(255, 255, 255, 0.055);
-  color: rgba(255, 255, 255, 0.95);
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.025);
+  background: var(--v4-panel);
+  color: var(--v4-text);
+  border-color: var(--v4-line-strong);
 }
 
 .glass-btn-ar:active {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--v4-accent-soft);
 }
 
 .glass-btn-ar-active {
-  background: rgba(143, 163, 209, 0.1) !important;
-  border-color: rgba(143, 163, 209, 0.38) !important;
-  color: var(--color-mint-strong) !important;
-  box-shadow: 
-    inset 0 1px 0 rgba(195, 238, 227, 0.16),
-    0 0 16px rgba(143, 163, 209, 0.12) !important;
+  background: var(--v4-accent-soft) !important;
+  border-color: color-mix(in srgb, var(--v4-accent) 45%, transparent) !important;
+  color: var(--v4-accent-strong) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
 }
 
 /* Range input — Ridgeline cream panels */
