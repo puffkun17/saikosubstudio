@@ -31,6 +31,8 @@ export type SourceMatchReport = {
     distributionLabel: string;
   };
   activityCurve: number[];
+  /** 非对白 / 辅助字幕时间点（相对整条时间轴的比例位置 0-1） */
+  specialMarks: Array<{ position: number; kind: 'auxiliary' | 'sound' | 'screen' }>;
   findings: SourceMatchFinding[];
 };
 
@@ -63,6 +65,7 @@ export const createSourceMatchReport = (
         distributionLabel: '无时间轴',
       },
       activityCurve: Array.from({ length: 48 }, () => 0),
+      specialMarks: [],
       findings: [{
         id: 'empty',
         label: '缺少时间轴',
@@ -96,6 +99,25 @@ export const createSourceMatchReport = (
     (total, row) => total + (row.text || '').replace(/\{[^}]*\}/g, '').replace(/<[^>]*>/g, '').replace(/\s+/g, '').length,
     0
   );
+
+  const specialMarks: SourceMatchReport['specialMarks'] = [];
+  const seenMarkSlots = new Set<number>();
+  rows.forEach((row) => {
+    const isSound = row.cueKind === 'sound_caption' || row.auxiliary?.category === 'ambient_sdh';
+    const isScreen = row.cueKind === 'screen_text';
+    const isAux = Boolean(row.auxiliary) || row.cueKind === 'sound_caption' || row.cueKind === 'screen_text';
+    if (!isAux) return;
+    const startMs = parseSubtitleRange(row.ts).startMs;
+    const position = clamp(startMs / basisDuration, 0, 1);
+    const slot = Math.round(position * 80);
+    if (seenMarkSlots.has(slot)) return;
+    seenMarkSlots.add(slot);
+    specialMarks.push({
+      position,
+      kind: isSound ? 'sound' : isScreen ? 'screen' : 'auxiliary',
+    });
+  });
+
   const stats: SourceMatchReport['stats'] = {
     lineCount: ranges.length,
     characterCount,
@@ -253,6 +275,7 @@ export const createSourceMatchReport = (
     coverageRatio,
     stats,
     activityCurve,
+    specialMarks,
     findings,
   };
 };

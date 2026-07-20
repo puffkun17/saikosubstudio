@@ -25,9 +25,10 @@ const severityClass: Record<SourceMatchFinding['severity'], string> = {
 
 const getChartPath = (values: number[], width: number, height: number, offset = 0) => {
   if (values.length === 0) return '';
-  const step = width / Math.max(1, values.length - 1);
+  // 与跨度条共用 0→1 时间比例：每个 bin 中心映射到横轴，避免「波形看起来缩进、跨度条另算」
+  const binCount = values.length;
   return values.map((value, index) => {
-    const x = index * step;
+    const x = ((index + 0.5) / binCount) * width;
     const y = height - 10 - value * (height - 22) + offset;
     return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
   }).join(' ');
@@ -241,9 +242,9 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
               </div>
               <span className="shrink-0 tabular-nums">{report.stats.densityPerMinute} 行/分钟</span>
             </figcaption>
-            <div className="px-4">
+            <div className="relative">
               <div className="relative">
-                <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label={isMatchMode ? '片源覆盖与字幕活动图' : '字幕时间分布图'} className="h-[142px] w-full overflow-visible">
+                <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none" role="img" aria-label={isMatchMode ? '片源覆盖与字幕活动图' : '字幕时间分布图'} className="h-[142px] w-full overflow-visible">
                   <defs>
                     <linearGradient id="subtitleArea" x1="0" x2="0" y1="0" y2="1">
                       <stop offset="0%" stopColor="var(--v4-accent)" stopOpacity="0.24" />
@@ -261,6 +262,15 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                       strokeWidth="1"
                     />
                   ))}
+                  {/* 字幕跨度区间：与下方跨度条同一比例 */}
+                  <rect
+                    x={coverageStart * chartWidth}
+                    y="12"
+                    width={Math.max(1, (coverageEnd - coverageStart) * chartWidth)}
+                    height={chartHeight - 20}
+                    fill="var(--v4-accent)"
+                    opacity="0.04"
+                  />
                   <path d={subtitleArea} fill="url(#subtitleArea)" />
                   <motion.path
                     d={subtitlePath}
@@ -272,6 +282,20 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                     animate={{ pathLength: 1, opacity: 1 }}
                     transition={{ duration: 1.05, ease: 'easeOut', delay: 0.08 }}
                   />
+                  {report.specialMarks.map((mark, index) => (
+                    <line
+                      key={`mark-${index}`}
+                      x1={mark.position * chartWidth}
+                      x2={mark.position * chartWidth}
+                      y1={chartHeight - 18}
+                      y2={chartHeight - 6}
+                      stroke={mark.kind === 'sound' ? 'var(--v4-warning)' : 'var(--v4-text-faint)'}
+                      strokeWidth="1.5"
+                      strokeOpacity="0.85"
+                    >
+                      <title>{mark.kind === 'sound' ? '声音说明' : mark.kind === 'screen' ? '画面文字' : '辅助字幕'}</title>
+                    </line>
+                  ))}
                   {videoEnd !== undefined && videoEnd < 0.999 && (
                     <line
                       x1={videoEnd * chartWidth}
@@ -346,6 +370,22 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                       transition={{ duration: 0.6, ease: 'easeOut' }}
                     />
                   </div>
+                  {report.specialMarks.length > 0 && (
+                    <div className="pointer-events-none absolute inset-x-0 top-1.5 h-2">
+                      {report.specialMarks.map((mark, index) => (
+                        <span
+                          key={`span-mark-${index}`}
+                          className="absolute top-0 h-2 w-px"
+                          style={{
+                            left: `${mark.position * 100}%`,
+                            background: mark.kind === 'sound' ? 'var(--v4-warning)' : 'var(--v4-text-faint)',
+                            opacity: 0.9,
+                          }}
+                          title={mark.kind === 'sound' ? '声音说明' : mark.kind === 'screen' ? '画面文字' : '辅助字幕'}
+                        />
+                      ))}
+                    </div>
+                  )}
                   {videoEnd !== undefined && videoEnd < 0.999 && (
                     <span
                       className="absolute top-0 h-5 w-px bg-[var(--v4-warning)]"
@@ -354,11 +394,16 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                     />
                   )}
                   <motion.span
-                    className="absolute top-0 h-5 w-px bg-[var(--v4-accent-strong)] shadow-[0_0_8px_color-mix(in_srgb,var(--v4-accent)_45%,transparent)]"
+                    className="absolute top-0 h-5 w-px bg-[var(--v4-accent-strong)]"
                     animate={{ left: `${activePosition * 100}%` }}
                     transition={{ duration: 0.18, ease: 'easeOut' }}
                   />
                 </div>
+                {report.specialMarks.length > 0 && (
+                  <p className="mt-2 text-[11px] text-[var(--v4-text-faint)]">
+                    短竖线标记非对白节点（声音说明 / 画面文字 / 辅助字幕）
+                  </p>
+                )}
               </div>
             </div>
           </figure>
