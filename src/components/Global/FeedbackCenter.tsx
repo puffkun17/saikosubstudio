@@ -3,6 +3,7 @@
 import React from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { AlertTriangle, X } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 
@@ -31,7 +32,11 @@ export const FeedbackCenter: React.FC = () => {
     logs,
     statusNotices,
     dismissStatusNotice,
-  } = useStudioStore();
+  } = useStudioStore(useShallow((state) => ({
+    logs: state.logs,
+    statusNotices: state.statusNotices,
+    dismissStatusNotice: state.dismissStatusNotice,
+  })));
   const shouldReduceMotion = useReducedMotion();
 
   const floatingNotices = statusNotices.filter((notice) => !CONTEXTUAL_NOTICE_IDS.has(notice.id));

@@ -8,7 +8,9 @@ import { TheaterStep } from '@/components/TheaterStep';
 import { FeedbackCenter } from '@/components/Global/FeedbackCenter';
 
 export default function Home() {
-  const { workflowStep, initializeLibrary } = useStudioStore();
+  // 精确订阅：页面根组件绝不能整仓订阅，否则播放时钟每帧都会重渲染全树。
+  const workflowStep = useStudioStore((state) => state.workflowStep);
+  const initializeLibrary = useStudioStore((state) => state.initializeLibrary);
 
   useEffect(() => {
     initializeLibrary();

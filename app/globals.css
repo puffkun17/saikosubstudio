@@ -123,10 +123,13 @@
   --info-bar-h: 0px;
   --edge-next-w: 0px;
 
-  /* Stacking: nav < feedback < overlay/modal. Never mount modals inside nav. */
+  /* Stacking: nav < dim scrim < dropdown < feedback < overlay/modal. Never mount modals inside nav. */
   --z-raised: 10;
   --z-sticky: 40;
   --z-nav: 50;
+  /* 关灯模式遮罩：盖住双托盘与工作区，但让位于 dropdown/feedback/modal。 */
+  --z-dim: 60;
+  --z-dim-stage: 70;
   --z-dropdown: 80;
   --z-feedback: 90;
   --z-overlay: 200;
@@ -432,21 +435,57 @@ body {
   color: var(--v4-accent-strong);
   cursor: pointer;
   transition:
+    width var(--v4-dur) var(--v4-ease),
     background var(--v4-dur) var(--v4-ease),
     color var(--v4-dur) var(--v4-ease),
-    border-color var(--v4-dur) var(--v4-ease);
+    border-color var(--v4-dur) var(--v4-ease),
+    box-shadow var(--v4-dur) var(--v4-ease);
 }
 
-.workflow-edge-next:hover:not(:disabled) {
+/* One-shot ignition when the button becomes available (mount) — no infinite loop. */
+.workflow-edge-next::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    270deg,
+    color-mix(in srgb, var(--v4-accent) 26%, transparent),
+    transparent 70%
+  );
+  opacity: 0;
+  animation: edgeNextIgnite 1100ms var(--v4-ease) 1;
+}
+
+@keyframes edgeNextIgnite {
+  0% {
+    opacity: 0;
+  }
+  28% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Hover expands leftward over the content edge; label flips to horizontal. */
+.workflow-edge-next:hover:not(.is-disabled),
+.workflow-edge-next:focus-visible:not(.is-disabled) {
+  width: max(var(--edge-next-w), 10.5rem);
   background: color-mix(in srgb, var(--v4-accent-soft) 80%, var(--v4-canvas-raised));
   border-left-color: color-mix(in srgb, var(--v4-accent) 40%, var(--v4-line));
+  box-shadow: -20px 0 44px rgba(26, 61, 55, 0.14);
 }
 
-.workflow-edge-next.is-disabled,
-.workflow-edge-next:disabled {
+.workflow-edge-next.is-disabled {
   color: var(--v4-text-faint);
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+.workflow-edge-next.is-disabled::after {
+  animation: none;
 }
 
 .workflow-edge-next__rail {
@@ -466,6 +505,7 @@ body {
 .workflow-edge-next__glyph {
   display: grid;
   place-items: center;
+  transition: opacity var(--v4-dur-fast) var(--v4-ease);
 }
 
 .workflow-edge-next__label {
@@ -474,6 +514,36 @@ body {
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.14em;
+  transition: opacity var(--v4-dur-fast) var(--v4-ease);
+}
+
+/* Horizontal hover layer: fades in as the button widens. */
+.workflow-edge-next__expanded {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--v4-dur-fast) var(--v4-ease) 60ms;
+}
+
+.workflow-edge-next:hover:not(.is-disabled) .workflow-edge-next__expanded,
+.workflow-edge-next:focus-visible:not(.is-disabled) .workflow-edge-next__expanded {
+  opacity: 1;
+}
+
+.workflow-edge-next:hover:not(.is-disabled) .workflow-edge-next__label,
+.workflow-edge-next:hover:not(.is-disabled) .workflow-edge-next__glyph,
+.workflow-edge-next:focus-visible:not(.is-disabled) .workflow-edge-next__label,
+.workflow-edge-next:focus-visible:not(.is-disabled) .workflow-edge-next__glyph {
+  opacity: 0;
 }
 
 .soft-log-marquee {
@@ -684,6 +754,69 @@ body {
   animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Previously referenced but undefined — subtle fade for lyric layers etc. */
+.animate-fade-in {
+  animation: fadeIn var(--v5-dur) var(--v5-ease) both;
+}
+
+/* Dropdown enter (replaces the unwired tailwindcss-animate `animate-in` classes). */
+@keyframes dropdownPop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-pop {
+  animation: dropdownPop var(--v5-dur-fast) var(--v5-ease) both;
+}
+
+/* Previously referenced but undefined — Firefox thin scrollbars (WebKit handled globally). */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(26, 61, 55, 0.24) transparent;
+}
+
+/* Unified press feedback for every interactive control (framer whileTap wins if present). */
+button:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+button {
+  transition-property: transform;
+  transition-duration: var(--v5-dur-fast);
+  transition-timing-function: var(--v5-ease);
+}
+
+/* 关灯模式：全屏压暗层，盖过双托盘；放映区提到 --z-dim-stage 之上保持点亮。 */
+.lights-off-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dim);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: rgba(7, 11, 10, 0.9);
+}
+
+.lights-off-stage {
+  position: relative;
+  z-index: var(--z-dim-stage);
+}
+
 @keyframes subtitleMarquee {
   0%, 12% {
     transform: translateX(0);
@@ -715,7 +848,8 @@ body {
 
 .hover-marquee:hover .hover-marquee-content,
 .hover-marquee:focus-within .hover-marquee-content {
-  animation: subtitleMarquee 11s ease-in-out infinite;
+  /* 400ms 起步延迟：略过鼠标扫过，只在真正停留时开始滚动。 */
+  animation: subtitleMarquee 11s ease-in-out 0.4s infinite;
   will-change: transform;
 }
 

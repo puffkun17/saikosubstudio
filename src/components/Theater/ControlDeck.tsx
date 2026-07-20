@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { Captions, ChevronLeft, ChevronRight, Image as ImageIcon, Ratio } from 'lucide-react';
 import type { StyleSettings } from '@/utils/subtitleCore';
@@ -82,7 +83,17 @@ export const ControlDeck: React.FC = () => {
     tmdbBackdrop,
     tmdbBackdropList,
     shuffleBackdrop,
-  } = useStudioStore();
+  } = useStudioStore(useShallow((state) => ({
+    theaterAspect: state.theaterAspect,
+    setTheaterAspect: state.setTheaterAspect,
+    activePreset: state.activePreset,
+    setActivePreset: state.setActivePreset,
+    customStyle: state.customStyle,
+    setCustomStyle: state.setCustomStyle,
+    tmdbBackdrop: state.tmdbBackdrop,
+    tmdbBackdropList: state.tmdbBackdropList,
+    shuffleBackdrop: state.shuffleBackdrop,
+  })));
 
   const aspectIndex = Math.max(0, ASPECT_RATIOS.findIndex((item) => item.id === theaterAspect));
   const activeAspect = ASPECT_RATIOS[aspectIndex];
@@ -93,13 +104,11 @@ export const ControlDeck: React.FC = () => {
     setTheaterAspect(ASPECT_RATIOS[cycleIndex(aspectIndex, direction, ASPECT_RATIOS.length)].id);
   };
 
+  // 持久化统一走 store 的 persistStyles（setActivePreset / setCustomStyle 内部落盘），
+  // 不再在此直接写 localStorage —— 旧实现曾把用户自定义模板整表清空。
   const applyPreset = (preset: Preset) => {
     setActivePreset(preset.id);
-    const updated = { ...customStyle, ...preset.styles };
-    setCustomStyle(updated);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('nexus_subtitle_styles_v4', JSON.stringify({ preset: preset.id, style: updated, templates: [] }));
-    }
+    setCustomStyle({ ...customStyle, ...preset.styles });
   };
 
   const selectPreset = (direction: -1 | 1) => {

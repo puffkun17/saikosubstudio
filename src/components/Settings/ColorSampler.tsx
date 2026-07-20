@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { Pipette, ImageIcon, ShieldAlert } from 'lucide-react';
 
@@ -15,7 +16,13 @@ export const ColorSampler: React.FC = () => {
     refScreenshot, 
     setRefScreenshot, 
     addLog,
-  } = useStudioStore();
+  } = useStudioStore(useShallow((state) => ({
+    customStyle: state.customStyle,
+    setCustomStyle: state.setCustomStyle,
+    refScreenshot: state.refScreenshot,
+    setRefScreenshot: state.setRefScreenshot,
+    addLog: state.addLog,
+  })));
 
   const [overlayOpacity, setOverlayOpacity] = useState(0.5);
   const [pickColorTarget, setPickColorTarget] = useState<'zhColor' | 'zhOutline' | 'enColor'>('zhColor');

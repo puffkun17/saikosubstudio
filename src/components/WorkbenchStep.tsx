@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { SequenceList } from '@/components/Workbench/SequenceList';
 import { AlignmentDiffPanel } from '@/components/Workbench/AlignmentDiffPanel';
@@ -22,7 +23,15 @@ export const WorkbenchStep: React.FC = () => {
     selectedTaskId,
     isSettingsOpen,
     setIsSettingsOpen
-  } = useStudioStore();
+  } = useStudioStore(useShallow((state) => ({
+    processedSubs: state.processedSubs,
+    customFilename: state.customFilename,
+    setWorkflowStep: state.setWorkflowStep,
+    setProcessedSubs: state.setProcessedSubs,
+    selectedTaskId: state.selectedTaskId,
+    isSettingsOpen: state.isSettingsOpen,
+    setIsSettingsOpen: state.setIsSettingsOpen,
+  })));
   const { setInfoBar, setEdgeNext } = useWorkflowChrome();
 
   const [showBackConfirm, setShowBackConfirm] = useState(false);

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity } from '../utils/subtitleCore';
 import { estimateJsonBytes, readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
+import { tmdbFetch } from '../services/tmdb';
 
 const LIBRARY_STORAGE_KEY = 'nexus_subtitle_library';
 const STYLE_STORAGE_KEY = 'nexus_subtitle_styles_v4';
@@ -11,6 +12,23 @@ const fitLibraryToStorageBudget = (items: LibraryItem[]): LibraryItem[] => {
   const limited = items.slice(0, MAX_LIBRARY_ITEMS);
   while (limited.length > 1 && estimateJsonBytes(limited) > MAX_LIBRARY_BYTES) limited.pop();
   return limited;
+};
+
+/**
+ * 样式持久化唯一出口：preset / style / templates 三者始终一起落盘，
+ * 避免任何调用点单独覆盖（曾经 ControlDeck 写入 templates: [] 清空过用户模板）。
+ */
+const persistStyles = (state: {
+  activePreset: string;
+  customStyle: StyleSettings;
+  customTemplates: CustomTemplate[];
+}) => {
+  if (typeof window === 'undefined') return;
+  writeJsonStorage(STYLE_STORAGE_KEY, {
+    preset: state.activePreset,
+    style: state.customStyle,
+    templates: state.customTemplates,
+  });
 };
 
 export interface Subfile {
@@ -143,6 +161,12 @@ type CustomTemplate = {
   styles: StyleSettings;
 };
 
+type SubtitleEditRecord = {
+  index: number;
+  before: string;
+  after: string;
+};
+
 export interface StudioState {
   workflowStep: number;
   isIngestClearing: boolean;
@@ -190,6 +214,11 @@ export interface StudioState {
   detectedAttributions: SubtitleAttribution[];
   creatorCredit: string;
   appendCreatorCredit: boolean;
+  /** 放映厅关灯模式：压暗全局界面，只保留放映区。 */
+  isLightsOff: boolean;
+  /** 字幕文本编辑历史（跨组件持久，抽屉开关不丢栈）。 */
+  editHistory: SubtitleEditRecord[];
+  editFuture: SubtitleEditRecord[];
 
   // Actions
   setAlignmentMode: (mode: 'standard' | 'industrial') => void;
@@ -229,6 +258,11 @@ export interface StudioState {
   setActivePreset: (preset: string) => void;
   setProcessedSubs: (subs: SubRow[] | null) => void;
   updateSubtitleText: (index: number, text: string) => void;
+  /** 编辑并记录历史（供撤销/重做）。 */
+  editSubtitleText: (index: number, text: string) => void;
+  undoSubtitleEdit: () => void;
+  redoSubtitleEdit: () => void;
+  setLightsOff: (on: boolean) => void;
   setShowAllSubs: (show: boolean) => void;
   setShowAssHint: (val: boolean) => void;
   setTasks: (tasks: TaskPair[] | ((prev: TaskPair[]) => TaskPair[])) => void;
@@ -321,6 +355,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   detectedAttributions: [],
   creatorCredit: '',
   appendCreatorCredit: false,
+  isLightsOff: false,
+  editHistory: [],
+  editFuture: [],
 
   setAlignmentMode: (alignmentMode) => set({ alignmentMode }),
   setCreatorCredit: (creatorCredit) => set({ creatorCredit }),
@@ -385,25 +422,29 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     get().addLog("已更换背景图", "success");
   },
   setIsTemplateLab: (isTemplateLab) => set({ isTemplateLab }),
-  setCustomStyle: (customStyle) => set({ customStyle }),
-  saveCustomTemplate: (name) => set((state) => {
-    const newTemplate = { id: `tpl_${Date.now()}`, name, styles: state.customStyle };
-    const newTemplates = [...state.customTemplates, newTemplate];
-    if (typeof window !== 'undefined') {
-      const stored = readJsonStorage<Record<string, unknown>>(STYLE_STORAGE_KEY, {});
-      writeJsonStorage(STYLE_STORAGE_KEY, { ...stored, templates: newTemplates });
-    }
-    return { customTemplates: newTemplates, activePreset: newTemplate.id };
-  }),
-  deleteCustomTemplate: (id) => set((state) => {
-    const newTemplates = state.customTemplates.filter(t => t.id !== id);
-    if (typeof window !== 'undefined') {
-      const stored = readJsonStorage<Record<string, unknown>>(STYLE_STORAGE_KEY, {});
-      writeJsonStorage(STYLE_STORAGE_KEY, { ...stored, templates: newTemplates });
-    }
-    return { customTemplates: newTemplates, activePreset: state.activePreset === id ? 'classic' : state.activePreset };
-  }),
-  setActivePreset: (activePreset) => set({ activePreset }),
+  setCustomStyle: (customStyle) => {
+    set({ customStyle });
+    persistStyles(get());
+  },
+  saveCustomTemplate: (name) => {
+    set((state) => {
+      const newTemplate = { id: `tpl_${Date.now()}`, name, styles: state.customStyle };
+      const newTemplates = [...state.customTemplates, newTemplate];
+      return { customTemplates: newTemplates, activePreset: newTemplate.id };
+    });
+    persistStyles(get());
+  },
+  deleteCustomTemplate: (id) => {
+    set((state) => {
+      const newTemplates = state.customTemplates.filter(t => t.id !== id);
+      return { customTemplates: newTemplates, activePreset: state.activePreset === id ? 'classic' : state.activePreset };
+    });
+    persistStyles(get());
+  },
+  setActivePreset: (activePreset) => {
+    set({ activePreset });
+    persistStyles(get());
+  },
   setPreviewIndex: (previewIndex) => set({ previewIndex }),
   setPreviewClockMs: (previewClockMs) => set({ previewClockMs }),
   setIsPreviewPlaying: (isPreviewPlaying) => set({ isPreviewPlaying }),
@@ -461,6 +502,41 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
     set({ processedSubs: updated });
   },
+
+  editSubtitleText: (index, text) => {
+    const { processedSubs } = get();
+    const row = processedSubs?.find(s => s.index === index);
+    if (!row || row.text === text) return;
+    get().updateSubtitleText(index, text);
+    set(state => ({
+      editHistory: [...state.editHistory, { index, before: row.text, after: text }].slice(-50),
+      editFuture: [],
+    }));
+  },
+
+  undoSubtitleEdit: () => {
+    const { editHistory } = get();
+    const record = editHistory[editHistory.length - 1];
+    if (!record) return;
+    get().updateSubtitleText(record.index, record.before);
+    set(state => ({
+      editHistory: state.editHistory.slice(0, -1),
+      editFuture: [...state.editFuture, record],
+    }));
+  },
+
+  redoSubtitleEdit: () => {
+    const { editFuture } = get();
+    const record = editFuture[editFuture.length - 1];
+    if (!record) return;
+    get().updateSubtitleText(record.index, record.after);
+    set(state => ({
+      editFuture: state.editFuture.slice(0, -1),
+      editHistory: [...state.editHistory, record],
+    }));
+  },
+
+  setLightsOff: (isLightsOff) => set({ isLightsOff }),
   setShowAllSubs: (showAllSubs) => set({ showAllSubs }),
   setShowAssHint: (showAssHint) => set({ showAssHint }),
   setTasks: (tasks) => set(state => {
@@ -587,10 +663,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         endpoint: 'multi' | 'tv' | 'movie' = 'multi',
       ) => {
         const yearParam = endpoint === 'movie' && year ? `&year=${year}` : '';
-        const url = `/api/tmdb/search/${endpoint}?query=${encodeURIComponent(q)}&language=zh-CN${yearParam}`;
+        const url = `search/${endpoint}?query=${encodeURIComponent(q)}&language=zh-CN${yearParam}`;
         const cached = typeof window !== 'undefined' ? tmdbClientCache.get(url) : undefined;
         if (cached && cached.expiresAt > Date.now()) return cached.results;
-        const res = await fetch(url);
+        const res = await tmdbFetch(url);
         if (!res.ok) return [];
         const data = await res.json() as { results?: TmdbSuggestion[] };
         const searchResults = (data.results || [])
@@ -879,10 +955,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     
     try {
       const runSearchManual = async (q: string) => {
-        const url = `/api/tmdb/search/${type}?query=${encodeURIComponent(q)}&language=zh-CN${year ? `&year=${year}` : ''}`;
+        const url = `search/${type}?query=${encodeURIComponent(q)}&language=zh-CN${year ? `&year=${year}` : ''}`;
         const cached = typeof window !== 'undefined' ? tmdbClientCache.get(url) : undefined;
         if (cached && cached.expiresAt > Date.now()) return cached.results;
-        const res = await fetch(url);
+        const res = await tmdbFetch(url);
         if (!res.ok) return [];
         const data = await res.json() as { results?: TmdbSuggestion[] };
         const searchResults = data.results || [];
@@ -1040,8 +1116,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       if (!type) {
         type = (s.first_air_date || s.name || s.original_name) ? 'tv' : 'movie';
       }
-      const detailRes = await fetch(
-        `/api/tmdb/${type}/${s.id}?language=zh-CN&append_to_response=alternative_titles`
+      const detailRes = await tmdbFetch(
+        `${type}/${s.id}?language=zh-CN&append_to_response=alternative_titles`
       );
       if (!detailRes.ok) throw new Error("获取详情失败");
       const details = await detailRes.json() as TmdbDetails;
@@ -1063,17 +1139,17 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       // Fetch images list (stills if TV episode, backdrops if movie) for random immersive selection
       let backdrops: string[] = [];
       try {
-        let imagesUrl = `/api/tmdb/${type}/${s.id}/images`;
+        let imagesUrl = `${type}/${s.id}/images`;
         const activeTaskForEp = get().tasks.find(t => t.id === selectedTaskId);
         if (type === 'tv' && activeTaskForEp?.epKey) {
           const epMatch = activeTaskForEp.epKey.match(/S(\d+)E(\d+)/i);
           if (epMatch) {
             const seasonNum = parseInt(epMatch[1]);
             const episodeNum = parseInt(epMatch[2]);
-            imagesUrl = `/api/tmdb/tv/${s.id}/season/${seasonNum}/episode/${episodeNum}/images`;
+            imagesUrl = `tv/${s.id}/season/${seasonNum}/episode/${episodeNum}/images`;
           }
         }
-        const imgRes = await fetch(imagesUrl);
+        const imgRes = await tmdbFetch(imagesUrl);
         if (!isCurrentSelection()) return;
         if (imgRes.ok) {
           const imgData = await imgRes.json() as TmdbImages;
@@ -1414,7 +1490,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       foundAssStyle: null,
       isProcessing: false,
       statusNotices: [],
-      detectedAttributions: []
+      detectedAttributions: [],
+      editHistory: [],
+      editFuture: [],
+      isLightsOff: false
     });
     get().addLog("已取消本次导入", "info");
   },
@@ -1466,7 +1545,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       tmdbBackdropList: item.backdropList || (item.backdrop ? [item.backdrop] : []),
       customStyle: item.customStyle,
       previewIndex: 0,
-      workflowStep: 2
+      workflowStep: 2,
+      editHistory: [],
+      editFuture: []
     });
     get().addLog(`已载入字幕库项目: ${item.name}`, "success");
   },
@@ -1639,7 +1720,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const rawParsed = parseSubtitle(files.zh.text);
         const parsed: SubRow[] = normalizeSingleBilingualRows(rawParsed);
         
-        set({ processedSubs: parsed, previewIndex: 0, workflowStep: 2 });
+        set({ processedSubs: parsed, previewIndex: 0, workflowStep: 2, editHistory: [], editFuture: [] });
         get().addLog(`已成功加载原生双语字幕，共包含 ${parsed.length} 行流数据，并自动完成双语拆轨`, 'success');
       } else {
         // Standard double merge
@@ -1669,7 +1750,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
               },
             })
           : mergeSubtitles(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t));
-        set({ processedSubs: merged, previewIndex: 0, workflowStep: 2 });
+        set({ processedSubs: merged, previewIndex: 0, workflowStep: 2, editHistory: [], editFuture: [] });
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -1700,7 +1781,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       previewIndex: 0,
       processedSubs: null,
       showAllSubs: false,
-      detectedAttributions: []
+      detectedAttributions: [],
+      editHistory: [],
+      editFuture: [],
+      isLightsOff: false
     });
     get().addLog("已重启工作流，准备新导入", "info");
   }

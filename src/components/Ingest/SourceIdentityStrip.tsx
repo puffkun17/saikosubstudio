@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { Image as ImageIcon, Search, LoaderCircle, X, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,7 +20,16 @@ export const SourceIdentityStrip: React.FC = () => {
     setTmdbManualOpen,
     statusNotices,
     dismissStatusNotice,
-  } = useStudioStore();
+  } = useStudioStore(useShallow((state) => ({
+    tmdbData: state.tmdbData,
+    isSearchingTmdb: state.isSearchingTmdb,
+    customFilename: state.customFilename,
+    tasks: state.tasks,
+    selectedTaskId: state.selectedTaskId,
+    setTmdbManualOpen: state.setTmdbManualOpen,
+    statusNotices: state.statusNotices,
+    dismissStatusNotice: state.dismissStatusNotice,
+  })));
 
   const activeTask = tasks.find((task) => task.id === selectedTaskId) || tasks[0];
   const optimisticTitle = customFilename || activeTask?.title || '待匹配影片';

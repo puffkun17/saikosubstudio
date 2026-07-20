@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { isLyricText } from '@/utils/subtitleCore';
 import type { SubRow } from '@/utils/subtitleCore';
@@ -12,12 +13,34 @@ interface SequenceListProps {
 }
 
 export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }) => {
-  const { processedSubs, previewIndex, setPreviewIndex, setJumpLineVal, showAllSubs, setShowAllSubs, updateSubtitleText } = useStudioStore();
+  const {
+    processedSubs,
+    previewIndex,
+    setPreviewIndex,
+    setJumpLineVal,
+    showAllSubs,
+    setShowAllSubs,
+    editSubtitleText,
+    undoSubtitleEdit,
+    redoSubtitleEdit,
+    canUndo,
+    canRedo,
+  } = useStudioStore(useShallow((state) => ({
+    processedSubs: state.processedSubs,
+    previewIndex: state.previewIndex,
+    setPreviewIndex: state.setPreviewIndex,
+    setJumpLineVal: state.setJumpLineVal,
+    showAllSubs: state.showAllSubs,
+    setShowAllSubs: state.setShowAllSubs,
+    editSubtitleText: state.editSubtitleText,
+    undoSubtitleEdit: state.undoSubtitleEdit,
+    redoSubtitleEdit: state.redoSubtitleEdit,
+    canUndo: state.editHistory.length > 0,
+    canRedo: state.editFuture.length > 0,
+  })));
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [draftZh, setDraftZh] = useState('');
   const [draftSecondary, setDraftSecondary] = useState('');
-  const [undoStack, setUndoStack] = useState<Array<{ index: number; before: string; after: string }>>([]);
-  const [redoStack, setRedoStack] = useState<Array<{ index: number; before: string; after: string }>>([]);
   const listRef = useRef<HTMLDivElement>(null);
   const prevIndexRef = useRef<number>(-1);
 
@@ -75,32 +98,19 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
 
   const commitEditing = () => {
     if (editingIndex === null || !processedSubs) return;
-    const row = processedSubs.find(item => item.index === editingIndex);
-    if (!row) return;
     const nextText = draftSecondary.trim().length > 0 ? `${draftZh}\n${draftSecondary}` : draftZh;
-    if (nextText !== row.text) {
-      updateSubtitleText(editingIndex, nextText);
-      setUndoStack(current => [...current, { index: editingIndex, before: row.text, after: nextText }].slice(-50));
-      setRedoStack([]);
-    }
+    // 历史栈由 store 维护（editHistory / editFuture），组件卸载后依然可撤销。
+    editSubtitleText(editingIndex, nextText);
     cancelEditing();
   };
 
   const undoEdit = () => {
-    const record = undoStack[undoStack.length - 1];
-    if (!record) return;
-    updateSubtitleText(record.index, record.before);
-    setUndoStack(current => current.slice(0, -1));
-    setRedoStack(current => [...current, record]);
+    undoSubtitleEdit();
     cancelEditing();
   };
 
   const redoEdit = () => {
-    const record = redoStack[redoStack.length - 1];
-    if (!record) return;
-    updateSubtitleText(record.index, record.after);
-    setRedoStack(current => current.slice(0, -1));
-    setUndoStack(current => [...current, record]);
+    redoSubtitleEdit();
     cancelEditing();
   };
 
@@ -110,12 +120,13 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
       const target = event.target as HTMLElement | null;
       if (target?.matches('input, textarea, select, [contenteditable="true"]')) return;
       event.preventDefault();
-      if (event.shiftKey) redoEdit();
-      else undoEdit();
+      setEditingIndex(null);
+      if (event.shiftKey) redoSubtitleEdit();
+      else undoSubtitleEdit();
     };
     document.addEventListener('keydown', handleHistoryShortcut);
     return () => document.removeEventListener('keydown', handleHistoryShortcut);
-  });
+  }, [redoSubtitleEdit, undoSubtitleEdit]);
 
   const total = processedSubs?.length ?? 0;
   const isOverlimit = total > THRESHOLD;
@@ -146,10 +157,10 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               )}
             </div>
               <div className="flex shrink-0 items-center gap-1.5">
-                <button type="button" onClick={undoEdit} disabled={undoStack.length === 0} className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] disabled:cursor-not-allowed disabled:opacity-25" aria-label="撤销字幕文本修改" title="撤销">
+                <button type="button" onClick={undoEdit} disabled={!canUndo} className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] disabled:cursor-not-allowed disabled:opacity-25" aria-label="撤销字幕文本修改" title="撤销 (Ctrl+Z)">
                   <Undo2 className="h-4 w-4" aria-hidden="true" />
                 </button>
-                <button type="button" onClick={redoEdit} disabled={redoStack.length === 0} className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] disabled:cursor-not-allowed disabled:opacity-25" aria-label="重做字幕文本修改" title="重做">
+                <button type="button" onClick={redoEdit} disabled={!canRedo} className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] disabled:cursor-not-allowed disabled:opacity-25" aria-label="重做字幕文本修改" title="重做 (Ctrl+Shift+Z)">
                   <Redo2 className="h-4 w-4" aria-hidden="true" />
                 </button>
                 {hasMore && (

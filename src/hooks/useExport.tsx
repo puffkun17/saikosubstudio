@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, SquareArrowRightExit } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { appendCreatorCredit as appendCreatorCreditCue, applyAuxiliarySubtitleMode, generateSrtContent, generateAssContent } from '@/utils/subtitleCore';
 
@@ -9,7 +10,14 @@ import { appendCreatorCredit as appendCreatorCreditCue, applyAuxiliarySubtitleMo
  * #16 — Shared export hook to avoid duplication in WorkbenchStep + TheaterStep
  */
 export const useExport = () => {
-  const { processedSubs, customFilename, customStyle, creatorCredit, appendCreatorCredit, addLog } = useStudioStore();
+  const { processedSubs, customFilename, customStyle, creatorCredit, appendCreatorCredit, addLog } = useStudioStore(useShallow((state) => ({
+    processedSubs: state.processedSubs,
+    customFilename: state.customFilename,
+    customStyle: state.customStyle,
+    creatorCredit: state.creatorCredit,
+    appendCreatorCredit: state.appendCreatorCredit,
+    addLog: state.addLog,
+  })));
 
   const handleDownload = (format: 'ass' | 'srt') => {
     if (!processedSubs || processedSubs.length === 0) return;
@@ -108,7 +116,7 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-[110] mt-1.5 min-w-[160px] overflow-hidden rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] shadow-[0_16px_40px_rgba(26,61,55,0.14)] animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="dropdown-pop absolute right-0 top-full z-[110] mt-1.5 min-w-[160px] overflow-hidden rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] shadow-[0_16px_40px_rgba(26,61,55,0.14)]">
           <button
             className="w-full py-3 px-4 text-xs font-semibold hover:bg-[var(--v4-accent-soft)] text-left border-b border-[var(--v4-line)] transition text-[var(--v4-text-muted)] hover:text-[var(--v4-text)] flex items-center gap-2 cursor-pointer"
             onClick={() => { handleDownload('ass'); setOpen(false); }}

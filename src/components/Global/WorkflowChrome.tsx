@@ -10,10 +10,13 @@ import React, {
 } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { useStudioStore } from '@/store/useStudioStore';
 
 export type EdgeNextConfig = {
   label: string;
   disabled?: boolean;
+  /** 置灰时点按给出的原因提示（走 statusNotice，而不是无响应）。 */
+  disabledReason?: string;
   onClick: () => void;
 } | null;
 
@@ -152,28 +155,46 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
   );
 };
 
+/**
+ * 通往下一步的右缘按钮。
+ * 事件驱动动效：挂载时一次性「点亮」（CSS edgeNextIgnite），不做循环晃动；
+ * hover 向左展开为横排标签；置灰时点按给出原因提示而非静默。
+ */
 const WorkflowEdgeNext: React.FC<{ config: EdgeNextConfig }> = ({ config }) => {
-  const shouldReduceMotion = useReducedMotion();
+  const setStatusNotice = useStudioStore((state) => state.setStatusNotice);
   if (!config) return null;
+
+  const handleClick = () => {
+    if (config.disabled) {
+      setStatusNotice({
+        id: 'edge-next-blocked',
+        tone: 'notice',
+        title: '暂时无法继续',
+        message: config.disabledReason || '请先完成当前步骤的必要操作。',
+      });
+      return;
+    }
+    config.onClick();
+  };
 
   return (
     <button
       type="button"
-      disabled={config.disabled}
-      onClick={config.onClick}
+      aria-disabled={config.disabled || undefined}
+      onClick={handleClick}
       aria-label={config.label}
       title={config.label}
       className={`workflow-edge-next v4-focus-ring ${config.disabled ? 'is-disabled' : ''}`}
     >
       <span className="workflow-edge-next__rail" aria-hidden="true" />
-      <motion.span
-        className="workflow-edge-next__glyph"
-        animate={shouldReduceMotion || config.disabled ? undefined : { x: [0, 3, 0] }}
-        transition={shouldReduceMotion || config.disabled ? undefined : { duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-      >
+      <span className="workflow-edge-next__glyph">
         <ChevronRight className="h-5 w-5" strokeWidth={2.25} />
-      </motion.span>
+      </span>
       <span className="workflow-edge-next__label">{config.label}</span>
+      <span className="workflow-edge-next__expanded" aria-hidden="true">
+        {config.label}
+        <ChevronRight className="h-[18px] w-[18px]" strokeWidth={2.5} />
+      </span>
     </button>
   );
 };

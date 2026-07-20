@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pause, Play } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 
@@ -70,7 +71,19 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
     setPreviewClockMs,
     isPreviewPlaying,
     setIsPreviewPlaying,
-  } = useStudioStore();
+  } = useStudioStore(useShallow((state) => ({
+    processedSubs: state.processedSubs,
+    previewIndex: state.previewIndex,
+    jumpLineVal: state.jumpLineVal,
+    setJumpLineVal: state.setJumpLineVal,
+    setPreviewIndex: state.setPreviewIndex,
+    showAllSubs: state.showAllSubs,
+    setShowAllSubs: state.setShowAllSubs,
+    previewClockMs: state.previewClockMs,
+    setPreviewClockMs: state.setPreviewClockMs,
+    isPreviewPlaying: state.isPreviewPlaying,
+    setIsPreviewPlaying: state.setIsPreviewPlaying,
+  })));
   const [scrubTimeMs, setScrubTimeMs] = useState<number | null>(null);
   const isPointerScrubbing = useRef(false);
   const playStartedAtRef = useRef(0);

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
 import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
@@ -198,7 +199,13 @@ const describeTrack = (file: Subfile) => {
 };
 
 export const DragZone: React.FC = () => {
-  const { isDragging, setIsDragging, processFiles, addLog, setIngestClearing } = useStudioStore();
+  const { isDragging, setIsDragging, processFiles, addLog, setIngestClearing } = useStudioStore(useShallow((state) => ({
+    isDragging: state.isDragging,
+    setIsDragging: state.setIsDragging,
+    processFiles: state.processFiles,
+    addLog: state.addLog,
+    setIngestClearing: state.setIngestClearing,
+  })));
   const { setEdgeNext, setInfoBar } = useWorkflowChrome();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -724,6 +731,7 @@ export const DragZone: React.FC = () => {
     setEdgeNext({
       label: '下一步',
       disabled,
+      disabledReason: queueIssue || '清单中暂无可整理的字幕文件，移除无效项或补充文件后继续。',
       onClick: () => {
         if (disabled) return;
         void handleFilesProcess(files);

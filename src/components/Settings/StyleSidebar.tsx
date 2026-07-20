@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { applyAuxiliarySubtitleMode, type StyleSettings } from '@/utils/subtitleCore';
 import { ALargeSmall, ChevronDown, ChevronUp, FileType, Paintbrush, Pipette, Save, SlidersHorizontal, SquareArrowRightExit, SquareCenterlineDashedHorizontal, Trash2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { InfoHint } from '@/components/ui/InfoHint';
+import { ColorSampler } from '@/components/Settings/ColorSampler';
 
 const PRESET_COLORS = ['#FFFFFF', '#E0E0E0', '#B0B0B0', '#9CAFB8', '#A8B7A3', '#B9A7B5', '#C0A89A', '#7F8C8D', '#000000'];
 
@@ -206,7 +208,20 @@ export const StyleSidebar: React.FC = () => {
     saveCustomTemplate,
     deleteCustomTemplate,
     setIsSettingsOpen,
-  } = useStudioStore();
+  } = useStudioStore(useShallow((state) => ({
+    processedSubs: state.processedSubs,
+    customStyle: state.customStyle,
+    setCustomStyle: state.setCustomStyle,
+    activePreset: state.activePreset,
+    setActivePreset: state.setActivePreset,
+    showGuides: state.showGuides,
+    setShowGuides: state.setShowGuides,
+    triggerTempGuides: state.triggerTempGuides,
+    customTemplates: state.customTemplates,
+    saveCustomTemplate: state.saveCustomTemplate,
+    deleteCustomTemplate: state.deleteCustomTemplate,
+    setIsSettingsOpen: state.setIsSettingsOpen,
+  })));
 
   const [showTemplateSave, setShowTemplateSave] = useState(false);
   const [templateNameInput, setTemplateNameInput] = useState('');
@@ -255,24 +270,16 @@ export const StyleSidebar: React.FC = () => {
       zhFontFamily: 'system-ui, "PingFang SC", "Noto Sans SC", sans-serif',
       enFontFamily: 'Helvetica Neue, Arial, "Inter", sans-serif'
     };
+    // 持久化由 store 的 persistStyles 统一处理，这里不再直接写 localStorage。
     setCustomStyle(defaultStyle);
-    if (typeof window !== 'undefined') {
-      const stored = JSON.parse(localStorage.getItem('nexus_subtitle_styles_v4') || '{}');
-      localStorage.setItem('nexus_subtitle_styles_v4', JSON.stringify({ ...stored, preset: 'classic', style: defaultStyle }));
-    }
   };
 
   const handleStyleChange = <K extends keyof StyleSettings>(key: K, value: StyleSettings[K]) => {
     setActivePreset('custom');
-    const updated = {
+    setCustomStyle({
       ...customStyle,
       [key]: value
-    };
-    setCustomStyle(updated);
-    if (typeof window !== 'undefined') {
-      const stored = JSON.parse(localStorage.getItem('nexus_subtitle_styles_v4') || '{}');
-      localStorage.setItem('nexus_subtitle_styles_v4', JSON.stringify({ ...stored, preset: 'custom', style: updated }));
-    }
+    });
   };
 
   const handleSaveTemplate = () => {
@@ -424,7 +431,15 @@ export const StyleSidebar: React.FC = () => {
 
         {activePanel === 'type' && (
           <>
-        <SettingSection title="文字尺寸" icon={<ALargeSmall className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}>
+        <SettingSection
+          title="文字尺寸"
+          icon={<ALargeSmall className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}
+          action={
+            <InfoHint label="尺寸单位说明" side="left">
+              数值为字幕参考单位（以 288 高的参考画布计），导出时会按「输出」页的画面规格自动换算，预览所见即最终比例。
+            </InfoHint>
+          }
+        >
           <SliderControl
             label="整体缩放"
             value={customStyle.globalScale ?? 1}
@@ -440,7 +455,7 @@ export const StyleSidebar: React.FC = () => {
             value={customStyle.zhFontSize}
             min={12}
             max={36}
-            suffix="px"
+            suffix=""
             onChange={value => handleStyleChange('zhFontSize', value)}
           />
           <SliderControl
@@ -448,7 +463,7 @@ export const StyleSidebar: React.FC = () => {
             value={customStyle.enFontSize}
             min={8}
             max={24}
-            suffix="px"
+            suffix=""
             onChange={value => handleStyleChange('enFontSize', value)}
           />
           <SliderControl
@@ -456,7 +471,7 @@ export const StyleSidebar: React.FC = () => {
             value={customStyle.marginV}
             min={10}
             max={60}
-            suffix="px"
+            suffix=""
             onChange={value => {
               handleStyleChange('marginV', value);
               triggerTempGuides();
@@ -508,6 +523,7 @@ export const StyleSidebar: React.FC = () => {
             onToggle={() => setOpenPicker(openPicker === 'enOutline' ? null : 'enOutline')}
             onChange={(c) => handleStyleChange('enOutline', c)}
           />
+          <ColorSampler />
         </SettingSection>
           </>
         )}
@@ -599,7 +615,7 @@ export const StyleSidebar: React.FC = () => {
                       value={customStyle.lyricFontSize ?? 16}
                       min={10}
                       max={30}
-                      suffix="px"
+                      suffix=""
                       onChange={value => handleStyleChange('lyricFontSize', value)}
                     />
                     <ColorPicker
