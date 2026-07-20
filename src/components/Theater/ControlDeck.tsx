@@ -3,7 +3,7 @@
 import React from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
-import { Captions, ChevronLeft, ChevronRight, Image as ImageIcon, Ratio } from 'lucide-react';
+import { Captions, Image as ImageIcon, Ratio, Shuffle } from 'lucide-react';
 import type { StyleSettings } from '@/utils/subtitleCore';
 
 type Preset = {
@@ -26,50 +26,50 @@ const ASPECT_RATIOS = [
   { id: '1.9:1', label: 'IMAX', description: '沉浸画幅' },
 ];
 
-const cycleIndex = (current: number, direction: -1 | 1, total: number) => (current + direction + total) % total;
-
-interface DialControlProps {
+interface SegmentGroupProps {
   label: string;
-  value: string;
-  description: string;
   icon: React.ReactNode;
-  onPrevious?: () => void;
-  onNext?: () => void;
+  children: React.ReactNode;
+  trailing?: React.ReactNode;
+}
+
+const SegmentGroup = ({ label, icon, children, trailing }: SegmentGroupProps) => (
+  <section className="flex min-w-0 flex-col gap-2 px-3 py-2.5 sm:px-4">
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-accent-strong)]">
+          {icon}
+        </span>
+        <p className="text-xs font-semibold tracking-wide text-[var(--v4-text-muted)]">{label}</p>
+      </div>
+      {trailing}
+    </div>
+    <div className="flex flex-wrap gap-1.5">{children}</div>
+  </section>
+);
+
+interface SegmentProps {
+  active: boolean;
+  label: string;
+  hint?: string;
+  onClick: () => void;
   disabled?: boolean;
 }
 
-const DialControl = ({ label, value, description, icon, onPrevious, onNext, disabled = false }: DialControlProps) => (
-  <section className="flex min-w-[220px] items-center gap-3 px-4 py-3">
-    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-accent-strong)]">
-      {icon}
-    </div>
-    <div className="min-w-0 flex-1">
-      <p className="text-xs font-medium text-[var(--v4-text-muted)]">{label}</p>
-      <p className="truncate text-sm font-semibold text-[var(--v4-text)]" title={description}>{value}</p>
-    </div>
-    {(onPrevious || onNext) && (
-      <div className="flex shrink-0 overflow-hidden rounded-md border border-[var(--v4-line)] bg-[var(--v4-canvas)]">
-        <button
-          type="button"
-          onClick={onPrevious}
-          disabled={disabled}
-          className="grid h-8 w-8 place-items-center text-[var(--v4-text-muted)] transition-colors hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] disabled:cursor-default disabled:opacity-35"
-          aria-label={`上一项：${label}`}
-        >
-          <ChevronLeft className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={disabled}
-          className="grid h-8 w-8 place-items-center border-l border-[var(--v4-line)] text-[var(--v4-text-muted)] transition-colors hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] disabled:cursor-default disabled:opacity-35"
-          aria-label={`下一项：${label}`}
-        >
-          <ChevronRight className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />
-        </button>
-      </div>
-    )}
-  </section>
+const Segment = ({ active, label, hint, onClick, disabled = false }: SegmentProps) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    title={hint}
+    aria-pressed={active}
+    className={`v4-focus-ring inline-flex h-8 items-center rounded-md px-2.5 text-xs font-semibold transition-colors disabled:cursor-default disabled:opacity-40
+      ${active
+        ? 'bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)] ring-1 ring-[var(--v4-accent)]/35'
+        : 'bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]'}`}
+  >
+    {label}
+  </button>
 );
 
 export const ControlDeck: React.FC = () => {
@@ -82,6 +82,7 @@ export const ControlDeck: React.FC = () => {
     setCustomStyle,
     tmdbBackdrop,
     tmdbBackdropList,
+    setTmdbBackdrop,
     shuffleBackdrop,
   } = useStudioStore(useShallow((state) => ({
     theaterAspect: state.theaterAspect,
@@ -92,17 +93,9 @@ export const ControlDeck: React.FC = () => {
     setCustomStyle: state.setCustomStyle,
     tmdbBackdrop: state.tmdbBackdrop,
     tmdbBackdropList: state.tmdbBackdropList,
+    setTmdbBackdrop: state.setTmdbBackdrop,
     shuffleBackdrop: state.shuffleBackdrop,
   })));
-
-  const aspectIndex = Math.max(0, ASPECT_RATIOS.findIndex((item) => item.id === theaterAspect));
-  const activeAspect = ASPECT_RATIOS[aspectIndex];
-  const presetIndex = Math.max(0, PRESETS.findIndex((item) => item.id === activePreset));
-  const activeStylePreset = PRESETS[presetIndex];
-
-  const selectAspect = (direction: -1 | 1) => {
-    setTheaterAspect(ASPECT_RATIOS[cycleIndex(aspectIndex, direction, ASPECT_RATIOS.length)].id);
-  };
 
   // 持久化统一走 store 的 persistStyles（setActivePreset / setCustomStyle 内部落盘），
   // 不再在此直接写 localStorage —— 旧实现曾把用户自定义模板整表清空。
@@ -111,37 +104,81 @@ export const ControlDeck: React.FC = () => {
     setCustomStyle({ ...customStyle, ...preset.styles });
   };
 
-  const selectPreset = (direction: -1 | 1) => {
-    applyPreset(PRESETS[cycleIndex(presetIndex, direction, PRESETS.length)]);
-  };
+  const hasBackdropPool = tmdbBackdropList.length > 0;
+  const canShuffleBackdrop = tmdbBackdropList.length > 1;
 
   return (
-    <div className="v4-panel-muted grid w-full divide-y divide-[var(--v4-line)] overflow-hidden rounded-lg sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-3">
-      <DialControl
+    <div className="v4-panel-muted grid w-full divide-y divide-[var(--v4-line)] overflow-hidden rounded-lg lg:grid-cols-3 lg:divide-x lg:divide-y-0">
+      <SegmentGroup
         label="画幅比例"
-        value={activeAspect.label}
-        description={activeAspect.description}
-        icon={<Ratio className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />}
-        onPrevious={() => selectAspect(-1)}
-        onNext={() => selectAspect(1)}
-      />
-      <DialControl
+        icon={<Ratio className="h-3.5 w-3.5 stroke-[2.25]" aria-hidden="true" />}
+      >
+        {ASPECT_RATIOS.map((item) => (
+          <Segment
+            key={item.id}
+            active={theaterAspect === item.id}
+            label={item.label}
+            hint={item.description}
+            onClick={() => setTheaterAspect(item.id)}
+          />
+        ))}
+      </SegmentGroup>
+
+      <SegmentGroup
         label="预览画面"
-        value={tmdbBackdrop ? '影片剧照' : '默认背景'}
-        description={tmdbBackdrop ? '已使用影片剧照' : '未匹配影片时的默认背景'}
-        icon={<ImageIcon className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />}
-        onPrevious={tmdbBackdropList.length > 1 ? shuffleBackdrop : undefined}
-        onNext={tmdbBackdropList.length > 1 ? shuffleBackdrop : undefined}
-        disabled={tmdbBackdropList.length <= 1}
-      />
-      <DialControl
+        icon={<ImageIcon className="h-3.5 w-3.5 stroke-[2.25]" aria-hidden="true" />}
+        trailing={
+          canShuffleBackdrop && tmdbBackdrop ? (
+            <button
+              type="button"
+              onClick={shuffleBackdrop}
+              className="v4-focus-ring inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-semibold text-[var(--v4-text-muted)] transition-colors hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-accent-strong)]"
+              title="换一张剧照"
+              aria-label="换一张剧照"
+            >
+              <Shuffle className="h-3 w-3" aria-hidden="true" />
+              换一张
+            </button>
+          ) : null
+        }
+      >
+        <Segment
+          active={!tmdbBackdrop}
+          label="默认背景"
+          hint="默认影院画面"
+          onClick={() => setTmdbBackdrop(null)}
+        />
+        <Segment
+          active={Boolean(tmdbBackdrop)}
+          label="影片剧照"
+          hint={hasBackdropPool ? '使用匹配影片的剧照' : '匹配影片后可用'}
+          onClick={() => {
+            if (!hasBackdropPool) return;
+            if (!tmdbBackdrop) setTmdbBackdrop(tmdbBackdropList[0]);
+          }}
+          disabled={!hasBackdropPool}
+        />
+        {hasBackdropPool && (
+          <span className="self-center text-[11px] font-medium text-[var(--v4-text-faint)]">
+            {tmdbBackdropList.length} 张
+          </span>
+        )}
+      </SegmentGroup>
+
+      <SegmentGroup
         label="字幕预设"
-        value={activeStylePreset.name}
-        description={activeStylePreset.desc}
-        icon={<Captions className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />}
-        onPrevious={() => selectPreset(-1)}
-        onNext={() => selectPreset(1)}
-      />
+        icon={<Captions className="h-3.5 w-3.5 stroke-[2.25]" aria-hidden="true" />}
+      >
+        {PRESETS.map((preset) => (
+          <Segment
+            key={preset.id}
+            active={activePreset === preset.id}
+            label={preset.name}
+            hint={preset.desc}
+            onClick={() => applyPreset(preset)}
+          />
+        ))}
+      </SegmentGroup>
     </div>
   );
 };

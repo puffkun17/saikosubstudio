@@ -69,6 +69,23 @@ export const useExport = () => {
   return { handleDownload };
 };
 
+const EXPORT_OPTIONS = [
+  {
+    format: 'ass' as const,
+    badge: 'ASS',
+    title: '高级字幕',
+    description: '保留字体、颜色与样式，推荐本地播放',
+    emphasized: true,
+  },
+  {
+    format: 'srt' as const,
+    badge: 'SRT',
+    title: '纯文本字幕',
+    description: '兼容性最好，不带样式信息',
+    emphasized: false,
+  },
+];
+
 /**
  * #9 — Export dropdown that closes on outside click
  */
@@ -98,8 +115,10 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
     return () => document.removeEventListener('keydown', handler);
   }, [open]);
 
-  const primaryClass = 'v4-focus-ring flex h-10 cursor-pointer items-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3.5 text-sm font-semibold text-[var(--v4-text)] transition-colors hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)]';
-  const ghostClass = primaryClass;
+  const primaryClass =
+    'v4-focus-ring flex h-10 cursor-pointer items-center gap-2 rounded-md border border-[var(--v4-accent)]/35 bg-[var(--v4-accent-soft)] px-3.5 text-sm font-semibold text-[var(--v4-accent-strong)] shadow-[0_1px_0_rgba(255,255,255,0.35)_inset] transition-colors hover:bg-[var(--v4-accent)]/18 hover:border-[var(--v4-accent)]/55';
+  const ghostClass =
+    'v4-focus-ring flex h-10 cursor-pointer items-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3.5 text-sm font-semibold text-[var(--v4-text)] transition-colors hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)]';
 
   return (
     <div className="relative" ref={ref}>
@@ -108,29 +127,53 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
         className={variant === 'primary' ? primaryClass : ghostClass}
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        aria-haspopup="true"
+        aria-haspopup="menu"
       >
-        <SquareArrowRightExit className="w-3.5 h-3.5 text-[var(--v4-accent-strong)]" aria-hidden="true" />
-        导出
-        <ChevronDown className="w-3 h-3 text-[var(--v4-text-faint)]" aria-hidden="true" />
+        <SquareArrowRightExit className="h-3.5 w-3.5" aria-hidden="true" />
+        导出字幕
+        <ChevronDown
+          className={`h-3.5 w-3.5 opacity-70 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          aria-hidden="true"
+        />
       </button>
 
       {open && (
-        <div className="dropdown-pop absolute right-0 top-full z-[110] mt-1.5 min-w-[160px] overflow-hidden rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] shadow-[0_16px_40px_rgba(26,61,55,0.14)]">
-          <button
-            className="w-full py-3 px-4 text-xs font-semibold hover:bg-[var(--v4-accent-soft)] text-left border-b border-[var(--v4-line)] transition text-[var(--v4-text-muted)] hover:text-[var(--v4-text)] flex items-center gap-2 cursor-pointer"
-            onClick={() => { handleDownload('ass'); setOpen(false); }}
-          >
-            <span className="font-mono text-[var(--v4-accent-strong)] text-xs bg-[var(--v4-accent-soft)] border border-[var(--v4-accent)]/20 px-1.5 py-0.5 rounded">ASS</span>
-            导出 ASS
-          </button>
-          <button
-            className="w-full py-3 px-4 text-xs font-semibold hover:bg-[var(--v4-accent-soft)] text-left transition text-[var(--v4-text-muted)] hover:text-[var(--v4-text)] flex items-center gap-2 cursor-pointer"
-            onClick={() => { handleDownload('srt'); setOpen(false); }}
-          >
-            <span className="font-mono text-[var(--v4-text-faint)] text-xs bg-[var(--v4-panel-muted)] px-1.5 py-0.5 rounded">SRT</span>
-            导出 SRT
-          </button>
+        <div
+          role="menu"
+          aria-label="选择导出格式"
+          className="dropdown-pop absolute right-0 top-full z-[110] mt-2 w-[min(18.5rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] shadow-[0_18px_48px_rgba(26,61,55,0.18)]"
+        >
+          <div className="border-b border-[var(--v4-line)] px-3.5 py-2.5">
+            <p className="text-xs font-semibold tracking-wide text-[var(--v4-text)]">选择格式</p>
+            <p className="mt-0.5 text-[11px] leading-4 text-[var(--v4-text-faint)]">下载到本地，可直接用于播放器</p>
+          </div>
+          <div className="p-1.5">
+            {EXPORT_OPTIONS.map((option) => (
+              <button
+                key={option.format}
+                type="button"
+                role="menuitem"
+                className="v4-focus-ring flex w-full cursor-pointer items-start gap-3 rounded-md px-2.5 py-2.5 text-left transition-colors hover:bg-[var(--v4-accent-soft)]"
+                onClick={() => {
+                  handleDownload(option.format);
+                  setOpen(false);
+                }}
+              >
+                <span
+                  className={`mt-0.5 inline-flex min-w-[2.75rem] shrink-0 items-center justify-center rounded-md px-1.5 py-1 font-mono text-[11px] font-bold tracking-wide
+                    ${option.emphasized
+                      ? 'border border-[var(--v4-accent)]/25 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
+                      : 'border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]'}`}
+                >
+                  {option.badge}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-[var(--v4-text)]">{option.title}</span>
+                  <span className="mt-0.5 block text-[11px] leading-4 text-[var(--v4-text-muted)]">{option.description}</span>
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

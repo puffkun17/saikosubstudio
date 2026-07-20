@@ -10,7 +10,7 @@ import { TimelineControls } from '@/components/Workbench/TimelineControls';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
-import { ChevronLeft, LampCeiling, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, LampCeiling, LightbulbOff, SlidersHorizontal } from 'lucide-react';
 import { SubtitleDataSlot, BackdropSlot, StyleSettings } from '@/types/subtitleTypes';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -200,7 +200,7 @@ export const TheaterStep: React.FC = () => {
               <SlidersHorizontal className="h-4 w-4 stroke-[2.25]" />
               字幕样式
             </button>
-            <ExportDropdown variant="ghost" />
+            <ExportDropdown variant="primary" />
           </div>
         </div>
         <ControlDeck />
@@ -210,24 +210,6 @@ export const TheaterStep: React.FC = () => {
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* Theater 预览区域（关灯时提到暗幕之上，保持点亮） */}
         <div className={`flex-1 flex flex-col items-center justify-center gap-3 p-3 md:p-5 xl:p-6 relative min-w-0 ${isLightsOff ? 'lights-off-stage' : ''}`}>
-          <div className="theater-stage-chrome flex w-full max-w-[1080px] shrink-0 items-center gap-2 px-1">
-            <div className="min-w-0 flex-1">
-              <TimelineControls variant="theater" />
-            </div>
-            <button
-              type="button"
-              onClick={() => setLightsOff(!isLightsOff)}
-              aria-pressed={isLightsOff}
-              title={isLightsOff ? '开灯（L / Esc）' : '关灯观影（L）'}
-              aria-label={isLightsOff ? '开灯' : '关灯观影'}
-              className={`v4-focus-ring grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-lg border transition-colors
-                ${isLightsOff
-                  ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
-                  : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]'}`}
-            >
-              <LampCeiling className="h-4.5 w-4.5 stroke-[2]" aria-hidden="true" />
-            </button>
-          </div>
           <div className="flex-1 w-full min-h-0 flex items-center justify-center">
             <SimulatorBoundary>
               <SimulatorWithClock
@@ -239,6 +221,37 @@ export const TheaterStep: React.FC = () => {
                 guides={{ show: showGuides, temp: tempShowGuides }}
               />
             </SimulatorBoundary>
+          </div>
+
+          {/* 播放条贴在「屏幕」下方，符合日常观影直觉 */}
+          <div className="theater-stage-chrome flex w-full max-w-[1080px] shrink-0 items-center gap-2 px-1">
+            <div className="min-w-0 flex-1">
+              <TimelineControls variant="theater" />
+            </div>
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setLightsOff(!isLightsOff)}
+                aria-pressed={isLightsOff}
+                title={isLightsOff ? '开灯（L / Esc）' : '关灯观影（L）'}
+                aria-label={isLightsOff ? '开灯' : '关灯观影'}
+                className={`v4-focus-ring grid h-10 w-10 cursor-pointer place-items-center rounded-lg border transition-colors
+                  ${isLightsOff
+                    ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
+                    : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]'}`}
+              >
+                {isLightsOff ? (
+                  <LightbulbOff className="h-[18px] w-[18px] stroke-[2]" aria-hidden="true" />
+                ) : (
+                  <LampCeiling className="h-[18px] w-[18px] stroke-[2]" aria-hidden="true" />
+                )}
+              </button>
+              {!isLightsOff && (
+                <span className="pointer-events-none absolute -top-7 right-0 whitespace-nowrap rounded-md bg-[var(--v4-panel-raised)] px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-[var(--v4-text-muted)] opacity-80 shadow-sm ring-1 ring-[var(--v4-line)]">
+                  关灯 L
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
