@@ -6,6 +6,20 @@ import { useStudioStore } from '@/store/useStudioStore';
 import { Image as ImageIcon, Search, LoaderCircle, X, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+/** 把「原文 + 英文」粘在同一串的标题拆成两行，避免折行糊成一团。 */
+const splitAltTitles = (original?: string | null) => {
+  if (!original?.trim()) return { scriptTitle: null as string | null, latinTitle: null as string | null };
+  const trimmed = original.trim();
+  const mixed = trimmed.match(/^(.+?[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff])\s+([A-Za-z0-9].+)$/);
+  if (mixed) {
+    return { scriptTitle: mixed[1].trim(), latinTitle: mixed[2].trim() };
+  }
+  if (/[A-Za-z]/.test(trimmed) && !/[\u3040-\u30ff\u3400-\u9fff]/.test(trimmed)) {
+    return { scriptTitle: null, latinTitle: trimmed };
+  }
+  return { scriptTitle: trimmed, latinTitle: null };
+};
+
 /**
  * Left rail for media identity — poster, meta, rematch.
  * Stretches with the checklist card; typography sized for scanability.
@@ -49,10 +63,11 @@ export const SourceIdentityStrip: React.FC = () => {
 
   const showInlineNotice = Boolean(filmNotice && !tmdbData);
   const displayTitle = tmdbData?.title || optimisticTitle;
-  const displayOriginal = tmdbData?.originalTitle && tmdbData.originalTitle !== tmdbData.title
-    ? tmdbData.originalTitle
-    : null;
-  const metaBits = [tmdbData?.year, activeTask?.epKey].filter(Boolean);
+  const { scriptTitle, latinTitle } = splitAltTitles(
+    tmdbData?.originalTitle && tmdbData.originalTitle !== tmdbData.title
+      ? tmdbData.originalTitle
+      : null,
+  );
   const hasScore = Boolean(tmdbData && tmdbData.voteAverage > 0);
   const overview = tmdbData?.overview?.trim() || '';
   const rematchLabel = tmdbData ? '重新校准匹配' : needsTitleInput ? '补充片名' : '搜索影片';
@@ -95,51 +110,55 @@ export const SourceIdentityStrip: React.FC = () => {
         </AnimatePresence>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3.5 p-4">
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <h3
-                className="font-display min-w-0 text-[1.125rem] leading-snug text-[var(--v4-text)] md:text-[1.25rem]"
+                className="font-display min-w-0 text-[1.2rem] leading-snug text-[var(--v4-text)] md:text-[1.35rem]"
                 title={displayTitle}
               >
                 {displayTitle}
               </h3>
+              {tmdbData?.year ? (
+                <span className="shrink-0 font-mono text-[15px] font-semibold tabular-nums text-[var(--v4-text-muted)]">
+                  {tmdbData.year}
+                </span>
+              ) : null}
               <span className="rd-chip rd-chip--tight shrink-0">
                 {statusLabel}
               </span>
             </div>
 
-            {displayOriginal ? (
-              <p
-                className="prose-serif mt-1.5 text-[13px] text-[var(--v4-text-muted)]"
-                title={displayOriginal}
-              >
-                {displayOriginal}
+            {scriptTitle ? (
+              <p className="prose-serif mt-1.5 truncate text-[14px] text-[var(--v4-text-muted)]" title={scriptTitle}>
+                {scriptTitle}
               </p>
-            ) : (
-              !tmdbData && (
-                <p className="mt-1.5 text-[13px] font-medium leading-relaxed text-[var(--v4-text-muted)]">
-                  用于命名与预览背景，可稍后补充。
-                </p>
-              )
-            )}
+            ) : null}
+            {latinTitle ? (
+              <p className="mt-0.5 truncate font-mono text-[12.5px] font-medium tracking-wide text-[var(--v4-text-faint)]" title={latinTitle}>
+                {latinTitle}
+              </p>
+            ) : null}
+            {!tmdbData && !scriptTitle && !latinTitle ? (
+              <p className="mt-1.5 text-[13px] font-medium leading-relaxed text-[var(--v4-text-muted)]">
+                用于命名与预览背景，可稍后补充。
+              </p>
+            ) : null}
 
-            {(metaBits.length > 0 || hasScore || (tmdbData?.genres?.length ?? 0) > 0) && (
-              <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                {metaBits.length > 0 && (
-                  <span className="rd-chip tabular-nums">
-                    {metaBits.join(' · ')}
-                  </span>
-                )}
+            {(hasScore || (tmdbData?.genres?.length ?? 0) > 0) && (
+              <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                 {hasScore && (
-                  <span className="rd-chip tabular-nums font-semibold">
-                    <Star className="h-3.5 w-3.5 fill-[var(--v4-accent)] text-[var(--v4-accent)]" aria-hidden="true" />
+                  <span className="inline-flex items-center gap-1 rounded-md border border-[var(--v4-accent)]/25 bg-[var(--v4-accent-soft)] px-2.5 py-1 font-mono text-[13px] font-bold text-[var(--v4-accent-strong)]">
+                    <Star className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
                     {tmdbData!.voteAverage.toFixed(1)}
                   </span>
                 )}
                 {tmdbData?.genres?.slice(0, 4).map((genre) => (
-                  <span key={genre} className="rd-chip text-[var(--v4-text-muted)]">
+                  <span
+                    key={genre}
+                    className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-[13px] font-semibold text-[var(--v4-text-muted)]"
+                  >
                     {genre}
                   </span>
                 ))}
@@ -148,7 +167,7 @@ export const SourceIdentityStrip: React.FC = () => {
           </div>
 
           {overview ? (
-            <p className="prose-serif text-[13px] text-[var(--v4-text-muted)] md:text-[14px] md:leading-7">
+            <p className="prose-serif text-[14.5px] leading-[1.75] text-[var(--v4-text)] md:text-[15px]">
               {overview}
             </p>
           ) : null}

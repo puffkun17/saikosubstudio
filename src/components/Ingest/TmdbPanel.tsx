@@ -182,47 +182,73 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
               )}
 
               {/* Movie metadata (Title + Badges) */}
-              <div className="flex-1 flex flex-col gap-3.5 min-w-0 text-left pt-1">
+              <div className="flex-1 flex flex-col gap-3 min-w-0 text-left pt-1">
                 <div>
-                  <h4 className="font-display text-[1.35rem] leading-tight text-[var(--v4-text)]">
-                    {tmdbData.title}
-                  </h4>
-                  {tmdbData.originalTitle && tmdbData.originalTitle !== tmdbData.title && (
-                    <p
-                      className="prose-serif mt-1 truncate whitespace-nowrap text-sm text-[var(--v4-text-muted)]"
-                      title={tmdbData.originalTitle}
-                    >
-                      {tmdbData.originalTitle}
-                    </p>
-                  )}
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <h4 className="font-display text-[1.4rem] leading-tight text-[var(--v4-text)]">
+                      {tmdbData.title}
+                    </h4>
+                    {tmdbData.year && (
+                      <span className="font-mono text-[15px] font-semibold tabular-nums text-[var(--v4-text-muted)]">
+                        {tmdbData.year}
+                      </span>
+                    )}
+                  </div>
+                  {(() => {
+                    const original = tmdbData.originalTitle && tmdbData.originalTitle !== tmdbData.title
+                      ? tmdbData.originalTitle
+                      : '';
+                    if (!original) return null;
+                    const mixed = original.match(/^(.+?[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff])\s+([A-Za-z0-9].+)$/);
+                    const scriptTitle = mixed ? mixed[1].trim() : /[\u3040-\u30ff\u3400-\u9fff]/.test(original) ? original : null;
+                    const latinTitle = mixed
+                      ? mixed[2].trim()
+                      : /[A-Za-z]/.test(original) && !/[\u3040-\u30ff\u3400-\u9fff]/.test(original)
+                        ? original
+                        : null;
+                    return (
+                      <>
+                        {scriptTitle && (
+                          <p className="prose-serif mt-1.5 truncate text-[14px] text-[var(--v4-text-muted)]" title={scriptTitle}>
+                            {scriptTitle}
+                          </p>
+                        )}
+                        {latinTitle && (
+                          <p className="mt-0.5 truncate font-mono text-[12.5px] font-medium tracking-wide text-[var(--v4-text-faint)]" title={latinTitle}>
+                            {latinTitle}
+                          </p>
+                        )}
+                        {!scriptTitle && !latinTitle && (
+                          <p className="prose-serif mt-1.5 truncate text-[14px] text-[var(--v4-text-muted)]" title={original}>
+                            {original}
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5 select-none">
-                  {tmdbData.year && (
-                    <span className="px-2.5 py-1 bg-[var(--v4-panel-muted)] border border-[var(--v4-line)] rounded-md text-xs font-bold text-[var(--v4-text-muted)]">
-                      {tmdbData.year}
-                    </span>
-                  )}
                   {tmdbData.voteAverage > 0 && (
-                    <span className="px-2.5 py-1 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)] border border-[var(--v4-accent)]/18 rounded-md text-xs font-mono font-bold flex items-center gap-1.5">
-                      <Star className="w-3.5 h-3.5 fill-[var(--v4-accent-strong)] text-[var(--v4-accent-strong)]" />
+                    <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--v4-accent)]/18 bg-[var(--v4-accent-soft)] px-2.5 py-1 font-mono text-[13px] font-bold text-[var(--v4-accent-strong)]">
+                      <Star className="h-3.5 w-3.5 fill-current" />
                       {tmdbData.voteAverage.toFixed(1)}
                     </span>
                   )}
                   {rtScore && (
-                    <span className="px-2.5 py-1 bg-[var(--v4-danger)]/10 text-[var(--v4-danger)] border border-[var(--v4-danger)]/15 rounded-md text-xs font-mono font-bold flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--v4-danger)]/15 bg-[var(--v4-danger)]/10 px-2.5 py-1 font-mono text-[13px] font-bold text-[var(--v4-danger)]">
                       RT {rtScore}%
                     </span>
                   )}
                   {tmdbData.genres && tmdbData.genres.map((g: string, i: number) => (
-                    <span key={i} className="px-2.5 py-1 bg-[var(--v4-panel-muted)] border border-[var(--v4-line)] text-xs rounded-md font-semibold text-[var(--v4-text-muted)]">
+                    <span key={i} className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-[13px] font-semibold text-[var(--v4-text-muted)]">
                       {g}
                     </span>
                   ))}
                 </div>
 
                 {tmdbData.isAnime && (
-                  <div className="mt-1 px-2.5 py-0.5 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)] border border-[var(--v4-accent)]/20 rounded-md text-xs font-semibold w-max flex items-center gap-1.5 select-none">
+                  <div className="mt-0.5 flex w-max select-none items-center gap-1.5 rounded-md border border-[var(--v4-accent)]/20 bg-[var(--v4-accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--v4-accent-strong)]">
                     <motion.span
                       animate={{ scale: [1, 1.12, 1], y: [0, -1.5, 0] }}
                       transition={{
@@ -240,7 +266,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
             </div>
 
             {/* Bottom Row: Synopsis text - consistent scale, better CJK leading for readability */}
-            <div className="prose-serif py-1 text-left text-[15.5px] text-[var(--v4-text-muted)] line-clamp-6 lg:line-clamp-7 min-h-0 w-full">
+            <div className="prose-serif py-1 text-left text-[15.5px] leading-[1.75] text-[var(--v4-text)] line-clamp-6 lg:line-clamp-7 min-h-0 w-full">
               {tmdbData.overview || '暂无剧情简介...'}
             </div>
           </motion.div>
