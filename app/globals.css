@@ -1,14 +1,15 @@
 @import "tailwindcss";
+@import url("/fonts/noto-serif-sc/noto-serif-sc.css");
 
 /*
  * 双字体：
- * - 正文 / 控件：系统黑体（PingFang / 雅黑），奶油底更实、不再拉 7.6MB 思源 VF
- * - 片源 / 空态主句：宋体 display，奶油底气质贴近影院资料页
- * CSP font-src 仅 'self'，故不走 Google Fonts CDN。
+ * - 正文 / 控件：系统黑体（PingFang / 雅黑）
+ * - 片源 / 空态主句：自托管思源宋体（Noto Serif SC）
+ * CSP font-src 仅 'self'，故字体放在 public/fonts。
  */
 @theme {
   --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", var(--font-geist-sans), system-ui, sans-serif;
-  --font-serif: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", "SimSun", "Songti TC", serif;
+  --font-serif: "Noto Serif SC", "Source Han Serif SC", "思源宋体", serif;
   --font-mono: var(--font-geist-mono), "SFMono-Regular", "Cascadia Mono", ui-monospace, monospace, "PingFang SC", "Microsoft YaHei";
   --color-accent-neon: #dfe5f2;
   --color-accent-glow: rgba(124, 141, 187, 0.14);
@@ -187,10 +188,10 @@ body {
   color: var(--v4-text-faint);
 }
 
-/* 宋体 display：片源名、空态主句、剧情简介。 */
+/* 思源宋体 display：片源名、空态主句、剧情简介。 */
 .font-display {
   font-family: var(--font-serif);
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.02em;
 }
 
@@ -198,7 +199,7 @@ body {
   font-family: var(--font-serif);
   font-weight: 500;
   letter-spacing: 0.01em;
-  line-height: 1.75;
+  line-height: 1.8;
 }
 
 .v4-panel {
