@@ -846,10 +846,43 @@ export const DragZone: React.FC = () => {
               transition={{ duration: shouldReduceMotion ? 0 : 0.24, ease: [0.16, 1, 0.3, 1] }}
               className="flex w-full justify-center"
             >
-              <div className="ingest-start-card">
+              {/* 整卡即落点：点击任意处开文件选择，拖入高亮吸附 */}
+              <div
+                className="ingest-start-card"
+                role="button"
+                tabIndex={0}
+                aria-label="选择或拖入字幕文件"
+                onClick={() => fileInputRef.current?.click()}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
+              >
+                <div className="ingest-start-card__glyphs" aria-hidden="true">
+                  {(['srt', 'ass', 'zip', 'rar', '7z'] as const).map((format, index) => (
+                    <motion.span
+                      key={format}
+                      className="ingest-start-card__glyph"
+                      initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: shouldReduceMotion ? 0 : 0.32,
+                        delay: shouldReduceMotion ? 0 : 0.08 + index * 0.05,
+                        ease: [0.16, 1, 0.3, 1],
+                      }}
+                    >
+                      <FileFormatIcon format={format} size="lg" />
+                    </motion.span>
+                  ))}
+                </div>
                 <h3 className="ingest-start-card__title">
-                  {isDragging ? '松开即可加入' : '让我们开始'}
+                  {isDragging ? '松开即可加入' : '把字幕放进来'}
                 </h3>
+                <p className="ingest-start-card__sub">
+                  拖入文件、文件夹或字幕包，全程只在本机处理
+                </p>
                 <div
                   className={`ingest-start-card__cta transition-opacity duration-[var(--v4-dur)] ${
                     isDragging ? 'pointer-events-none opacity-40' : 'opacity-100'
@@ -857,15 +890,23 @@ export const DragZone: React.FC = () => {
                 >
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="v4-focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-[var(--v5-radius-panel)] bg-[var(--v4-accent)] px-10 text-sm font-bold text-[var(--v4-accent-ink)] shadow-[0_8px_24px_rgba(239,141,95,0.25)] transition-[filter,transform,background-color] duration-[var(--v4-dur-fast)] hover:brightness-105 hover:-translate-y-0.5"
+                    onClick={(event) => { event.stopPropagation(); fileInputRef.current?.click(); }}
+                    className="v4-focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-[var(--v5-radius-panel)] bg-[var(--v4-accent)] px-9 text-sm font-bold text-[var(--v4-accent-ink)] shadow-[0_8px_24px_rgba(239,141,95,0.25)] transition-[filter,transform,background-color] duration-[var(--v4-dur-fast)] hover:brightness-105 hover:-translate-y-0.5"
                   >
                     <FilePlus className="h-[18px] w-[18px] shrink-0 stroke-[2.25]" aria-hidden="true" />
                     选择字幕
                   </button>
+                  <button
+                    type="button"
+                    onClick={(event) => { event.stopPropagation(); folderInputRef.current?.click(); }}
+                    className="v4-focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-[var(--v5-radius-panel)] border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)]/70 px-5 text-sm font-semibold text-[var(--v4-text-muted)] transition-colors duration-[var(--v4-dur-fast)] hover:bg-[var(--v4-panel-raised)] hover:text-[var(--v4-text)]"
+                  >
+                    <FolderPlus className="h-[18px] w-[18px] shrink-0 stroke-[2]" aria-hidden="true" />
+                    文件夹
+                  </button>
                 </div>
                 <p className="ingest-start-card__hint">
-                  支持 SRT / ASS，以及 ZIP、RAR、7Z。也可拖入文件或文件夹。
+                  支持 SRT / ASS 字幕，以及 ZIP / RAR / 7Z 字幕包
                 </p>
               </div>
             </motion.div>
