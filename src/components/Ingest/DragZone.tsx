@@ -35,7 +35,13 @@ interface ArchiveEntryPreview {
 
 interface PreflightItem {
   file: File;
+  /** 队列去重键：包含相对路径，同名不同目录的文件不再互斥。 */
+  key: string;
   name: string;
+  /** 文件夹导入时的本地相对路径（如 `剧集目录/S01/xx.srt`）。 */
+  relativePath?: string;
+  /** 顶层文件夹名——存在时该项归入对应文件夹分组树。 */
+  folderName?: string;
   extension: string;
   kind: PreflightKind;
   label: string;
@@ -44,6 +50,12 @@ interface PreflightItem {
   archiveEntries?: ArchiveEntryPreview[];
   archivePeekStatus?: 'idle' | 'loading' | 'ready' | 'error';
   archivePeekError?: string;
+}
+
+/** 入队原始记录：拖入目录遍历得到的文件不带 webkitRelativePath，路径单独传递。 */
+interface IncomingFile {
+  file: File;
+  relativePath?: string;
 }
 
 interface TrackSummary {
@@ -88,7 +100,11 @@ const formatBytes = (bytes: number) => {
   return `${value >= 100 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
 };
 
-const getQueueKey = (file: File) => `${file.name}:${file.size}:${file.lastModified}`;
+const getQueueKey = (file: File, relativePath?: string) =>
+  `${relativePath || ''}:${file.name}:${file.size}:${file.lastModified}`;
+
+/** 树杈伸展节奏：主干先长，叶枝随后逐条抽出（封顶避免长列表拖沓）。 */
+const leafDelayMs = (index: number) => Math.min(90 + index * 70, 480);
 
 const getExtension = (name: string) => {
   const idx = name.lastIndexOf('.');
@@ -112,11 +128,20 @@ const PREFLIGHT_LANGUAGE_LABELS = {
   unknown: '语言待识别',
 } as const;
 
-const createPreflightItem = (file: File): PreflightItem => {
+const createPreflightItem = (file: File, relativePath?: string): PreflightItem => {
   const extension = getExtension(file.name);
+  const decorate = (
+    item: Omit<PreflightItem, 'key' | 'relativePath' | 'folderName'>,
+  ): PreflightItem => ({
+    ...item,
+    key: getQueueKey(file, relativePath),
+    relativePath,
+    folderName: relativePath && relativePath.includes('/') ? relativePath.split('/')[0] : undefined,
+  });
+
   const sizeIssue = getClientFileIssue(file);
   if (sizeIssue) {
-    return {
+    return decorate({
       file,
       name: file.name,
       extension: extension || 'unknown',
@@ -124,11 +149,11 @@ const createPreflightItem = (file: File): PreflightItem => {
       label: extension ? extension.toUpperCase() : '未知',
       accepted: false,
       note: sizeIssue,
-    };
+    });
   }
   if (isSubtitleExtension(extension)) {
     const language = detectLanguageByFilename(file.name);
-    return {
+    return decorate({
       file,
       name: file.name,
       extension,
@@ -136,10 +161,10 @@ const createPreflightItem = (file: File): PreflightItem => {
       label: extension.toUpperCase(),
       accepted: true,
       note: `${PREFLIGHT_LANGUAGE_LABELS[language]} · ${extension === 'ass' ? '样式字幕轨' : '标准字幕轨'}`,
-    };
+    });
   }
   if (extension === 'zip') {
-    return {
+    return decorate({
       file,
       name: file.name,
       extension,
@@ -149,10 +174,10 @@ const createPreflightItem = (file: File): PreflightItem => {
       note: '正在查看包内字幕…',
       archivePeekStatus: 'loading',
       archiveEntries: [],
-    };
+    });
   }
   if (isMultipartArchiveName(file.name)) {
-    return {
+    return decorate({
       file,
       name: file.name,
       extension,
@@ -160,10 +185,10 @@ const createPreflightItem = (file: File): PreflightItem => {
       label: extension.toUpperCase(),
       accepted: false,
       note: '分卷压缩包请先在本地完整解压',
-    };
+    });
   }
   if (extension === '7z' || extension === 'rar') {
-    return {
+    return decorate({
       file,
       name: file.name,
       extension,
@@ -173,9 +198,9 @@ const createPreflightItem = (file: File): PreflightItem => {
       note: '正在查看包内字幕…',
       archivePeekStatus: 'loading',
       archiveEntries: [],
-    };
+    });
   }
-  return {
+  return decorate({
     file,
     name: file.name,
     extension: extension || 'unknown',
@@ -183,7 +208,42 @@ const createPreflightItem = (file: File): PreflightItem => {
     label: extension ? extension.toUpperCase() : '未知',
     accepted: false,
     note: '已忽略非字幕资源',
-  };
+  });
+};
+
+/** 拖入目录时递归收集文件（webkitGetAsEntry），并保留相对路径。 */
+const MAX_DROPPED_ENTRIES = 400;
+
+const collectEntryFiles = async (
+  entry: FileSystemEntry,
+  out: IncomingFile[],
+  budget: { remaining: number },
+): Promise<void> => {
+  if (budget.remaining <= 0) return;
+  if (entry.isFile) {
+    budget.remaining -= 1;
+    const file = await new Promise<File>((resolve, reject) =>
+      (entry as FileSystemFileEntry).file(resolve, reject),
+    ).catch(() => null);
+    if (!file) return;
+    const fullPath = entry.fullPath.replace(/^\//, '');
+    out.push({ file, relativePath: fullPath.includes('/') ? fullPath : undefined });
+    return;
+  }
+  if (entry.isDirectory) {
+    const reader = (entry as FileSystemDirectoryEntry).createReader();
+    // readEntries 每批最多返回 ~100 条，需循环读到空批为止
+    while (budget.remaining > 0) {
+      const batch = await new Promise<FileSystemEntry[]>((resolve, reject) =>
+        reader.readEntries(resolve, reject),
+      ).catch(() => [] as FileSystemEntry[]);
+      if (batch.length === 0) break;
+      for (const child of batch) {
+        await collectEntryFiles(child, out, budget);
+        if (budget.remaining <= 0) break;
+      }
+    }
+  }
 };
 
 const describeTrack = (file: Subfile) => {
@@ -290,12 +350,12 @@ export const DragZone: React.FC = () => {
   };
 
   const peekArchiveContents = async (item: PreflightItem) => {
-    const key = getQueueKey(item.file);
+    const key = item.key;
 
     // Hint only — never flip to ready/empty (that used to show「0 条字幕」as a fake success).
     const softWatchdog = window.setTimeout(() => {
       setQueuedItems((current) => current.map((row) => {
-        if (getQueueKey(row.file) !== key) return row;
+        if (row.key !== key) return row;
         if (row.archivePeekStatus !== 'loading') return row;
         return {
           ...row,
@@ -327,7 +387,7 @@ export const DragZone: React.FC = () => {
       }));
 
       setQueuedItems(current => current.map(row => {
-        if (getQueueKey(row.file) !== key) return row;
+        if (row.key !== key) return row;
         if (archiveEntries.length === 0) {
           return {
             ...row,
@@ -356,7 +416,7 @@ export const DragZone: React.FC = () => {
           : '预览失败；包内字幕将在开始整理时读取';
       addLog(`${item.name}: ${message}`, encrypted ? 'error' : 'info');
       setQueuedItems(current => current.map(row => {
-        if (getQueueKey(row.file) !== key) return row;
+        if (row.key !== key) return row;
         if (encrypted) {
           return {
             ...row,
@@ -382,18 +442,29 @@ export const DragZone: React.FC = () => {
     }
   };
 
-  const addFilesToQueue = (filesList: File[]) => {
-    if (filesList.length === 0) return;
-    const existingKeys = new Set(queuedItems.map(item => getQueueKey(item.file)));
-    const seenKeys = new Set(existingKeys);
-    const additions = filesList
-      .filter(file => {
-        const key = getQueueKey(file);
-        if (seenKeys.has(key)) return false;
-        seenKeys.add(key);
-        return true;
-      })
-      .map(createPreflightItem);
+  const addFilesToQueue = (incoming: IncomingFile[]) => {
+    if (incoming.length === 0) return;
+    const seenKeys = new Set(queuedItems.map(item => item.key));
+    const additions: PreflightItem[] = [];
+    let duplicateCount = 0;
+    let skippedInFolder = 0;
+
+    for (const record of incoming) {
+      const relativePath = record.relativePath || record.file.webkitRelativePath || undefined;
+      const item = createPreflightItem(record.file, relativePath);
+      if (seenKeys.has(item.key)) {
+        duplicateCount += 1;
+        continue;
+      }
+      seenKeys.add(item.key);
+      // 文件夹整包导入常混着视频/nfo 等杂项，静默汇总而不是刷满整屏「已忽略」
+      if (item.folderName && item.kind === 'unsupported') {
+        skippedInFolder += 1;
+        continue;
+      }
+      additions.push(item);
+    }
+
     const nextItems = [...queuedItems, ...additions];
     const batchIssue = getClientBatchIssue(nextItems.map(item => item.file));
 
@@ -405,8 +476,11 @@ export const DragZone: React.FC = () => {
 
     setQueueIssue(null);
     setQueuedItems(nextItems);
-    if (additions.length < filesList.length) {
-      addLog(`已忽略 ${filesList.length - additions.length} 个重复文件`, 'info');
+    if (duplicateCount > 0) {
+      addLog(`已忽略 ${duplicateCount} 个重复文件`, 'info');
+    }
+    if (skippedInFolder > 0) {
+      addLog(`文件夹内已忽略 ${skippedInFolder} 个非字幕资源`, 'info');
     }
     additions
       .filter(item => item.kind === 'zip' || item.kind === 'archive')
@@ -415,9 +489,13 @@ export const DragZone: React.FC = () => {
       });
   };
 
-  const removeQueuedFile = (file: File) => {
-    const key = getQueueKey(file);
-    setQueuedItems(items => items.filter(item => getQueueKey(item.file) !== key));
+  const removeQueuedFile = (key: string) => {
+    setQueuedItems(items => items.filter(item => item.key !== key));
+    setQueueIssue(null);
+  };
+
+  const removeFolderGroup = (folderName: string) => {
+    setQueuedItems(items => items.filter(item => item.folderName !== folderName));
     setQueueIssue(null);
   };
 
@@ -563,7 +641,7 @@ export const DragZone: React.FC = () => {
       return;
     }
 
-    const preflight = filesList.map(createPreflightItem);
+    const preflight = filesList.map((file) => createPreflightItem(file));
     setResultChips([]);
 
     const validItems = preflight.filter(item => item.accepted);
@@ -763,33 +841,50 @@ export const DragZone: React.FC = () => {
     dragCounterRef.current = 0;
     setIsDragging(false);
 
-    const filesArray: File[] = [];
+    // 目录句柄必须在事件同步阶段取出（await 之后 dataTransfer 即失效）
+    const droppedEntries: FileSystemEntry[] = [];
+    const plainFiles: File[] = [];
     if (e.dataTransfer.items) {
       for (let i = 0; i < e.dataTransfer.items.length; i++) {
         const item = e.dataTransfer.items[i];
-        if (item.kind === 'file') {
+        if (item.kind !== 'file') continue;
+        const entry = item.webkitGetAsEntry?.();
+        if (entry) {
+          droppedEntries.push(entry);
+        } else {
           const file = item.getAsFile();
-          if (file) filesArray.push(file);
+          if (file) plainFiles.push(file);
         }
       }
     } else {
       const filesList = e.dataTransfer.files;
       for (let i = 0; i < filesList.length; i++) {
-        filesArray.push(filesList[i]);
+        plainFiles.push(filesList[i]);
       }
     }
 
-    if (filesArray.length === 0) return;
+    const incoming: IncomingFile[] = plainFiles.map((file) => ({ file }));
+    if (droppedEntries.length > 0) {
+      const budget = { remaining: MAX_DROPPED_ENTRIES };
+      for (const entry of droppedEntries) {
+        await collectEntryFiles(entry, incoming, budget);
+      }
+      if (budget.remaining <= 0) {
+        addLog(`拖入内容过多，仅读取前 ${MAX_DROPPED_ENTRIES} 个文件`, 'info');
+      }
+    }
+
+    if (incoming.length === 0) return;
 
     // Empty → queue: short accept flash (CSS only), then reveal tree.
     if (queuedItems.length === 0 && !shouldReduceMotion) {
       setIsAccepting(true);
       await sleep(180);
-      addFilesToQueue(filesArray);
+      addFilesToQueue(incoming);
       setIsAccepting(false);
       return;
     }
-    addFilesToQueue(filesArray);
+    addFilesToQueue(incoming);
   };
 
   if (isParsing) {
@@ -821,6 +916,62 @@ export const DragZone: React.FC = () => {
       return [PREFLIGHT_LANGUAGE_LABELS[detectLanguageByFilename(item.name)] || '语言待识别'];
     }
     return [];
+  };
+
+  // 文件夹导入的条目按顶层目录归组，队列渲染为「文件夹 → 子文件」树
+  type RenderNode =
+    | { type: 'item'; item: PreflightItem }
+    | { type: 'folder'; folder: string; items: PreflightItem[] };
+
+  const renderNodes: RenderNode[] = [];
+  {
+    const folderBuckets = new Map<string, PreflightItem[]>();
+    for (const item of queuedItems) {
+      if (item.folderName) {
+        let bucket = folderBuckets.get(item.folderName);
+        if (!bucket) {
+          bucket = [];
+          folderBuckets.set(item.folderName, bucket);
+          renderNodes.push({ type: 'folder', folder: item.folderName, items: bucket });
+        }
+        bucket.push(item);
+      } else {
+        renderNodes.push({ type: 'item', item });
+      }
+    }
+  }
+
+  /** 压缩包子文件树（顶层与文件夹内嵌套共用）。 */
+  const renderArchiveSubtree = (item: PreflightItem) => {
+    if (item.kind !== 'zip' && item.kind !== 'archive') return null;
+    if (item.archivePeekStatus !== 'error' && !(item.archiveEntries && item.archiveEntries.length > 0)) return null;
+    return (
+      <div className="ingest-halo-tree mt-2.5">
+        {item.archivePeekStatus === 'error' && (
+          <p className="mb-1.5 text-xs font-normal text-[var(--v4-danger)]">{item.archivePeekError || item.note}</p>
+        )}
+        {item.archiveEntries?.map((entry, entryIndex) => (
+          <motion.div
+            key={`${item.key}:${entry.name}`}
+            initial={shouldReduceMotion ? false : { opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{
+              duration: shouldReduceMotion ? 0 : 0.26,
+              delay: shouldReduceMotion ? 0 : leafDelayMs(entryIndex) / 1000,
+              ease: [0.16, 1, 0.3, 1],
+            }}
+            className="ingest-halo-leaf grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 py-1.5"
+            style={{ '--leaf-delay': `${leafDelayMs(entryIndex)}ms` } as React.CSSProperties}
+          >
+            <FileFormatIcon name={entry.name} size="md" />
+            <span className="min-w-0 truncate text-[13px] font-normal leading-snug text-[var(--v4-text-muted)]" title={entry.name}>
+              {entry.name}
+            </span>
+            <LanguageMark label={entry.languageLabel} className="justify-self-end" />
+          </motion.div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -980,22 +1131,112 @@ export const DragZone: React.FC = () => {
               </header>
 
               <div className="max-h-[min(420px,52vh)] space-y-4 overflow-y-auto px-1 pb-1">
-                {queuedItems.map((item, itemIndex) => {
+                {renderNodes.map((node, nodeIndex) => {
+                  // 文件「落桌」：从上方轻降 + 微缩回位，像放到桌面上
+                  const landing = {
+                    initial: shouldReduceMotion ? false : { opacity: 0, y: -14, scale: 1.03 },
+                    animate: { opacity: 1, y: 0, scale: 1 },
+                    transition: {
+                      duration: shouldReduceMotion ? 0 : 0.34,
+                      delay: shouldReduceMotion ? 0 : Math.min(nodeIndex * 0.05, 0.2),
+                      ease: [0.16, 1, 0.3, 1] as const,
+                    },
+                  };
+
+                  if (node.type === 'folder') {
+                    const folderBytes = node.items.reduce((sum, row) => sum + row.file.size, 0);
+                    const subtitleCount = node.items.filter((row) => row.kind === 'subtitle').length
+                      + node.items.reduce((sum, row) => sum + (row.archiveEntries?.length || 0), 0);
+                    return (
+                      <motion.div key={`folder:${node.folder}`} {...landing} className="min-w-0">
+                        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+                          <div className="ingest-halo-root">
+                            <FileFormatIcon format="folder" size="lg" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-[15px] font-semibold leading-snug tracking-tight text-[var(--v4-text)]" title={node.folder}>
+                              {node.folder}
+                            </p>
+                            <p className="mt-1 text-xs font-normal text-[var(--v4-text-muted)]">
+                              本地文件夹 · {node.items.length} 个文件
+                              {subtitleCount > 0 ? ` · ${subtitleCount} 条字幕` : ''} · {formatBytes(folderBytes)}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeFolderGroup(node.folder)}
+                            className="v4-focus-ring grid h-8 w-8 place-items-center rounded-md text-[var(--v4-text-muted)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)]"
+                            aria-label={`移除文件夹 ${node.folder}`}
+                          >
+                            <X className="h-4 w-4" strokeWidth={2.25} />
+                          </button>
+                        </div>
+
+                        <div className="ingest-halo-tree mt-2.5">
+                          {node.items.map((item, leafIndex) => {
+                            const langs = languagesForItem(item);
+                            // 去掉顶层目录名，保留剩余相对路径（如 S01/xx.srt）
+                            const subPath = item.relativePath
+                              ? item.relativePath.split('/').slice(1).join('/')
+                              : item.name;
+                            return (
+                              <motion.div
+                                key={item.key}
+                                initial={shouldReduceMotion ? false : { opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{
+                                  duration: shouldReduceMotion ? 0 : 0.26,
+                                  delay: shouldReduceMotion ? 0 : leafDelayMs(leafIndex) / 1000,
+                                  ease: [0.16, 1, 0.3, 1],
+                                }}
+                                className="ingest-halo-leaf min-w-0 py-1.5"
+                                style={{ '--leaf-delay': `${leafDelayMs(leafIndex)}ms` } as React.CSSProperties}
+                              >
+                                <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2.5">
+                                  <FileFormatIcon name={item.name} size="md" />
+                                  <div className="min-w-0">
+                                    <p
+                                      className={`truncate text-[13px] leading-snug ${item.accepted ? 'text-[var(--v4-text)]' : 'text-[var(--v4-danger)]'}`}
+                                      title={item.relativePath || item.name}
+                                    >
+                                      {subPath}
+                                    </p>
+                                    {!item.accepted && (
+                                      <p className="mt-0.5 text-xs font-normal text-[var(--v4-danger)]">{item.note}</p>
+                                    )}
+                                  </div>
+                                  {langs.length > 0 ? (
+                                    <span className="inline-flex flex-wrap items-center justify-end gap-1">
+                                      {langs.map((label) => (
+                                        <LanguageMark key={`${item.key}:${label}`} label={label} />
+                                      ))}
+                                    </span>
+                                  ) : (
+                                    <span aria-hidden="true" />
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => removeQueuedFile(item.key)}
+                                    className="v4-focus-ring grid h-7 w-7 place-items-center rounded-md text-[var(--v4-text-faint)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)]"
+                                    aria-label={`移除 ${item.name}`}
+                                  >
+                                    <X className="h-3.5 w-3.5" strokeWidth={2.25} />
+                                  </button>
+                                </div>
+                                {renderArchiveSubtree(item)}
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    );
+                  }
+
+                  const item = node.item;
                   const langs = languagesForItem(item);
                   const isArchive = item.kind === 'zip' || item.kind === 'archive';
                   return (
-                    <motion.div
-                      key={getQueueKey(item.file)}
-                      // 文件「落桌」：从上方轻降 + 微缩回位，像放到桌面上
-                      initial={shouldReduceMotion ? false : { opacity: 0, y: -14, scale: 1.03 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{
-                        duration: shouldReduceMotion ? 0 : 0.34,
-                        delay: shouldReduceMotion ? 0 : Math.min(itemIndex * 0.05, 0.2),
-                        ease: [0.16, 1, 0.3, 1],
-                      }}
-                      className="min-w-0"
-                    >
+                    <motion.div key={item.key} {...landing} className="min-w-0">
                       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
                         <div className="ingest-halo-root">
                           <FileFormatIcon format={resolveFileFormat(item.name)} size="lg" />
@@ -1029,7 +1270,7 @@ export const DragZone: React.FC = () => {
                         </div>
                         <button
                           type="button"
-                          onClick={() => removeQueuedFile(item.file)}
+                          onClick={() => removeQueuedFile(item.key)}
                           className="v4-focus-ring grid h-8 w-8 place-items-center rounded-md text-[var(--v4-text-muted)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)]"
                           aria-label={`移除 ${item.name}`}
                         >
@@ -1037,32 +1278,7 @@ export const DragZone: React.FC = () => {
                         </button>
                       </div>
 
-                      {isArchive && (item.archivePeekStatus === 'error' || (item.archiveEntries && item.archiveEntries.length > 0)) && (
-                        <div className="ingest-halo-tree mt-2.5">
-                          {item.archivePeekStatus === 'error' && (
-                            <p className="mb-1.5 text-xs font-normal text-[var(--v4-danger)]">{item.archivePeekError || item.note}</p>
-                          )}
-                          {item.archiveEntries?.map((entry, entryIndex) => (
-                            <motion.div
-                              key={`${item.name}:${entry.name}`}
-                              initial={shouldReduceMotion ? false : { opacity: 0, x: -6 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{
-                                duration: shouldReduceMotion ? 0 : 0.24,
-                                delay: shouldReduceMotion ? 0 : 0.06 + Math.min(entryIndex * 0.05, 0.2),
-                                ease: [0.16, 1, 0.3, 1],
-                              }}
-                              className="ingest-halo-leaf grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 py-1.5"
-                            >
-                              <FileFormatIcon name={entry.name} size="md" />
-                              <span className="min-w-0 truncate text-[13px] font-normal leading-snug text-[var(--v4-text-muted)]" title={entry.name}>
-                                {entry.name}
-                              </span>
-                              <LanguageMark label={entry.languageLabel} className="justify-self-end" />
-                            </motion.div>
-                          ))}
-                        </div>
-                      )}
+                      {renderArchiveSubtree(item)}
                     </motion.div>
                   );
                 })}
@@ -1091,7 +1307,7 @@ export const DragZone: React.FC = () => {
         accept=".srt,.ass,.zip,.rar,.7z"
         className="hidden"
         onChange={(e) => {
-          addFilesToQueue(Array.from(e.target.files || []));
+          addFilesToQueue(Array.from(e.target.files || []).map((file) => ({ file })));
           e.currentTarget.value = '';
         }}
       />
@@ -1101,7 +1317,13 @@ export const DragZone: React.FC = () => {
         {...({ webkitdirectory: 'true', directory: 'true' } as React.InputHTMLAttributes<HTMLInputElement>)}
         className="hidden"
         onChange={(e) => {
-          addFilesToQueue(Array.from(e.target.files || []));
+          // webkitRelativePath 携带「文件夹/子目录/文件」的本地路径
+          addFilesToQueue(
+            Array.from(e.target.files || []).map((file) => ({
+              file,
+              relativePath: file.webkitRelativePath || undefined,
+            })),
+          );
           e.currentTarget.value = '';
         }}
       />

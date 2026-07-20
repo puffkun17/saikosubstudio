@@ -354,6 +354,20 @@ body {
     transparent
   );
   box-shadow: 0 0 14px color-mix(in srgb, var(--v4-accent) 28%, transparent);
+  /* 树杈打开：主干先自上而下生长 */
+  transform-origin: top;
+  animation: treeSpineGrow 480ms var(--v5-ease) both;
+}
+
+@keyframes treeSpineGrow {
+  from {
+    transform: scaleY(0);
+    opacity: 0.3;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
 }
 
 .ingest-halo-leaf {
@@ -372,6 +386,28 @@ body {
   background: color-mix(in srgb, var(--v4-accent) 40%, var(--v4-line-strong));
   box-shadow: 0 0 8px color-mix(in srgb, var(--v4-accent) 22%, transparent);
   opacity: 0.85;
+  /* 叶枝随后逐条抽出（--leaf-delay 由条目错峰节奏注入） */
+  transform-origin: left;
+  animation: treeStubExtend 260ms var(--v5-ease) both;
+  animation-delay: var(--leaf-delay, 60ms);
+}
+
+@keyframes treeStubExtend {
+  from {
+    transform: translateY(-50%) scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(-50%) scaleX(1);
+    opacity: 0.85;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ingest-halo-tree::before,
+  .ingest-halo-leaf::before {
+    animation: none;
+  }
 }
 
 .ingest-halo-root {
