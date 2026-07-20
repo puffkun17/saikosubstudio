@@ -210,7 +210,7 @@ export const TheaterStep: React.FC = () => {
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* Theater 预览区域（关灯时提到暗幕之上，保持点亮） */}
         <div className={`flex-1 flex flex-col items-center justify-center gap-3 p-3 md:p-5 xl:p-6 relative min-w-0 ${isLightsOff ? 'lights-off-stage' : ''}`}>
-          <div className="flex w-full max-w-[1080px] shrink-0 items-center gap-2 px-1">
+          <div className="theater-stage-chrome flex w-full max-w-[1080px] shrink-0 items-center gap-2 px-1">
             <div className="min-w-0 flex-1">
               <TimelineControls variant="theater" />
             </div>
@@ -279,9 +279,10 @@ export const TheaterStep: React.FC = () => {
               aria-label="开灯"
               title="点击开灯（L / Esc）"
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+              // 关灯像影院调光：先快速压到六成，再缓缓沉到全暗；开灯一步到位（快出）。
+              animate={{ opacity: [0, 0.62, 1] }}
+              exit={{ opacity: 0, transition: { duration: 0.26, ease: [0.16, 1, 0.3, 1] } }}
+              transition={{ duration: 0.68, times: [0, 0.38, 1], ease: [0.16, 1, 0.3, 1] }}
               className="lights-off-scrim"
               onClick={() => setLightsOff(false)}
             />

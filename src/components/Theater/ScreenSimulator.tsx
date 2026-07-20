@@ -264,11 +264,11 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
   const isMagnetic = targetCqh > 0 && Math.abs(paddingBottomCqh - targetCqh) < 1.0;
 
   return (
-    <div className="relative flex h-full w-full flex-1 items-center justify-center overflow-hidden bg-[var(--v4-canvas)] p-4 md:p-8">
+    <div className="screen-sim-root relative flex h-full w-full flex-1 items-center justify-center overflow-hidden bg-[var(--v4-canvas)] p-4 md:p-8">
 
       {/* Outer wrapper constrained to the TV Mask's Aspect Ratio */}
       <div 
-        className="fade-in-up relative z-10 flex items-center justify-center overflow-hidden rounded-sm border border-[var(--v4-line-strong)] shadow-[0_18px_46px_rgba(0,0,0,0.42)]"
+        className="screen-sim-frame fade-in-up relative z-10 flex items-center justify-center overflow-hidden rounded-sm border border-[var(--v4-line-strong)] shadow-[0_18px_46px_rgba(0,0,0,0.42)]"
         style={{
           aspectRatio: maskAspect,
           maxWidth: '100%',

@@ -891,6 +891,51 @@ button {
   z-index: var(--z-dim-stage);
 }
 
+/* ── 关灯二期：舞台自身的灯光编排 ─────────────────────────────
+   舞台被提到暗幕之上后，simulator 周围的奶油底会形成一块刺眼亮区。
+   关灯时让舞台底色跟着暗幕一起沉入近黑，电视获得一圈暖色环境光
+  （类似电视背后的 bias lighting），控制条息屏、悬停或聚焦时唤醒。 */
+.screen-sim-root {
+  transition: background-color 680ms var(--v5-ease);
+}
+
+.lights-off-stage .screen-sim-root {
+  background-color: #0a0e0d;
+}
+
+.screen-sim-frame {
+  transition: box-shadow 680ms var(--v5-ease), border-color 680ms var(--v5-ease);
+}
+
+.lights-off-stage .screen-sim-frame {
+  border-color: rgba(239, 141, 95, 0.14);
+  box-shadow:
+    0 0 90px 14px rgba(239, 141, 95, 0.07),
+    0 0 32px 4px rgba(239, 141, 95, 0.05),
+    0 18px 46px rgba(0, 0, 0, 0.65);
+}
+
+.theater-stage-chrome {
+  transition: opacity var(--v5-dur-slow) var(--v5-ease);
+}
+
+.lights-off-stage .theater-stage-chrome {
+  opacity: 0.32;
+}
+
+.lights-off-stage .theater-stage-chrome:hover,
+.lights-off-stage .theater-stage-chrome:focus-within {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-sim-root,
+  .screen-sim-frame,
+  .theater-stage-chrome {
+    transition: none;
+  }
+}
+
 @keyframes subtitleMarquee {
   0%, 12% {
     transform: translateX(0);
