@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ArrowLeft, FolderClock, MessageSquareText, RotateCcw, ShieldCheck } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
@@ -188,7 +189,7 @@ export const SystemTray = () => {
         aria-label="全局导航"
         className={`system-tray system-tray--top fixed top-0 z-[var(--z-nav)] justify-between border-b ${trayChrome}`}
       >
-        <div className="flex min-w-0 items-center gap-2.5 tracking-tight">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5 tracking-tight">
           <button
             type="button"
             onClick={() => handleStepClick(1)}
@@ -207,31 +208,50 @@ export const SystemTray = () => {
           </button>
 
           {!isInfoPage && (
-            <div className="hidden items-center gap-1 border-l border-[color:rgba(245,241,234,0.12)] pl-2.5 min-[720px]:flex">
-              {WORKFLOW_STEPS.map((step) => {
-                const isActive = workflowStep === step.id;
-                const disabled =
-                  (step.id === 2 && !hasUploadData && !hasWorkbenchData)
-                  || (step.id === 3 && !hasWorkbenchData);
-                return (
-                  <button
-                    key={step.id}
-                    type="button"
-                    onClick={() => handleStepClick(step.id)}
-                    className={`v4-focus-ring cursor-pointer whitespace-nowrap rounded-full px-4 py-1.5 text-[16px] font-semibold transition-all ${
-                      isActive
-                        ? 'bg-[var(--v5-cream)] text-[var(--v5-green)]'
-                        : disabled
-                          ? 'cursor-help text-[color:rgba(245,241,234,0.35)]'
-                          : 'bg-[color:rgba(245,241,234,0.08)] text-[color:rgba(245,241,234,0.78)] hover:bg-[color:rgba(245,241,234,0.14)] hover:text-[var(--v5-cream)]'
-                    }`}
-                    aria-current={isActive ? 'step' : undefined}
-                    aria-disabled={disabled}
-                  >
-                    {step.label}
-                  </button>
-                );
-              })}
+            <div className="hidden min-w-0 flex-1 items-center border-l border-[color:rgba(245,241,234,0.12)] pl-3 min-[720px]:flex">
+              <div
+                className="relative h-9 w-full max-w-[22rem] overflow-hidden rounded-lg border border-[color:rgba(245,241,234,0.14)] bg-[color:rgba(245,241,234,0.08)]"
+                role="group"
+                aria-label="工作流程进度"
+              >
+                {/* 橙色充电填充：随步骤推进像电量一样涨满 */}
+                <motion.div
+                  className="absolute inset-y-0 left-0 bg-[var(--v5-orange)]"
+                  initial={false}
+                  animate={{ width: `${(workflowStep / WORKFLOW_STEPS.length) * 100}%` }}
+                  transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+                  aria-hidden="true"
+                />
+                <div className="relative z-10 grid h-full grid-cols-3">
+                  {WORKFLOW_STEPS.map((step, index) => {
+                    const isActive = workflowStep === step.id;
+                    const isFilled = step.id <= workflowStep;
+                    const disabled =
+                      (step.id === 2 && !hasUploadData && !hasWorkbenchData)
+                      || (step.id === 3 && !hasWorkbenchData);
+                    return (
+                      <button
+                        key={step.id}
+                        type="button"
+                        onClick={() => handleStepClick(step.id)}
+                        className={`v4-focus-ring relative flex cursor-pointer items-center justify-center px-1 text-[14px] font-bold tracking-wide transition-colors
+                          ${index > 0 ? 'border-l border-[color:rgba(26,61,55,0.12)]' : ''}
+                          ${isFilled
+                            ? 'text-[var(--v5-green)]'
+                            : disabled
+                              ? 'cursor-help text-[color:rgba(245,241,234,0.32)]'
+                              : 'text-[color:rgba(245,241,234,0.72)] hover:text-[var(--v5-cream)]'}
+                          ${isActive ? 'underline decoration-2 underline-offset-4' : ''}`}
+                        aria-current={isActive ? 'step' : undefined}
+                        aria-disabled={disabled}
+                        title={disabled ? '请先完成前序步骤' : `前往${step.label}`}
+                      >
+                        {step.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
 
