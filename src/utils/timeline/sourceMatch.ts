@@ -32,7 +32,12 @@ export type SourceMatchReport = {
   };
   activityCurve: number[];
   /** 非对白 / 辅助字幕时间点（相对整条时间轴的比例位置 0-1） */
-  specialMarks: Array<{ position: number; kind: 'auxiliary' | 'sound' | 'screen' }>;
+  specialMarks: Array<{
+    position: number;
+    kind: 'auxiliary' | 'sound' | 'screen';
+    arrayIndex: number;
+    rowIndex: number;
+  }>;
   findings: SourceMatchFinding[];
 };
 
@@ -102,7 +107,7 @@ export const createSourceMatchReport = (
 
   const specialMarks: SourceMatchReport['specialMarks'] = [];
   const seenMarkSlots = new Set<number>();
-  rows.forEach((row) => {
+  rows.forEach((row, arrayIndex) => {
     const isSound = row.cueKind === 'sound_caption' || row.auxiliary?.category === 'ambient_sdh';
     const isScreen = row.cueKind === 'screen_text';
     const isAux = Boolean(row.auxiliary) || row.cueKind === 'sound_caption' || row.cueKind === 'screen_text';
@@ -115,6 +120,8 @@ export const createSourceMatchReport = (
     specialMarks.push({
       position,
       kind: isSound ? 'sound' : isScreen ? 'screen' : 'auxiliary',
+      arrayIndex,
+      rowIndex: row.index,
     });
   });
 

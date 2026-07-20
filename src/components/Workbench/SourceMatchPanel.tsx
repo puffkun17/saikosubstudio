@@ -114,6 +114,16 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
     if (nearest.arrayIndex >= 100 && !showAllSubs) setShowAllSubs(true);
   };
 
+  const jumpToSpecialMark = (mark: SourceMatchReport['specialMarks'][number]) => {
+    setPreviewIndex(mark.arrayIndex);
+    setJumpLineVal(String(mark.rowIndex));
+    if (mark.arrayIndex >= 100 && !showAllSubs) setShowAllSubs(true);
+  };
+
+  const markKindLabel = (kind: SourceMatchReport['specialMarks'][number]['kind']) => (
+    kind === 'sound' ? '声音说明' : kind === 'screen' ? '画面文字' : '辅助字幕'
+  );
+
   const handleVideoFile = (file: File | undefined) => {
     if (!file) return;
     setMetadataError('');
@@ -287,14 +297,13 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                       key={`mark-${index}`}
                       x1={mark.position * chartWidth}
                       x2={mark.position * chartWidth}
-                      y1={chartHeight - 18}
+                      y1={chartHeight - 22}
                       y2={chartHeight - 6}
                       stroke={mark.kind === 'sound' ? 'var(--v4-warning)' : 'var(--v4-text-faint)'}
-                      strokeWidth="1.5"
-                      strokeOpacity="0.85"
-                    >
-                      <title>{mark.kind === 'sound' ? '声音说明' : mark.kind === 'screen' ? '画面文字' : '辅助字幕'}</title>
-                    </line>
+                      strokeWidth="2"
+                      strokeOpacity="0.9"
+                      pointerEvents="none"
+                    />
                   ))}
                   {videoEnd !== undefined && videoEnd < 0.999 && (
                     <line
@@ -329,6 +338,21 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                     transition={{ duration: 0.18, ease: 'easeOut' }}
                   />
                 </svg>
+                {/* 非对白节点：可点跳到对应字幕行 */}
+                {report.specialMarks.map((mark, index) => (
+                  <button
+                    key={`mark-hit-${index}`}
+                    type="button"
+                    className="absolute bottom-1 z-10 h-7 w-3 -translate-x-1/2 cursor-pointer rounded-sm bg-transparent hover:bg-[var(--v4-accent-soft)]"
+                    style={{ left: `${mark.position * 100}%` }}
+                    title={`${markKindLabel(mark.kind)} · 第 ${mark.rowIndex} 行`}
+                    aria-label={`跳转到第 ${mark.rowIndex} 行（${markKindLabel(mark.kind)}）`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      jumpToSpecialMark(mark);
+                    }}
+                  />
+                ))}
                 <input
                   type="range"
                   min="0"
@@ -336,7 +360,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                   step="100"
                   value={activeTimeMs}
                   onChange={event => selectTimelineTime(Number(event.target.value))}
-                  className="absolute inset-0 h-full w-full cursor-ew-resize opacity-0"
+                  className="absolute inset-0 z-0 h-full w-full cursor-ew-resize opacity-0"
                   aria-label="在字幕分布图中定位时间"
                 />
               </div>
@@ -381,11 +405,21 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                             background: mark.kind === 'sound' ? 'var(--v4-warning)' : 'var(--v4-text-faint)',
                             opacity: 0.9,
                           }}
-                          title={mark.kind === 'sound' ? '声音说明' : mark.kind === 'screen' ? '画面文字' : '辅助字幕'}
                         />
                       ))}
                     </div>
                   )}
+                  {report.specialMarks.map((mark, index) => (
+                    <button
+                      key={`span-hit-${index}`}
+                      type="button"
+                      className="absolute top-0 z-10 h-5 w-3 -translate-x-1/2 cursor-pointer rounded-sm hover:bg-[var(--v4-accent-soft)]"
+                      style={{ left: `${mark.position * 100}%` }}
+                      title={`${markKindLabel(mark.kind)} · 第 ${mark.rowIndex} 行`}
+                      aria-label={`跳转到第 ${mark.rowIndex} 行（${markKindLabel(mark.kind)}）`}
+                      onClick={() => jumpToSpecialMark(mark)}
+                    />
+                  ))}
                   {videoEnd !== undefined && videoEnd < 0.999 && (
                     <span
                       className="absolute top-0 h-5 w-px bg-[var(--v4-warning)]"
@@ -394,14 +428,14 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                     />
                   )}
                   <motion.span
-                    className="absolute top-0 h-5 w-px bg-[var(--v4-accent-strong)]"
+                    className="pointer-events-none absolute top-0 h-5 w-px bg-[var(--v4-accent-strong)]"
                     animate={{ left: `${activePosition * 100}%` }}
                     transition={{ duration: 0.18, ease: 'easeOut' }}
                   />
                 </div>
                 {report.specialMarks.length > 0 && (
                   <p className="mt-2 text-[11px] text-[var(--v4-text-faint)]">
-                    短竖线标记非对白节点（声音说明 / 画面文字 / 辅助字幕）
+                    短竖线为非对白节点，点击可跳到对应字幕行
                   </p>
                 )}
               </div>
