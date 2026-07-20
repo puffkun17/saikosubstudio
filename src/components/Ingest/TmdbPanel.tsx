@@ -184,13 +184,12 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
               {/* Movie metadata (Title + Badges) */}
               <div className="flex-1 flex flex-col gap-3.5 min-w-0 text-left pt-1">
                 <div>
-                  <h4 className="font-sans text-[1.35rem] font-semibold leading-tight tracking-normal text-[var(--v4-text)]">
+                  <h4 className="font-display text-[1.35rem] leading-tight text-[var(--v4-text)]">
                     {tmdbData.title}
                   </h4>
                   {tmdbData.originalTitle && tmdbData.originalTitle !== tmdbData.title && (
                     <p
-                      className="mt-1 truncate whitespace-nowrap text-sm font-medium tracking-[0.02em] text-[var(--v4-text-muted)]"
-                      style={{ fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }}
+                      className="prose-serif mt-1 truncate whitespace-nowrap text-sm text-[var(--v4-text-muted)]"
                       title={tmdbData.originalTitle}
                     >
                       {tmdbData.originalTitle}
@@ -241,7 +240,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
             </div>
 
             {/* Bottom Row: Synopsis text - consistent scale, better CJK leading for readability */}
-            <div className="py-1 text-left font-sans text-[15.5px] leading-[1.78] text-[var(--v4-text-muted)] line-clamp-6 lg:line-clamp-7 min-h-0 w-full">
+            <div className="prose-serif py-1 text-left text-[15.5px] text-[var(--v4-text-muted)] line-clamp-6 lg:line-clamp-7 min-h-0 w-full">
               {tmdbData.overview || '暂无剧情简介...'}
             </div>
           </motion.div>

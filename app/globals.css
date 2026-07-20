@@ -1,17 +1,15 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: "Source Han Sans CN VF";
-  src: url("/fonts/SourceHanSansCN-VF.woff2") format("woff2");
-  font-style: normal;
-  font-weight: 200 900;
-  font-display: swap;
-  unicode-range: U+2E80-2FFF, U+3000-303F, U+31C0-31EF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
-}
-
+/*
+ * 双字体：
+ * - 正文 / 控件：系统黑体（PingFang / 雅黑），奶油底更实、不再拉 7.6MB 思源 VF
+ * - 片源 / 空态主句：宋体 display，奶油底气质贴近影院资料页
+ * CSP font-src 仅 'self'，故不走 Google Fonts CDN。
+ */
 @theme {
-  --font-sans: "Source Han Sans CN VF", var(--font-geist-sans), "PingFang SC", "Microsoft YaHei", sans-serif;
-  --font-mono: var(--font-geist-mono), "SFMono-Regular", "Cascadia Mono", ui-monospace, monospace, "Source Han Sans CN VF";
+  --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", var(--font-geist-sans), system-ui, sans-serif;
+  --font-serif: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", "SimSun", "Songti TC", serif;
+  --font-mono: var(--font-geist-mono), "SFMono-Regular", "Cascadia Mono", ui-monospace, monospace, "PingFang SC", "Microsoft YaHei";
   --color-accent-neon: #dfe5f2;
   --color-accent-glow: rgba(124, 141, 187, 0.14);
   --color-accent-muted: #8e99b5;
@@ -187,6 +185,20 @@ body {
   font-weight: 500;
   letter-spacing: 0.015em;
   color: var(--v4-text-faint);
+}
+
+/* 宋体 display：片源名、空态主句、剧情简介。 */
+.font-display {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.prose-serif {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.75;
 }
 
 .v4-panel {
@@ -704,9 +716,10 @@ body {
 
 .ingest-start-card__title {
   margin: 0;
+  font-family: var(--font-serif);
   font-size: clamp(1.85rem, 3.4vw, 2.25rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   color: var(--v4-text);
 }
 
