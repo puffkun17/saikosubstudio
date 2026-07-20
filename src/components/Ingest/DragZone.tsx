@@ -941,12 +941,70 @@ export const DragZone: React.FC = () => {
     }
   }
 
+  /**
+   * 生产线「轨单元」：单独字幕 / 包内字幕 / 文件夹内字幕共用同一视觉规格。
+   * 壳（7z、文件夹）用更大的根行；轨永远是 md 图标 + 文件名 + 语种标。
+   */
+  const renderTrackUnit = ({
+    keyName,
+    name,
+    title,
+    accepted,
+    note,
+    languageLabels,
+    onRemove,
+  }: {
+    keyName: string;
+    name: string;
+    title?: string;
+    accepted: boolean;
+    note?: string;
+    languageLabels: string[];
+    onRemove?: () => void;
+  }) => (
+    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2.5">
+      <FileFormatIcon name={name} size="md" />
+      <div className="min-w-0">
+        <p
+          className={`truncate text-[14px] font-medium leading-snug ${accepted ? 'text-[var(--v4-text)]' : 'text-[var(--v4-danger)]'}`}
+          title={title || name}
+        >
+          {name}
+        </p>
+        {note && !accepted && (
+          <p className="mt-0.5 text-xs font-normal text-[var(--v4-danger)]">{note}</p>
+        )}
+      </div>
+      {languageLabels.length > 0 ? (
+        <span className="inline-flex flex-wrap items-center justify-end gap-1">
+          {languageLabels.map((label) => (
+            <LanguageMark key={`${keyName}:${label}`} label={label} />
+          ))}
+        </span>
+      ) : (
+        <span aria-hidden="true" />
+      )}
+      {onRemove ? (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="v4-focus-ring grid h-8 w-8 place-items-center rounded-md text-[var(--v4-text-faint)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)]"
+          aria-label={`移除 ${name}`}
+        >
+          <X className="h-3.5 w-3.5" strokeWidth={2.25} />
+        </button>
+      ) : (
+        <span className="h-8 w-8" aria-hidden="true" />
+      )}
+    </div>
+  );
+
   /** 压缩包子文件树（顶层与文件夹内嵌套共用）。 */
   const renderArchiveSubtree = (item: PreflightItem) => {
     if (item.kind !== 'zip' && item.kind !== 'archive') return null;
     if (item.archivePeekStatus !== 'error' && !(item.archiveEntries && item.archiveEntries.length > 0)) return null;
     return (
-      <div className="ingest-halo-tree mt-2.5">
+      <div className="ingest-halo-tree mt-2">
         {item.archivePeekStatus === 'error' && (
           <p className="mb-1.5 text-xs font-normal text-[var(--v4-danger)]">{item.archivePeekError || item.note}</p>
         )}
@@ -960,14 +1018,16 @@ export const DragZone: React.FC = () => {
               delay: shouldReduceMotion ? 0 : leafDelayMs(entryIndex) / 1000,
               ease: [0.16, 1, 0.3, 1],
             }}
-            className="ingest-halo-leaf grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 py-1.5"
+            className="ingest-halo-leaf min-w-0 py-1"
             style={{ '--leaf-delay': `${leafDelayMs(entryIndex)}ms` } as React.CSSProperties}
           >
-            <FileFormatIcon name={entry.name} size="md" />
-            <span className="min-w-0 truncate text-[13px] font-normal leading-snug text-[var(--v4-text-muted)]" title={entry.name}>
-              {entry.name}
-            </span>
-            <LanguageMark label={entry.languageLabel} className="justify-self-end" />
+            {renderTrackUnit({
+              keyName: `${item.key}:${entry.name}`,
+              name: entry.name,
+              title: entry.name,
+              accepted: true,
+              languageLabels: [entry.languageLabel],
+            })}
           </motion.div>
         ))}
       </div>
@@ -1130,7 +1190,7 @@ export const DragZone: React.FC = () => {
                 </div>
               </header>
 
-              <div className="max-h-[min(420px,52vh)] space-y-4 overflow-y-auto px-1 pb-1">
+              <div className="max-h-[min(420px,52vh)] space-y-2.5 overflow-y-auto px-1 pb-1">
                 {renderNodes.map((node, nodeIndex) => {
                   // 文件「落桌」：从上方轻降 + 微缩回位，像放到桌面上
                   const landing = {
@@ -1157,7 +1217,7 @@ export const DragZone: React.FC = () => {
                             <p className="truncate text-[15px] font-semibold leading-snug tracking-tight text-[var(--v4-text)]" title={node.folder}>
                               {node.folder}
                             </p>
-                            <p className="mt-1 text-xs font-medium text-[var(--v4-text-muted)]">
+                            <p className="mt-0.5 text-[13px] font-medium text-[var(--v4-text-muted)]">
                               本地文件夹 · {node.items.length} 个文件
                               {subtitleCount > 0 ? ` · ${subtitleCount} 条字幕` : ''} · {formatBytes(folderBytes)}
                             </p>
@@ -1172,7 +1232,7 @@ export const DragZone: React.FC = () => {
                           </button>
                         </div>
 
-                        <div className="ingest-halo-tree mt-2.5">
+                        <div className="ingest-halo-tree mt-2">
                           {node.items.map((item, leafIndex) => {
                             const langs = languagesForItem(item);
                             // 去掉顶层目录名，保留剩余相对路径（如 S01/xx.srt）
@@ -1189,40 +1249,18 @@ export const DragZone: React.FC = () => {
                                   delay: shouldReduceMotion ? 0 : leafDelayMs(leafIndex) / 1000,
                                   ease: [0.16, 1, 0.3, 1],
                                 }}
-                                className="ingest-halo-leaf min-w-0 py-1.5"
+                                className="ingest-halo-leaf min-w-0 py-1"
                                 style={{ '--leaf-delay': `${leafDelayMs(leafIndex)}ms` } as React.CSSProperties}
                               >
-                                <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2.5">
-                                  <FileFormatIcon name={item.name} size="md" />
-                                  <div className="min-w-0">
-                                    <p
-                                      className={`truncate text-[13px] leading-snug ${item.accepted ? 'text-[var(--v4-text)]' : 'text-[var(--v4-danger)]'}`}
-                                      title={item.relativePath || item.name}
-                                    >
-                                      {subPath}
-                                    </p>
-                                    {!item.accepted && (
-                                      <p className="mt-0.5 text-xs font-normal text-[var(--v4-danger)]">{item.note}</p>
-                                    )}
-                                  </div>
-                                  {langs.length > 0 ? (
-                                    <span className="inline-flex flex-wrap items-center justify-end gap-1">
-                                      {langs.map((label) => (
-                                        <LanguageMark key={`${item.key}:${label}`} label={label} />
-                                      ))}
-                                    </span>
-                                  ) : (
-                                    <span aria-hidden="true" />
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={() => removeQueuedFile(item.key)}
-                                    className="v4-focus-ring grid h-7 w-7 place-items-center rounded-md text-[var(--v4-text-faint)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)]"
-                                    aria-label={`移除 ${item.name}`}
-                                  >
-                                    <X className="h-3.5 w-3.5" strokeWidth={2.25} />
-                                  </button>
-                                </div>
+                                {renderTrackUnit({
+                                  keyName: item.key,
+                                  name: subPath,
+                                  title: item.relativePath || item.name,
+                                  accepted: item.accepted,
+                                  note: item.accepted ? undefined : item.note,
+                                  languageLabels: langs,
+                                  onRemove: () => removeQueuedFile(item.key),
+                                })}
                                 {renderArchiveSubtree(item)}
                               </motion.div>
                             );
@@ -1235,6 +1273,24 @@ export const DragZone: React.FC = () => {
                   const item = node.item;
                   const langs = languagesForItem(item);
                   const isArchive = item.kind === 'zip' || item.kind === 'archive';
+
+                  // 单独字幕文件：与包内轨同级的「轨单元」，不升格成壳
+                  if (!isArchive && item.kind === 'subtitle') {
+                    return (
+                      <motion.div key={item.key} {...landing} className="min-w-0 rounded-md px-0.5 py-0.5">
+                        {renderTrackUnit({
+                          keyName: item.key,
+                          name: item.name,
+                          title: item.name,
+                          accepted: item.accepted,
+                          note: item.accepted ? undefined : item.note,
+                          languageLabels: langs,
+                          onRemove: () => removeQueuedFile(item.key),
+                        })}
+                      </motion.div>
+                    );
+                  }
+
                   return (
                     <motion.div key={item.key} {...landing} className="min-w-0">
                       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
@@ -1245,27 +1301,20 @@ export const DragZone: React.FC = () => {
                           <p className="truncate text-[15px] font-semibold leading-snug tracking-tight text-[var(--v4-text)]" title={item.name}>
                             {item.name}
                           </p>
-                          {!isArchive && (
-                            <div className={`mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium ${item.accepted ? 'text-[var(--v4-text-muted)]' : 'text-[var(--v4-danger)]'}`}>
-                              <span>{item.note} · {formatBytes(item.file.size)}</span>
-                              {langs.length > 0 && (
-                                <>
-                                  <span aria-hidden="true" className="text-[var(--v4-text-faint)]">·</span>
-                                  <span className="inline-flex flex-wrap items-center gap-1">
-                                    {langs.map((label) => (
-                                      <LanguageMark key={`${item.name}:${label}`} label={label} />
-                                    ))}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          )}
                           {isArchive && item.archivePeekStatus === 'loading' && (
-                            <p className="mt-1 text-xs font-normal text-[var(--v4-text-muted)]">
+                            <p className="mt-0.5 text-[13px] font-medium text-[var(--v4-text-muted)]">
                               {item.note && item.note !== '正在查看包内字幕…'
                                 ? item.note
                                 : '正在读取包内字幕…'}
                             </p>
+                          )}
+                          {isArchive && item.archivePeekStatus === 'ready' && item.archiveEntries && (
+                            <p className="mt-0.5 text-[13px] font-medium text-[var(--v4-text-muted)]">
+                              压缩包 · {item.archiveEntries.length} 条字幕 · {formatBytes(item.file.size)}
+                            </p>
+                          )}
+                          {!item.accepted && (
+                            <p className="mt-0.5 text-[13px] font-medium text-[var(--v4-danger)]">{item.note}</p>
                           )}
                         </div>
                         <button
