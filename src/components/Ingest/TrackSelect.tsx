@@ -39,6 +39,7 @@ const FileNameText: React.FC<{ name: string; className?: string }> = ({ name, cl
   );
 };
 
+/** 与导入列表「轨单元」同规格：md 图标 + 语种标 + 文件名 */
 export const TrackSelect: React.FC<TrackSelectProps> = ({
   value,
   options,
@@ -73,46 +74,54 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
   }, [open]);
 
   return (
-    <div className="relative flex-1 min-w-0" ref={ref}>
+    <div className="relative min-w-0 flex-1" ref={ref}>
       <button
         type="button"
-        className={`v4-focus-ring w-full flex items-center gap-2 rounded-xl border py-3 px-3.5 text-base outline-none transition-all duration-200 cursor-pointer text-left bg-[var(--v4-panel-muted)] shadow-[inset_0_1px_2px_rgba(26,61,55,0.06)]
-          ${open ? 'border-[var(--v4-accent)] text-[var(--v4-text)]' : 'border-[var(--v4-line)] hover:border-[var(--v4-line-strong)] text-[var(--v4-text-muted)]'}`}
+        className={`v4-focus-ring flex w-full cursor-pointer items-center gap-2.5 rounded-md border px-2.5 py-2 text-left text-[14px] outline-none transition-colors
+          ${open
+            ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-text)]'
+            : 'border-[var(--v4-line)] bg-[var(--v4-panel)] text-[var(--v4-text-muted)] hover:border-[var(--v4-line-strong)]'}`}
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-controls={listId}
       >
-        <span className="flex-1 min-w-0 overflow-hidden">
+        <span className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden">
           {selectedOption ? (
-            <span className="flex min-w-0 items-center gap-2">
-              <FileFormatIcon name={selectedOption.name} size="sm" />
+            <>
+              <FileFormatIcon name={selectedOption.name} size="md" />
               <LanguageMark lang={selectedOption.lang} languagePair={selectedOption.languagePair} />
-              <FileNameText name={selectedOption.name} className="flex-1 font-medium text-[var(--v4-text)]" />
-            </span>
+              <FileNameText name={selectedOption.name} className="min-w-0 flex-1 text-[14px] font-medium text-[var(--v4-text)]" />
+            </>
           ) : (
-            <span className="text-[var(--v4-text-faint)]">{placeholder}</span>
+            <span className="pl-1 text-[var(--v4-text-faint)]">{placeholder}</span>
           )}
         </span>
-        <span className="flex shrink-0 items-center gap-2 border-l border-[var(--v4-line)] pl-2.5">
+        <span className="flex shrink-0 items-center gap-1.5 border-l border-[var(--v4-line)] pl-2">
           {countLabel != null && (
-            <span className="text-[var(--v4-text-muted)] text-xs font-mono font-semibold bg-[var(--v4-panel)] px-2 py-1 rounded-md border border-[var(--v4-line)]">{countLabel}行</span>
+            <span className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums text-[var(--v4-text-muted)]">
+              {countLabel}行
+            </span>
           )}
-          <span className={`text-xs font-medium transition-colors ${open ? 'text-[var(--v4-text)]' : 'text-[var(--v4-text-faint)]'}`}>
+          <span className={`text-[12px] font-semibold transition-colors ${open ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-faint)]'}`}>
             {selectedOption ? '更换' : '选择'}
           </span>
-          <ChevronDown className={`h-4 w-4 text-[var(--v4-text-faint)] transition-transform duration-200 ${open ? 'rotate-180 text-[var(--v4-accent-strong)]' : ''}`} />
+          <ChevronDown className={`h-3.5 w-3.5 text-[var(--v4-text-faint)] transition-transform duration-200 ${open ? 'rotate-180 text-[var(--v4-accent-strong)]' : ''}`} />
         </span>
       </button>
 
       {open && (
-        <div id={listId} className="absolute top-full left-0 right-0 mt-1.5 z-[200] bg-[var(--v4-panel-raised)] border border-[var(--v4-line-strong)] rounded-xl overflow-hidden shadow-[0_12px_36px_rgba(26,61,55,0.14)] max-h-64 overflow-y-auto scrollbar-thin">
+        <div
+          id={listId}
+          className="dropdown-pop absolute left-0 right-0 top-full z-[200] mt-1.5 max-h-64 overflow-y-auto overflow-x-hidden rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] shadow-[0_12px_36px_rgba(26,61,55,0.14)] scrollbar-thin"
+        >
           <button
-            className={`w-full flex items-center gap-2 px-3.5 py-3 text-base hover:bg-[var(--v4-accent-soft)] transition text-left cursor-pointer
-              ${!value ? 'text-[var(--v4-text)] bg-[var(--v4-panel-muted)] font-semibold' : 'text-[var(--v4-text-muted)]'}`}
+            type="button"
+            className={`flex w-full cursor-pointer items-center gap-2.5 px-2.5 py-2 text-left text-[14px] transition-colors hover:bg-[var(--v4-accent-soft)]
+              ${!value ? 'bg-[var(--v4-panel-muted)] font-semibold text-[var(--v4-text)]' : 'text-[var(--v4-text-muted)]'}`}
             onClick={() => { onChange(''); setOpen(false); }}
           >
-            {!value && <Check className="w-3 h-3 text-[var(--v4-accent-strong)] flex-shrink-0" />}
-            <span className={`text-base ${!value ? 'pl-0' : 'pl-[18px]'} text-[var(--v4-text-muted)]`}>未选择</span>
+            {!value ? <Check className="h-3.5 w-3.5 shrink-0 text-[var(--v4-accent-strong)]" /> : <span className="w-3.5 shrink-0" />}
+            <span>未选择</span>
           </button>
 
           {options.map(opt => {
@@ -120,27 +129,28 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
             return (
               <button
                 key={opt.id}
-                className={`w-full flex items-center gap-2 px-3.5 py-3 text-base hover:bg-[var(--v4-accent-soft)] transition text-left border-t border-[var(--v4-line)] cursor-pointer
-                  ${isSelected ? 'bg-[var(--v4-accent-soft)] text-[var(--v4-text)] font-semibold' : 'text-[var(--v4-text-muted)]'}`}
+                type="button"
+                className={`flex w-full cursor-pointer items-center gap-2.5 border-t border-[var(--v4-line)] px-2.5 py-2 text-left transition-colors hover:bg-[var(--v4-accent-soft)]
+                  ${isSelected ? 'bg-[var(--v4-accent-soft)] font-semibold text-[var(--v4-text)]' : 'text-[var(--v4-text-muted)]'}`}
                 onClick={() => { onChange(opt.id); setOpen(false); }}
                 title={opt.name}
               >
                 {isSelected
-                  ? <Check className="h-3 w-3 shrink-0 text-[var(--v4-accent-strong)]" />
-                  : <span className="w-3 shrink-0" />
+                  ? <Check className="h-3.5 w-3.5 shrink-0 text-[var(--v4-accent-strong)]" />
+                  : <span className="w-3.5 shrink-0" />
                 }
-                <FileFormatIcon name={opt.name} size="sm" />
+                <FileFormatIcon name={opt.name} size="md" />
                 <LanguageMark lang={opt.lang} languagePair={opt.languagePair} />
-                <FileNameText name={truncateMiddle(opt.name, 120)} className="flex-1 font-mono text-base text-[var(--v4-text)]" />
+                <FileNameText name={truncateMiddle(opt.name, 120)} className="min-w-0 flex-1 font-mono text-[14px] font-medium text-[var(--v4-text)]" />
                 {opt.count != null && (
-                  <span className="text-[var(--v4-text-faint)] text-xs flex-shrink-0 font-mono tabular-nums">{opt.count}行</span>
+                  <span className="shrink-0 font-mono text-[11px] tabular-nums text-[var(--v4-text-faint)]">{opt.count}行</span>
                 )}
               </button>
             );
           })}
 
           {options.length === 0 && (
-            <div className="px-3 py-4 text-xs text-[var(--v4-text-faint)] text-center">
+            <div className="px-3 py-4 text-center text-xs text-[var(--v4-text-faint)]">
               暂无已上传的字幕文件
             </div>
           )}

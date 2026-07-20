@@ -710,17 +710,29 @@ export const TaskList: React.FC = () => {
               </div>
 
               <div className="relative mt-2.5">
-                <input
-                  type="text"
-                  className="rd-field v4-focus-ring h-10 w-full rounded-lg px-3 font-mono text-sm outline-none"
-                  value={customFilename}
-                  onChange={e => setCustomFilename(e.target.value, 'manual')}
-                  onFocus={() => setIsFilenameFocused(true)}
-                  onBlur={() => setIsFilenameFocused(false)}
-                  placeholder="输入导出文件名"
-                />
+                {/* 与轨单元同形：图标 + 文件名 + 后缀，像产品离开流水线贴的标签 */}
+                <div className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 rounded-md border px-2 py-1.5 transition-colors ${
+                  isFilenameFocused
+                    ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)]'
+                    : 'border-[var(--v4-line)] bg-[var(--v4-panel)]'
+                }`}>
+                  <FileFormatIcon format="ass" size="md" />
+                  <input
+                    type="text"
+                    className="v4-focus-ring h-8 w-full min-w-0 border-0 bg-transparent font-mono text-[14px] font-medium text-[var(--v4-text)] outline-none placeholder:text-[var(--v4-text-faint)]"
+                    value={customFilename}
+                    onChange={e => setCustomFilename(e.target.value, 'manual')}
+                    onFocus={() => setIsFilenameFocused(true)}
+                    onBlur={() => setIsFilenameFocused(false)}
+                    placeholder="输入导出文件名"
+                    aria-label="导出文件名"
+                  />
+                  <span className="shrink-0 font-mono text-[11px] font-semibold tracking-wide text-[var(--v4-text-faint)]">
+                    .ass / .srt
+                  </span>
+                </div>
                 {customFilename.length > 42 && !isFilenameFocused && (
-                  <div className="pointer-events-none absolute inset-y-px left-px right-px flex items-center overflow-hidden rounded-lg bg-white px-3 font-mono text-sm text-[var(--v4-text)]">
+                  <div className="pointer-events-none absolute inset-y-px left-[2.75rem] right-[4.75rem] flex items-center overflow-hidden bg-[var(--v4-panel)] font-mono text-[14px] font-medium text-[var(--v4-text)]">
                     {renderMarqueeText(customFilename, 'w-full')}
                   </div>
                 )}
