@@ -110,6 +110,13 @@ export interface SubtitleAttribution {
   source: 'ass-header' | 'subtitle-cue';
 }
 
+/** Optional ASS Script Info fields written on export. */
+export interface AssScriptMeta {
+  originalScript?: string;
+  comments?: string[];
+  updateDetails?: string;
+}
+
 export interface StyleSettings {
   zhFontSize: number;
   enFontSize: number;
@@ -1742,7 +1749,12 @@ export function generateSrtContent(subs: SubRow[], styleSettings?: StyleSettings
   }).join("\n\n") + "\n";
 }
 
-export function generateAssContent(subs: SubRow[], styleSettings: StyleSettings, title = "Bilingual Subtitles"): string {
+export function generateAssContent(
+  subs: SubRow[],
+  styleSettings: StyleSettings,
+  title = "Bilingual Subtitles",
+  scriptMeta?: AssScriptMeta,
+): string {
   const {
     zhFontSize = 22,
     enFontSize = 12,
@@ -1828,6 +1840,11 @@ export function generateAssContent(subs: SubRow[], styleSettings: StyleSettings,
   const assZhFont = toAssFontName(zhFontFamily, 'PingFang SC');
   const assEnFont = toAssFontName(enFontFamily, 'Arial');
   const safeTitle = title.replace(/[\r\n]/g, ' ').trim() || 'Bilingual Subtitles';
+  const safeOriginal = (scriptMeta?.originalScript || '').replace(/[\r\n]/g, ' ').trim();
+  const safeUpdateDetails = (scriptMeta?.updateDetails || '').replace(/[\r\n]/g, ' ').trim();
+  const commentLines = (scriptMeta?.comments || [])
+    .map((line) => line.replace(/[\r\n]/g, ' ').trim())
+    .filter(Boolean);
 
   const header = `[Script Info]
 PlayResX: ${resX}
@@ -1835,7 +1852,7 @@ PlayResY: ${resY}
 ScaledBorderAndShadow: no
 ScriptType: v4.00+
 Title: ${safeTitle}
-
+${safeOriginal ? `Original Script: ${safeOriginal}\n` : ''}${commentLines.map((line) => `Comment: ${line}`).join('\n')}${commentLines.length ? '\n' : ''}${safeUpdateDetails ? `Update Details: ${safeUpdateDetails}\n` : ''}
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Han,${assZhFont},${mZhFont},${assZhColor},&H00FF9C41,${assZhOutline},&H00000000,1,0,0,0,100,100,0,0,1,${mOutline},${mShadow},2,${mBaseMargin},${mBaseMargin},${mMarginV},1

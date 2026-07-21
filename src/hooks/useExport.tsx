@@ -3,19 +3,66 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, SquareArrowRightExit } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { useStudioStore } from '@/store/useStudioStore';
-import { appendCreatorCredit as appendCreatorCreditCue, applyAuxiliarySubtitleMode, generateSrtContent, generateAssContent } from '@/utils/subtitleCore';
+import { useStudioStore, type CreditDeclaration } from '@/store/useStudioStore';
+import {
+  appendCreatorCredit as appendCreatorCreditCue,
+  applyAuxiliarySubtitleMode,
+  generateSrtContent,
+  generateAssContent,
+  type AssScriptMeta,
+} from '@/utils/subtitleCore';
+
+const DECLARATION_LABEL: Record<CreditDeclaration, string | null> = {
+  none: null,
+  original: '原创字幕',
+  'ai-assisted': '含 AI 提示/生成辅助',
+  translated: '翻译或二次整理',
+};
+
+const buildAssScriptMeta = ({
+  creatorCredit,
+  creditDeclaration,
+  isOfficialSubtitle,
+}: {
+  creatorCredit: string;
+  creditDeclaration: CreditDeclaration;
+  isOfficialSubtitle: boolean;
+}): AssScriptMeta | undefined => {
+  const comments: string[] = [];
+  const declaration = DECLARATION_LABEL[creditDeclaration];
+  if (declaration) comments.push(`声明：${declaration}`);
+  if (isOfficialSubtitle) comments.push('来源：官方字幕');
+  const originalScript = creatorCredit.trim() || undefined;
+  const updateDetails = comments.length > 0 ? comments.join('；') : undefined;
+  if (!originalScript && comments.length === 0) return undefined;
+  return {
+    originalScript,
+    comments,
+    updateDetails,
+  };
+};
 
 /**
  * #16 — Shared export hook to avoid duplication in WorkbenchStep + TheaterStep
  */
 export const useExport = () => {
-  const { processedSubs, customFilename, customStyle, creatorCredit, appendCreatorCredit, addLog } = useStudioStore(useShallow((state) => ({
+  const {
+    processedSubs,
+    customFilename,
+    customStyle,
+    creatorCredit,
+    appendCreatorCredit,
+    creditDeclaration,
+    isOfficialSubtitle,
+    addLog,
+  } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     customFilename: state.customFilename,
     customStyle: state.customStyle,
     creatorCredit: state.creatorCredit,
     appendCreatorCredit: state.appendCreatorCredit,
+    creditDeclaration: state.creditDeclaration,
+    isOfficialSubtitle: state.isOfficialSubtitle,
     addLog: state.addLog,
   })));
 
@@ -39,7 +86,12 @@ export const useExport = () => {
         mimeType = 'text/srt';
         extension = 'srt';
       } else {
-        content = generateAssContent(filteredExportSubs, exportStyle, customFilename);
+        const scriptMeta = buildAssScriptMeta({
+          creatorCredit,
+          creditDeclaration,
+          isOfficialSubtitle,
+        });
+        content = generateAssContent(filteredExportSubs, exportStyle, customFilename, scriptMeta);
         mimeType = 'text/x-ass';
         extension = 'ass';
       }

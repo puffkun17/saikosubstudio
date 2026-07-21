@@ -3,7 +3,14 @@
 import React from 'react';
 import { BadgeCheck, PenLine } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { useStudioStore } from '@/store/useStudioStore';
+import { useStudioStore, type CreditDeclaration } from '@/store/useStudioStore';
+
+const DECLARATION_OPTIONS: Array<{ value: CreditDeclaration; label: string; hint: string }> = [
+  { value: 'none', label: '未声明', hint: '不写入制作声明' },
+  { value: 'original', label: '原创', hint: '声明为原创字幕' },
+  { value: 'ai-assisted', label: 'AI 辅助', hint: '声明含 AI 提示/生成辅助' },
+  { value: 'translated', label: '翻译整理', hint: '声明为翻译或二次整理' },
+];
 
 /** Fixed credit block — always visible, placed before export filename. */
 export const CreditTool: React.FC = () => {
@@ -11,14 +18,20 @@ export const CreditTool: React.FC = () => {
     detectedAttributions,
     creatorCredit,
     appendCreatorCredit,
+    creditDeclaration,
+    isOfficialSubtitle,
     setCreatorCredit,
     setAppendCreatorCredit,
+    setCreditDeclaration,
   } = useStudioStore(useShallow((state) => ({
     detectedAttributions: state.detectedAttributions,
     creatorCredit: state.creatorCredit,
     appendCreatorCredit: state.appendCreatorCredit,
+    creditDeclaration: state.creditDeclaration,
+    isOfficialSubtitle: state.isOfficialSubtitle,
     setCreatorCredit: state.setCreatorCredit,
     setAppendCreatorCredit: state.setAppendCreatorCredit,
+    setCreditDeclaration: state.setCreditDeclaration,
   })));
 
   const showCreditInput = appendCreatorCredit || Boolean(creatorCredit.trim());
@@ -57,6 +70,36 @@ export const CreditTool: React.FC = () => {
               未在当前字幕中发现明确署名行。
             </p>
           )}
+        </div>
+
+        <div className="min-w-0">
+          <div className="text-xs font-medium text-[var(--v4-text-muted)]">制作声明</div>
+          <div className="mt-2 flex flex-wrap gap-1.5" role="radiogroup" aria-label="制作声明">
+            {DECLARATION_OPTIONS.map((option) => {
+              const active = creditDeclaration === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  title={option.hint}
+                  onClick={() => setCreditDeclaration(option.value)}
+                  className={`v4-focus-ring inline-flex h-8 items-center rounded-md border px-2.5 text-xs font-semibold transition-colors ${
+                    active
+                      ? 'border-[var(--v4-accent)]/40 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
+                      : 'border-[var(--v4-line)] bg-[var(--v4-panel)] text-[var(--v4-text-muted)] hover:text-[var(--v4-text)]'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1.5 text-[11px] font-medium leading-relaxed text-[var(--v4-text-faint)]">
+            {isOfficialSubtitle ? '已标记官方字幕 · ' : ''}
+            导出 ASS 时写入 Script Info（Original Script / Comment）
+          </p>
         </div>
 
         <div className="min-w-0">

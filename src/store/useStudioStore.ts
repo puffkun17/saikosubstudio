@@ -40,6 +40,8 @@ export interface Subfile {
   isBilingual: boolean;
   isCommentary: boolean;
   size: number;
+  /** 导入来源：松散文件 / ZIP / RAR·7Z / 文件夹 */
+  importSource?: 'file' | 'zip' | 'archive' | 'folder';
 }
 
 export interface TaskPair {
@@ -147,6 +149,8 @@ type TmdbImages = {
 
 type TmdbManualInput = { title: string; year: string; type: TmdbMediaType; season: string; episode: string };
 type FilenameSource = 'auto' | 'tmdb' | 'manual' | 'library' | 'unknown';
+/** 署名声明：导出 ASS 时写入 Script Info。 */
+export type CreditDeclaration = 'none' | 'original' | 'ai-assisted' | 'translated';
 type TmdbConfirmationAction = 'auto_apply' | 'require_confirmation' | 'reject';
 
 type TmdbConfirmationDecision = {
@@ -214,6 +218,10 @@ export interface StudioState {
   detectedAttributions: SubtitleAttribution[];
   creatorCredit: string;
   appendCreatorCredit: boolean;
+  /** 本批导入是否标记为官方字幕（写入 ASS 声明）。 */
+  isOfficialSubtitle: boolean;
+  /** 制作声明：写入 ASS Script Info 前缀。 */
+  creditDeclaration: CreditDeclaration;
   /** 放映厅关灯模式：压暗全局界面，只保留放映区。 */
   isLightsOff: boolean;
   /** 字幕文本编辑历史（跨组件持久，抽屉开关不丢栈）。 */
@@ -224,6 +232,8 @@ export interface StudioState {
   setAlignmentMode: (mode: 'standard' | 'industrial') => void;
   setCreatorCredit: (credit: string) => void;
   setAppendCreatorCredit: (enabled: boolean) => void;
+  setIsOfficialSubtitle: (official: boolean) => void;
+  setCreditDeclaration: (declaration: CreditDeclaration) => void;
   setLibraryOpen: (open: boolean) => void;
   setWorkflowStep: (step: number) => void;
   setIngestClearing: (clearing: boolean) => void;
@@ -355,6 +365,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   detectedAttributions: [],
   creatorCredit: '',
   appendCreatorCredit: false,
+  isOfficialSubtitle: false,
+  creditDeclaration: 'none',
   isLightsOff: false,
   editHistory: [],
   editFuture: [],
@@ -362,6 +374,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setAlignmentMode: (alignmentMode) => set({ alignmentMode }),
   setCreatorCredit: (creatorCredit) => set({ creatorCredit }),
   setAppendCreatorCredit: (appendCreatorCredit) => set({ appendCreatorCredit }),
+  setIsOfficialSubtitle: (isOfficialSubtitle) => set({ isOfficialSubtitle }),
+  setCreditDeclaration: (creditDeclaration) => set({ creditDeclaration }),
   setLibraryOpen: (isLibraryOpen) => set({ isLibraryOpen }),
   setWorkflowStep: (step) => set({ workflowStep: step }),
   setIngestClearing: (isIngestClearing) => set({ isIngestClearing }),
@@ -1803,7 +1817,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       detectedAttributions: [],
       editHistory: [],
       editFuture: [],
-      isLightsOff: false
+      isLightsOff: false,
+      isOfficialSubtitle: false,
+      creditDeclaration: 'none',
+      creatorCredit: '',
+      appendCreatorCredit: false,
     });
     get().addLog("已重启工作流，准备新导入", "info");
   }

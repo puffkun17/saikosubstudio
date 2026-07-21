@@ -33,17 +33,24 @@ export type EdgeNextConfig = {
 
 export type InfoBarConfig = {
   title: string;
-  subtitle?: string;
-  /** Highlighted season/episode or short identity chip next to the title. */
+  /**
+   * 片源元数据徽章（集数、年份等），紧贴标题。
+   * 兼容旧的单一 `badge` 字段。
+   */
+  badges?: string[];
+  /** @deprecated 使用 badges；仍支持单徽章 */
   badge?: string;
   /**
-   * 广义状态通知（如已匹配 / 匹配中 / 未匹配），常驻顶栏。
-   * tone: ok 已完成 · progress 进行中 · warn 需处理 · muted 中性
+   * 本地状态通知（已匹配 / 匹配中 / 未匹配），与副行本地信息同组。
    */
   status?: {
     label: string;
     tone?: 'ok' | 'progress' | 'warn' | 'muted';
   };
+  /**
+   * 本地状态副行：任务数、格式构成、导入来源等（不含冗余「字幕文件」）。
+   */
+  subtitle?: string;
   onBack?: () => void;
   actions?: React.ReactNode;
 } | null;
@@ -133,11 +140,16 @@ export const WorkflowChromeProvider: React.FC<{ children: React.ReactNode }> = (
 
 const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
   const shouldReduceMotion = useReducedMotion();
+  const metaBadges = [
+    ...(config?.badges || []),
+    ...(config?.badge && !(config.badges || []).includes(config.badge) ? [config.badge] : []),
+  ];
+
   return (
     <AnimatePresence>
       {config && (
         <motion.div
-          key={`${config.title}:${config.badge || ''}:${config.status?.label || ''}:${config.subtitle || ''}`}
+          key={`${config.title}:${metaBadges.join('|')}:${config.status?.label || ''}:${config.subtitle || ''}`}
           role="region"
           aria-label="信息栏"
           initial={shouldReduceMotion ? false : { opacity: 0, y: -6 }}
@@ -163,31 +175,38 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
                   <h2 className="truncate text-[17px] font-semibold tracking-tight text-[var(--v4-text)]">
                     {config.title}
                   </h2>
-                  {config.badge && (
-                    <span className="inline-flex h-7 shrink-0 items-center rounded-md border border-[var(--v4-accent)]/35 bg-[var(--v4-accent-soft)] px-2.5 font-mono text-[13px] font-bold tracking-wide text-[var(--v4-accent-strong)]">
-                      {config.badge}
-                    </span>
-                  )}
-                  {config.status && (
+                  {metaBadges.map((item) => (
                     <span
-                      className={`inline-flex h-7 shrink-0 items-center rounded-md border px-2.5 text-[12px] font-bold tracking-wide ${
-                        config.status.tone === 'ok'
-                          ? 'border-[var(--v4-accent)]/35 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
-                          : config.status.tone === 'progress'
-                            ? 'border-[var(--v4-line-strong)] bg-[var(--v4-panel)] text-[var(--v4-text)]'
-                            : config.status.tone === 'warn'
-                              ? 'border-[color:rgba(196,137,58,0.35)] bg-[color:rgba(196,137,58,0.12)] text-[var(--v4-warning)]'
-                              : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]'
-                      }`}
+                      key={item}
+                      className="inline-flex h-7 shrink-0 items-center rounded-md border border-[var(--v4-accent)]/35 bg-[var(--v4-accent-soft)] px-2.5 font-mono text-[13px] font-bold tracking-wide text-[var(--v4-accent-strong)]"
                     >
-                      {config.status.label}
+                      {item}
                     </span>
-                  )}
+                  ))}
                 </div>
-                {config.subtitle && (
-                  <p className="mt-0.5 truncate text-[13px] font-medium text-[var(--v4-text-muted)]" title={config.subtitle}>
-                    {config.subtitle}
-                  </p>
+                {(config.status || config.subtitle) && (
+                  <div className="mt-0.5 flex min-w-0 items-center gap-2">
+                    {config.status && (
+                      <span
+                        className={`inline-flex h-6 shrink-0 items-center rounded-md border px-2 text-[11px] font-bold tracking-wide ${
+                          config.status.tone === 'ok'
+                            ? 'border-[var(--v4-accent)]/35 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
+                            : config.status.tone === 'progress'
+                              ? 'border-[var(--v4-line-strong)] bg-[var(--v4-panel)] text-[var(--v4-text)]'
+                              : config.status.tone === 'warn'
+                                ? 'border-[color:rgba(196,137,58,0.35)] bg-[color:rgba(196,137,58,0.12)] text-[var(--v4-warning)]'
+                                : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]'
+                        }`}
+                      >
+                        {config.status.label}
+                      </span>
+                    )}
+                    {config.subtitle && (
+                      <p className="min-w-0 truncate text-[13px] font-medium text-[var(--v4-text-muted)]" title={config.subtitle}>
+                        {config.subtitle}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

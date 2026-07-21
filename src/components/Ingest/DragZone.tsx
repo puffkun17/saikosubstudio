@@ -64,7 +64,7 @@ interface TrackSummary {
   lang: string;
   isBilingual: boolean;
   isCommentary: boolean;
-  source: 'file' | 'zip' | 'archive';
+  source: 'file' | 'zip' | 'archive' | 'folder';
 }
 
 type IngestPhase = 'idle' | 'reading' | 'parsing' | 'binding' | 'metadata' | 'ready' | 'needs_review' | 'error';
@@ -259,12 +259,14 @@ const describeTrack = (file: Subfile) => {
 };
 
 export const DragZone: React.FC = () => {
-  const { isDragging, setIsDragging, processFiles, addLog, setIngestClearing } = useStudioStore(useShallow((state) => ({
+  const { isDragging, setIsDragging, processFiles, addLog, setIngestClearing, isOfficialSubtitle, setIsOfficialSubtitle } = useStudioStore(useShallow((state) => ({
     isDragging: state.isDragging,
     setIsDragging: state.setIsDragging,
     processFiles: state.processFiles,
     addLog: state.addLog,
     setIngestClearing: state.setIngestClearing,
+    isOfficialSubtitle: state.isOfficialSubtitle,
+    setIsOfficialSubtitle: state.setIsOfficialSubtitle,
   })));
   const { setEdgeNext, setBottomStatus } = useWorkflowChrome();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -564,7 +566,8 @@ export const DragZone: React.FC = () => {
           languagePair: detected.languagePair,
           isBilingual: detected.isBilingual,
           isCommentary: /(commentary|comment|director|解说|导轨)/i.test(zipEntry.name),
-          size: decoded.text.length
+          size: decoded.text.length,
+          importSource: 'zip',
         };
         zipDetectedFiles.push(subfile);
         zipSummaries.push({
@@ -613,6 +616,7 @@ export const DragZone: React.FC = () => {
           isBilingual: detected.isBilingual,
           isCommentary: /(commentary|comment|director|解说|导轨)/i.test(extractedFile.name),
           size: extractedFile.size,
+          importSource: 'archive',
         };
         detectedFiles.push(subfile);
         summaries.push({
@@ -642,8 +646,14 @@ export const DragZone: React.FC = () => {
     }
   };
 
-  const handleFilesProcess = async (filesList: File[]) => {
-    const batchIssue = getClientBatchIssue(filesList);
+  const handleFilesProcess = async (filesList?: File[]) => {
+    const preflight = (filesList && filesList.length > 0 && queuedItems.length === 0)
+      ? filesList.map((file) => createPreflightItem(file))
+      : queuedItems.length > 0
+        ? queuedItems
+        : (filesList || []).map((file) => createPreflightItem(file));
+
+    const batchIssue = getClientBatchIssue(preflight.map((item) => item.file));
     if (batchIssue) {
       setIngestClearing(false);
       setPhase('error', '本次导入超出安全限制');
@@ -651,7 +661,6 @@ export const DragZone: React.FC = () => {
       return;
     }
 
-    const preflight = filesList.map((file) => createPreflightItem(file));
     setResultChips([]);
 
     const validItems = preflight.filter(item => item.accepted);
@@ -695,7 +704,7 @@ export const DragZone: React.FC = () => {
     const summaries: TrackSummary[] = [];
     let ignoredInArchiveCount = 0;
 
-    setResultChips([`${filesList.length} 个文件`, `${validItems.length} 个可整理`]);
+    setResultChips([`${preflight.length} 个文件`, `${validItems.length} 个可整理`]);
     await holdPhaseFloor(ceremonyStartedAt, phaseStartedAt);
 
     phaseStartedAt = Date.now();
@@ -719,7 +728,8 @@ export const DragZone: React.FC = () => {
             languagePair: detected.languagePair,
             isBilingual: detected.isBilingual,
             isCommentary: /(commentary|comment|director|解说|导轨)/i.test(file.name),
-            size: text.length
+            size: text.length,
+            importSource: item.folderName ? 'folder' : 'file',
           };
           detectedFiles.push(subfile);
           summaries.push({
@@ -728,7 +738,7 @@ export const DragZone: React.FC = () => {
             lang: describeTrack(subfile),
             isBilingual: detected.isBilingual,
             isCommentary: subfile.isCommentary,
-            source: 'file',
+            source: item.folderName ? 'folder' : 'file',
           });
         } catch (e: unknown) {
           const message = e instanceof Error ? e.message : String(e);
@@ -815,7 +825,6 @@ export const DragZone: React.FC = () => {
     }
     const acceptedCount = queuedItems.filter((item) => item.accepted).length;
     const disabled = acceptedCount === 0 || Boolean(queueIssue);
-    const files = queuedItems.map((item) => item.file);
     setEdgeNext({
       label: '下一步',
       disabled,
@@ -823,7 +832,7 @@ export const DragZone: React.FC = () => {
       disabledReason: queueIssue || '清单中暂无可整理的字幕文件，移除无效项或补充文件后继续。',
       onClick: () => {
         if (disabled) return;
-        void handleFilesProcess(files);
+        void handleFilesProcess();
       },
     });
     return () => setEdgeNext(null);
@@ -918,6 +927,48 @@ export const DragZone: React.FC = () => {
   const trackCount = looseSubtitleCount + peekedTrackCount;
   const archivePeekPending = queuedItems.some(item => (item.kind === 'zip' || item.kind === 'archive') && item.archivePeekStatus === 'loading');
   const totalBytes = queuedItems.reduce((sum, item) => sum + item.file.size, 0);
+
+  const queueFormatSummary = (() => {
+    let srt = 0;
+    let ass = 0;
+    for (const item of queuedItems) {
+      if (item.kind === 'subtitle') {
+        if (item.extension === 'ass') ass += 1;
+        else srt += 1;
+      }
+      for (const entry of item.archiveEntries || []) {
+        if (/\.ass$/i.test(entry.name)) ass += 1;
+        else srt += 1;
+      }
+    }
+    const parts: string[] = [];
+    if (srt > 0) parts.push(`${srt} SRT`);
+    if (ass > 0) parts.push(`${ass} ASS`);
+    return parts.join(' · ');
+  })();
+
+  const queueSourceSummary = (() => {
+    const hasArchive = queuedItems.some((item) => item.kind === 'zip' || item.kind === 'archive');
+    const hasFolder = queuedItems.some((item) => Boolean(item.folderName));
+    const hasLoose = queuedItems.some((item) => item.kind === 'subtitle' && !item.folderName);
+    const parts: string[] = [];
+    if (hasArchive) parts.push('来自压缩包');
+    if (hasFolder) parts.push('来自文件夹');
+    if (hasLoose && parts.length === 0) parts.push('本地文件');
+    else if (hasLoose && (hasArchive || hasFolder)) parts.push('含本地文件');
+    if (isOfficialSubtitle) parts.unshift('官方字幕');
+    return parts.join(' · ');
+  })();
+
+  const queueStatsLine = archivePeekPending && trackCount === 0
+    ? '正在读取…'
+    : [
+        `${queuedItems.length} 项`,
+        queueFormatSummary || (trackCount > 0 ? `${trackCount} 轨` : null),
+        queueSourceSummary,
+        formatBytes(totalBytes),
+        rejectedItems.length > 0 ? `${rejectedItems.length} 项已忽略` : null,
+      ].filter(Boolean).join(' · ');
 
   const languagesForItem = (item: PreflightItem): string[] => {
     if (item.archiveEntries && item.archiveEntries.length > 0) {
@@ -1153,13 +1204,19 @@ export const DragZone: React.FC = () => {
                     已添加
                   </h3>
                   <p className="mt-1 text-sm font-medium tabular-nums text-[var(--v4-text-muted)] md:text-[15px]">
-                    {archivePeekPending && trackCount === 0
-                      ? '正在读取…'
-                      : `${queuedItems.length} 项 · ${trackCount} 条字幕 · ${formatBytes(totalBytes)}`}
-                    {rejectedItems.length > 0 ? ` · ${rejectedItems.length} 项已忽略` : ''}
+                    {queueStatsLine}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-2 md:gap-2.5">
+                <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 md:gap-2.5">
+                  <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel)] px-3 text-sm font-medium text-[var(--v4-text-muted)] md:h-11 md:text-[15px]">
+                    <input
+                      type="checkbox"
+                      checked={isOfficialSubtitle}
+                      onChange={(event) => setIsOfficialSubtitle(event.target.checked)}
+                      className="h-3.5 w-3.5 accent-[var(--v4-accent)]"
+                    />
+                    官方字幕
+                  </label>
                   <div className="relative" ref={addMenuRef}>
                     <button
                       type="button"
@@ -1218,8 +1275,14 @@ export const DragZone: React.FC = () => {
 
                   if (node.type === 'folder') {
                     const folderBytes = node.items.reduce((sum, row) => sum + row.file.size, 0);
-                    const subtitleCount = node.items.filter((row) => row.kind === 'subtitle').length
-                      + node.items.reduce((sum, row) => sum + (row.archiveEntries?.length || 0), 0);
+                    const folderSrt = node.items.filter((row) => row.kind === 'subtitle' && row.extension !== 'ass').length
+                      + node.items.reduce((sum, row) => sum + (row.archiveEntries || []).filter((entry) => !/\.ass$/i.test(entry.name)).length, 0);
+                    const folderAss = node.items.filter((row) => row.kind === 'subtitle' && row.extension === 'ass').length
+                      + node.items.reduce((sum, row) => sum + (row.archiveEntries || []).filter((entry) => /\.ass$/i.test(entry.name)).length, 0);
+                    const folderFormat = [
+                      folderSrt > 0 ? `${folderSrt} SRT` : null,
+                      folderAss > 0 ? `${folderAss} ASS` : null,
+                    ].filter(Boolean).join(' · ');
                     return (
                       <motion.div key={`folder:${node.folder}`} {...landing} className="min-w-0">
                         <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 md:gap-4">
@@ -1232,7 +1295,7 @@ export const DragZone: React.FC = () => {
                             </p>
                             <p className="mt-1 text-[13px] font-medium text-[var(--v4-text-muted)] md:text-[14px]">
                               本地文件夹 · {node.items.length} 个文件
-                              {subtitleCount > 0 ? ` · ${subtitleCount} 条字幕` : ''} · {formatBytes(folderBytes)}
+                              {folderFormat ? ` · ${folderFormat}` : ''} · {formatBytes(folderBytes)}
                             </p>
                           </div>
                           <button
@@ -1323,7 +1386,15 @@ export const DragZone: React.FC = () => {
                           )}
                           {isArchive && item.archivePeekStatus === 'ready' && item.archiveEntries && (
                             <p className="mt-1 text-[13px] font-medium text-[var(--v4-text-muted)] md:text-[14px]">
-                              压缩包 · {item.archiveEntries.length} 条字幕 · {formatBytes(item.file.size)}
+                              {[
+                                '压缩包',
+                                (() => {
+                                  const srt = item.archiveEntries.filter((entry) => !/\.ass$/i.test(entry.name)).length;
+                                  const ass = item.archiveEntries.filter((entry) => /\.ass$/i.test(entry.name)).length;
+                                  return [srt > 0 ? `${srt} SRT` : null, ass > 0 ? `${ass} ASS` : null].filter(Boolean).join(' · ');
+                                })(),
+                                formatBytes(item.file.size),
+                              ].filter(Boolean).join(' · ')}
                             </p>
                           )}
                           {!item.accepted && (

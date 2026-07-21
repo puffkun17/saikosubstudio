@@ -60,6 +60,7 @@ export const TaskList: React.FC = () => {
     setTmdbManualOpen,
     tmdbData,
     isSearchingTmdb,
+    isOfficialSubtitle,
   } = useStudioStore(useShallow((state) => ({
     tasks: state.tasks,
     selectedTaskId: state.selectedTaskId,
@@ -86,6 +87,7 @@ export const TaskList: React.FC = () => {
     setTmdbManualOpen: state.setTmdbManualOpen,
     tmdbData: state.tmdbData,
     isSearchingTmdb: state.isSearchingTmdb,
+    isOfficialSubtitle: state.isOfficialSubtitle,
   })));
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -136,7 +138,8 @@ export const TaskList: React.FC = () => {
             languagePair: detected.languagePair,
             isBilingual: detected.isBilingual,
             isCommentary: /(commentary|comment|director|解说|导轨)/i.test(file.name),
-            size: text.length
+            size: text.length,
+            importSource: 'file',
           });
         } catch (error: unknown) {
           const msg = error instanceof Error ? error.message : String(error);
@@ -367,10 +370,51 @@ export const TaskList: React.FC = () => {
     return raw || '字幕任务';
   })();
 
-  const identityBadge = activeTask?.epKey?.toUpperCase() || undefined;
-  const identitySubtitle = [
+  const identityBadges = [
+    activeTask?.epKey?.toUpperCase(),
     tmdbData?.year,
-    `字幕文件 · ${tasks.length} 个任务`,
+  ].filter((item): item is string => Boolean(item));
+
+  const trackFormatSummary = (() => {
+    if (!activeTask) return '';
+    const files = activeTask.files.length > 0
+      ? activeTask.files
+      : [activeTask.zh, activeTask.en, activeTask.commentary].filter(Boolean);
+    let srt = 0;
+    let ass = 0;
+    for (const file of files) {
+      if (!file) continue;
+      if (file.name.toLowerCase().endsWith('.ass')) ass += 1;
+      else srt += 1;
+    }
+    const parts: string[] = [];
+    if (srt > 0) parts.push(`${srt} SRT`);
+    if (ass > 0) parts.push(`${ass} ASS`);
+    return parts.join(' · ');
+  })();
+
+  const trackSourceSummary = (() => {
+    if (!activeTask) return '';
+    const sources = new Set(
+      (activeTask.files.length > 0
+        ? activeTask.files
+        : [activeTask.zh, activeTask.en, activeTask.commentary].filter(Boolean)
+      ).map((file) => file?.importSource).filter(Boolean),
+    );
+    const parts: string[] = [];
+    if (sources.has('zip') || sources.has('archive')) parts.push('来自压缩包');
+    if (sources.has('folder')) parts.push('来自文件夹');
+    if (sources.has('file') || sources.size === 0) {
+      if (parts.length === 0) parts.push('本地文件');
+    }
+    if (isOfficialSubtitle) parts.unshift('官方字幕');
+    return parts.join(' · ');
+  })();
+
+  const identitySubtitle = [
+    `${tasks.length} 个任务`,
+    trackFormatSummary,
+    trackSourceSummary,
   ].filter(Boolean).join(' · ');
   const matchStatusLabel = tmdbData
     ? '已匹配'
@@ -394,7 +438,7 @@ export const TaskList: React.FC = () => {
     }
     setInfoBar({
       title: identityTitle,
-      badge: identityBadge,
+      badges: identityBadges,
       subtitle: identitySubtitle,
       status: { label: matchStatusLabel, tone: matchStatusTone },
       actions: (
@@ -471,7 +515,7 @@ export const TaskList: React.FC = () => {
   }, [
     activeTask,
     identityTitle,
-    identityBadge,
+    identityBadges,
     identitySubtitle,
     matchStatusLabel,
     matchStatusTone,

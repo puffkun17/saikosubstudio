@@ -239,6 +239,18 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
 }
 
 {
+  const rows = [{ index: 1, ts: '00:01:00,000 --> 00:01:02,000', text: 'Hello' }];
+  const assWithMeta = generateAssContent(rows, { zhFontSize: 20, enFontSize: 12, zhColor: '#FFFFFF', enColor: '#B0B0B0', zhOutline: '#000000', enOutline: '#000000', enScale: 90, maxLenZh: 20, maxLenEn: 80, marginV: 20 }, 'Demo', {
+    originalScript: 'Nexus Studio',
+    comments: ['声明：原创字幕', '来源：官方字幕'],
+    updateDetails: '声明：原创字幕；来源：官方字幕',
+  });
+  assert.match(assWithMeta, /Original Script: Nexus Studio/, 'ASS Script Info should carry Original Script.');
+  assert.match(assWithMeta, /Comment: 声明：原创字幕/, 'ASS Script Info should carry declaration comments.');
+  assert.match(assWithMeta, /Update Details: 声明：原创字幕；来源：官方字幕/, 'ASS Script Info should carry Update Details.');
+}
+
+{
   const rows = [
     { index: 1, ts: '00:00:01,000 --> 00:00:03,000', text: '{\\an8}画面文字', cueKind: 'screen_text' },
     { index: 2, ts: '00:00:04,000 --> 00:00:06,000', text: 'Sing along', type: 'lyrics' },
