@@ -1697,7 +1697,13 @@ const msToSrtTimestamp = (milliseconds: number) => {
 };
 
 /** Create a non-mutating, optional end-credit cue for exported subtitle files. */
-export function appendCreatorCredit(subs: SubRow[], creatorCredit: string): SubRow[] {
+export type CreatorCreditPlacement = 'after-last' | 'before-end';
+
+export function appendCreatorCredit(
+  subs: SubRow[],
+  creatorCredit: string,
+  placement: CreatorCreditPlacement = 'after-last',
+): SubRow[] {
   const cleanCredit = cleanAttributionValue(creatorCredit);
   if (!cleanCredit || subs.length === 0) return subs;
 
@@ -1705,8 +1711,11 @@ export function appendCreatorCredit(subs: SubRow[], creatorCredit: string): SubR
     ? cleanCredit
     : `字幕制作：${cleanCredit}`;
   const lastEnd = Math.max(...subs.map(sub => timestampToMs(sub.ts.split(' --> ')[1] || sub.ts)));
-  const start = lastEnd + 1500;
-  const end = start + 5000;
+  const duration = 5000;
+  const start = placement === 'before-end'
+    ? Math.max(0, lastEnd - duration)
+    : lastEnd + 1500;
+  const end = placement === 'before-end' ? lastEnd : start + duration;
 
   return [...subs, {
     index: Math.max(...subs.map(sub => sub.index), 0) + 1,

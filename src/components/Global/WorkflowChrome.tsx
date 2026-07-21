@@ -34,7 +34,11 @@ export type EdgeNextConfig = {
 export type InfoBarConfig = {
   title: string;
   /**
-   * 片源元数据徽章（集数、年份等）——统一强调色 chip，紧贴标题。
+   * 年份锚点：紧跟片名，非 chip；用等宽数字字体与片名区分。
+   */
+  year?: string;
+  /**
+   * 片源元数据徽章（集数等）——统一强调色 chip，跟在片名+年份旁。
    */
   badges?: string[];
   /** @deprecated 使用 badges */
@@ -113,8 +117,8 @@ export const WorkflowChromeProvider: React.FC<{ children: React.ReactNode }> = (
   useEffect(() => {
     document.documentElement.style.setProperty(
       '--info-bar-h',
-      // 片名独占一行 + 片源 chip + 本地 chip，需高于旧的单行 56px
-      infoBarActive ? '6.75rem' : '0px',
+      // 片名左侧占满栏高，旁侧两行 chip
+      infoBarActive ? '4.25rem' : '0px',
     );
     return () => {
       document.documentElement.style.setProperty('--info-bar-h', '0px');
@@ -140,12 +144,17 @@ export const WorkflowChromeProvider: React.FC<{ children: React.ReactNode }> = (
   );
 };
 
+const YEAR_LIKE = /^\d{4}$/;
+
 const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
   const shouldReduceMotion = useReducedMotion();
+  const year = config?.year?.trim() || undefined;
   const metaBadges = [
     ...(config?.badges || []),
     ...(config?.badge && !(config.badges || []).includes(config.badge) ? [config.badge] : []),
-  ];
+  ]
+    // 年份改走片名锚点，不再当 chip；兼容误塞进 badges 的四位年份
+    .filter((item) => !(YEAR_LIKE.test(item) && (!year || item === year)));
   const localChips = [
     ...(config?.localChips || []),
     // 兼容：旧 status 非「已匹配」时并入本地芯片；成功匹配不再在顶栏重复
@@ -154,12 +163,15 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
       ? config.subtitle.split(' · ').map((part) => part.trim()).filter(Boolean)
       : []),
   ].filter((item, index, all) => all.indexOf(item) === index);
+  // 兼容旧调用：未传 year 时从 badges 里捞四位年份作锚点
+  const yearAnchor = year
+    || [...(config?.badges || []), config?.badge].find((item): item is string => Boolean(item && YEAR_LIKE.test(item)));
 
   return (
     <AnimatePresence>
       {config && (
         <motion.div
-          key={`${config.title}:${metaBadges.join('|')}:${localChips.join('|')}`}
+          key={`${config.title}:${yearAnchor || ''}:${metaBadges.join('|')}:${localChips.join('|')}`}
           role="region"
           aria-label="信息栏"
           initial={shouldReduceMotion ? false : { opacity: 0, y: -6 }}
@@ -169,49 +181,64 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
           className="workflow-info-bar"
         >
           <div className="workflow-info-bar__inner">
-            <div className="flex min-w-0 flex-1 items-start gap-2.5">
+            <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-4">
               {config.onBack && (
                 <button
                   type="button"
                   onClick={config.onBack}
-                  className="v4-focus-ring mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-accent-strong)] transition-colors hover:bg-[var(--v4-panel)]"
+                  className="v4-focus-ring flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-accent-strong)] transition-colors hover:bg-[var(--v4-panel)]"
                   aria-label="返回"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
               )}
-              <div className="min-w-0 flex-1">
-                {/* 片名独占一行 */}
-                <h2 className="truncate text-[20px] font-semibold leading-tight tracking-tight text-[var(--v4-text)] md:text-[22px]">
+              {/* 片名 + 年份锚点：年份紧跟片名，等宽数字体与 CJK 片名区分 */}
+              <div className="flex min-w-0 max-w-[min(52%,24rem)] shrink-0 items-baseline gap-2 md:max-w-[min(56%,28rem)] md:gap-2.5">
+                <h2
+                  className="min-w-0 truncate text-[22px] font-semibold leading-none tracking-tight text-[var(--v4-text)] md:text-[26px]"
+                  title={config.title}
+                >
                   {config.title}
                 </h2>
-                {/* 片源元数据：强调色 chip */}
-                {metaBadges.length > 0 && (
-                  <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-2">
-                    {metaBadges.map((item) => (
-                      <span
-                        key={`meta:${item}`}
-                        className="inline-flex h-8 shrink-0 items-center rounded-md border border-[var(--v4-accent)]/35 bg-[var(--v4-accent-soft)] px-2.5 font-mono text-[14px] font-bold tracking-wide text-[var(--v4-accent-strong)]"
-                      >
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {/* 本地状态：中性 chip */}
-                {localChips.length > 0 && (
-                  <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
-                    {localChips.map((item) => (
-                      <span
-                        key={`local:${item}`}
-                        className="inline-flex h-7 shrink-0 items-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 text-[13px] font-semibold tracking-wide text-[var(--v4-text-muted)]"
-                      >
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {yearAnchor ? (
+                  <time
+                    dateTime={yearAnchor}
+                    className="workflow-info-bar__year shrink-0"
+                    title={`${yearAnchor} 年`}
+                  >
+                    {yearAnchor}
+                  </time>
+                ) : null}
               </div>
+              {/* 旁侧分行：上片源元数据，下本地状态 */}
+              {(metaBadges.length > 0 || localChips.length > 0) && (
+                <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
+                  {metaBadges.length > 0 && (
+                    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                      {metaBadges.map((item) => (
+                        <span
+                          key={`meta:${item}`}
+                          className="inline-flex h-7 shrink-0 items-center rounded-md border border-[var(--v4-accent)]/35 bg-[var(--v4-accent-soft)] px-2.5 font-mono text-[13px] font-bold tracking-wide text-[var(--v4-accent-strong)] md:h-8 md:text-[14px]"
+                        >
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {localChips.length > 0 && (
+                    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                      {localChips.map((item) => (
+                        <span
+                          key={`local:${item}`}
+                          className="inline-flex h-6 shrink-0 items-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2 text-[12px] font-semibold tracking-wide text-[var(--v4-text-muted)] md:h-7 md:px-2.5 md:text-[13px]"
+                        >
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             {config.actions && (
               <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 self-center">

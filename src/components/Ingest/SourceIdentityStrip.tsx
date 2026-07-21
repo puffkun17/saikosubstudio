@@ -217,15 +217,17 @@ export const SourceIdentityStrip: React.FC = () => {
               href="https://www.themoviedb.org/"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2.5 flex items-center justify-center gap-2 text-[11px] font-medium text-[var(--v4-text-faint)] transition-colors hover:text-[var(--v4-text-muted)]"
+              className="mt-3 flex w-full items-center justify-center gap-2.5 rounded-md border border-[color:rgba(1,180,228,0.28)] bg-[color:rgba(1,180,228,0.08)] px-3 py-2.5 transition-colors hover:border-[color:rgba(1,180,228,0.45)] hover:bg-[color:rgba(1,180,228,0.14)]"
               title="This product uses the TMDB API but is not endorsed or certified by TMDB."
             >
-              <span>Powered by</span>
+              <span className="text-[13px] font-semibold tracking-wide text-[var(--v4-text-muted)]">
+                Powered by
+              </span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/tmdb_logo_blue_square.svg"
                 alt="TMDB"
-                className="h-3.5 w-auto object-contain opacity-90"
+                className="h-7 w-auto object-contain brightness-110 contrast-110 drop-shadow-[0_0_6px_rgba(1,180,228,0.35)]"
               />
             </a>
           ) : null}

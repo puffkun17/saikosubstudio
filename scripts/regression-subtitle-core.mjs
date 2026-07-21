@@ -233,6 +233,10 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
   assert.equal(withCredit[1].text, '字幕制作：Nexus Studio');
   assert.equal(withCredit[1].ts, '00:01:03,500 --> 00:01:08,500');
   assert.match(generateSrtContent(withCredit), /字幕制作：Nexus Studio/, 'Creator credit should be included in exported SRT content.');
+  const beforeEnd = appendCreatorCredit([
+    { index: 1, ts: '00:01:00,000 --> 00:01:10,000', text: 'The end.' },
+  ], 'Nexus Studio', 'before-end');
+  assert.equal(beforeEnd[1].ts, '00:01:05,000 --> 00:01:10,000', 'before-end placement should sit in the final seconds.');
   const ass = generateAssContent(withCredit, { zhFontSize: 20, enFontSize: 12, zhColor: '#FFFFFF', enColor: '#B0B0B0', zhOutline: '#000000', enOutline: '#000000', enScale: 90, maxLenZh: 20, maxLenEn: 80, marginV: 20 });
   assert.match(ass, /Style: Credit,/, 'ASS export should include a dedicated centered credit style.');
   assert.match(ass, /Dialogue: 0,0:01:03\.50,0:01:08\.50,Credit,/, 'Creator credit should use the dedicated ASS style.');

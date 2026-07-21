@@ -96,16 +96,20 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
             <span className="pl-1 text-[var(--v4-text-faint)]">{placeholder}</span>
           )}
         </span>
-        <span className="flex shrink-0 items-center gap-1.5 border-l border-[var(--v4-line)] pl-2">
+        <span className="flex shrink-0 items-center gap-2 border-l border-[var(--v4-line)] pl-2.5">
           {countLabel != null && (
             <span className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums text-[var(--v4-text-muted)]">
               {countLabel}行
             </span>
           )}
-          <span className={`text-[12px] font-semibold transition-colors ${open ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-faint)]'}`}>
-            {selectedOption ? '更换' : '选择'}
-          </span>
-          <ChevronDown className={`h-3.5 w-3.5 text-[var(--v4-text-faint)] transition-transform duration-200 ${open ? 'rotate-180 text-[var(--v4-accent-strong)]' : ''}`} />
+          <ChevronDown
+            className={`h-5 w-5 shrink-0 transition-transform duration-200 ${
+              open ? 'rotate-180 text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-muted)]'
+            }`}
+            strokeWidth={2.5}
+            aria-hidden="true"
+          />
+          <span className="sr-only">{selectedOption ? '更换字幕' : '选择字幕'}</span>
         </span>
       </button>
 

@@ -170,7 +170,7 @@ export const TaskList: React.FC = () => {
       case 'tmdb':
         return '片源信息';
       case 'auto':
-        return '字幕文件名';
+        return '原始文件名';
       case 'manual':
         return '手动输入';
       case 'library':
@@ -370,9 +370,9 @@ export const TaskList: React.FC = () => {
     return raw || '字幕任务';
   })();
 
+  const identityYear = tmdbData?.year || undefined;
   const identityBadges = [
     activeTask?.epKey?.toUpperCase(),
-    tmdbData?.year,
   ].filter((item): item is string => Boolean(item));
 
   const trackFormatSummary = (() => {
@@ -428,6 +428,7 @@ export const TaskList: React.FC = () => {
     }
     setInfoBar({
       title: identityTitle,
+      year: identityYear,
       badges: identityBadges,
       localChips: identityLocalChips,
       actions: (
@@ -504,6 +505,7 @@ export const TaskList: React.FC = () => {
   }, [
     activeTask,
     identityTitle,
+    identityYear,
     identityBadges,
     identityLocalChips,
     tasks.length,
@@ -570,9 +572,9 @@ export const TaskList: React.FC = () => {
           <div className="relative flex flex-col gap-3 overflow-visible">
             <div className="flex items-center gap-2">
               <h4 className="block select-none text-base font-semibold text-[var(--v4-text)]">
-                字幕轨
+                字幕序列
               </h4>
-              <InfoHint label="字幕轨说明">
+              <InfoHint label="字幕序列说明">
                 选择要处理的字幕文件。双语单文件会自动识别；分开的中文与第二语言轨将按时间轴合并。
               </InfoHint>
               {activeTask.isBilingualSingle && (
@@ -582,7 +584,7 @@ export const TaskList: React.FC = () => {
               )}
               {!activeTask.isBilingualSingle && activeTask.zh && activeTask.en && (
                 <span className="ml-auto text-xs font-normal text-[var(--v4-text-faint)]">
-                  按住六点拖动可对调主副轨
+                  按住行尾六点拖动可对调主副轨
                 </span>
               )}
             </div>
@@ -619,10 +621,20 @@ export const TaskList: React.FC = () => {
                         scale: isDropTarget ? 1.01 : 1,
                       }}
                       transition={{ type: 'spring', stiffness: 420, damping: 32, mass: 0.7 }}
-                      className={`flex flex-row items-center gap-1.5 overflow-visible rounded-xl ${
+                      className={`flex flex-row items-center gap-2 overflow-visible rounded-xl ${
                         isDropTarget ? 'bg-[var(--v4-accent-soft)] ring-1 ring-[var(--v4-accent)]/40' : ''
                       }`}
                     >
+                      <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-[var(--v4-text-muted)]">
+                        {label}
+                      </span>
+                      <TrackSelect
+                        value={file?.id || ''}
+                        options={trackOptions}
+                        onChange={(id) => bindTrack(activeTask.id, trackKey, id)}
+                        countLabel={file ? getSubTitleCount(file) : null}
+                        placeholder={placeholder}
+                      />
                       <span
                         role="button"
                         tabIndex={canReorderTracks ? 0 : -1}
@@ -639,7 +651,7 @@ export const TaskList: React.FC = () => {
                         }}
                         aria-label={canReorderTracks ? `拖动以对调${trackKey === 'zh' ? '主字幕' : '第二语言'}顺序` : undefined}
                         title={canReorderTracks ? '按住拖动，对调主副轨' : undefined}
-                        className={`grid h-11 w-7 shrink-0 place-items-center rounded-md text-[var(--v4-text-faint)] transition-colors touch-none ${
+                        className={`grid h-11 w-8 shrink-0 place-items-center rounded-md text-[var(--v4-text-faint)] transition-colors touch-none ${
                           canReorderTracks
                             ? 'cursor-grab hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] active:cursor-grabbing'
                             : 'cursor-default opacity-25'
@@ -647,16 +659,6 @@ export const TaskList: React.FC = () => {
                       >
                         <GripVertical className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
                       </span>
-                      <span className="inline-flex w-[4.75rem] shrink-0 items-center gap-1 text-left text-sm font-semibold text-[var(--v4-text-muted)]">
-                        {label}
-                      </span>
-                      <TrackSelect
-                        value={file?.id || ''}
-                        options={trackOptions}
-                        onChange={(id) => bindTrack(activeTask.id, trackKey, id)}
-                        countLabel={file ? getSubTitleCount(file) : null}
-                        placeholder={placeholder}
-                      />
                     </motion.div>
                   );
                 };
@@ -681,13 +683,18 @@ export const TaskList: React.FC = () => {
                       <>
                         {renderPrimaryRow(
                           'en',
-                          '第二语言',
+                          <>
+                            第二语言
+                            <InfoHint label="第二语言说明" side="right">
+                              英语或其他语言轨，将与主字幕按时间轴合并。
+                            </InfoHint>
+                          </>,
                           '选择英语或其他语言（可选）',
                           enRowRef,
                         )}
 
-                        <div className="flex flex-row items-center gap-1.5 overflow-visible pl-7">
-                          <span className="inline-flex w-[4.75rem] shrink-0 items-center gap-1 text-left text-sm font-semibold text-[var(--v4-text-muted)]">
+                        <div className="flex flex-row items-center gap-2 overflow-visible">
+                          <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-[var(--v4-text-muted)]">
                             旁白导评
                             <InfoHint label="旁白与导评说明" side="right">
                               {getSubtitleTermHint('narration')} 导评通常不是正片对白。
@@ -699,6 +706,7 @@ export const TaskList: React.FC = () => {
                             onChange={(id) => bindTrack(activeTask.id, 'commentary', id)}
                             placeholder="可选"
                           />
+                          <span className="grid h-11 w-8 shrink-0 place-items-center opacity-0" aria-hidden="true" />
                         </div>
                       </>
                     ) : null}
@@ -720,7 +728,6 @@ export const TaskList: React.FC = () => {
                             className="flex items-center gap-2 rounded-xl border border-[var(--v4-accent)]/40 bg-[var(--v4-panel-raised)] px-3 py-2.5 shadow-[0_18px_40px_rgba(26,61,55,0.12)] backdrop-blur-md"
                             style={{ height: dragCardSize.h }}
                           >
-                            <GripVertical className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
                             <FileFormatIcon name={dragFile.name} size="sm" />
                             <LanguageMark lang={dragFile.lang} languagePair={dragFile.languagePair} />
                             <span className="min-w-0 flex-1 truncate font-mono text-sm text-[var(--v4-text)]">
@@ -729,6 +736,7 @@ export const TaskList: React.FC = () => {
                             <span className="shrink-0 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2 py-0.5 font-mono text-xs text-[var(--v4-text-muted)]">
                               {getSubTitleCount(dragFile)}行
                             </span>
+                            <GripVertical className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
                           </motion.div>
                         </div>
                       </OverlayPortal>
@@ -745,10 +753,10 @@ export const TaskList: React.FC = () => {
 
             <div className="rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2.5">
               <div className="flex items-center justify-between gap-2">
-                <label className="inline-flex select-none items-center gap-1.5 text-sm font-semibold text-[var(--v4-text-muted)]">
-                  导出名称
-                  <InfoHint label="导出文件名称说明">
-                    默认留空。可勾选从片源信息或主副字幕文件名填充，也可直接输入。
+                <label className="inline-flex select-none items-center gap-1.5 text-sm font-semibold text-[var(--v4-text)]">
+                  导出选项
+                  <InfoHint label="导出选项说明">
+                    默认留空。可勾选从片源信息或原始文件名填充，也可直接输入。格式在导出时再选。
                   </InfoHint>
                 </label>
                 <span className="rd-chip rd-chip--tight shrink-0 text-[var(--v4-text-muted)]">
@@ -768,7 +776,7 @@ export const TaskList: React.FC = () => {
                       else if (filenameSource === 'tmdb') setCustomFilename('', 'unknown');
                     }}
                   />
-                  <span>使用片源信息</span>
+                  <span>使用片源</span>
                 </label>
                 <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-[var(--v4-text-muted)]">
                   <input
@@ -780,18 +788,16 @@ export const TaskList: React.FC = () => {
                       else if (filenameSource === 'auto') setCustomFilename('', 'unknown');
                     }}
                   />
-                  <span>使用主副字幕文件名</span>
+                  <span>使用原始文件名</span>
                 </label>
               </div>
 
               <div className="relative mt-2.5">
-                {/* 与轨单元同形：图标 + 文件名 + 后缀，像产品离开流水线贴的标签 */}
-                <div className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 rounded-md border px-2 py-1.5 transition-colors ${
+                <div className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md border px-2.5 py-1.5 transition-colors ${
                   isFilenameFocused
                     ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)]'
                     : 'border-[var(--v4-line)] bg-[var(--v4-panel)]'
                 }`}>
-                  <FileFormatIcon format="ass" size="md" />
                   <input
                     type="text"
                     className="v4-focus-ring h-8 w-full min-w-0 border-0 bg-transparent font-mono text-[14px] font-medium text-[var(--v4-text)] outline-none placeholder:text-[var(--v4-text-faint)]"
@@ -807,7 +813,7 @@ export const TaskList: React.FC = () => {
                   </span>
                 </div>
                 {customFilename.length > 42 && !isFilenameFocused && (
-                  <div className="pointer-events-none absolute inset-y-px left-[2.75rem] right-[4.75rem] flex items-center overflow-hidden bg-[var(--v4-panel)] font-mono text-[14px] font-medium text-[var(--v4-text)]">
+                  <div className="pointer-events-none absolute inset-y-px left-2.5 right-[4.75rem] flex items-center overflow-hidden bg-[var(--v4-panel)] font-mono text-[14px] font-medium text-[var(--v4-text)]">
                     {renderMarqueeText(customFilename, 'w-full')}
                   </div>
                 )}

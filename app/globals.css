@@ -533,10 +533,26 @@ body {
   padding: 0.55rem 0.85rem 0.55rem 1rem;
 }
 
+/* 年份锚点：Geist Mono 数字体，与 CJK 片名刻意区分，不作 chip */
+.workflow-info-bar__year {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: var(--v4-text-muted);
+}
+
 @media (min-width: 768px) {
   .workflow-info-bar__inner {
     gap: 1rem;
     padding: 0.6rem 1.1rem 0.6rem 1.25rem;
+  }
+
+  .workflow-info-bar__year {
+    font-size: 17px;
   }
 }
 

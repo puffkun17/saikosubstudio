@@ -53,6 +53,7 @@ export const useExport = () => {
     creatorCredit,
     appendCreatorCredit,
     creditDeclaration,
+    creditPlacement,
     isOfficialSubtitle,
     addLog,
   } = useStudioStore(useShallow((state) => ({
@@ -62,6 +63,7 @@ export const useExport = () => {
     creatorCredit: state.creatorCredit,
     appendCreatorCredit: state.appendCreatorCredit,
     creditDeclaration: state.creditDeclaration,
+    creditPlacement: state.creditPlacement,
     isOfficialSubtitle: state.isOfficialSubtitle,
     addLog: state.addLog,
   })));
@@ -74,7 +76,7 @@ export const useExport = () => {
       let extension = '';
 
       const exportSubs = appendCreatorCredit
-        ? appendCreatorCreditCue(processedSubs, creatorCredit)
+        ? appendCreatorCreditCue(processedSubs, creatorCredit, creditPlacement)
         : processedSubs;
       const auxiliaryMode = customStyle.auxiliaryMode || 'keep';
       const filteredExportSubs = applyAuxiliarySubtitleMode(exportSubs, auxiliaryMode);

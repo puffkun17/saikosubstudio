@@ -222,6 +222,8 @@ export interface StudioState {
   isOfficialSubtitle: boolean;
   /** 制作声明：写入 ASS Script Info 前缀。 */
   creditDeclaration: CreditDeclaration;
+  /** 字幕后署名时间位置。 */
+  creditPlacement: 'after-last' | 'before-end';
   /** 放映厅关灯模式：压暗全局界面，只保留放映区。 */
   isLightsOff: boolean;
   /** 字幕文本编辑历史（跨组件持久，抽屉开关不丢栈）。 */
@@ -234,6 +236,7 @@ export interface StudioState {
   setAppendCreatorCredit: (enabled: boolean) => void;
   setIsOfficialSubtitle: (official: boolean) => void;
   setCreditDeclaration: (declaration: CreditDeclaration) => void;
+  setCreditPlacement: (placement: 'after-last' | 'before-end') => void;
   setLibraryOpen: (open: boolean) => void;
   setWorkflowStep: (step: number) => void;
   setIngestClearing: (clearing: boolean) => void;
@@ -367,6 +370,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   appendCreatorCredit: false,
   isOfficialSubtitle: false,
   creditDeclaration: 'none',
+  creditPlacement: 'after-last',
   isLightsOff: false,
   editHistory: [],
   editFuture: [],
@@ -376,6 +380,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setAppendCreatorCredit: (appendCreatorCredit) => set({ appendCreatorCredit }),
   setIsOfficialSubtitle: (isOfficialSubtitle) => set({ isOfficialSubtitle }),
   setCreditDeclaration: (creditDeclaration) => set({ creditDeclaration }),
+  setCreditPlacement: (creditPlacement) => set({ creditPlacement }),
   setLibraryOpen: (isLibraryOpen) => set({ isLibraryOpen }),
   setWorkflowStep: (step) => set({ workflowStep: step }),
   setIngestClearing: (isIngestClearing) => set({ isIngestClearing }),
@@ -1820,6 +1825,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       isLightsOff: false,
       isOfficialSubtitle: false,
       creditDeclaration: 'none',
+      creditPlacement: 'after-last',
       creatorCredit: '',
       appendCreatorCredit: false,
     });
