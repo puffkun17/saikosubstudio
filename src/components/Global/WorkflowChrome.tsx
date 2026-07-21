@@ -34,23 +34,24 @@ export type EdgeNextConfig = {
 export type InfoBarConfig = {
   title: string;
   /**
-   * 片源元数据徽章（集数、年份等），紧贴标题。
-   * 兼容旧的单一 `badge` 字段。
+   * 片源元数据徽章（集数、年份等）——统一强调色 chip，紧贴标题。
    */
   badges?: string[];
-  /** @deprecated 使用 badges；仍支持单徽章 */
+  /** @deprecated 使用 badges */
   badge?: string;
   /**
-   * 本地状态通知（已匹配 / 匹配中 / 未匹配），与副行本地信息同组。
+   * 本地状态徽章（任务数、格式、来源、匹配过程提示等）——统一中性 chip，与片源徽章分区。
+   */
+  localChips?: string[];
+  /** @deprecated 改用 localChips；若仍传入则拆成芯片展示 */
+  subtitle?: string;
+  /**
+   * @deprecated 匹配成功改由片源卡「Powered by TMDB」表达；过程态请放入 localChips。
    */
   status?: {
     label: string;
     tone?: 'ok' | 'progress' | 'warn' | 'muted';
   };
-  /**
-   * 本地状态副行：任务数、格式构成、导入来源等（不含冗余「字幕文件」）。
-   */
-  subtitle?: string;
   onBack?: () => void;
   actions?: React.ReactNode;
 } | null;
@@ -112,7 +113,8 @@ export const WorkflowChromeProvider: React.FC<{ children: React.ReactNode }> = (
   useEffect(() => {
     document.documentElement.style.setProperty(
       '--info-bar-h',
-      infoBarActive ? '56px' : '0px',
+      // 片名独占一行 + 片源 chip + 本地 chip，需高于旧的单行 56px
+      infoBarActive ? '6.75rem' : '0px',
     );
     return () => {
       document.documentElement.style.setProperty('--info-bar-h', '0px');
@@ -144,12 +146,20 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
     ...(config?.badges || []),
     ...(config?.badge && !(config.badges || []).includes(config.badge) ? [config.badge] : []),
   ];
+  const localChips = [
+    ...(config?.localChips || []),
+    // 兼容：旧 status 非「已匹配」时并入本地芯片；成功匹配不再在顶栏重复
+    ...(config?.status && config.status.label !== '已匹配' ? [config.status.label] : []),
+    ...(config?.subtitle
+      ? config.subtitle.split(' · ').map((part) => part.trim()).filter(Boolean)
+      : []),
+  ].filter((item, index, all) => all.indexOf(item) === index);
 
   return (
     <AnimatePresence>
       {config && (
         <motion.div
-          key={`${config.title}:${metaBadges.join('|')}:${config.status?.label || ''}:${config.subtitle || ''}`}
+          key={`${config.title}:${metaBadges.join('|')}:${localChips.join('|')}`}
           role="region"
           aria-label="信息栏"
           initial={shouldReduceMotion ? false : { opacity: 0, y: -6 }}
@@ -159,59 +169,52 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
           className="workflow-info-bar"
         >
           <div className="workflow-info-bar__inner">
-            <div className="flex min-w-0 items-center gap-3">
+            <div className="flex min-w-0 flex-1 items-start gap-2.5">
               {config.onBack && (
                 <button
                   type="button"
                   onClick={config.onBack}
-                  className="v4-focus-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-accent-strong)] transition-colors hover:bg-[var(--v4-panel)]"
+                  className="v4-focus-ring mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-accent-strong)] transition-colors hover:bg-[var(--v4-panel)]"
                   aria-label="返回"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-5 w-5" />
                 </button>
               )}
-              <div className="min-w-0">
-                <div className="flex min-w-0 items-center gap-2">
-                  <h2 className="truncate text-[17px] font-semibold tracking-tight text-[var(--v4-text)]">
-                    {config.title}
-                  </h2>
-                  {metaBadges.map((item) => (
-                    <span
-                      key={item}
-                      className="inline-flex h-7 shrink-0 items-center rounded-md border border-[var(--v4-accent)]/35 bg-[var(--v4-accent-soft)] px-2.5 font-mono text-[13px] font-bold tracking-wide text-[var(--v4-accent-strong)]"
-                    >
-                      {item}
-                    </span>
-                  ))}
-                </div>
-                {(config.status || config.subtitle) && (
-                  <div className="mt-0.5 flex min-w-0 items-center gap-2">
-                    {config.status && (
+              <div className="min-w-0 flex-1">
+                {/* 片名独占一行 */}
+                <h2 className="truncate text-[20px] font-semibold leading-tight tracking-tight text-[var(--v4-text)] md:text-[22px]">
+                  {config.title}
+                </h2>
+                {/* 片源元数据：强调色 chip */}
+                {metaBadges.length > 0 && (
+                  <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-2">
+                    {metaBadges.map((item) => (
                       <span
-                        className={`inline-flex h-6 shrink-0 items-center rounded-md border px-2 text-[11px] font-bold tracking-wide ${
-                          config.status.tone === 'ok'
-                            ? 'border-[var(--v4-accent)]/35 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
-                            : config.status.tone === 'progress'
-                              ? 'border-[var(--v4-line-strong)] bg-[var(--v4-panel)] text-[var(--v4-text)]'
-                              : config.status.tone === 'warn'
-                                ? 'border-[color:rgba(196,137,58,0.35)] bg-[color:rgba(196,137,58,0.12)] text-[var(--v4-warning)]'
-                                : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]'
-                        }`}
+                        key={`meta:${item}`}
+                        className="inline-flex h-8 shrink-0 items-center rounded-md border border-[var(--v4-accent)]/35 bg-[var(--v4-accent-soft)] px-2.5 font-mono text-[14px] font-bold tracking-wide text-[var(--v4-accent-strong)]"
                       >
-                        {config.status.label}
+                        {item}
                       </span>
-                    )}
-                    {config.subtitle && (
-                      <p className="min-w-0 truncate text-[13px] font-medium text-[var(--v4-text-muted)]" title={config.subtitle}>
-                        {config.subtitle}
-                      </p>
-                    )}
+                    ))}
+                  </div>
+                )}
+                {/* 本地状态：中性 chip */}
+                {localChips.length > 0 && (
+                  <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
+                    {localChips.map((item) => (
+                      <span
+                        key={`local:${item}`}
+                        className="inline-flex h-7 shrink-0 items-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 text-[13px] font-semibold tracking-wide text-[var(--v4-text-muted)]"
+                      >
+                        {item}
+                      </span>
+                    ))}
                   </div>
                 )}
               </div>
             </div>
             {config.actions && (
-              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 self-center">
                 {config.actions}
               </div>
             )}

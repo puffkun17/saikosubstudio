@@ -411,25 +411,15 @@ export const TaskList: React.FC = () => {
     return parts.join(' · ');
   })();
 
-  const identitySubtitle = [
+  const identityLocalChips = [
+    // 过程态仍在本地层；成功匹配改由片源卡 Powered by TMDB 表达
+    !tmdbData && isSearchingTmdb ? '匹配中' : null,
+    !tmdbData && needsTitleInput ? '待补充片名' : null,
+    !tmdbData && !isSearchingTmdb && !needsTitleInput ? '未匹配' : null,
     `${tasks.length} 个任务`,
     trackFormatSummary,
-    trackSourceSummary,
-  ].filter(Boolean).join(' · ');
-  const matchStatusLabel = tmdbData
-    ? '已匹配'
-    : isSearchingTmdb
-      ? '匹配中'
-      : needsTitleInput
-        ? '待补充片名'
-        : '未匹配';
-  const matchStatusTone = tmdbData
-    ? 'ok' as const
-    : isSearchingTmdb
-      ? 'progress' as const
-      : needsTitleInput
-        ? 'warn' as const
-        : 'muted' as const;
+    ...trackSourceSummary.split(' · ').filter(Boolean),
+  ].filter((item): item is string => Boolean(item));
 
   useEffect(() => {
     if (!activeTask) {
@@ -439,8 +429,7 @@ export const TaskList: React.FC = () => {
     setInfoBar({
       title: identityTitle,
       badges: identityBadges,
-      subtitle: identitySubtitle,
-      status: { label: matchStatusLabel, tone: matchStatusTone },
+      localChips: identityLocalChips,
       actions: (
         <>
           {pendingCancelUpload ? (
@@ -516,9 +505,7 @@ export const TaskList: React.FC = () => {
     activeTask,
     identityTitle,
     identityBadges,
-    identitySubtitle,
-    matchStatusLabel,
-    matchStatusTone,
+    identityLocalChips,
     tasks.length,
     pendingCancelUpload,
     pendingDeleteId,

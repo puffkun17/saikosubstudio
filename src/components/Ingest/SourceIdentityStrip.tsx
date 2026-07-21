@@ -212,6 +212,23 @@ export const SourceIdentityStrip: React.FC = () => {
             <Search className="h-3.5 w-3.5" aria-hidden="true" />
             {rematchLabel}
           </button>
+          {tmdbData ? (
+            <a
+              href="https://www.themoviedb.org/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2.5 flex items-center justify-center gap-2 text-[11px] font-medium text-[var(--v4-text-faint)] transition-colors hover:text-[var(--v4-text-muted)]"
+              title="This product uses the TMDB API but is not endorsed or certified by TMDB."
+            >
+              <span>Powered by</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/tmdb_logo_blue_square.svg"
+                alt="TMDB"
+                className="h-3.5 w-auto object-contain opacity-90"
+              />
+            </a>
+          ) : null}
         </div>
       </div>
     </aside>

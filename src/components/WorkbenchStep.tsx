@@ -57,10 +57,11 @@ export const WorkbenchStep: React.FC = () => {
   useEffect(() => {
     setInfoBar({
       title: '字幕工作台',
-      subtitle: `${processedSubs?.length || 0} 行 / ${customFilename || '未命名字幕'}`,
-      status: tmdbData
-        ? { label: '已匹配', tone: 'ok' }
-        : { label: '未匹配', tone: 'muted' },
+      localChips: [
+        `${processedSubs?.length || 0} 行`,
+        customFilename || '未命名字幕',
+        tmdbData ? undefined : '未匹配',
+      ].filter((item): item is string => Boolean(item)),
       onBack: () => {
         if (processedSubs && processedSubs.length > 0) {
           setShowBackConfirm(true);
