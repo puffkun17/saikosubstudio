@@ -649,7 +649,7 @@ body {
 
 .soft-log-marquee {
   min-width: 0;
-  max-width: min(28rem, 42vw);
+  max-width: min(36rem, 52vw);
   overflow: hidden;
   height: 1.25rem;
 }
@@ -662,6 +662,99 @@ body {
   font-size: 0.75rem;
   line-height: 1.25rem;
   color: var(--v4-text-muted);
+}
+
+/* 底栏工序甲板：清楚、不刺眼；当前步轻呼吸 */
+.bottom-status-deck {
+  max-width: min(42rem, 58vw);
+}
+
+.bottom-status-deck__card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 2.5rem;
+}
+
+.bottom-status-deck__title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: rgba(245, 241, 234, 0.92);
+}
+
+.bottom-status-deck__meta {
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  font-weight: 500;
+  color: rgba(245, 241, 234, 0.55);
+}
+
+.bottom-status-deck__steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bottom-status-deck__step {
+  white-space: nowrap;
+}
+
+.bottom-status-deck__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.bottom-status-deck__step.is-done {
+  color: rgba(245, 241, 234, 0.78);
+}
+
+.bottom-status-deck__step.is-done .bottom-status-deck__dot {
+  background: var(--v5-orange);
+  border-color: var(--v5-orange);
+}
+
+.bottom-status-deck__step.is-active {
+  color: var(--v5-orange-strong);
+}
+
+.bottom-status-deck__step.is-active .bottom-status-deck__dot {
+  background: var(--v5-orange);
+  border-color: var(--v5-orange);
+  box-shadow: 0 0 0 0 rgba(239, 141, 95, 0.35);
+  animation: bottomStatusPulse 2.4s ease-in-out infinite;
+}
+
+.bottom-status-deck__step.is-pending {
+  color: rgba(245, 241, 234, 0.38);
+}
+
+.bottom-status-deck__subtitle {
+  margin: 0;
+  color: rgba(245, 241, 234, 0.5);
+}
+
+@keyframes bottomStatusPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 141, 95, 0.28);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(239, 141, 95, 0);
+    opacity: 0.82;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bottom-status-deck__step.is-active .bottom-status-deck__dot {
+    animation: none;
+  }
 }
 
 /* 桌面隐喻：默认无底无框，内容直接坐在奶油底上；

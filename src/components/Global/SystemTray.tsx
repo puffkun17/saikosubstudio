@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
-import { SoftLogMarquee } from '@/components/Global/SoftLogMarquee';
+import { BottomStatusDeck } from '@/components/Global/BottomStatusDeck';
 
 const STEP_LABEL: Record<number, string> = {
   1: '导入',
@@ -316,7 +316,7 @@ export const SystemTray = () => {
         className={`system-tray system-tray--bottom fixed bottom-0 z-[var(--z-nav)] border-t ${trayChrome}`}
       >
         <div className="flex min-w-0 flex-1 items-center justify-start gap-2 pr-3">
-          <SoftLogMarquee />
+          <BottomStatusDeck />
         </div>
 
         {/* Container = remaining deck width (generous when left is empty). */}

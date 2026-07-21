@@ -266,7 +266,7 @@ export const DragZone: React.FC = () => {
     addLog: state.addLog,
     setIngestClearing: state.setIngestClearing,
   })));
-  const { setEdgeNext, setInfoBar } = useWorkflowChrome();
+  const { setEdgeNext, setBottomStatus } = useWorkflowChrome();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
@@ -304,21 +304,31 @@ export const DragZone: React.FC = () => {
     return () => document.removeEventListener('mousedown', onPointerDown);
   }, [addMenuOpen]);
 
-  // Clearing → progress lives in the global info bar
+  // 工序进度进底栏；顶栏留给 T0（身份 / 关键操作）
   useEffect(() => {
-    if (!isParsing) return;
-    const activeStepIndex = Math.max(0, PHASE_STEPS.findIndex((step) => step.id === ingestPhase));
-    const stepLabel = PHASE_STEPS.map((step, index) => {
-      const mark = activeStepIndex >= index || ingestPhase === 'ready' ? '●' : '○';
-      return `${mark}${step.label}`;
-    }).join('  ');
+    if (!isParsing) {
+      setBottomStatus(null);
+      return;
+    }
+    const activeStepIndex = PHASE_STEPS.findIndex((step) => step.id === ingestPhase);
+    const resolvedIndex = activeStepIndex >= 0
+      ? activeStepIndex
+      : ingestPhase === 'needs_review'
+        ? PHASE_STEPS.length - 2
+        : 0;
+    const steps = PHASE_STEPS.map((step, index) => ({
+      label: step.label,
+      // 已走过的实心；当前步交给 UI 呼吸；「完成」仅在 ready 时点亮
+      done: ingestPhase === 'ready' || index < resolvedIndex,
+    }));
     const chipSummary = resultChips.length > 0 ? resultChips.slice(0, 3).join(' · ') : undefined;
-    setInfoBar({
+    setBottomStatus({
       title: ingestMessage,
-      subtitle: chipSummary ? `${stepLabel} · ${chipSummary}` : stepLabel,
+      subtitle: chipSummary,
+      steps,
     });
-    return () => setInfoBar(null);
-  }, [isParsing, ingestPhase, ingestMessage, resultChips, setInfoBar]);
+    return () => setBottomStatus(null);
+  }, [isParsing, ingestPhase, ingestMessage, resultChips, setBottomStatus]);
 
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 

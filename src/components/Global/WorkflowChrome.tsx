@@ -29,11 +29,20 @@ export type InfoBarConfig = {
   actions?: React.ReactNode;
 } | null;
 
+/** 底栏工序/统计状态（非 T0）。顶栏 InfoBar 只留给身份与关键操作。 */
+export type BottomStatusConfig = {
+  title: string;
+  subtitle?: string;
+  steps?: Array<{ label: string; done: boolean }>;
+} | null;
+
 type WorkflowChromeValue = {
   edgeNext: EdgeNextConfig;
   infoBar: InfoBarConfig;
+  bottomStatus: BottomStatusConfig;
   setEdgeNext: (config: EdgeNextConfig) => void;
   setInfoBar: (config: InfoBarConfig) => void;
+  setBottomStatus: (config: BottomStatusConfig) => void;
 };
 
 const WorkflowChromeContext = createContext<WorkflowChromeValue | null>(null);
@@ -52,6 +61,7 @@ export const useWorkflowChromeOptional = () => useContext(WorkflowChromeContext)
 export const WorkflowChromeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [edgeNext, setEdgeNextState] = useState<EdgeNextConfig>(null);
   const [infoBar, setInfoBarState] = useState<InfoBarConfig>(null);
+  const [bottomStatus, setBottomStatusState] = useState<BottomStatusConfig>(null);
 
   const setEdgeNext = useCallback((config: EdgeNextConfig) => {
     setEdgeNextState(config);
@@ -61,9 +71,13 @@ export const WorkflowChromeProvider: React.FC<{ children: React.ReactNode }> = (
     setInfoBarState(config);
   }, []);
 
+  const setBottomStatus = useCallback((config: BottomStatusConfig) => {
+    setBottomStatusState(config);
+  }, []);
+
   const value = useMemo(
-    () => ({ edgeNext, infoBar, setEdgeNext, setInfoBar }),
-    [edgeNext, infoBar, setEdgeNext, setInfoBar],
+    () => ({ edgeNext, infoBar, bottomStatus, setEdgeNext, setInfoBar, setBottomStatus }),
+    [edgeNext, infoBar, bottomStatus, setEdgeNext, setInfoBar, setBottomStatus],
   );
 
   const infoBarActive = Boolean(infoBar);
