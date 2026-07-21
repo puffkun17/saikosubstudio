@@ -819,6 +819,7 @@ export const DragZone: React.FC = () => {
     setEdgeNext({
       label: '下一步',
       disabled,
+      ready: !disabled,
       disabledReason: queueIssue || '清单中暂无可整理的字幕文件，移除无效项或补充文件后继续。',
       onClick: () => {
         if (disabled) return;
@@ -953,7 +954,7 @@ export const DragZone: React.FC = () => {
 
   /**
    * 生产线「轨单元」：单独字幕 / 包内字幕 / 文件夹内字幕共用同一视觉规格。
-   * 壳（7z、文件夹）用更大的根行；轨永远是 md 图标 + 文件名 + 语种标。
+   * 壳（7z、文件夹）用更大的根行；轨用 lg 图标 + 语种标，桌面再加一档字号。
    */
   const renderTrackUnit = ({
     keyName,
@@ -972,23 +973,23 @@ export const DragZone: React.FC = () => {
     languageLabels: string[];
     onRemove?: () => void;
   }) => (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2.5">
-      <FileFormatIcon name={name} size="md" />
+    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2.5 md:gap-3.5">
+      <FileFormatIcon name={name} size="lg" />
       <div className="min-w-0">
         <p
-          className={`truncate text-[14px] font-medium leading-snug ${accepted ? 'text-[var(--v4-text)]' : 'text-[var(--v4-danger)]'}`}
+          className={`truncate text-[15px] font-medium leading-snug md:text-[16px] lg:text-[17px] ${accepted ? 'text-[var(--v4-text)]' : 'text-[var(--v4-danger)]'}`}
           title={title || name}
         >
           {name}
         </p>
         {note && !accepted && (
-          <p className="mt-0.5 text-xs font-normal text-[var(--v4-danger)]">{note}</p>
+          <p className="mt-0.5 text-xs font-normal text-[var(--v4-danger)] md:text-sm">{note}</p>
         )}
       </div>
       {languageLabels.length > 0 ? (
-        <span className="inline-flex flex-wrap items-center justify-end gap-1">
+        <span className="inline-flex flex-wrap items-center justify-end gap-1 md:gap-1.5">
           {languageLabels.map((label) => (
-            <LanguageMark key={`${keyName}:${label}`} label={label} />
+            <LanguageMark key={`${keyName}:${label}`} label={label} size="lg" />
           ))}
         </span>
       ) : (
@@ -998,13 +999,13 @@ export const DragZone: React.FC = () => {
         <button
           type="button"
           onClick={onRemove}
-          className="v4-focus-ring grid h-8 w-8 place-items-center rounded-md text-[var(--v4-text-faint)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)]"
+          className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-faint)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)] md:h-10 md:w-10"
           aria-label={`移除 ${name}`}
         >
-          <X className="h-3.5 w-3.5" strokeWidth={2.25} />
+          <X className="h-4 w-4" strokeWidth={2.25} />
         </button>
       ) : (
-        <span className="h-8 w-8" aria-hidden="true" />
+        <span className="h-9 w-9 md:h-10 md:w-10" aria-hidden="true" />
       )}
     </div>
   );
@@ -1014,9 +1015,9 @@ export const DragZone: React.FC = () => {
     if (item.kind !== 'zip' && item.kind !== 'archive') return null;
     if (item.archivePeekStatus !== 'error' && !(item.archiveEntries && item.archiveEntries.length > 0)) return null;
     return (
-      <div className="ingest-halo-tree mt-2">
+      <div className="ingest-halo-tree mt-2.5 md:mt-3">
         {item.archivePeekStatus === 'error' && (
-          <p className="mb-1.5 text-xs font-normal text-[var(--v4-danger)]">{item.archivePeekError || item.note}</p>
+          <p className="mb-1.5 text-xs font-normal text-[var(--v4-danger)] md:text-sm">{item.archivePeekError || item.note}</p>
         )}
         {item.archiveEntries?.map((entry, entryIndex) => (
           <motion.div
@@ -1028,7 +1029,7 @@ export const DragZone: React.FC = () => {
               delay: shouldReduceMotion ? 0 : leafDelayMs(entryIndex) / 1000,
               ease: [0.16, 1, 0.3, 1],
             }}
-            className="ingest-halo-leaf min-w-0 py-1"
+            className="ingest-halo-leaf min-w-0 py-1.5 md:py-2"
             style={{ '--leaf-delay': `${leafDelayMs(entryIndex)}ms` } as React.CSSProperties}
           >
             {renderTrackUnit({
@@ -1139,40 +1140,42 @@ export const DragZone: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={shouldReduceMotion ? undefined : { opacity: 0 }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col text-left"
+              className="ingest-queue flex flex-col text-left"
             >
               {isDragging && (
-                <p className="mb-4 px-1 text-sm font-medium text-[var(--v4-accent-strong)]">
+                <p className="mb-4 px-1 text-sm font-medium text-[var(--v4-accent-strong)] md:text-base">
                   松开以继续添加
                 </p>
               )}
-              <header className="mb-5 flex flex-wrap items-end justify-between gap-3 px-1">
+              <header className="mb-5 flex flex-wrap items-end justify-between gap-3 px-1 md:mb-6 md:gap-4">
                 <div className="min-w-0">
-                  <h3 className="text-sm font-semibold tracking-tight text-[var(--v4-text)]">已添加</h3>
-                  <p className="mt-0.5 text-xs font-medium tabular-nums text-[var(--v4-text-muted)]">
+                  <h3 className="text-base font-semibold tracking-tight text-[var(--v4-text)] md:text-lg lg:text-[1.25rem]">
+                    已添加
+                  </h3>
+                  <p className="mt-1 text-sm font-medium tabular-nums text-[var(--v4-text-muted)] md:text-[15px]">
                     {archivePeekPending && trackCount === 0
                       ? '正在读取…'
                       : `${queuedItems.length} 项 · ${trackCount} 条字幕 · ${formatBytes(totalBytes)}`}
                     {rejectedItems.length > 0 ? ` · ${rejectedItems.length} 项已忽略` : ''}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2 md:gap-2.5">
                   <div className="relative" ref={addMenuRef}>
                     <button
                       type="button"
                       onClick={() => setAddMenuOpen((open) => !open)}
-                      className="v4-focus-ring inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)]/80 px-3 text-sm font-semibold text-[var(--v4-text)] backdrop-blur-sm hover:bg-[var(--v4-accent-soft)]"
+                      className="v4-focus-ring inline-flex h-10 items-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)]/80 px-3.5 text-sm font-semibold text-[var(--v4-text)] backdrop-blur-sm hover:bg-[var(--v4-accent-soft)] md:h-11 md:px-4 md:text-[15px]"
                       aria-expanded={addMenuOpen}
                     >
-                      <Plus className="h-4 w-4" aria-hidden="true" />
+                      <Plus className="h-4 w-4 md:h-[18px] md:w-[18px]" aria-hidden="true" />
                       添加
-                      <ChevronDown className={`h-3.5 w-3.5 text-[var(--v4-text-faint)] transition-transform ${addMenuOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`h-3.5 w-3.5 text-[var(--v4-text-faint)] transition-transform md:h-4 md:w-4 ${addMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {addMenuOpen && (
-                      <div className="absolute right-0 top-full z-20 mt-1.5 min-w-[11rem] overflow-hidden rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] shadow-[0_12px_28px_rgba(0,0,0,0.4)]">
+                      <div className="absolute right-0 top-full z-20 mt-1.5 min-w-[12rem] overflow-hidden rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] shadow-[0_12px_28px_rgba(0,0,0,0.4)]">
                         <button
                           type="button"
-                          className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-normal text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)]"
+                          className="flex w-full items-center gap-2 px-3.5 py-3 text-left text-sm font-normal text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)] md:text-[15px]"
                           onClick={() => { setAddMenuOpen(false); fileInputRef.current?.click(); }}
                         >
                           <FilePlus className="h-4 w-4 text-[var(--v4-accent-strong)]" />
@@ -1180,7 +1183,7 @@ export const DragZone: React.FC = () => {
                         </button>
                         <button
                           type="button"
-                          className="flex w-full items-center gap-2 border-t border-[var(--v4-line)] px-3 py-2.5 text-left text-sm font-normal text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)]"
+                          className="flex w-full items-center gap-2 border-t border-[var(--v4-line)] px-3.5 py-3 text-left text-sm font-normal text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)] md:text-[15px]"
                           onClick={() => { setAddMenuOpen(false); folderInputRef.current?.click(); }}
                         >
                           <FolderPlus className="h-4 w-4 text-[var(--v4-accent-strong)]" />
@@ -1192,15 +1195,15 @@ export const DragZone: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => { setQueuedItems([]); setQueueIssue(null); }}
-                    className="v4-focus-ring inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-normal text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)]"
+                    className="v4-focus-ring inline-flex h-10 items-center gap-1.5 rounded-md px-3 text-sm font-normal text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)] md:h-11 md:px-3.5 md:text-[15px]"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-4 w-4" />
                     清空
                   </button>
                 </div>
               </header>
 
-              <div className="max-h-[min(420px,52vh)] space-y-2.5 overflow-y-auto px-1 pb-1">
+              <div className="max-h-[min(480px,56vh)] space-y-3 overflow-y-auto px-1 pb-1 md:max-h-[min(620px,62vh)] md:space-y-4">
                 {renderNodes.map((node, nodeIndex) => {
                   // 文件「落桌」：从上方轻降 + 微缩回位，像放到桌面上
                   const landing = {
@@ -1219,15 +1222,15 @@ export const DragZone: React.FC = () => {
                       + node.items.reduce((sum, row) => sum + (row.archiveEntries?.length || 0), 0);
                     return (
                       <motion.div key={`folder:${node.folder}`} {...landing} className="min-w-0">
-                        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+                        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 md:gap-4">
                           <div className="ingest-halo-root">
-                            <FileFormatIcon format="folder" size="lg" />
+                            <FileFormatIcon format="folder" size="xl" />
                           </div>
                           <div className="min-w-0">
-                            <p className="truncate text-[15px] font-semibold leading-snug tracking-tight text-[var(--v4-text)]" title={node.folder}>
+                            <p className="truncate text-[16px] font-semibold leading-snug tracking-tight text-[var(--v4-text)] md:text-[17px] lg:text-[18px]" title={node.folder}>
                               {node.folder}
                             </p>
-                            <p className="mt-0.5 text-[13px] font-medium text-[var(--v4-text-muted)]">
+                            <p className="mt-1 text-[13px] font-medium text-[var(--v4-text-muted)] md:text-[14px]">
                               本地文件夹 · {node.items.length} 个文件
                               {subtitleCount > 0 ? ` · ${subtitleCount} 条字幕` : ''} · {formatBytes(folderBytes)}
                             </p>
@@ -1235,14 +1238,14 @@ export const DragZone: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => removeFolderGroup(node.folder)}
-                            className="v4-focus-ring grid h-8 w-8 place-items-center rounded-md text-[var(--v4-text-muted)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)]"
+                            className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-muted)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)] md:h-10 md:w-10"
                             aria-label={`移除文件夹 ${node.folder}`}
                           >
                             <X className="h-4 w-4" strokeWidth={2.25} />
                           </button>
                         </div>
 
-                        <div className="ingest-halo-tree mt-2">
+                        <div className="ingest-halo-tree mt-2.5 md:mt-3">
                           {node.items.map((item, leafIndex) => {
                             const langs = languagesForItem(item);
                             // 去掉顶层目录名，保留剩余相对路径（如 S01/xx.srt）
@@ -1259,7 +1262,7 @@ export const DragZone: React.FC = () => {
                                   delay: shouldReduceMotion ? 0 : leafDelayMs(leafIndex) / 1000,
                                   ease: [0.16, 1, 0.3, 1],
                                 }}
-                                className="ingest-halo-leaf min-w-0 py-1"
+                                className="ingest-halo-leaf min-w-0 py-1.5 md:py-2"
                                 style={{ '--leaf-delay': `${leafDelayMs(leafIndex)}ms` } as React.CSSProperties}
                               >
                                 {renderTrackUnit({
@@ -1287,7 +1290,7 @@ export const DragZone: React.FC = () => {
                   // 单独字幕文件：与包内轨同级的「轨单元」，不升格成壳
                   if (!isArchive && item.kind === 'subtitle') {
                     return (
-                      <motion.div key={item.key} {...landing} className="min-w-0 rounded-md px-0.5 py-0.5">
+                      <motion.div key={item.key} {...landing} className="min-w-0 rounded-md px-0.5 py-1 md:py-1.5">
                         {renderTrackUnit({
                           keyName: item.key,
                           name: item.name,
@@ -1303,34 +1306,34 @@ export const DragZone: React.FC = () => {
 
                   return (
                     <motion.div key={item.key} {...landing} className="min-w-0">
-                      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+                      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 md:gap-4">
                         <div className="ingest-halo-root">
-                          <FileFormatIcon format={resolveFileFormat(item.name)} size="lg" />
+                          <FileFormatIcon format={resolveFileFormat(item.name)} size="xl" />
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-[15px] font-semibold leading-snug tracking-tight text-[var(--v4-text)]" title={item.name}>
+                          <p className="truncate text-[16px] font-semibold leading-snug tracking-tight text-[var(--v4-text)] md:text-[17px] lg:text-[18px]" title={item.name}>
                             {item.name}
                           </p>
                           {isArchive && item.archivePeekStatus === 'loading' && (
-                            <p className="mt-0.5 text-[13px] font-medium text-[var(--v4-text-muted)]">
+                            <p className="mt-1 text-[13px] font-medium text-[var(--v4-text-muted)] md:text-[14px]">
                               {item.note && item.note !== '正在查看包内字幕…'
                                 ? item.note
                                 : '正在读取包内字幕…'}
                             </p>
                           )}
                           {isArchive && item.archivePeekStatus === 'ready' && item.archiveEntries && (
-                            <p className="mt-0.5 text-[13px] font-medium text-[var(--v4-text-muted)]">
+                            <p className="mt-1 text-[13px] font-medium text-[var(--v4-text-muted)] md:text-[14px]">
                               压缩包 · {item.archiveEntries.length} 条字幕 · {formatBytes(item.file.size)}
                             </p>
                           )}
                           {!item.accepted && (
-                            <p className="mt-0.5 text-[13px] font-medium text-[var(--v4-danger)]">{item.note}</p>
+                            <p className="mt-1 text-[13px] font-medium text-[var(--v4-danger)] md:text-[14px]">{item.note}</p>
                           )}
                         </div>
                         <button
                           type="button"
                           onClick={() => removeQueuedFile(item.key)}
-                          className="v4-focus-ring grid h-8 w-8 place-items-center rounded-md text-[var(--v4-text-muted)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)]"
+                          className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-muted)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)] md:h-10 md:w-10"
                           aria-label={`移除 ${item.name}`}
                         >
                           <X className="h-4 w-4" strokeWidth={2.25} />
@@ -1343,14 +1346,14 @@ export const DragZone: React.FC = () => {
                 })}
               </div>
 
-              <footer className="mt-6 px-1">
+              <footer className="mt-6 px-1 md:mt-7">
                 {(queueIssue || rejectedItems.length > 0) && (
-                  <p className="mb-3 text-xs leading-5 text-[var(--v4-warning)]">
+                  <p className="mb-3 text-sm leading-5 text-[var(--v4-warning)] md:text-[15px]">
                     {queueIssue || `${rejectedItems.length} 项无法处理，可移除后继续。`}
                   </p>
                 )}
-                <span className="inline-flex items-center gap-2 text-xs font-medium text-[var(--v4-text-muted)]">
-                  <HardDrive className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--v4-text-muted)] md:text-[15px]">
+                  <HardDrive className="h-4 w-4" aria-hidden="true" />
                   仅在本机读取，不会上传
                 </span>
               </footer>

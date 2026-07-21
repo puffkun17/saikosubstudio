@@ -8,16 +8,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { parseSrt } from '@/utils/subtitleCore';
 import { AssStylePreview } from '@/components/Ingest/AssStylePreview';
 
-const getRottenTomatoesScore = (title: string, voteAverage: number) => {
-  if (!voteAverage || voteAverage === 0) return null;
-  let seed = 0;
-  for (let i = 0; i < title.length; i++) {
-    seed += title.charCodeAt(i);
-  }
-  const delta = (seed % 15) - 6; // deterministic score delta based on title
-  return Math.max(30, Math.min(100, Math.round(voteAverage * 10 + delta)));
-};
-
 const countSubtitleCues = (text?: string) => {
   if (!text) return 0;
   try {
@@ -68,7 +58,6 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
 
   const [pendingSuggestion, setPendingSuggestion] = useState<TmdbSuggestion | null>(null);
   const [isApplyingSuggestion, setIsApplyingSuggestion] = useState(false);
-  const rtScore = tmdbData ? getRottenTomatoesScore(tmdbData.title, tmdbData.voteAverage) : null;
   const activeTask = tasks.find((task) => task.id === selectedTaskId) || tasks[0];
   const needsTitleInput = Boolean(activeTask?.title.includes('待补充片名'));
   const shouldHighlightSearch = needsTitleInput && tmdbSuggestions.length === 0;
@@ -233,11 +222,6 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                     <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--v4-accent)]/18 bg-[var(--v4-accent-soft)] px-2.5 py-1 font-mono text-[13px] font-bold text-[var(--v4-accent-strong)]">
                       <Star className="h-3.5 w-3.5 fill-current" />
                       {tmdbData.voteAverage.toFixed(1)}
-                    </span>
-                  )}
-                  {rtScore && (
-                    <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--v4-danger)]/15 bg-[var(--v4-danger)]/10 px-2.5 py-1 font-mono text-[13px] font-bold text-[var(--v4-danger)]">
-                      RT {rtScore}%
                     </span>
                   )}
                   {tmdbData.genres && tmdbData.genres.map((g: string, i: number) => (

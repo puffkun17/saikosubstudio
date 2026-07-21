@@ -310,7 +310,28 @@ body {
 }
 
 .ingest-stage.has-queue {
-  max-width: 44rem;
+  max-width: min(48rem, 100%);
+}
+
+@media (min-width: 1024px) {
+  .ingest-stage.has-queue {
+    max-width: min(56rem, 92vw);
+  }
+
+  .ingest-halo-tree {
+    margin-left: 1.35rem;
+    padding-left: 1.6rem;
+  }
+
+  .ingest-halo-leaf::before {
+    left: -1.6rem;
+    width: 1rem;
+  }
+
+  .ingest-halo-root::before {
+    width: 3.85rem;
+    height: 3.85rem;
+  }
 }
 
 .ingest-stage.is-empty {
@@ -567,6 +588,41 @@ body {
   }
   100% {
     opacity: 0;
+  }
+}
+
+/* 就绪态：琥珀光圈缓慢呼吸（克制，非霓虹闪） */
+.workflow-edge-next.is-ready:not(.is-disabled) {
+  border-left-color: color-mix(in srgb, var(--v4-accent) 55%, var(--v4-line));
+  animation: edgeNextReadyBreath 2.6s ease-in-out infinite;
+}
+
+.workflow-edge-next.is-ready:not(.is-disabled) .workflow-edge-next__rail {
+  background: color-mix(in srgb, var(--v4-accent) 72%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--v4-accent) 35%, transparent);
+  opacity: 1;
+}
+
+@keyframes edgeNextReadyBreath {
+  0%,
+  100% {
+    box-shadow:
+      inset 3px 0 0 color-mix(in srgb, var(--v4-accent) 38%, transparent),
+      0 0 0 0 color-mix(in srgb, var(--v4-accent) 22%, transparent);
+  }
+  50% {
+    box-shadow:
+      inset 3px 0 0 color-mix(in srgb, var(--v4-accent) 62%, transparent),
+      0 0 18px 2px color-mix(in srgb, var(--v4-accent) 22%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workflow-edge-next.is-ready:not(.is-disabled) {
+    animation: none;
+    box-shadow:
+      inset 3px 0 0 color-mix(in srgb, var(--v4-accent) 55%, transparent),
+      0 0 10px color-mix(in srgb, var(--v4-accent) 16%, transparent);
   }
 }
 

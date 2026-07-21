@@ -88,12 +88,16 @@ export const WorkbenchStep: React.FC = () => {
   }, [processedSubs, customFilename, isSettingsOpen, tmdbData, setInfoBar, setIsSettingsOpen, setWorkflowStep]);
 
   useEffect(() => {
+    const hasTimeline = Boolean(processedSubs && processedSubs.length > 0);
     setEdgeNext({
       label: '打开预览',
+      disabled: !hasTimeline,
+      ready: hasTimeline,
+      disabledReason: '还没有可预览的字幕时间轴，请先完成合轴。',
       onClick: () => setWorkflowStep(3),
     });
     return () => setEdgeNext(null);
-  }, [setEdgeNext, setWorkflowStep]);
+  }, [processedSubs, setEdgeNext, setWorkflowStep]);
 
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[var(--v4-canvas)]">

@@ -1261,23 +1261,42 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     const inheritedMetadata = reusableTask?.tmdbData || null;
     const inheritedBackdrop = reusableTask?.tmdbBackdrop || inheritedMetadata?.backdropUrl || null;
     const inheritedBackdrops = reusableTask?.tmdbBackdropList || (inheritedBackdrop ? [inheritedBackdrop] : []);
-    if (inheritedMetadata) {
-      set(state => ({
-        tasks: state.tasks.map(candidate => candidate.id === taskId
-          ? { ...candidate, tmdbData: inheritedMetadata, tmdbBackdrop: inheritedBackdrop, tmdbBackdropList: inheritedBackdrops }
-          : candidate),
-      }));
-    }
+    const resolvedMeta = task.tmdbData || inheritedMetadata;
     set({
       selectedTaskId: taskId,
       files: { zh: task.zh, en: task.en, commentary: task.commentary },
-      tmdbData: task.tmdbData || inheritedMetadata,
+      tmdbData: resolvedMeta,
       tmdbBackdrop: task.tmdbBackdrop || inheritedBackdrop,
       tmdbBackdropList: task.tmdbBackdropList || inheritedBackdrops,
       detectedAttributions: task.files.flatMap(file => extractSubtitleAttributions(file.text)).filter((item, index, all) =>
         all.findIndex(candidate => candidate.role === item.role && candidate.value.toLowerCase() === item.value.toLowerCase()) === index
       )
     });
+
+    // 复用/已有片源时按当前集 epKey 重算导出名（手动填写过的不覆盖）
+    if (resolvedMeta) {
+      const formattedName = formatTmdbOutputName(resolvedMeta, task.epKey);
+      set((state) => {
+        const keepManual = state.filenameSource === 'manual' && Boolean(state.customFilename.trim());
+        return {
+          customFilename: keepManual ? state.customFilename : formattedName,
+          filenameSource: keepManual ? 'manual' : 'tmdb',
+          tasks: state.tasks.map((candidate) =>
+            candidate.id === taskId
+              ? {
+                  ...candidate,
+                  title: keepManual ? candidate.title : formattedName,
+                  tmdbData: resolvedMeta,
+                  tmdbBackdrop: candidate.tmdbBackdrop || inheritedBackdrop,
+                  tmdbBackdropList: candidate.tmdbBackdropList?.length
+                    ? candidate.tmdbBackdropList
+                    : inheritedBackdrops,
+                }
+              : candidate,
+          ),
+        };
+      });
+    }
     
     const detectTitle = smartDetectTitle(
       task.zh?.name || '',

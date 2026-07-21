@@ -6,10 +6,10 @@ import { springSnappy } from '@/lib/motion';
 
 export type FileFormat = 'srt' | 'ass' | 'zip' | 'rar' | '7z' | 'folder' | 'unknown';
 
-type Size = 'sm' | 'md' | 'lg';
+type Size = 'sm' | 'md' | 'lg' | 'xl';
 
 /** Adobe-like glyphs need a bit of size so the 3-letter code stays crisp. */
-const SIZE_PX: Record<Size, number> = { sm: 24, md: 30, lg: 36 };
+const SIZE_PX: Record<Size, number> = { sm: 24, md: 30, lg: 36, xl: 44 };
 
 const TIPS: Record<FileFormat, string> = {
   srt: 'SRT 字幕',
@@ -315,10 +315,17 @@ const chipSurfaceStyle = (face: string): React.CSSProperties => ({
   fontWeight: 600,
 });
 
-/** Fixed 32×32 tile — larger glyph, tighter padding, footprint unchanged. */
-const LangTile: React.FC<{ visual: LangVisual; flipKey?: string }> = ({ visual, flipKey }) => {
+type MarkSize = 'md' | 'lg';
+
+/** Fixed tile — larger glyph, tighter padding. */
+const LangTile: React.FC<{ visual: LangVisual; flipKey?: string; size?: MarkSize }> = ({
+  visual,
+  flipKey,
+  size = 'md',
+}) => {
   const { face, ink, mark } = visual;
   const isWide = mark.length > 1;
+  const isLg = size === 'lg';
 
   return (
     <motion.span
@@ -326,12 +333,18 @@ const LangTile: React.FC<{ visual: LangVisual; flipKey?: string }> = ({ visual, 
       initial={{ rotateY: 75, opacity: 0 }}
       animate={{ rotateY: 0, opacity: 1 }}
       transition={springSnappy}
-      className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md"
+      className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-md ${
+        isLg ? 'h-9 w-9' : 'h-8 w-8'
+      }`}
       aria-hidden="true"
       style={{ background: face }}
     >
       <span
-        className={`font-mono font-bold leading-none tracking-normal ${isWide ? 'text-[14px]' : 'text-[16px]'}`}
+        className={`font-mono font-bold leading-none tracking-normal ${
+          isLg
+            ? isWide ? 'text-[15px]' : 'text-[17px]'
+            : isWide ? 'text-[14px]' : 'text-[16px]'
+        }`}
         style={{ color: ink }}
       >
         {mark}
@@ -345,8 +358,17 @@ export const LanguageMark: React.FC<{
   lang?: string;
   label?: string;
   languagePair?: { primary: string; secondary: string };
+  size?: MarkSize;
   className?: string;
-}> = ({ lang, label, languagePair, className = '' }) => {
+}> = ({ lang, label, languagePair, size = 'md', className = '' }) => {
+  const isLg = size === 'lg';
+  const shellClass = `inline-flex shrink-0 items-center gap-1 rounded-md border pl-0.5 pr-2 ${
+    isLg ? 'h-9' : 'h-8'
+  } ${className}`;
+  const labelClass = `font-mono font-semibold leading-none tracking-normal ${
+    isLg ? 'text-[14px]' : 'text-[13px]'
+  }`;
+
   if (languagePair) {
     const primaryKey = resolveLangKey(languagePair.primary);
     const secondaryKey = resolveLangKey(languagePair.secondary);
@@ -354,7 +376,7 @@ export const LanguageMark: React.FC<{
     const secondary = LANG_VISUAL[secondaryKey] || LANG_VISUAL.unknown;
     return (
       <span
-        className={`inline-flex h-8 shrink-0 items-center gap-1 rounded-md border pl-0.5 pr-2 ${className}`}
+        className={shellClass}
         style={chipSurfaceStyle(LANG_VISUAL.bilingual.face)}
         title={`${primary.label} / ${secondary.label}`}
       >
@@ -366,7 +388,7 @@ export const LanguageMark: React.FC<{
             transition={springSnappy}
             className="inline-flex"
           >
-            <LangTile visual={primary} flipKey={`p-${primaryKey}`} />
+            <LangTile visual={primary} flipKey={`p-${primaryKey}`} size={size} />
           </motion.span>
           <motion.span
             initial={{ x: 5 }}
@@ -374,12 +396,10 @@ export const LanguageMark: React.FC<{
             transition={springSnappy}
             className="-ml-1.5 inline-flex"
           >
-            <LangTile visual={secondary} flipKey={`s-${secondaryKey}`} />
+            <LangTile visual={secondary} flipKey={`s-${secondaryKey}`} size={size} />
           </motion.span>
         </span>
-        <span className="font-mono text-[13px] font-semibold leading-none tracking-normal">
-          双语
-        </span>
+        <span className={labelClass}>双语</span>
       </span>
     );
   }
@@ -395,15 +415,13 @@ export const LanguageMark: React.FC<{
 
   return (
     <span
-      className={`inline-flex h-8 shrink-0 items-center gap-1 rounded-md border pl-0.5 pr-2 ${className}`}
+      className={shellClass}
       style={chipSurfaceStyle(visual.face)}
       title={visual.label}
     >
       {/* key 变化（如 待识别 → 简中）时翻牌，提示「语言已识别」 */}
-      <LangTile visual={visual} flipKey={key} />
-      <span className="font-mono text-[13px] font-semibold leading-none tracking-normal">
-        {visual.label}
-      </span>
+      <LangTile visual={visual} flipKey={key} size={size} />
+      <span className={labelClass}>{visual.label}</span>
     </span>
   );
 };

@@ -17,6 +17,17 @@ export type EdgeNextConfig = {
   disabled?: boolean;
   /** 置灰时点按给出的原因提示（走 statusNotice，而不是无响应）。 */
   disabledReason?: string;
+  /**
+   * 就绪呼吸：必要工序已齐、可进入下一场景时为 true。
+   * 省略时默认按 !disabled 推断。处理中请显式传 false。
+   *
+   * 各步就绪条件（判「可前进」，不判「一切完美」）：
+   * - 收件队列：至少 1 条可接受字幕，无阻断 queueIssue
+   * - 核对清单：当前任务有主轨（中/英），且未在合并处理中
+   * - 工作台：已有合轴字幕行，可打开预览
+   * 警告类问题不挡前进；样式/导出偏好有默认即可。
+   */
+  ready?: boolean;
   onClick: () => void;
 } | null;
 
@@ -194,12 +205,14 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
 
 /**
  * 通往下一步的右缘按钮。
- * 事件驱动动效：挂载时一次性「点亮」（CSS edgeNextIgnite），不做循环晃动；
- * hover 向左展开为横排标签；置灰时点按给出原因提示而非静默。
+ * 就绪时可点：琥珀光圈缓慢呼吸；置灰无呼吸，点按说明缺什么；
+ * 挂载时仍有一次性「点亮」（edgeNextIgnite）；hover 向左展开标签。
  */
 const WorkflowEdgeNext: React.FC<{ config: EdgeNextConfig }> = ({ config }) => {
   const setStatusNotice = useStudioStore((state) => state.setStatusNotice);
   if (!config) return null;
+
+  const isReady = !config.disabled && (config.ready ?? true);
 
   const handleClick = () => {
     if (config.disabled) {
@@ -221,7 +234,7 @@ const WorkflowEdgeNext: React.FC<{ config: EdgeNextConfig }> = ({ config }) => {
       onClick={handleClick}
       aria-label={config.label}
       title={config.label}
-      className={`workflow-edge-next v4-focus-ring ${config.disabled ? 'is-disabled' : ''}`}
+      className={`workflow-edge-next v4-focus-ring ${config.disabled ? 'is-disabled' : ''} ${isReady ? 'is-ready' : ''}`}
     >
       <span className="workflow-edge-next__rail" aria-hidden="true" />
       <span className="workflow-edge-next__glyph">

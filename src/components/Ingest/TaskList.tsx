@@ -345,13 +345,15 @@ export const TaskList: React.FC = () => {
     setEdgeNext({
       label: edgeLabel,
       disabled: !canProceed,
+      ready: canProceed && !isProcessing,
+      disabledReason: '请先为当前任务绑定至少一条主字幕轨。',
       onClick: () => {
         if (!canProceed) return;
         void runSubtitleMerge();
       },
     });
     return () => setEdgeNext(null);
-  }, [activeTask, canProceed, edgeLabel, runSubtitleMerge, setEdgeNext]);
+  }, [activeTask, canProceed, edgeLabel, isProcessing, runSubtitleMerge, setEdgeNext]);
 
   const identityTitle = (() => {
     if (!activeTask) return '核对清单';
