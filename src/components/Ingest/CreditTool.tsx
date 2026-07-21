@@ -21,6 +21,8 @@ export const CreditTool: React.FC = () => {
     setAppendCreatorCredit: state.setAppendCreatorCredit,
   })));
 
+  const showCreditInput = appendCreatorCredit || Boolean(creatorCredit.trim());
+
   return (
     <section className="rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2.5">
       <div className="flex items-center gap-1.5">
@@ -58,17 +60,7 @@ export const CreditTool: React.FC = () => {
         </div>
 
         <div className="min-w-0">
-          <label className="text-xs font-medium text-[var(--v4-text-muted)]" htmlFor="creator-credit">
-            片尾制作署名
-          </label>
-          <input
-            id="creator-credit"
-            type="text"
-            value={creatorCredit}
-            onChange={(event) => setCreatorCredit(event.target.value)}
-            placeholder="例如：Nexus Studio"
-            className="rd-field mt-1.5 h-10 w-full rounded-lg px-3 text-sm text-[var(--v4-text)] outline-none transition placeholder:text-[var(--v4-text-faint)]"
-          />
+          <div className="text-xs font-medium text-[var(--v4-text-muted)]">片尾制作署名</div>
           <label className="mt-2 flex cursor-pointer items-start gap-2 text-xs leading-relaxed text-[var(--v4-text-muted)]">
             <input
               type="checkbox"
@@ -78,6 +70,16 @@ export const CreditTool: React.FC = () => {
             />
             <span>导出时在最后一条字幕后追加片尾署名</span>
           </label>
+          {showCreditInput ? (
+            <input
+              id="creator-credit"
+              type="text"
+              value={creatorCredit}
+              onChange={(event) => setCreatorCredit(event.target.value)}
+              placeholder="例如：Nexus Studio"
+              className="rd-field mt-2 h-10 w-full rounded-lg px-3 text-sm text-[var(--v4-text)] outline-none transition placeholder:text-[var(--v4-text-faint)]"
+            />
+          ) : null}
         </div>
       </div>
     </section>

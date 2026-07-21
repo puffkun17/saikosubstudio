@@ -49,14 +49,6 @@ export const SourceIdentityStrip: React.FC = () => {
   const optimisticTitle = customFilename || activeTask?.title || '待匹配影片';
   const needsTitleInput = Boolean(activeTask?.title.includes('待补充片名'));
 
-  const statusLabel = tmdbData
-    ? '已匹配'
-    : isSearchingTmdb
-      ? '匹配中'
-      : needsTitleInput
-        ? '待补充片名'
-        : '未匹配';
-
   const filmNotice = [...statusNotices]
     .reverse()
     .find((notice) => notice.id === 'media-match' || notice.id === 'media-identity');
@@ -125,9 +117,6 @@ export const SourceIdentityStrip: React.FC = () => {
                   {tmdbData.year}
                 </span>
               ) : null}
-              <span className="rd-chip rd-chip--tight shrink-0">
-                {statusLabel}
-              </span>
             </div>
 
             {scriptTitle ? (

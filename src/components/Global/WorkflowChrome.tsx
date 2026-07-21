@@ -25,6 +25,14 @@ export type InfoBarConfig = {
   subtitle?: string;
   /** Highlighted season/episode or short identity chip next to the title. */
   badge?: string;
+  /**
+   * 广义状态通知（如已匹配 / 匹配中 / 未匹配），常驻顶栏。
+   * tone: ok 已完成 · progress 进行中 · warn 需处理 · muted 中性
+   */
+  status?: {
+    label: string;
+    tone?: 'ok' | 'progress' | 'warn' | 'muted';
+  };
   onBack?: () => void;
   actions?: React.ReactNode;
 } | null;
@@ -118,7 +126,7 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
     <AnimatePresence>
       {config && (
         <motion.div
-          key={`${config.title}:${config.badge || ''}:${config.subtitle || ''}`}
+          key={`${config.title}:${config.badge || ''}:${config.status?.label || ''}:${config.subtitle || ''}`}
           role="region"
           aria-label="信息栏"
           initial={shouldReduceMotion ? false : { opacity: 0, y: -6 }}
@@ -147,6 +155,21 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
                   {config.badge && (
                     <span className="inline-flex h-7 shrink-0 items-center rounded-md border border-[var(--v4-accent)]/35 bg-[var(--v4-accent-soft)] px-2.5 font-mono text-[13px] font-bold tracking-wide text-[var(--v4-accent-strong)]">
                       {config.badge}
+                    </span>
+                  )}
+                  {config.status && (
+                    <span
+                      className={`inline-flex h-7 shrink-0 items-center rounded-md border px-2.5 text-[12px] font-bold tracking-wide ${
+                        config.status.tone === 'ok'
+                          ? 'border-[var(--v4-accent)]/35 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
+                          : config.status.tone === 'progress'
+                            ? 'border-[var(--v4-line-strong)] bg-[var(--v4-panel)] text-[var(--v4-text)]'
+                            : config.status.tone === 'warn'
+                              ? 'border-[color:rgba(196,137,58,0.35)] bg-[color:rgba(196,137,58,0.12)] text-[var(--v4-warning)]'
+                              : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]'
+                      }`}
+                    >
+                      {config.status.label}
                     </span>
                   )}
                 </div>

@@ -22,7 +22,8 @@ export const WorkbenchStep: React.FC = () => {
     setProcessedSubs,
     selectedTaskId,
     isSettingsOpen,
-    setIsSettingsOpen
+    setIsSettingsOpen,
+    tmdbData,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     customFilename: state.customFilename,
@@ -31,6 +32,7 @@ export const WorkbenchStep: React.FC = () => {
     selectedTaskId: state.selectedTaskId,
     isSettingsOpen: state.isSettingsOpen,
     setIsSettingsOpen: state.setIsSettingsOpen,
+    tmdbData: state.tmdbData,
   })));
   const { setInfoBar, setEdgeNext } = useWorkflowChrome();
 
@@ -56,6 +58,9 @@ export const WorkbenchStep: React.FC = () => {
     setInfoBar({
       title: '字幕工作台',
       subtitle: `${processedSubs?.length || 0} 行 / ${customFilename || '未命名字幕'}`,
+      status: tmdbData
+        ? { label: '已匹配', tone: 'ok' }
+        : { label: '未匹配', tone: 'muted' },
       onBack: () => {
         if (processedSubs && processedSubs.length > 0) {
           setShowBackConfirm(true);
@@ -80,7 +85,7 @@ export const WorkbenchStep: React.FC = () => {
       ),
     });
     return () => setInfoBar(null);
-  }, [processedSubs, customFilename, isSettingsOpen, setInfoBar, setIsSettingsOpen, setWorkflowStep]);
+  }, [processedSubs, customFilename, isSettingsOpen, tmdbData, setInfoBar, setIsSettingsOpen, setWorkflowStep]);
 
   useEffect(() => {
     setEdgeNext({

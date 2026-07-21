@@ -59,6 +59,7 @@ export const TaskList: React.FC = () => {
     setAlignmentMode,
     setTmdbManualOpen,
     tmdbData,
+    isSearchingTmdb,
   } = useStudioStore(useShallow((state) => ({
     tasks: state.tasks,
     selectedTaskId: state.selectedTaskId,
@@ -84,6 +85,7 @@ export const TaskList: React.FC = () => {
     setAlignmentMode: state.setAlignmentMode,
     setTmdbManualOpen: state.setTmdbManualOpen,
     tmdbData: state.tmdbData,
+    isSearchingTmdb: state.isSearchingTmdb,
   })));
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -368,6 +370,20 @@ export const TaskList: React.FC = () => {
     tmdbData?.year,
     `字幕文件 · ${tasks.length} 个任务`,
   ].filter(Boolean).join(' · ');
+  const matchStatusLabel = tmdbData
+    ? '已匹配'
+    : isSearchingTmdb
+      ? '匹配中'
+      : needsTitleInput
+        ? '待补充片名'
+        : '未匹配';
+  const matchStatusTone = tmdbData
+    ? 'ok' as const
+    : isSearchingTmdb
+      ? 'progress' as const
+      : needsTitleInput
+        ? 'warn' as const
+        : 'muted' as const;
 
   useEffect(() => {
     if (!activeTask) {
@@ -378,6 +394,7 @@ export const TaskList: React.FC = () => {
       title: identityTitle,
       badge: identityBadge,
       subtitle: identitySubtitle,
+      status: { label: matchStatusLabel, tone: matchStatusTone },
       actions: (
         <>
           {pendingCancelUpload ? (
@@ -454,6 +471,8 @@ export const TaskList: React.FC = () => {
     identityTitle,
     identityBadge,
     identitySubtitle,
+    matchStatusLabel,
+    matchStatusTone,
     tasks.length,
     pendingCancelUpload,
     pendingDeleteId,
