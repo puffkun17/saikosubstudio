@@ -17,6 +17,7 @@ execFileSync('npx', [
   'tsc',
   'src/utils/subtitleCore.ts',
   'src/utils/mediaIdentity.ts',
+  'src/utils/tmdbCandidateFit.ts',
   'src/utils/releaseNamingRules.ts',
   'src/utils/importSafety.ts',
   'src/utils/timeline/alignmentDiff.ts',
@@ -64,6 +65,7 @@ const {
 const { analyzeAlignmentDiff } = require(join(outDir, 'utils/timeline/alignmentDiff.js'));
 const { useStudioStore } = require(join(outDir, 'store/useStudioStore.js'));
 const { CLIENT_IMPORT_LIMITS, getClientFileIssue } = require(join(outDir, 'utils/importSafety.js'));
+const { assessTvYearFit, shouldDemoteBySeasonSpan } = require(join(outDir, 'utils/tmdbCandidateFit.js'));
 
 const noopLog = () => {};
 
@@ -856,8 +858,10 @@ const resetStoreForTmdb = () => {
     tmdbBackdrop: null,
     tmdbBackdropList: [],
     tmdbSuggestions: [],
+    tmdbAlternateSuggestion: null,
     selectedSuggestion: null,
     tmdbManualOpen: false,
+    tmdbManualInput: { title: '', year: '', type: 'movie', season: '1', episode: '1' },
     isSearchingTmdb: false,
     logs: [],
     statusNotices: [],
@@ -888,11 +892,14 @@ Hello`,
   assert.equal(state.tmdbManualInput.title, '', 'Weak release parameters must not prefill the TMDB manual search box.');
 }
 
-const createTmdbSearchResult = (item) => ({
-  ok: true,
-  status: 200,
-  json: async () => ({ page: 1, results: item ? [item] : [], total_pages: item ? 1 : 0, total_results: item ? 1 : 0 }),
-});
+const createTmdbSearchResult = (item) => {
+  const results = item == null ? [] : Array.isArray(item) ? item : [item];
+  return {
+    ok: true,
+    status: 200,
+    json: async () => ({ page: 1, results, total_pages: results.length ? 1 : 0, total_results: results.length }),
+  };
+};
 
 const createTmdbDetails = (details) => ({
   ok: true,
@@ -1197,6 +1204,152 @@ const createTmdbImages = () => ({
   await useStudioStore.getState().searchTmdb('The_Battle_Of_Algiers_1966_BluRay_Criterion_Collection_1080p_AVC.srt', { silent: true });
   assert.equal(useStudioStore.getState().tmdbData, null, 'Movie filenames must not auto-apply TV candidates.');
   assert.equal(useStudioStore.getState().tmdbSuggestions[0]?.id, wrongTypeSuggestion.id, 'Wrong-type candidates may remain visible for manual confirmation.');
+}
+
+{
+  assert.equal(assessTvYearFit({ userYear: '2020', itemYear: '2020', season: 5 }).match, true, 'Exact premiere year should match.');
+  assert.equal(assessTvYearFit({ userYear: '2020', itemYear: '2023', season: 5 }).veto, 'veto:year-after', 'Later premiere than user year should veto.');
+  assert.equal(assessTvYearFit({ userYear: '2025', itemYear: '2023', season: 5 }).veto, 'veto:season-span', 'Too-new show cannot cover S05 by user year.');
+  assert.equal(assessTvYearFit({ userYear: '2025', itemYear: '2020', season: 5 }).soft, true, 'Later impression year with enough span should soft-confirm.');
+  assert.equal(
+    shouldDemoteBySeasonSpan({ itemYear: '2023', season: 5, referenceYear: 2026 }),
+    true,
+    'S05 against a 2023 premiere should demote by 2026.',
+  );
+  assert.equal(
+    shouldDemoteBySeasonSpan({ itemYear: '2020', season: 5, referenceYear: 2026 }),
+    false,
+    'S05 against a 2020 premiere should remain plausible in 2026.',
+  );
+
+  const tryingWrong = {
+    id: 301,
+    media_type: 'tv',
+    name: 'Trying',
+    original_name: 'Trying',
+    first_air_date: '2023-01-01',
+    popularity: 90,
+    vote_average: 6,
+  };
+  const tryingRight = {
+    id: 302,
+    media_type: 'tv',
+    name: '尝试',
+    original_name: 'Trying',
+    first_air_date: '2020-05-01',
+    popularity: 40,
+    vote_average: 7.6,
+  };
+  const tryingFile = 'Trying.S05E02.1080p.WEB.h264-ETHEL.ass';
+
+  resetStoreForTmdb();
+  global.fetch = async (url) => {
+    const target = String(url);
+    if (target.includes('/api/tmdb/search/tv') || target.includes('/api/tmdb/search/multi')) {
+      return createTmdbSearchResult([tryingWrong, tryingRight]);
+    }
+    if (target.includes('/api/tmdb/tv/302')) {
+      if (target.includes('/images') || target.includes('/season/')) return createTmdbImages();
+      return createTmdbDetails({
+        id: 302,
+        name: '尝试',
+        original_name: 'Trying',
+        first_air_date: '2020-05-01',
+        genres: [{ name: '喜剧' }],
+        overview: 'Apple TV+ Trying',
+        vote_average: 7.6,
+        alternative_titles: { results: [{ iso_3166_1: 'CN', title: '尝试' }] },
+      });
+    }
+    if (target.includes('/api/tmdb/tv/301')) {
+      if (target.includes('/images') || target.includes('/season/')) return createTmdbImages();
+      return createTmdbDetails({
+        id: 301,
+        name: 'Trying',
+        original_name: 'Trying',
+        first_air_date: '2023-01-01',
+        genres: [{ name: '剧情' }],
+        overview: 'Wrong same-title show',
+        vote_average: 6,
+        alternative_titles: { results: [] },
+      });
+    }
+    throw new Error(`Unexpected fetch during Trying lucky path: ${target}`);
+  };
+  await useStudioStore.getState().searchTmdb(tryingFile, { silent: true });
+  assert.equal(useStudioStore.getState().tmdbData?.title, '尝试', 'Season-span demotion should auto-apply the span-plausible Trying series.');
+  assert.equal(useStudioStore.getState().tmdbAlternateSuggestion?.id, 301, 'Demoted same-title candidate should remain cached for swap.');
+  assert.deepEqual(
+    useStudioStore.getState().tmdbSuggestions.map((item) => item.id),
+    [302, 301],
+    'Lucky path should keep at most two cached suggestions.',
+  );
+
+  await useStudioStore.getState().swapTmdbAlternate();
+  assert.equal(useStudioStore.getState().tmdbData?.title, 'Trying', 'Not-this swap should surface the cached alternate without a new search.');
+  assert.equal(useStudioStore.getState().tmdbAlternateSuggestion?.id, 302, 'Swap should park the previous selection as the new alternate.');
+
+  resetStoreForTmdb();
+  useStudioStore.setState({
+    tmdbManualInput: { title: 'Trying', year: '2020', type: 'tv', season: '5', episode: '2' },
+  });
+  global.fetch = async (url) => {
+    const target = String(url);
+    if (target.includes('/api/tmdb/search/tv') || target.includes('/api/tmdb/search/multi')) {
+      return createTmdbSearchResult([tryingWrong, tryingRight]);
+    }
+    if (target.includes('/api/tmdb/tv/302/images') || target.includes('/api/tmdb/tv/302/season/')) return createTmdbImages();
+    if (target.includes('/api/tmdb/tv/302')) {
+      return createTmdbDetails({
+        id: 302,
+        name: '尝试',
+        original_name: 'Trying',
+        first_air_date: '2020-05-01',
+        genres: [{ name: '喜剧' }],
+        overview: 'Apple TV+ Trying',
+        vote_average: 7.6,
+        alternative_titles: { results: [{ iso_3166_1: 'CN', title: '尝试' }] },
+      });
+    }
+    throw new Error(`Unexpected fetch during Trying exact year: ${target}`);
+  };
+  await useStudioStore.getState().searchTmdb(tryingFile, { silent: true });
+  assert.equal(useStudioStore.getState().tmdbData?.title, '尝试', 'Exact premiere year 2020 should auto-apply the real Trying series.');
+  assert.equal(useStudioStore.getState().tmdbData?.year, '2020', 'Exact premiere year should keep 2020 metadata.');
+
+  resetStoreForTmdb();
+  useStudioStore.setState({
+    tmdbManualInput: { title: 'Trying', year: '2025', type: 'tv', season: '5', episode: '2' },
+  });
+  global.fetch = async (url) => {
+    const target = String(url);
+    if (target.includes('/api/tmdb/search/tv') || target.includes('/api/tmdb/search/multi')) {
+      return createTmdbSearchResult([tryingWrong, tryingRight]);
+    }
+    throw new Error(`Unexpected fetch during Trying soft year: ${target}`);
+  };
+  await useStudioStore.getState().searchTmdb(tryingFile, { silent: true });
+  assert.equal(useStudioStore.getState().tmdbData, null, 'Subjective year must not auto-apply; user confirmation required.');
+  assert.equal(useStudioStore.getState().tmdbSuggestions[0]?.id, 302, 'Season-span veto should rank the 2020 Trying series first.');
+  assert.ok(
+    useStudioStore.getState().statusNotices.some((n) => n.title.includes('年份') || n.message.includes('确认')),
+    'Soft year should ask the user to confirm the remaining series.',
+  );
+
+  resetStoreForTmdb();
+  useStudioStore.setState({
+    tmdbManualInput: { title: 'Trying', year: '2025', type: 'tv', season: '5', episode: '2' },
+  });
+  global.fetch = async (url) => {
+    const target = String(url);
+    if (target.includes('/api/tmdb/search/tv')) {
+      assert.ok(!target.includes('year='), 'TV manual search must not pass year= to TMDB API (soft year would be lost).');
+      return createTmdbSearchResult([tryingWrong, tryingRight]);
+    }
+    throw new Error(`Unexpected fetch during Trying manual soft year: ${target}`);
+  };
+  await useStudioStore.getState().searchTmdbManual('Trying', 'tv', '2025');
+  assert.equal(useStudioStore.getState().tmdbSuggestions[0]?.id, 302, 'Manual soft year should surface the span-plausible Trying series first.');
 }
 
 console.log('Core subtitle regression checks passed.');

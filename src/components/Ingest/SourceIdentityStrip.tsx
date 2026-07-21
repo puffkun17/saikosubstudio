@@ -3,7 +3,7 @@
 import React from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
-import { Image as ImageIcon, Search, LoaderCircle, X, Star } from 'lucide-react';
+import { Image as ImageIcon, Search, LoaderCircle, X, Star, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /** 把「原文 + 英文」粘在同一串的标题拆成两行，避免折行糊成一团。 */
@@ -27,20 +27,24 @@ const splitAltTitles = (original?: string | null) => {
 export const SourceIdentityStrip: React.FC = () => {
   const {
     tmdbData,
+    tmdbAlternateSuggestion,
     isSearchingTmdb,
     customFilename,
     tasks,
     selectedTaskId,
     setTmdbManualOpen,
+    swapTmdbAlternate,
     statusNotices,
     dismissStatusNotice,
   } = useStudioStore(useShallow((state) => ({
     tmdbData: state.tmdbData,
+    tmdbAlternateSuggestion: state.tmdbAlternateSuggestion,
     isSearchingTmdb: state.isSearchingTmdb,
     customFilename: state.customFilename,
     tasks: state.tasks,
     selectedTaskId: state.selectedTaskId,
     setTmdbManualOpen: state.setTmdbManualOpen,
+    swapTmdbAlternate: state.swapTmdbAlternate,
     statusNotices: state.statusNotices,
     dismissStatusNotice: state.dismissStatusNotice,
   })));
@@ -204,14 +208,28 @@ export const SourceIdentityStrip: React.FC = () => {
         </div>
 
         <div className="shrink-0 pt-1">
-          <button
-            type="button"
-            onClick={() => setTmdbManualOpen(true)}
-            className="v4-focus-ring inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-3 text-sm font-semibold text-[var(--v4-accent-strong)] transition-colors hover:bg-[color:rgba(239,141,95,0.22)]"
-          >
-            <Search className="h-3.5 w-3.5" aria-hidden="true" />
-            {rematchLabel}
-          </button>
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => setTmdbManualOpen(true)}
+              className="v4-focus-ring inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-3 text-sm font-semibold text-[var(--v4-accent-strong)] transition-colors hover:bg-[color:rgba(239,141,95,0.22)]"
+            >
+              <Search className="h-3.5 w-3.5" aria-hidden="true" />
+              {rematchLabel}
+            </button>
+            {tmdbData && tmdbAlternateSuggestion ? (
+              <button
+                type="button"
+                onClick={() => { void swapTmdbAlternate(); }}
+                disabled={isSearchingTmdb}
+                className="v4-focus-ring inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm font-semibold text-[var(--v4-text-muted)] transition-colors hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)] disabled:cursor-not-allowed disabled:opacity-50"
+                title="切换到同一次搜索缓存的另一同名候选，不再发起检索"
+              >
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                不是这个？
+              </button>
+            ) : null}
+          </div>
           {tmdbData ? (
             <a
               href="https://www.themoviedb.org/"

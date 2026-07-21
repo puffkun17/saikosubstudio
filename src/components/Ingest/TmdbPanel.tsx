@@ -336,6 +336,11 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                       确认后将用于片源资料与导出命名。
                     </p>
                   )}
+                  {!needsTitleInput && tmdbManualInput.type === 'tv' && (
+                    <p className="mt-0.5 text-xs text-[var(--v4-text-muted)]">
+                      同名剧集可填年份区分：首播年直接命中；发行/观影年会排除跨度不够的结果并请你确认。
+                    </p>
+                  )}
                 </div>
                 <button
                   className="v4-focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] transition hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] cursor-pointer"
@@ -380,17 +385,22 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                       </select>
                     </label>
                     <label htmlFor="tmdb-year-input" className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-[var(--v4-text-muted)]">
-                      年份
+                      年份{tmdbManualInput.type === 'tv' ? '（建议）' : ''}
                       <input
                         id="tmdb-year-input"
                         type="number"
                         min="1888"
                         max="2100"
                         inputMode="numeric"
-                        className="v4-focus-ring w-full rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2 font-mono text-sm tabular-nums text-[var(--v4-text)] outline-none transition-all placeholder:text-[var(--v4-text-faint)] focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]"
+                        className={`v4-focus-ring w-full rounded-lg border bg-[var(--v4-panel-muted)] px-3 py-2 font-mono text-sm tabular-nums text-[var(--v4-text)] outline-none transition-all placeholder:text-[var(--v4-text-faint)] focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)] ${
+                          tmdbManualInput.type === 'tv' && !tmdbManualInput.year.trim()
+                            ? 'border-[var(--v4-accent)]/35'
+                            : 'border-[var(--v4-line)]'
+                        }`}
                         value={tmdbManualInput.year}
                         onChange={e => setTmdbManualInput({ ...tmdbManualInput, year: e.target.value })}
-                        placeholder="可选"
+                        placeholder={tmdbManualInput.type === 'tv' ? '首播年优先' : '可选'}
+                        title={tmdbManualInput.type === 'tv' ? '首播年可直接命中；若只记得发行/观影年，也会排除季跨度不够的同名剧并请你确认' : undefined}
                       />
                     </label>
                   </div>

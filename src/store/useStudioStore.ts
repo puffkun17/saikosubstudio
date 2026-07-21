@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity } from '../utils/subtitleCore';
+import { assessTvYearFit, parseSeasonNumber, parseYearToken, shouldDemoteBySeasonSpan } from '../utils/tmdbCandidateFit';
 import { estimateJsonBytes, readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
 import { tmdbFetch } from '../services/tmdb';
 
@@ -202,6 +203,8 @@ export interface StudioState {
   tmdbManualOpen: boolean;
   tmdbManualInput: TmdbManualInput;
   tmdbSuggestions: TmdbSuggestion[];
+  /** 同名季跨度优选后的另一候选（最多 1 条，供「不是这个？」切换，不新增搜索）。 */
+  tmdbAlternateSuggestion: TmdbSuggestion | null;
   selectedSuggestion: TmdbSuggestion | null;
   isSettingsOpen: boolean;
   activePreset: string;
@@ -284,6 +287,8 @@ export interface StudioState {
   searchTmdb: (query: string, options?: { silent?: boolean; fallbackTitle?: string }) => Promise<void>;
   searchTmdbManual: (query: string, type: TmdbMediaType, year: string) => Promise<void>;
   selectTmdbSuggestion: (s: TmdbSuggestion, options?: { silent?: boolean }) => Promise<void>;
+  /** 在当前片源与已缓存的同名备选之间切换（不重新搜索）。 */
+  swapTmdbAlternate: () => Promise<void>;
   shuffleBackdrop: () => void;
   
   // Complex Workflows
@@ -352,6 +357,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   tmdbManualOpen: false,
   tmdbManualInput: { title: '', year: '', type: 'movie', season: '1', episode: '1' },
   tmdbSuggestions: [],
+  tmdbAlternateSuggestion: null,
   selectedSuggestion: null,
   isSettingsOpen: false,
   activePreset: 'classic',
@@ -484,6 +490,30 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setTmdbManualInput: (tmdbManualInput) => set({ tmdbManualInput }),
   setTmdbSuggestions: (tmdbSuggestions) => set({ tmdbSuggestions }),
   setSelectedSuggestion: (selectedSuggestion) => set({ selectedSuggestion }),
+  swapTmdbAlternate: async () => {
+    const alternate = get().tmdbAlternateSuggestion;
+    const current = get().selectedSuggestion;
+    if (!alternate) {
+      get().setStatusNotice({
+        id: 'media-match',
+        tone: 'notice',
+        title: '没有可切换的候选',
+        message: '当前没有缓存的同名备选，可打开手动检索查看更多结果。',
+        action: 'openTmdbManual',
+        actionLabel: '手动检索',
+      });
+      return;
+    }
+    // 互换：当前变为备选，备选上屏（仅详情拉取，不再 search）
+    set({ tmdbAlternateSuggestion: current });
+    get().addLog('正在切换同名备选片源', 'info');
+    await get().selectTmdbSuggestion(alternate, { silent: false });
+    const nextCurrent = get().selectedSuggestion;
+    const nextAlt = get().tmdbAlternateSuggestion;
+    const pair = [nextCurrent, nextAlt].filter(Boolean) as TmdbSuggestion[];
+    const unique = pair.filter((item, index, all) => all.findIndex((x) => x.id === item.id) === index).slice(0, 2);
+    if (unique.length > 0) set({ tmdbSuggestions: unique });
+  },
   setIsSettingsOpen: (isSettingsOpen) => set({ isSettingsOpen }),
   setProcessedSubs: (processedSubs) => {
     const currentPreview = get().previewIndex;
@@ -661,7 +691,15 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     
     try {
       const yearMatch = isEpisodeQuery ? null : searchStr.match(/\b(19\d\d|20\d\d)\b/);
-      const year = !isEpisodeQuery ? (parsed.year || fallbackParsed?.year || yearMatch?.[1] || '') : '';
+      // 剧集：文件名通常无年；优先用手填年份区分同名。电影仍从文件名抽年。
+      const manualYear = parseYearToken(get().tmdbManualInput.year);
+      const year = isEpisodeQuery
+        ? manualYear
+        : (parsed.year || fallbackParsed?.year || yearMatch?.[1] || manualYear || '');
+      const seasonHint = parseSeasonNumber(parsed.season)
+        || parseSeasonNumber(fallbackParsed?.season)
+        || parseSeasonNumber(episodeKey?.match(/S(\d+)/i)?.[1])
+        || parseSeasonNumber(get().tmdbManualInput.season);
       const querySource = parsed.hasUsableTitle ? rawSearchStr : (searchTitle || searchStr);
       const searchQueries = buildTmdbSearchQueries(querySource, 12);
       let cleanQuery = searchQueries[0] || searchStr;
@@ -766,7 +804,25 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             reasons.push('type-mismatch');
           }
         }
-        if (year && itemYear === year) {
+        if (isEpisodeQuery && year) {
+          const fit = assessTvYearFit({ userYear: year, itemYear, season: seasonHint });
+          if (fit.match) {
+            score += 100;
+            reasons.push('year:match');
+          } else if (fit.veto) {
+            score -= 220;
+            reasons.push(fit.veto);
+          } else if (fit.soft) {
+            score += 40;
+            reasons.push('year:soft');
+          } else if (!itemYear) {
+            reasons.push('year:missing');
+          }
+        } else if (isEpisodeQuery && !year && itemYear && shouldDemoteBySeasonSpan({ itemYear, season: seasonHint })) {
+          // 无手填年：用「今天」估季跨度，本地降权撑不起 Sxx 的同名剧（不 reject，留给「不是这个？」）
+          score -= 200;
+          reasons.push('season-span:demote');
+        } else if (year && itemYear === year) {
           score += 100;
           reasons.push('year:match');
         } else if (year && itemYear && itemYear !== year) {
@@ -811,7 +867,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         if (expectedMediaType && item.media_type && item.media_type !== expectedMediaType) {
           vetoes.push('veto:type');
         }
-        if (year && itemYear && itemYear !== year) {
+        if (isEpisodeQuery && year) {
+          const fit = assessTvYearFit({ userYear: year, itemYear, season: seasonHint });
+          if (fit.veto) vetoes.push(fit.veto);
+          if (fit.soft) vetoes.push('veto:year-soft');
+        } else if (year && itemYear && itemYear !== year) {
           vetoes.push('veto:year');
         }
         if (!isEpisodeQuery && isAncillaryMovieCandidate(item)) {
@@ -821,6 +881,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           vetoes.push('veto:title-contains-only');
         }
         if (vetoes.includes('veto:type')) {
+          return { action: 'reject', score, reasons: [...reasons, ...vetoes] };
+        }
+        if (vetoes.includes('veto:year-after') || vetoes.includes('veto:season-span')) {
           return { action: 'reject', score, reasons: [...reasons, ...vetoes] };
         }
         if (vetoes.includes('veto:year') && (vetoes.includes('veto:ancillary') || Math.abs(Number(itemYear) - Number(year)) >= 30)) {
@@ -840,9 +903,16 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       const getConfirmationMessage = (decision: TmdbConfirmationDecision | undefined): string => {
         const reasons = decision?.reasons || [];
         if (reasons.includes('veto:type')) return '结果类型与文件名判断不一致，请确认后应用。';
+        if (reasons.includes('veto:year-after') || reasons.includes('veto:season-span')) {
+          return '已按年份与季跨度排除不可能的同名剧，请确认剩余结果。';
+        }
+        if (reasons.includes('veto:year-soft')) {
+          return '年份更像发行/观影印象而非首播年，已排除跨度不够的同名剧，请确认是否为目标片源。';
+        }
         if (reasons.includes('veto:year')) return '结果年份与文件名年份不一致，请确认后应用。';
         if (reasons.includes('veto:ancillary')) return '结果可能是纪录片、花絮或特别篇，请确认是否为正片。';
         if (reasons.includes('veto:title-contains-only')) return '结果标题仅部分包含片名，请确认后应用。';
+        if (reasons.includes('need-year')) return '存在多个同名片名，补充年份可排除错误结果。';
         return '已找到相近结果，但片名或年份不够吻合，请确认后应用。';
       };
 
@@ -885,11 +955,86 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       });
 
       scored.sort((a, b) => b.score - a.score || (b.item.popularity || 0) - (a.item.popularity || 0));
-      const sortedResults = scored.map((s) => s.item).slice(0, 5);
-      const bestScored = scored[0];
+
+      // 剧集无年 + 多个精确同名：若季跨度已能分出胜负 → 上屏高分项并缓存另一候选；否则再请补年份
+      const exactTitleTv = scored.filter((entry) =>
+        entry.item.media_type === 'tv'
+        && entry.decision.action !== 'reject'
+        && (entry.decision.reasons.includes('title:exact') || entry.decision.reasons.includes('title:loose-exact')),
+      );
+      const spanPlausibleExact = exactTitleTv.filter((entry) => !entry.decision.reasons.includes('season-span:demote'));
+      const spanDemotedExact = exactTitleTv.filter((entry) => entry.decision.reasons.includes('season-span:demote'));
+      const canLuckyDisambiguate = isEpisodeQuery
+        && !year
+        && Boolean(seasonHint && seasonHint > 1)
+        && spanPlausibleExact.length === 1
+        && spanDemotedExact.length >= 1;
+      const needsYearDisambiguation = isEpisodeQuery
+        && !year
+        && exactTitleTv.length >= 2
+        && !canLuckyDisambiguate;
+
+      if (needsYearDisambiguation) {
+        for (const entry of scored) {
+          if (entry.decision.action === 'auto_apply') {
+            entry.decision = {
+              action: 'require_confirmation',
+              score: entry.score,
+              reasons: [...entry.decision.reasons, 'need-year'],
+            };
+          }
+        }
+      }
+
+      // 有年时：硬否决的同名剧仍可展示在列表末尾，但不参与自动采纳
+      // 运气路径：最多保留 2 条（上屏 + 备用），不扩缓存
+      const rankedNonReject = scored.filter((entry) => entry.decision.action !== 'reject');
+      const rankedReject = scored.filter((entry) => entry.decision.action === 'reject');
+      const luckyPair = canLuckyDisambiguate
+        ? [spanPlausibleExact[0], spanDemotedExact[0]].filter(Boolean)
+        : null;
+      const sortedResults = (
+        luckyPair
+          ? luckyPair.map((entry) => entry.item)
+          : [...rankedNonReject, ...rankedReject].map((s) => s.item)
+      ).slice(0, luckyPair ? 2 : 5);
+      const bestScored = luckyPair?.[0]
+        || scored.find((entry) => entry.item.id === sortedResults[0]?.id)
+        || scored[0];
+      const luckyAlternate = luckyPair?.[1]?.item || null;
 
       if (!isCurrentRequest()) return;
-      set({ tmdbSuggestions: sortedResults });
+      set({
+        tmdbSuggestions: sortedResults,
+        tmdbAlternateSuggestion: luckyAlternate,
+      });
+
+      if (needsYearDisambiguation) {
+        const epMatch = episodeKey?.match(/S(\d+)E(\d+)/i);
+        set((state) => ({
+          tmdbManualInput: {
+            ...state.tmdbManualInput,
+            title: searchTitle || cleanQuery || state.tmdbManualInput.title,
+            type: 'tv',
+            year: state.tmdbManualInput.year,
+            season: epMatch ? String(parseInt(epMatch[1], 10)) : (seasonHint ? String(seasonHint) : state.tmdbManualInput.season),
+            episode: epMatch ? String(parseInt(epMatch[2], 10)) : state.tmdbManualInput.episode,
+          },
+          tmdbManualOpen: !silent,
+          tmdbAlternateSuggestion: null,
+        }));
+        if (!silent) get().addLog('多个同名剧集，请补充年份以确认片源', 'info');
+        get().setStatusNotice({
+          id: 'media-match',
+          tone: 'notice',
+          title: '请补充年份',
+          message: '文件名缺少年份，且存在多个同名片名。填写首播年可直接命中；若只记得发行/观影年，也会排除跨度不够的错误结果并请你确认。',
+          meta: episodeKey || searchStr,
+          action: 'openTmdbManual',
+          actionLabel: '补充年份',
+        });
+        return;
+      }
 
       if (sortedResults.length > 0) {
         const best = sortedResults[0];
@@ -899,7 +1044,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           get().setStatusNotice({
             id: 'media-match',
             tone: 'notice',
-            title: '请确认影片信息',
+            title: decision?.reasons.includes('veto:year-soft') ? '请确认片源年份' : '请确认影片信息',
             message: getConfirmationMessage(decision),
             meta: best.title || best.name || searchStr,
             action: 'openTmdbManual',
@@ -909,7 +1054,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           return;
         }
 
-        if (!silent) get().addLog('已找到匹配结果，正在应用', 'success');
+        if (!silent) {
+          get().addLog(
+            luckyAlternate
+              ? '已按季跨度优先匹配，若不对应可点「不是这个？」'
+              : '已找到匹配结果，正在应用',
+            'success',
+          );
+        }
         if (isEpisodeQuery && best.media_type !== 'tv') {
           if (!silent) get().addLog('已找到剧集结果，请确认后应用', 'info');
           get().setStatusNotice({
@@ -924,6 +1076,15 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           set({ tmdbManualOpen: !silent });
         } else {
           await get().selectTmdbSuggestion(best, { silent });
+          if (luckyAlternate && !silent) {
+            get().setStatusNotice({
+              id: 'media-match',
+              tone: 'success',
+              title: '已按季跨度优选',
+              message: '同名剧已按开播跨度排序。若不对，可点「不是这个？」切换另一候选（不再搜索）。',
+              meta: best.title || best.name || searchStr,
+            });
+          }
         }
       } else {
         const hasExistingMetadata = Boolean(get().tmdbData);
@@ -974,7 +1135,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     
     try {
       const runSearchManual = async (q: string) => {
-        const url = `search/${type}?query=${encodeURIComponent(q)}&language=zh-CN${year ? `&year=${year}` : ''}`;
+        // 剧集年份只做客户端筛选：API 的 year 会按首播年硬过滤，会丢掉「发行年/观影年」软匹配。
+        const yearParam = type === 'movie' && year ? `&year=${year}` : '';
+        const url = `search/${type}?query=${encodeURIComponent(q)}&language=zh-CN${yearParam}`;
         const cached = typeof window !== 'undefined' ? tmdbClientCache.get(url) : undefined;
         if (cached && cached.expiresAt > Date.now()) return cached.results;
         const res = await tmdbFetch(url);
@@ -1052,8 +1215,21 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         let score = 0;
         const relDate = item.release_date || item.first_air_date || '';
         const itemYear = relDate.substring(0, 4);
-        if (year && itemYear === year) {
+        const seasonHint = parseSeasonNumber(get().tmdbManualInput.season);
+        const userYear = parseYearToken(year);
+        let rejected = false;
+
+        if (type === 'tv' && userYear) {
+          const fit = assessTvYearFit({ userYear, itemYear, season: seasonHint });
+          if (fit.match) score += 100;
+          else if (fit.veto) {
+            score -= 220;
+            rejected = true;
+          } else if (fit.soft) score += 40;
+        } else if (userYear && itemYear === userYear) {
           score += 100;
+        } else if (userYear && itemYear && itemYear !== userYear) {
+          score -= 120;
         }
 
         const normTitle = normalize(item.title || item.name || '');
@@ -1066,11 +1242,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         });
         score += Math.max(0, ...queryScores);
 
-        return { item: { ...item, media_type: type }, score };
+        return { item: { ...item, media_type: type }, score, rejected };
       });
 
-      scored.sort((a: { item: TmdbSuggestion; score: number }, b: { item: TmdbSuggestion; score: number }) => b.score - a.score || (b.item.popularity || 0) - (a.item.popularity || 0));
-      const sortedResults = scored.map((s: { item: TmdbSuggestion; score: number }) => s.item).slice(0, 10);
+      scored.sort((a, b) => {
+        if (a.rejected !== b.rejected) return a.rejected ? 1 : -1;
+        return b.score - a.score || (b.item.popularity || 0) - (a.item.popularity || 0);
+      });
+      const sortedResults = scored.map((s) => s.item).slice(0, 10);
       if (!isCurrentRequest()) return;
       set({ tmdbSuggestions: sortedResults });
       
@@ -1081,13 +1260,27 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const displayYear = itemYear ? ` (${itemYear})` : '';
         get().addLog(`[手动候选] ${title}${displayYear}`, 'info');
       });
+
+      const viable = scored.filter((entry) => !entry.rejected);
+      const softOnly = type === 'tv' && Boolean(parseYearToken(year))
+        && viable.length > 0
+        && !viable.some((entry) => {
+          const itemYear = (entry.item.release_date || entry.item.first_air_date || '').substring(0, 4);
+          return assessTvYearFit({
+            userYear: parseYearToken(year),
+            itemYear,
+            season: parseSeasonNumber(get().tmdbManualInput.season),
+          }).match;
+        });
       
       if (sortedResults.length > 0) {
         get().setStatusNotice({
           id: 'media-match',
           tone: 'notice',
-          title: '请选择匹配结果',
-          message: `已找到 ${sortedResults.length} 个结果，请选择正确的一项。`,
+          title: softOnly ? '请确认片源年份' : '请选择匹配结果',
+          message: softOnly
+            ? '已按季跨度排除不可能的同名剧；年份更像发行/观影印象，请确认是否为目标片源。'
+            : `已找到 ${sortedResults.length} 个结果，请选择正确的一项。`,
           meta: searchStr,
           action: 'openTmdbManual',
           actionLabel: '查看结果',
@@ -1518,6 +1711,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       tmdbBackdrop: null,
       tmdbBackdropList: [],
       tmdbSuggestions: [],
+      tmdbAlternateSuggestion: null,
       selectedSuggestion: null,
       tmdbManualOpen: false,
       isSearchingTmdb: false,
