@@ -197,11 +197,12 @@ export const SystemTray = () => {
             aria-label="返回导入页"
           >
             <Image
-              src="/favicon.svg"
+              src="/favicon.svg?v=3"
               alt=""
               aria-hidden="true"
               width={40}
               height={40}
+              unoptimized
               className="h-10 w-10 rounded-[11px] shadow-[0_1px_2px_rgba(0,0,0,0.28)]"
             />
             <span className="hidden whitespace-nowrap min-[420px]:inline">SubStudio</span>
