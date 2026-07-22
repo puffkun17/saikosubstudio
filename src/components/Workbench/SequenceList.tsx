@@ -43,12 +43,17 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [draftZh, setDraftZh] = useState('');
   const [draftSecondary, setDraftSecondary] = useState('');
-  const [selectedIndexes, setSelectedIndexes] = useState<Set<number>>(() => new Set());
+  /** 仅在多选时有内容；单选直接跟随 previewIndex，避免 effect 内 setState。 */
+  const [multiSelectedIndexes, setMultiSelectedIndexes] = useState<Set<number>>(() => new Set());
   const [selectionAnchor, setSelectionAnchor] = useState<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const prevIndexRef = useRef<number>(-1);
   const longPressTimerRef = useRef<number | null>(null);
   const longPressFiredRef = useRef(false);
+
+  const selectedIndexes = multiSelectedIndexes.size > 1
+    ? multiSelectedIndexes
+    : new Set<number>([previewIndex]);
 
   const THRESHOLD = 500;
   const LIMIT = 100;
@@ -84,15 +89,6 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
     return () => clearTimeout(timer);
   }, [previewIndex, showAllSubs, processedSubs]);
 
-  // 预览行变更时，若当前无多选，同步单选高亮
-  useEffect(() => {
-    setSelectedIndexes((prev) => {
-      if (prev.size > 1) return prev;
-      return new Set([previewIndex]);
-    });
-    setSelectionAnchor((anchor) => (anchor == null ? previewIndex : anchor));
-  }, [previewIndex]);
-
   const clearLongPress = useCallback(() => {
     if (longPressTimerRef.current != null) {
       window.clearTimeout(longPressTimerRef.current);
@@ -112,15 +108,18 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
       || ('ctrlKey' in event && event.ctrlKey)
       || ('altKey' in event && event.altKey);
 
-    if (shift && selectionAnchor != null) {
-      const from = Math.min(selectionAnchor, idx);
-      const to = Math.max(selectionAnchor, idx);
+    if (shift) {
+      const anchor = selectionAnchor ?? previewIndex;
+      const from = Math.min(anchor, idx);
+      const to = Math.max(anchor, idx);
       const next = new Set<number>();
       for (let i = from; i <= to; i += 1) next.add(i);
-      setSelectedIndexes(next);
+      setMultiSelectedIndexes(next);
+      if (selectionAnchor == null) setSelectionAnchor(previewIndex);
     } else if (toggle) {
-      setSelectedIndexes((prev) => {
-        const next = new Set(prev);
+      setMultiSelectedIndexes((prev) => {
+        const base = prev.size > 0 ? prev : new Set<number>([previewIndex]);
+        const next = new Set(base);
         if (next.has(idx)) next.delete(idx);
         else next.add(idx);
         if (next.size === 0) next.add(idx);
@@ -128,11 +127,11 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
       });
       setSelectionAnchor(idx);
     } else {
-      setSelectedIndexes(new Set([idx]));
+      setMultiSelectedIndexes(new Set());
       setSelectionAnchor(idx);
     }
     applyPreview(idx);
-  }, [applyPreview, selectionAnchor]);
+  }, [applyPreview, previewIndex, selectionAnchor]);
 
   const beginEditing = (sub: SubRow) => {
     const parts = sub.text.replace(/\\N/gi, '\n').split('\n');
@@ -300,8 +299,9 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     longPressFiredRef.current = false;
                     longPressTimerRef.current = window.setTimeout(() => {
                       longPressFiredRef.current = true;
-                      setSelectedIndexes((prev) => {
-                        const next = new Set(prev);
+                      setMultiSelectedIndexes((prev) => {
+                        const base = prev.size > 0 ? prev : new Set<number>([previewIndex]);
+                        const next = new Set(base);
                         next.add(rowIndex);
                         return next;
                       });
