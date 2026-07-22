@@ -1,52 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img">
-  <title>SaikoSubStudio</title>
+  <title>SubStudio</title>
   <defs>
-    <linearGradient id="plate" x1="64" y1="32" x2="448" y2="480" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#2a221c"/>
-      <stop offset="0.48" stop-color="#14110f"/>
-      <stop offset="1" stop-color="#0c0b0a"/>
+    <linearGradient id="plate" x1="64" y1="40" x2="448" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#254843"/>
+      <stop offset="0.55" stop-color="#1a3d37"/>
+      <stop offset="1" stop-color="#122e2a"/>
     </linearGradient>
-    <linearGradient id="gold" x1="88" y1="190" x2="424" y2="280" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#f2d7ad"/>
-      <stop offset="0.42" stop-color="#e0b984"/>
-      <stop offset="1" stop-color="#c99545"/>
-    </linearGradient>
-    <linearGradient id="goldSoft" x1="120" y1="270" x2="392" y2="330" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#e8c896"/>
-      <stop offset="1" stop-color="#d0a46f"/>
-    </linearGradient>
-    <radialGradient id="bloom" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 236) rotate(90) scale(210 190)">
-      <stop stop-color="#d0a46f" stop-opacity="0.28"/>
-      <stop offset="1" stop-color="#d0a46f" stop-opacity="0"/>
-    </radialGradient>
-    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
-      <feGaussianBlur stdDeviation="6" result="b"/>
-      <feMerge>
-        <feMergeNode in="b"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
   </defs>
 
   <!-- App squircle -->
   <rect width="512" height="512" rx="118" fill="url(#plate)"/>
+  <rect x="22" y="22" width="468" height="468" rx="100" stroke="#f5f1ea" stroke-opacity="0.12" stroke-width="3"/>
 
-  <!-- Inner rim -->
-  <rect x="20" y="20" width="472" height="472" rx="102" stroke="#e8d6be" stroke-opacity="0.14" stroke-width="3"/>
+  <!-- Letter S -->
+  <text
+    x="256"
+    y="292"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    fill="#f5f1ea"
+    font-family="ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif"
+    font-size="310"
+    font-weight="700"
+    letter-spacing="-0.04em"
+  >S</text>
 
-  <!-- Warm bloom behind the mark -->
-  <circle cx="256" cy="236" r="200" fill="url(#bloom)"/>
-
-  <!-- Bilingual cue stack — large, readable at 16px and rich at 512 -->
-  <g filter="url(#soft)">
-    <!-- Primary (主字幕) -->
-    <rect x="86" y="188" width="340" height="56" rx="16" fill="url(#gold)"/>
-    <!-- Secondary (第二语言) -->
-    <rect x="118" y="272" width="276" height="38" rx="13" fill="url(#goldSoft)" fill-opacity="0.55"/>
-    <!-- Whisper depth line -->
-    <rect x="154" y="334" width="204" height="16" rx="8" fill="#d0a46f" fill-opacity="0.22"/>
-  </g>
-
-  <!-- Hairline highlight on primary bar -->
-  <rect x="102" y="198" width="308" height="8" rx="4" fill="#fff6e8" fill-opacity="0.22"/>
+  <!-- Coral subtitle cue -->
+  <rect x="168" y="408" width="176" height="20" rx="10" fill="#ef8d5f"/>
 </svg>

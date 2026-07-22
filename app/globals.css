@@ -1032,7 +1032,7 @@ body {
 
 .timeline-row-deferred {
   content-visibility: auto;
-  contain-intrinsic-size: auto 78px;
+  contain-intrinsic-size: auto 64px;
 }
 
 @media (min-width: 768px) and (max-height: 800px) {

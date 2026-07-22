@@ -66,7 +66,7 @@ export const SourceIdentityStrip: React.FC = () => {
   );
   const hasScore = Boolean(tmdbData && tmdbData.voteAverage > 0);
   const overview = tmdbData?.overview?.trim() || '';
-  const rematchLabel = tmdbData ? '重新校准匹配' : needsTitleInput ? '补充片名' : '搜索影片';
+  const rematchLabel = tmdbData ? '手动匹配' : needsTitleInput ? '补充片名' : '搜索影片';
 
   return (
     <aside className="source-identity-rail v4-panel flex h-full w-full flex-col overflow-hidden rounded-lg">
@@ -209,43 +209,52 @@ export const SourceIdentityStrip: React.FC = () => {
 
         <div className="shrink-0 pt-1">
           <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => setTmdbManualOpen(true)}
-              className="v4-focus-ring inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-3 text-sm font-semibold text-[var(--v4-accent-strong)] transition-colors hover:bg-[color:rgba(239,141,95,0.22)]"
-            >
-              <Search className="h-3.5 w-3.5" aria-hidden="true" />
-              {rematchLabel}
-            </button>
             {tmdbData && tmdbAlternateSuggestion ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => { void swapTmdbAlternate(); }}
+                  disabled={isSearchingTmdb}
+                  className="v4-focus-ring inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-3 text-sm font-semibold text-[var(--v4-accent-strong)] transition-colors hover:bg-[color:rgba(239,141,95,0.22)] disabled:cursor-not-allowed disabled:opacity-50"
+                  title="切换到同一次搜索缓存的另一同名候选，不再发起检索"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                  不是这个？
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTmdbManualOpen(true)}
+                  className="v4-focus-ring inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm font-semibold text-[var(--v4-text-muted)] transition-colors hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]"
+                >
+                  <Search className="h-3.5 w-3.5" aria-hidden="true" />
+                  手动匹配
+                </button>
+              </>
+            ) : (
               <button
                 type="button"
-                onClick={() => { void swapTmdbAlternate(); }}
-                disabled={isSearchingTmdb}
-                className="v4-focus-ring inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm font-semibold text-[var(--v4-text-muted)] transition-colors hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)] disabled:cursor-not-allowed disabled:opacity-50"
-                title="切换到同一次搜索缓存的另一同名候选，不再发起检索"
+                onClick={() => setTmdbManualOpen(true)}
+                className="v4-focus-ring inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-3 text-sm font-semibold text-[var(--v4-accent-strong)] transition-colors hover:bg-[color:rgba(239,141,95,0.22)]"
               >
-                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-                不是这个？
+                <Search className="h-3.5 w-3.5" aria-hidden="true" />
+                {rematchLabel}
               </button>
-            ) : null}
+            )}
           </div>
           {tmdbData ? (
             <a
               href="https://www.themoviedb.org/"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 flex w-full items-center justify-center gap-2.5 rounded-md border border-[color:rgba(1,180,228,0.28)] bg-[color:rgba(1,180,228,0.08)] px-3 py-2.5 transition-colors hover:border-[color:rgba(1,180,228,0.45)] hover:bg-[color:rgba(1,180,228,0.14)]"
+              className="mt-3 flex w-full items-center justify-center gap-2 text-[12px] font-medium text-[var(--v4-text-faint)] transition-colors hover:text-[var(--v4-text-muted)]"
               title="This product uses the TMDB API but is not endorsed or certified by TMDB."
             >
-              <span className="text-[13px] font-semibold tracking-wide text-[var(--v4-text-muted)]">
-                Powered by
-              </span>
+              <span>Powered by</span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/tmdb_logo_blue_square.svg"
                 alt="TMDB"
-                className="h-7 w-auto object-contain brightness-110 contrast-110 drop-shadow-[0_0_6px_rgba(1,180,228,0.35)]"
+                className="h-5 w-auto object-contain opacity-80"
               />
             </a>
           ) : null}

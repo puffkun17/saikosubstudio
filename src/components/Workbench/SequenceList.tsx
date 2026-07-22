@@ -1,16 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { isLyricText } from '@/utils/subtitleCore';
 import type { SubRow } from '@/utils/subtitleCore';
-import { Check, Captions, ChevronDown, Music2, Pencil, Redo2, Undo2, Volume2, X } from 'lucide-react';
+import { Check, Captions, ChevronDown, ChevronUp, Music2, Pencil, Redo2, Undo2, Volume2, X } from 'lucide-react';
 import { TimelineControls } from '@/components/Workbench/TimelineControls';
 
 interface SequenceListProps {
   timelineDurationMs?: number;
 }
+
+const LONG_PRESS_MS = 450;
 
 export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }) => {
   const {
@@ -41,8 +43,12 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [draftZh, setDraftZh] = useState('');
   const [draftSecondary, setDraftSecondary] = useState('');
+  const [selectedIndexes, setSelectedIndexes] = useState<Set<number>>(() => new Set());
+  const [selectionAnchor, setSelectionAnchor] = useState<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const prevIndexRef = useRef<number>(-1);
+  const longPressTimerRef = useRef<number | null>(null);
+  const longPressFiredRef = useRef(false);
 
   const THRESHOLD = 500;
   const LIMIT = 100;
@@ -78,10 +84,55 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
     return () => clearTimeout(timer);
   }, [previewIndex, showAllSubs, processedSubs]);
 
-  const handleRowClick = (sub: SubRow) => {
-    setPreviewIndex(sub.index - 1);
-    setJumpLineVal(String(sub.index));
-  };
+  // 预览行变更时，若当前无多选，同步单选高亮
+  useEffect(() => {
+    setSelectedIndexes((prev) => {
+      if (prev.size > 1) return prev;
+      return new Set([previewIndex]);
+    });
+    setSelectionAnchor((anchor) => (anchor == null ? previewIndex : anchor));
+  }, [previewIndex]);
+
+  const clearLongPress = useCallback(() => {
+    if (longPressTimerRef.current != null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const applyPreview = useCallback((rowIndex: number) => {
+    setPreviewIndex(rowIndex);
+    setJumpLineVal(String(rowIndex + 1));
+  }, [setJumpLineVal, setPreviewIndex]);
+
+  const handleRowSelect = useCallback((sub: SubRow, event: React.MouseEvent | React.KeyboardEvent) => {
+    const idx = sub.index - 1;
+    const shift = 'shiftKey' in event && event.shiftKey;
+    const toggle = ('metaKey' in event && event.metaKey)
+      || ('ctrlKey' in event && event.ctrlKey)
+      || ('altKey' in event && event.altKey);
+
+    if (shift && selectionAnchor != null) {
+      const from = Math.min(selectionAnchor, idx);
+      const to = Math.max(selectionAnchor, idx);
+      const next = new Set<number>();
+      for (let i = from; i <= to; i += 1) next.add(i);
+      setSelectedIndexes(next);
+    } else if (toggle) {
+      setSelectedIndexes((prev) => {
+        const next = new Set(prev);
+        if (next.has(idx)) next.delete(idx);
+        else next.add(idx);
+        if (next.size === 0) next.add(idx);
+        return next;
+      });
+      setSelectionAnchor(idx);
+    } else {
+      setSelectedIndexes(new Set([idx]));
+      setSelectionAnchor(idx);
+    }
+    applyPreview(idx);
+  }, [applyPreview, selectionAnchor]);
 
   const beginEditing = (sub: SubRow) => {
     const parts = sub.text.replace(/\\N/gi, '\n').split('\n');
@@ -99,7 +150,6 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
   const commitEditing = () => {
     if (editingIndex === null || !processedSubs) return;
     const nextText = draftSecondary.trim().length > 0 ? `${draftZh}\n${draftSecondary}` : draftZh;
-    // 历史栈由 store 维护（editHistory / editFuture），组件卸载后依然可撤销。
     editSubtitleText(editingIndex, nextText);
     cancelEditing();
   };
@@ -128,6 +178,8 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
     return () => document.removeEventListener('keydown', handleHistoryShortcut);
   }, [redoSubtitleEdit, undoSubtitleEdit]);
 
+  useEffect(() => () => clearLongPress(), [clearLongPress]);
+
   const total = processedSubs?.length ?? 0;
   const isOverlimit = total > THRESHOLD;
 
@@ -138,6 +190,20 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
     : [];
 
   const hasMore = isOverlimit && !showAllSubs && total > LIMIT;
+  const canCollapse = isOverlimit && showAllSubs && total > LIMIT;
+
+  const foldButton = canCollapse ? (
+    <button
+      type="button"
+      onClick={() => setShowAllSubs(false)}
+      className="v4-focus-ring flex h-9 items-center gap-1 rounded-md border border-[var(--v4-line)] px-2.5 text-sm font-medium text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]"
+      title="折叠回前 100 行"
+    >
+      <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
+      折叠显示
+    </button>
+  ) : null;
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)]">
       {total > 0 && (
@@ -149,10 +215,16 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               </span>
               <span className="rounded-full border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-xs tabular-nums text-[var(--v4-text-muted)]">
                 {isOverlimit && !showAllSubs ? `${LIMIT} / ${total} 行` : `${total} 行`}
+                {selectedIndexes.size > 1 ? ` · 已选 ${selectedIndexes.size}` : ''}
               </span>
               {isOverlimit && !showAllSubs && (
                 <span className="hidden sm:inline text-xs text-[var(--v4-text-faint)] truncate">
                   当前只显示前 {LIMIT} 行，拖动进度时会自动展开
+                </span>
+              )}
+              {canCollapse && (
+                <span className="hidden sm:inline text-xs text-[var(--v4-text-faint)] truncate">
+                  已展开全部 · Shift 连选 · ⌥/⌘/Ctrl 跳选 · 长按追加
                 </span>
               )}
             </div>
@@ -173,6 +245,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     显示全部
                   </button>
                 )}
+                {foldButton}
               </div>
           </div>
           <TimelineControls timelineDurationMs={timelineDurationMs} />
@@ -182,13 +255,16 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
       <div ref={listRef} className="flex-1 overflow-y-auto">
         {visibleSubs.length > 0 ? (
           <div className="flex flex-col relative">
-            <div className="sticky top-0 z-20 grid grid-cols-[7.25rem_minmax(0,1fr)_3.5rem] items-center border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-4 py-2.5 text-xs font-semibold tracking-wide text-[var(--v4-text-muted)] select-none md:grid-cols-[170px_minmax(0,1fr)_96px] md:px-7">
-              <div className="pl-2">时间轴</div>
+            <div className="sticky top-0 z-20 grid grid-cols-[3rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] items-center gap-2 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-3 py-2 text-xs font-semibold tracking-wide text-[var(--v4-text-muted)] select-none md:grid-cols-[3.5rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] md:gap-3 md:px-5">
+              <div className="pl-0.5">行号</div>
+              <div>时间轴</div>
               <div>字幕内容</div>
-              <div className="text-right pr-2">行号</div>
+              <div className="sr-only">编辑</div>
             </div>
             {visibleSubs.map((sub) => {
-              const isActive = previewIndex === (sub.index - 1);
+              const rowIndex = sub.index - 1;
+              const isActive = previewIndex === rowIndex;
+              const isSelected = selectedIndexes.has(rowIndex);
               const normalizedText = sub.text.replace(/\\N/gi, '\n');
               const parts = normalizedText.split('\n');
               const zhText = parts[0] || '';
@@ -201,21 +277,45 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
               const endTime = sub.ts.split(' --> ')[1]?.replace(',', '.').trim() || '';
 
-              const rowClass = `relative grid grid-cols-[7.25rem_minmax(0,1fr)_3.5rem] md:grid-cols-[170px_minmax(0,1fr)_96px] gap-3 md:gap-5 py-4 px-4 md:px-7 border-b border-[var(--v4-line)] cursor-pointer text-left overflow-hidden transition-colors duration-200
-                ${isActive ? 'glass-lens-active' : 'bg-transparent hover:bg-[var(--v4-panel-muted)]'}
-                ${isLyric && !isActive ? 'bg-[var(--v4-panel-muted)]/50' : ''}
+              const rowClass = `group relative grid grid-cols-[3rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] md:grid-cols-[3.5rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] items-center gap-2 md:gap-3 py-2.5 px-3 md:px-5 border-b border-[var(--v4-line)] cursor-pointer text-left overflow-hidden transition-colors duration-150
+                ${isActive ? 'glass-lens-active' : isSelected ? 'bg-[var(--v4-accent-soft)]/55' : 'bg-transparent hover:bg-[var(--v4-panel-muted)]'}
+                ${isLyric && !isActive && !isSelected ? 'bg-[var(--v4-panel-muted)]/50' : ''}
                 ${sub.index > 30 ? 'timeline-row-deferred' : ''}`;
 
               return (
                 <div
                   key={sub.index}
-                  id={`wb-row-${sub.index - 1}`}
-                  onClick={() => handleRowClick(sub)}
+                  id={`wb-row-${rowIndex}`}
+                  onClick={(event) => {
+                    if (longPressFiredRef.current) {
+                      longPressFiredRef.current = false;
+                      return;
+                    }
+                    handleRowSelect(sub, event);
+                  }}
                   onDoubleClick={() => beginEditing(sub)}
+                  onPointerDown={(event) => {
+                    if (event.button !== 0 || event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return;
+                    clearLongPress();
+                    longPressFiredRef.current = false;
+                    longPressTimerRef.current = window.setTimeout(() => {
+                      longPressFiredRef.current = true;
+                      setSelectedIndexes((prev) => {
+                        const next = new Set(prev);
+                        next.add(rowIndex);
+                        return next;
+                      });
+                      setSelectionAnchor(rowIndex);
+                      applyPreview(rowIndex);
+                    }, LONG_PRESS_MS);
+                  }}
+                  onPointerUp={clearLongPress}
+                  onPointerLeave={clearLongPress}
+                  onPointerCancel={clearLongPress}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
                       event.preventDefault();
-                      handleRowClick(sub);
+                      handleRowSelect(sub, event);
                     }
                     if (event.key === 'F2') {
                       event.preventDefault();
@@ -223,28 +323,33 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     }
                   }}
                   tabIndex={0}
-                  aria-label={`第 ${sub.index} 行字幕，按 F2 编辑`}
+                  aria-selected={isSelected}
+                  aria-label={`第 ${sub.index} 行字幕，按 F2 编辑；Shift 连选，⌥/⌘/Ctrl 跳选`}
                   className={rowClass}
                 >
-                  <div className="font-mono text-xs text-[var(--v4-text-muted)] self-center flex items-center gap-3 select-none">
-                    <div className="relative flex flex-col items-center self-stretch">
-                      <span className={`mt-1 h-2.5 w-2.5 rounded-full border ${isActive ? 'bg-[var(--v4-accent-strong)] border-[var(--v4-accent-strong)] shadow-[0_0_10px_color-mix(in_srgb,var(--v4-accent)_40%,transparent)]' : 'bg-[var(--v4-accent-soft)] border-[var(--v4-line-strong)]'}`} />
+                  <div className={`self-center pl-0.5 font-mono text-[13px] font-semibold tabular-nums whitespace-nowrap ${isActive ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-muted)]'}`}>
+                    #{sub.index}
+                  </div>
+
+                  <div className="flex min-w-0 items-center gap-2 self-center select-none">
+                    <div className="relative flex flex-col items-center self-stretch py-0.5">
+                      <span className={`mt-0.5 h-2 w-2 rounded-full border ${isActive ? 'bg-[var(--v4-accent-strong)] border-[var(--v4-accent-strong)] shadow-[0_0_10px_color-mix(in_srgb,var(--v4-accent)_40%,transparent)]' : 'bg-[var(--v4-accent-soft)] border-[var(--v4-line-strong)]'}`} />
                       <span className="mt-1 flex-1 w-px bg-[var(--v4-line)]" />
                     </div>
                     {isLyric && (
-                      <span className="inline-flex select-none text-[var(--v4-accent-strong)]">
-                        <Music2 className="w-3 h-3" />
+                      <span className="inline-flex shrink-0 select-none text-[var(--v4-accent-strong)]">
+                        <Music2 className="h-3.5 w-3.5" />
                       </span>
                     )}
-                    <div className={`flex flex-col leading-tight tabular-nums font-medium ${isActive ? 'text-[var(--v4-accent-strong)] font-semibold' : 'text-[var(--v4-text-muted)]'}`}>
+                    <div className={`flex min-w-0 flex-col whitespace-nowrap font-mono text-[13px] leading-tight tabular-nums tracking-tight ${isActive ? 'font-semibold text-[var(--v4-accent-strong)]' : 'font-medium text-[var(--v4-text-muted)]'}`}>
                       <span>{startTime}</span>
-                      <span className="mt-1 opacity-80">{endTime}</span>
+                      <span className="mt-0.5 opacity-80">{endTime}</span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-1.5 pr-6 min-w-0">
+                  <div className="flex min-w-0 flex-col gap-1 pr-1">
                     {editingIndex === sub.index ? (
-                      <div className="flex flex-col gap-2 w-full z-10" onClick={(e) => e.stopPropagation()}>
+                      <div className="z-10 flex w-full flex-col gap-2" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="text"
                           value={draftZh}
@@ -253,7 +358,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                             if (e.key === 'Enter') commitEditing();
                             if (e.key === 'Escape') cancelEditing();
                           }}
-                          className="bg-[var(--v4-panel-muted)] border border-[var(--v4-line)] text-sm font-medium leading-relaxed text-[var(--v4-text)] rounded-lg px-3 py-1.5 w-full outline-none focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)] transition-all"
+                          className="w-full rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-1.5 text-sm font-medium leading-relaxed text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]"
                           placeholder="中文字幕文本"
                           autoFocus
                         />
@@ -266,11 +371,11 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                               if (e.key === 'Enter') commitEditing();
                               if (e.key === 'Escape') cancelEditing();
                             }}
-                            className="bg-[var(--v4-panel-muted)] border border-[var(--v4-line)] text-xs font-normal leading-relaxed text-[var(--v4-text-muted)] rounded-lg px-3 py-1.5 w-full outline-none focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)] transition-all"
+                            className="w-full rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-1.5 text-xs font-normal leading-relaxed text-[var(--v4-text-muted)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]"
                             placeholder="第二语言字幕文本"
                           />
                         )}
-                        <div className="flex justify-end gap-2 mt-1">
+                        <div className="mt-1 flex justify-end gap-2">
                           <button type="button" className="v4-focus-ring inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-sm text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]" onClick={(e) => { e.stopPropagation(); cancelEditing(); }}>
                             <X className="h-3.5 w-3.5" aria-hidden="true" />取消
                           </button>
@@ -308,12 +413,12 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                             辅助信息
                           </span>
                         )}
-                        <div className="font-sans text-sm font-semibold leading-6 break-words text-[var(--v4-text)]">
+                        <div className="break-words font-sans text-[15px] font-semibold leading-snug text-[var(--v4-text)]">
                           {zhText}
                         </div>
                         {enText && (
                           <div
-                            className="mt-0.5 text-xs font-medium leading-5 break-words tracking-[0.01em] text-[var(--v4-text-muted)]"
+                            className="mt-0.5 break-words text-[13px] font-medium leading-snug tracking-[0.01em] text-[var(--v4-text-muted)]"
                             style={{ fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }}
                           >
                             {enText}
@@ -323,21 +428,22 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     )}
                   </div>
 
-                  <div className="flex items-center justify-end gap-3 self-center select-none text-xs">
+                  <div className="flex items-center justify-end self-center select-none">
                     {editingIndex !== sub.index && (
                       <button
                         type="button"
-                        className={`v4-focus-ring inline-flex h-8 items-center gap-1 rounded-md px-2 text-sm font-medium transition-colors ${isActive ? 'text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)]' : 'text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel-muted)] hover:text-[var(--v4-text)]'}`}
+                        className={`v4-focus-ring inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--v4-text-muted)] transition-opacity hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] ${
+                          isActive
+                            ? 'opacity-70 group-hover:opacity-100 focus-visible:opacity-100'
+                            : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
+                        }`}
                         onClick={(event) => { event.stopPropagation(); beginEditing(sub); }}
                         aria-label={`编辑第 ${sub.index} 行`}
+                        title="编辑 (F2 / 双击)"
                       >
                         <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                        <span className="hidden md:inline">编辑</span>
                       </button>
                     )}
-                    <span className={`font-mono tabular-nums font-medium ${isActive ? 'text-[var(--v4-accent-strong)] font-semibold' : 'text-[var(--v4-text-muted)]'}`}>
-                      #{sub.index}
-                    </span>
                   </div>
                 </div>
               );
@@ -347,10 +453,20 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               <button
                 type="button"
                 onClick={() => setShowAllSubs(true)}
-                className="flex cursor-pointer items-center justify-center gap-2 border-t border-[var(--v4-line)] bg-[var(--v4-panel-muted)] py-4 text-sm font-medium text-[var(--v4-text-muted)] transition-colors hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]"
+                className="flex cursor-pointer items-center justify-center gap-2 border-t border-[var(--v4-line)] bg-[var(--v4-panel-muted)] py-3.5 text-sm font-medium text-[var(--v4-text-muted)] transition-colors hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]"
               >
                 <ChevronDown className="w-4 h-4" />
                 显示剩余 {total - LIMIT} 行
+              </button>
+            )}
+            {canCollapse && (
+              <button
+                type="button"
+                onClick={() => setShowAllSubs(false)}
+                className="flex cursor-pointer items-center justify-center gap-2 border-t border-[var(--v4-line)] bg-[var(--v4-panel-muted)] py-3.5 text-sm font-medium text-[var(--v4-text-muted)] transition-colors hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]"
+              >
+                <ChevronUp className="w-4 h-4" />
+                折叠显示
               </button>
             )}
           </div>
