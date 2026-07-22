@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useSyncExternalStore } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ArrowLeft, FolderClock, MessageSquareText, RotateCcw, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -10,6 +9,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import { BottomStatusDeck } from '@/components/Global/BottomStatusDeck';
+import { BrandMark } from '@/components/Global/BrandMark';
 
 const STEP_LABEL: Record<number, string> = {
   1: '导入',
@@ -196,15 +196,7 @@ export const SystemTray = () => {
             className="v4-focus-ring flex h-11 shrink-0 cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg text-[22px] font-semibold leading-none tracking-tight text-[var(--v5-cream)] transition-colors duration-150 hover:text-white md:text-[24px]"
             aria-label="返回导入页"
           >
-            <Image
-              src="/favicon.svg?v=3"
-              alt=""
-              aria-hidden="true"
-              width={40}
-              height={40}
-              unoptimized
-              className="h-10 w-10 rounded-[11px] shadow-[0_1px_2px_rgba(0,0,0,0.28)]"
-            />
+            <BrandMark className="h-10 w-10 shrink-0 rounded-[11px] shadow-[0_1px_2px_rgba(0,0,0,0.28)]" />
             <span className="hidden whitespace-nowrap min-[420px]:inline">SubStudio</span>
           </button>
 
