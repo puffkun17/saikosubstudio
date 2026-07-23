@@ -983,6 +983,73 @@ body {
   color: var(--v4-text-faint);
 }
 
+/* Genre / category badges — static forest chips (not interactive) */
+.ui-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.ui-tag {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  border: 1px solid color-mix(in srgb, var(--v5-green, #1a3d37) 18%, transparent);
+  border-radius: 0.375rem;
+  background: color-mix(in srgb, var(--v5-green, #1a3d37) 9%, transparent);
+  padding: 0.15rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  color: var(--v5-green, #1a3d37);
+  white-space: nowrap;
+}
+
+/* Rating row — brand + score; room for TMDB / IMDb / 豆瓣 etc. */
+.ui-rating-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem 1rem;
+  min-height: 1.25rem;
+}
+
+.ui-rating {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ui-rating__brand {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  color: var(--v4-text-faint);
+  text-transform: uppercase;
+}
+
+.ui-rating__score {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--v4-text);
+}
+
+.ui-rating--empty {
+  opacity: 0.45;
+}
+
+.ui-rating--empty .ui-rating__score {
+  font-weight: 500;
+  color: var(--v4-text-faint);
+}
+
 /* Legacy alias: chips are meta now, not boxed pills */
 .rd-chip,
 .rd-chip--tight {

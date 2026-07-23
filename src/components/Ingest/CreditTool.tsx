@@ -12,7 +12,7 @@ const DECLARATION_OPTIONS: Array<{ value: CreditDeclaration; label: string; hint
   { value: 'translated', label: '翻译整理', hint: '声明为翻译或二次整理' },
 ];
 
-/** 属性信息：默认折叠；含制作声明、署名与可选的字幕后署名。 */
+/** 属性信息：默认展开；含制作声明、署名与可选的字幕后署名。 */
 export const CreditTool: React.FC = () => {
   const {
     detectedAttributions,
@@ -38,7 +38,7 @@ export const CreditTool: React.FC = () => {
     setCreditPlacement: state.setCreditPlacement,
   })));
 
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const summaryBits = [
     creditDeclaration !== 'none'
       ? DECLARATION_OPTIONS.find((item) => item.value === creditDeclaration)?.label

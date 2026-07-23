@@ -3,8 +3,9 @@
 import React from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
-import { Image as ImageIcon, Search, LoaderCircle, X, Star, RefreshCw } from 'lucide-react';
+import { Image as ImageIcon, Search, LoaderCircle, X, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FilmMetaBlock, buildFilmRatings } from '@/components/Ingest/FilmMetaBlock';
 
 /** 把「原文 + 英文」粘在同一串的标题拆成两行，避免折行糊成一团。 */
 const splitAltTitles = (original?: string | null) => {
@@ -65,6 +66,8 @@ export const SourceIdentityStrip: React.FC = () => {
       : null,
   );
   const hasScore = Boolean(tmdbData && tmdbData.voteAverage > 0);
+  const genres = tmdbData?.genres ?? [];
+  const showFilmMeta = hasScore || genres.length > 0;
   const overview = tmdbData?.overview?.trim() || '';
   const rematchLabel = tmdbData ? '手动匹配' : needsTitleInput ? '补充片名' : '搜索影片';
 
@@ -139,20 +142,13 @@ export const SourceIdentityStrip: React.FC = () => {
               </p>
             ) : null}
 
-            {(hasScore || (tmdbData?.genres?.length ?? 0) > 0) && (
-              <div className="mt-2.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                {hasScore && (
-                  <span className="ui-meta ui-meta--key gap-1">
-                    <Star className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
-                    {tmdbData!.voteAverage.toFixed(1)}
-                  </span>
-                )}
-                {tmdbData?.genres?.slice(0, 4).map((genre) => (
-                  <span key={genre} className="ui-meta">
-                    {genre}
-                  </span>
-                ))}
-              </div>
+            {showFilmMeta && (
+              <FilmMetaBlock
+                className="mt-2.5"
+                ratings={buildFilmRatings(tmdbData?.voteAverage)}
+                genres={genres}
+                maxGenres={4}
+              />
             )}
           </div>
 

@@ -18,7 +18,7 @@ const FILTERS: Array<{ id: DiffFilter; label: string }> = [
 ];
 
 export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [filter, setFilter] = useState<DiffFilter>('all');
   const [sourceEntryId, setSourceEntryId] = useState<string | null>(null);
   const setPreviewIndex = useStudioStore((state) => state.setPreviewIndex);

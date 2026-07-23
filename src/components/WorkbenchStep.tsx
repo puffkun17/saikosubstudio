@@ -38,7 +38,7 @@ export const WorkbenchStep: React.FC = () => {
 
   const [showBackConfirm, setShowBackConfirm] = useState(false);
   const [sourceDurationMs, setSourceDurationMs] = useState<number | undefined>(undefined);
-  const [isInspectionOpen, setIsInspectionOpen] = useState(false);
+  const [isInspectionOpen, setIsInspectionOpen] = useState(true);
   const alignmentSummary = useMemo(
     () => processedSubs ? analyzeAlignmentDiff(processedSubs) : null,
     [processedSubs]

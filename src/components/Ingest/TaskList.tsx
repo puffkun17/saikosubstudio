@@ -747,6 +747,70 @@ export const TaskList: React.FC = () => {
             </div>
           </div>
 
+          {/* 对齐方式：紧挨字幕序列，全宽双栏说明 */}
+          {!activeTask.isBilingualSingle && (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-base font-semibold text-[var(--v4-text)]">对齐方式</h4>
+                <InfoHint label="对齐方式说明">
+                  仅在主字幕与第二语言分轨时生效。双语单文件无需选择。
+                </InfoHint>
+              </div>
+              <div
+                className="grid gap-2 sm:grid-cols-2"
+                role="radiogroup"
+                aria-label="对齐方式"
+              >
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={alignmentMode === 'standard'}
+                  onClick={() => setAlignmentMode('standard')}
+                  className={`rounded-lg border px-3.5 py-3 text-left transition-colors ${
+                    alignmentMode === 'standard'
+                      ? 'border-[var(--v4-accent)]/45 bg-[var(--v4-accent-soft)]'
+                      : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] hover:border-[var(--v4-line-strong)]'
+                  }`}
+                >
+                  <div className={`text-sm font-semibold ${
+                    alignmentMode === 'standard' ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text)]'
+                  }`}>
+                    智能
+                  </div>
+                  <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
+                    按时间轴就近配对主副轨，速度快、占用低。适合对白节奏接近、断句差异不大的常规双语。
+                  </p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-[var(--v4-text-faint)]">
+                    一侧多句/少句或翻译节奏差较大时，可能漏配或错位。
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={alignmentMode === 'industrial'}
+                  onClick={() => setAlignmentMode('industrial')}
+                  className={`rounded-lg border px-3.5 py-3 text-left transition-colors ${
+                    alignmentMode === 'industrial'
+                      ? 'border-[var(--v4-accent)]/45 bg-[var(--v4-accent-soft)]'
+                      : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] hover:border-[var(--v4-line-strong)]'
+                  }`}
+                >
+                  <div className={`text-sm font-semibold ${
+                    alignmentMode === 'industrial' ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text)]'
+                  }`}>
+                    细致
+                  </div>
+                  <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
+                    用更完整的对齐搜索处理插入、删减与断句不一致，准确度更高。适合翻译节奏不同、一侧多句或少句的片子。
+                  </p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-[var(--v4-text-faint)]">
+                    耗时与内存更高；字幕体量很大时会自动降级或收窄搜索带。
+                  </p>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Credit first, then export name (field + fill shortcuts) */}
           <div className="flex flex-shrink-0 flex-col gap-4">
             <CreditTool />
@@ -818,116 +882,71 @@ export const TaskList: React.FC = () => {
             </div>
           </div>
 
-          {/* Configuration & Process Dock — sticky, no mt-auto void */}
+          {/* Configuration & Process Dock — sticky when ASS style decision is present */}
+          {foundAssStyle && (
           <div className="sticky bottom-0 z-10 mt-3 flex flex-col gap-3 overflow-visible border-t border-[var(--v4-line)] bg-[var(--v4-panel)]/95 pt-3 backdrop-blur-sm">
-
-            {/* Source ASS style preview and explicit adoption decision. */}
-            {foundAssStyle && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="overflow-hidden rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]"
-              >
-                <div className="grid gap-0 md:grid-cols-[minmax(220px,0.72fr)_minmax(0,1fr)]">
-                  <AssStylePreview style={foundAssStyle} className="min-h-36 rounded-none border-0 border-b border-[var(--v4-line)] md:border-b-0 md:border-r" />
-                  <div className="flex min-w-0 flex-col justify-between gap-4 p-4 md:p-5">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Paintbrush className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />
-                        <h5 className="text-sm font-semibold text-[var(--v4-text)]">文件内嵌样式</h5>
-                        {isFoundAssStyleApplied && !showAssHint && (
-                          <span className="ui-meta ui-meta--key gap-1">
-                            <Check className="h-3 w-3" />
-                            已用于导出
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
-                        预览来自当前 ASS 文件。字体按当前设备可用版本近似呈现。
-                      </p>
-                      <p className="ui-meta-row mt-3">
-                        中文 {foundAssStyle.zhFontSize || '--'} px
-                        <span aria-hidden="true"> · </span>
-                        第二语言 {foundAssStyle.enFontSize || '--'} px
-                      </p>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="overflow-hidden rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]"
+            >
+              <div className="grid gap-0 md:grid-cols-[minmax(220px,0.72fr)_minmax(0,1fr)]">
+                <AssStylePreview style={foundAssStyle} className="min-h-36 rounded-none border-0 border-b border-[var(--v4-line)] md:border-b-0 md:border-r" />
+                <div className="flex min-w-0 flex-col justify-between gap-4 p-4 md:p-5">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Paintbrush className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />
+                      <h5 className="text-sm font-semibold text-[var(--v4-text)]">文件内嵌样式</h5>
+                      {isFoundAssStyleApplied && !showAssHint && (
+                        <span className="ui-meta ui-meta--key gap-1">
+                          <Check className="h-3 w-3" />
+                          已用于导出
+                        </span>
+                      )}
                     </div>
+                    <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
+                      预览来自当前 ASS 文件。字体按当前设备可用版本近似呈现。
+                    </p>
+                    <p className="ui-meta-row mt-3">
+                      中文 {foundAssStyle.zhFontSize || '--'} px
+                      <span aria-hidden="true"> · </span>
+                      第二语言 {foundAssStyle.enFontSize || '--'} px
+                    </p>
+                  </div>
 
-                    {(showAssHint || !isFoundAssStyleApplied) && (
-                      <div className="ui-choice-group" role="group" aria-label="内嵌样式选择">
+                  {(showAssHint || !isFoundAssStyleApplied) && (
+                    <div className="ui-choice-group" role="group" aria-label="内嵌样式选择">
+                      <button
+                        type="button"
+                        className="ui-choice ui-choice--on"
+                        onClick={() => {
+                          setCustomStyle({ ...customStyle, ...foundAssStyle } as StyleSettings);
+                          setActivePreset('ass_native');
+                          setShowAssHint(false);
+                          addLog('已采用 ASS 文件内嵌样式', 'success');
+                        }}
+                      >
+                        使用源样式
+                      </button>
+                      {showAssHint && (
                         <button
                           type="button"
-                          className="ui-choice ui-choice--on"
+                          className="ui-choice"
                           onClick={() => {
-                            setCustomStyle({ ...customStyle, ...foundAssStyle } as StyleSettings);
-                            setActivePreset('ass_native');
                             setShowAssHint(false);
-                            addLog('已采用 ASS 文件内嵌样式', 'success');
+                            addLog('已保留当前字幕样式', 'info');
                           }}
                         >
-                          使用源样式
+                          保留当前样式
                         </button>
-                        {showAssHint && (
-                          <button
-                            type="button"
-                            className="ui-choice"
-                            onClick={() => {
-                              setShowAssHint(false);
-                              addLog('已保留当前字幕样式', 'info');
-                            }}
-                          >
-                            保留当前样式
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            <div className="flex flex-col justify-end gap-3.5 lg:flex-row lg:items-end">
-              {/* Alignment Mode Selection */}
-              {!activeTask.isBilingualSingle && (
-                <div className="flex flex-col gap-1.5 w-full lg:w-60 shrink-0">
-                  <label className="text-sm text-[var(--v4-text-muted)] font-semibold select-none inline-flex items-center gap-1.5">
-                    对齐方式
-                    <InfoHint label="对齐方式说明" side="left">
-                      智能模式适合常规双语轨合并；细致模式会尝试处理插入、删减或断句不一致，但耗时略高。
-                    </InfoHint>
-                  </label>
-                  <div className="grid grid-cols-2 gap-0.5 p-0.5 rounded-xl bg-[var(--v4-panel-muted)] border border-[var(--v4-line)] relative h-12 items-center">
-                    <button
-                      className={`relative z-10 py-1.5 rounded-md text-sm font-semibold transition-all duration-105 cursor-pointer ${alignmentMode === 'standard' ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-faint)] hover:text-[var(--v4-text-muted)]'}`}
-                      onClick={() => setAlignmentMode('standard')}
-                    >
-                      {alignmentMode === 'standard' && (
-                        <motion.div
-                          layoutId="activeEngine"
-                          className="absolute inset-0 bg-[var(--v4-accent-soft)] border border-[var(--v4-accent)]/25 rounded-md -z-10"
-                          transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                        />
                       )}
-                      智能
-                    </button>
-                    <button
-                      className={`relative z-10 py-1.5 rounded-md text-sm font-semibold transition-all duration-105 cursor-pointer ${alignmentMode === 'industrial' ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-faint)] hover:text-[var(--v4-text-muted)]'}`}
-                      onClick={() => setAlignmentMode('industrial')}
-                    >
-                      {alignmentMode === 'industrial' && (
-                        <motion.div
-                          layoutId="activeEngine"
-                          className="absolute inset-0 bg-[var(--v4-accent-soft)] border border-[var(--v4-accent)]/25 rounded-md -z-10"
-                          transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                        />
-                      )}
-                      细致
-                    </button>
-                  </div>
+                    </div>
+                  )}
                 </div>
-              )}
-
-            </div>
+              </div>
+            </motion.div>
           </div>
+          )}
 
         </div>
 

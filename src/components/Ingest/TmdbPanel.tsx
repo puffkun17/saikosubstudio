@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, type TmdbSuggestion } from '@/store/useStudioStore';
 import { Search, Image as ImageIcon, Star, Sparkles, X, CheckCircle2, CircleAlert, FileText, Languages } from 'lucide-react';
+import { FilmMetaBlock, buildFilmRatings } from '@/components/Ingest/FilmMetaBlock';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseSrt } from '@/utils/subtitleCore';
 import { AssStylePreview } from '@/components/Ingest/AssStylePreview';
@@ -217,19 +218,11 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                   })()}
                 </div>
 
-                <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 select-none">
-                  {tmdbData.voteAverage > 0 && (
-                    <span className="ui-meta ui-meta--key gap-1.5">
-                      <Star className="h-3.5 w-3.5 fill-current" />
-                      {tmdbData.voteAverage.toFixed(1)}
-                    </span>
-                  )}
-                  {tmdbData.genres && tmdbData.genres.map((g: string, i: number) => (
-                    <span key={i} className="ui-meta">
-                      {g}
-                    </span>
-                  ))}
-                </div>
+                <FilmMetaBlock
+                  className="select-none"
+                  ratings={buildFilmRatings(tmdbData.voteAverage)}
+                  genres={tmdbData.genres || []}
+                />
 
                 {tmdbData.isAnime && (
                   <div className="ui-meta ui-meta--key mt-0.5 w-max select-none gap-1.5">
