@@ -621,11 +621,11 @@ export const TaskList: React.FC = () => {
                         scale: isDropTarget ? 1.01 : 1,
                       }}
                       transition={{ type: 'spring', stiffness: 420, damping: 32, mass: 0.7 }}
-                      className={`flex flex-row items-center gap-2 overflow-visible rounded-xl ${
+                      className={`grid grid-cols-[7.25rem_minmax(0,1fr)_2rem] items-center gap-2 overflow-visible rounded-xl ${
                         isDropTarget ? 'bg-[var(--v4-accent-soft)] ring-1 ring-[var(--v4-accent)]/40' : ''
                       }`}
                     >
-                      <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-[var(--v4-text-muted)]">
+                      <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-[var(--v4-text-muted)]">
                         {label}
                       </span>
                       <TrackSelect
@@ -693,8 +693,8 @@ export const TaskList: React.FC = () => {
                           enRowRef,
                         )}
 
-                        <div className="flex flex-row items-center gap-2 overflow-visible">
-                          <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-[var(--v4-text-muted)]">
+                        <div className="grid grid-cols-[7.25rem_minmax(0,1fr)_2rem] items-center gap-2 overflow-visible">
+                          <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-[var(--v4-text-muted)]">
                             旁白导评
                             <InfoHint label="旁白与导评说明" side="right">
                               {getSubtitleTermHint('narration')} 导评通常不是正片对白。
@@ -747,76 +747,73 @@ export const TaskList: React.FC = () => {
             </div>
           </div>
 
-          {/* Credit first, then export name (blank + source checkboxes) */}
-          <div className="flex flex-shrink-0 flex-col gap-3">
+          {/* Credit first, then export name (field + fill shortcuts) */}
+          <div className="flex flex-shrink-0 flex-col gap-4">
             <CreditTool />
 
-            <div className="rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <label className="inline-flex select-none items-center gap-1.5 text-sm font-semibold text-[var(--v4-text)]">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <h4 className="inline-flex select-none items-center gap-1.5 text-base font-semibold text-[var(--v4-text)]">
                   导出选项
                   <InfoHint label="导出选项说明">
-                    默认留空。可勾选从片源信息或原始文件名填充，也可直接输入。格式在导出时再选。
+                    默认留空，可手输；也可用下方捷径从片源或原始文件名填充。格式在导出时再选。
                   </InfoHint>
-                </label>
-                <span className="rd-chip rd-chip--tight shrink-0 text-[var(--v4-text-muted)]">
+                </h4>
+                <span className="ui-meta ml-auto shrink-0">
                   {getFilenameSourceLabel()}
                 </span>
               </div>
 
-              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
-                <label className={`inline-flex items-center gap-2 text-xs ${tmdbData ? 'cursor-pointer text-[var(--v4-text-muted)]' : 'cursor-not-allowed text-[var(--v4-text-faint)]'}`}>
-                  <input
-                    type="checkbox"
-                    className="h-3.5 w-3.5 accent-[var(--v4-accent)]"
-                    disabled={!tmdbData}
-                    checked={filenameSource === 'tmdb'}
-                    onChange={(event) => {
-                      if (event.target.checked) applyFilenameFromSource('tmdb');
-                      else if (filenameSource === 'tmdb') setCustomFilename('', 'unknown');
-                    }}
-                  />
-                  <span>使用片源</span>
-                </label>
-                <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-[var(--v4-text-muted)]">
-                  <input
-                    type="checkbox"
-                    className="h-3.5 w-3.5 accent-[var(--v4-accent)]"
-                    checked={filenameSource === 'auto'}
-                    onChange={(event) => {
-                      if (event.target.checked) applyFilenameFromSource('auto');
-                      else if (filenameSource === 'auto') setCustomFilename('', 'unknown');
-                    }}
-                  />
-                  <span>使用原始文件名</span>
-                </label>
-              </div>
-
-              <div className="relative mt-2.5">
-                <div className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md border px-2.5 py-1.5 transition-colors ${
-                  isFilenameFocused
-                    ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)]'
-                    : 'border-[var(--v4-line)] bg-[var(--v4-panel)]'
-                }`}>
-                  <input
-                    type="text"
-                    className="v4-focus-ring h-8 w-full min-w-0 border-0 bg-transparent font-mono text-[14px] font-medium text-[var(--v4-text)] outline-none placeholder:text-[var(--v4-text-faint)]"
-                    value={customFilename}
-                    onChange={e => setCustomFilename(e.target.value, 'manual')}
-                    onFocus={() => setIsFilenameFocused(true)}
-                    onBlur={() => setIsFilenameFocused(false)}
-                    placeholder="输入导出文件名"
-                    aria-label="导出文件名"
-                  />
-                  <span className="shrink-0 font-mono text-[11px] font-semibold tracking-wide text-[var(--v4-text-faint)]">
-                    .ass / .srt
-                  </span>
-                </div>
-                {customFilename.length > 42 && !isFilenameFocused && (
-                  <div className="pointer-events-none absolute inset-y-px left-2.5 right-[4.75rem] flex items-center overflow-hidden bg-[var(--v4-panel)] font-mono text-[14px] font-medium text-[var(--v4-text)]">
-                    {renderMarqueeText(customFilename, 'w-full')}
+              <div className="rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2.5">
+                <div className="relative">
+                  <div className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md border px-2.5 py-1.5 transition-colors ${
+                    isFilenameFocused
+                      ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)]'
+                      : 'border-[var(--v4-line)] bg-[var(--v4-panel)]'
+                  }`}>
+                    <input
+                      type="text"
+                      className="v4-focus-ring h-8 w-full min-w-0 border-0 bg-transparent font-mono text-[14px] font-medium text-[var(--v4-text)] outline-none placeholder:text-[var(--v4-text-faint)]"
+                      value={customFilename}
+                      onChange={e => setCustomFilename(e.target.value, 'manual')}
+                      onFocus={() => setIsFilenameFocused(true)}
+                      onBlur={() => setIsFilenameFocused(false)}
+                      placeholder="输入导出文件名"
+                      aria-label="导出文件名"
+                    />
+                    <span className="shrink-0 font-mono text-[11px] font-semibold tracking-wide text-[var(--v4-text-faint)]">
+                      .ass / .srt
+                    </span>
                   </div>
-                )}
+                  {customFilename.length > 42 && !isFilenameFocused && (
+                    <div className="pointer-events-none absolute inset-y-px left-2.5 right-[4.75rem] flex items-center overflow-hidden bg-[var(--v4-panel)] font-mono text-[14px] font-medium text-[var(--v4-text)]">
+                      {renderMarqueeText(customFilename, 'w-full')}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  <span className="ui-meta">从…填充</span>
+                  <div className="ui-choice-group" role="group" aria-label="填充导出文件名">
+                    <button
+                      type="button"
+                      className={`ui-choice ${filenameSource === 'tmdb' ? 'ui-choice--on' : ''} ${tmdbData ? '' : 'cursor-not-allowed opacity-40'}`}
+                      disabled={!tmdbData}
+                      title={tmdbData ? '用片源信息生成文件名' : '需先匹配片源'}
+                      onClick={() => applyFilenameFromSource('tmdb')}
+                    >
+                      片源
+                    </button>
+                    <button
+                      type="button"
+                      className={`ui-choice ${filenameSource === 'auto' ? 'ui-choice--on' : ''}`}
+                      title="用当前字幕轨原始文件名填充"
+                      onClick={() => applyFilenameFromSource('auto')}
+                    >
+                      原始文件名
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BadgeCheck, ChevronDown, PenLine } from 'lucide-react';
+import { BadgeCheck, ChevronDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, type CreditDeclaration } from '@/store/useStudioStore';
 
@@ -49,15 +49,14 @@ export const CreditTool: React.FC = () => {
   ].filter(Boolean);
 
   return (
-    <section className="rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2.5">
+    <section className="flex flex-col gap-2">
       <button
         type="button"
         className="v4-focus-ring flex w-full items-center gap-1.5 rounded-md text-left"
         onClick={() => setExpanded((value) => !value)}
         aria-expanded={expanded}
       >
-        <PenLine className="h-3.5 w-3.5 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
-        <h4 className="text-sm font-semibold text-[var(--v4-text)]">属性信息</h4>
+        <h4 className="text-base font-semibold text-[var(--v4-text)]">属性信息</h4>
         <span className="text-xs font-medium text-[var(--v4-text-muted)]">可选</span>
         {summaryBits.length > 0 && !expanded ? (
           <span className="ml-1 min-w-0 truncate text-xs font-medium text-[var(--v4-text-faint)]">
@@ -71,10 +70,10 @@ export const CreditTool: React.FC = () => {
       </button>
 
       {expanded ? (
-        <div className="mt-3 grid gap-3 border-t border-[var(--v4-line)] pt-3">
+        <div className="grid gap-3 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2.5">
           <div className="min-w-0">
             <div className="text-xs font-medium text-[var(--v4-text-muted)]">制作声明</div>
-            <div className="mt-2 ui-choice-group" role="radiogroup" aria-label="制作声明">
+            <div className="ui-choice-group mt-2" role="radiogroup" aria-label="制作声明">
               {DECLARATION_OPTIONS.map((option) => {
                 const active = creditDeclaration === option.value;
                 return (
