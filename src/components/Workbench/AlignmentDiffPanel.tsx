@@ -53,7 +53,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
           <button
             type="button"
             onClick={() => setIsOpen(value => !value)}
-            className="v4-focus-ring inline-flex items-center gap-2 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2 text-xs font-medium text-[var(--v4-text-muted)] transition hover:border-[var(--v4-accent)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-accent-strong)]"
+            className="ui-action ui-action--secondary"
             aria-expanded={isOpen}
           >
             {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -77,7 +77,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
               <p className="text-xs leading-5 text-[var(--v4-text-faint)]">
                 此处标出结构差异与整体平移配对；不会自动删除或改写任一字幕轨。
               </p>
-              <div className="flex items-center gap-1 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-1" role="tablist" aria-label="对齐差异筛选">
+              <div className="ui-choice-group" role="tablist" aria-label="对齐差异筛选">
                 {FILTERS.map(item => (
                   <button
                     key={item.id}
@@ -85,7 +85,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                     role="tab"
                     aria-selected={filter === item.id}
                     onClick={() => setFilter(item.id)}
-                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${filter === item.id ? 'bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-faint)] hover:text-[var(--v4-text-muted)]'}`}
+                    className={`ui-choice ${filter === item.id ? 'ui-choice--on' : ''}`}
                   >
                     {item.label}
                   </button>
@@ -138,7 +138,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                           <button
                             type="button"
                             onClick={() => setSourceEntryId(current => current === entry.id ? null : entry.id)}
-                            className={`v4-focus-ring inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition ${isSourceOpen ? 'bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-faint)] hover:bg-[var(--v4-panel-muted)] hover:text-[var(--v4-text)]'}`}
+                            className={isSourceOpen ? 'ui-action' : 'ui-action ui-action--quiet'}
                             aria-expanded={isSourceOpen}
                           >
                             <FileSearch2 className="h-3 w-3" />
@@ -148,7 +148,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                         <button
                           type="button"
                           onClick={() => handleLocate(entry.rowIndexes[0])}
-                          className="v4-focus-ring inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-[var(--v4-text-faint)] transition hover:bg-[var(--v4-panel-muted)] hover:text-[var(--v4-text)]"
+                          className="ui-action ui-action--quiet"
                           title={`定位到第 ${entry.rowIndexes[0]} 行`}
                         >
                           <LocateFixed className="h-3 w-3" />
@@ -161,7 +161,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                         <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[var(--v4-text-faint)]">
                           <span>原始字幕来源</span>
                           {entry.provenance[0]?.timingSource && (
-                            <span className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-1.5 py-0.5 text-[var(--v4-accent-strong)]">
+                            <span className="ui-meta ui-meta--key">
                               时序取自{entry.provenance[0].timingSource === 'primary' ? '主轨' : '第二语言'}
                             </span>
                           )}

@@ -169,10 +169,8 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
     return () => document.removeEventListener('keydown', handler);
   }, [open]);
 
-  const primaryClass =
-    'v4-focus-ring flex h-10 cursor-pointer items-center gap-2 rounded-md border border-[var(--v4-accent)]/35 bg-[var(--v4-accent-soft)] px-3.5 text-sm font-semibold text-[var(--v4-accent-strong)] shadow-[0_1px_0_rgba(255,255,255,0.35)_inset] transition-colors hover:bg-[var(--v4-accent)]/18 hover:border-[var(--v4-accent)]/55';
-  const ghostClass =
-    'v4-focus-ring flex h-10 cursor-pointer items-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3.5 text-sm font-semibold text-[var(--v4-text)] transition-colors hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)]';
+  const primaryClass = 'ui-action ui-action--lg';
+  const ghostClass = 'ui-action ui-action--secondary ui-action--lg';
 
   return (
     <div className="relative" ref={ref}>

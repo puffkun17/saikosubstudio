@@ -195,7 +195,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
     <button
       type="button"
       onClick={() => setShowAllSubs(false)}
-      className="v4-focus-ring flex h-9 items-center gap-1 rounded-md border border-[var(--v4-line)] px-2.5 text-sm font-medium text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]"
+      className="ui-action ui-action--secondary"
       title="折叠回前 100 行"
     >
       <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
@@ -212,7 +212,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               <span className="text-sm tracking-normal text-[var(--v4-text)] font-semibold whitespace-nowrap">
                 时间轴
               </span>
-              <span className="rounded-full border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-xs tabular-nums text-[var(--v4-text-muted)]">
+              <span className="ui-meta-row tabular-nums">
                 {isOverlimit && !showAllSubs ? `${LIMIT} / ${total} 行` : `${total} 行`}
                 {selectedIndexes.size > 1 ? ` · 已选 ${selectedIndexes.size}` : ''}
               </span>
@@ -238,7 +238,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                   <button
                     type="button"
                     onClick={() => setShowAllSubs(true)}
-                    className="v4-focus-ring flex h-9 items-center gap-1 rounded-md border border-[var(--v4-line)] px-2.5 text-sm font-medium text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]"
+                    className="ui-action ui-action--secondary"
                   >
                     <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
                     显示全部
@@ -376,12 +376,12 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                           />
                         )}
                         <div className="mt-1 flex justify-end gap-2">
-                          <button type="button" className="v4-focus-ring inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-sm text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]" onClick={(e) => { e.stopPropagation(); cancelEditing(); }}>
+                          <button type="button" className="ui-action ui-action--quiet" onClick={(e) => { e.stopPropagation(); cancelEditing(); }}>
                             <X className="h-3.5 w-3.5" aria-hidden="true" />取消
                           </button>
                           <button
                             type="button"
-                            className="v4-focus-ring inline-flex h-8 items-center gap-1 rounded-md bg-[var(--v4-accent-soft)] px-2.5 text-sm font-semibold text-[var(--v4-accent-strong)] hover:bg-[var(--v4-accent)] hover:text-[var(--v4-canvas)]"
+                            className="ui-action"
                             onClick={(e) => { e.stopPropagation(); commitEditing(); }}
                           >
                             <Check className="h-3.5 w-3.5" aria-hidden="true" />保存
@@ -391,25 +391,25 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     ) : (
                       <>
                         {isExpandedDialogue && (
-                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[var(--v4-accent)]/20 bg-[var(--v4-accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--v4-accent-strong)]">
+                          <span className="ui-meta ui-meta--key mb-0.5">
                             对话组
                           </span>
                         )}
                         {sub.cueKind === 'screen_text' && (
-                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-muted)] px-2 py-0.5 text-xs font-medium text-[var(--v4-text-muted)]">
-                            <Captions className="mr-1 h-3 w-3" />
+                          <span className="ui-meta mb-0.5">
+                            <Captions className="h-3 w-3" />
                             画面文字
                           </span>
                         )}
                         {isSoundCaption && (
-                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2 py-0.5 text-xs font-medium text-[var(--v4-text-muted)]">
-                            <Volume2 className="mr-1 h-3 w-3" />
+                          <span className="ui-meta mb-0.5">
+                            <Volume2 className="h-3 w-3" />
                             声音说明
                           </span>
                         )}
                         {isAuxiliarySemantic && (
-                          <span className="mb-0.5 inline-flex w-fit items-center rounded-md border border-[var(--v4-accent)]/20 bg-[var(--v4-accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--v4-accent-strong)]">
-                            <Captions className="mr-1 h-3 w-3" />
+                          <span className="ui-meta ui-meta--key mb-0.5">
+                            <Captions className="h-3 w-3" />
                             辅助信息
                           </span>
                         )}

@@ -165,7 +165,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="v4-focus-ring inline-flex shrink-0 items-center gap-2 rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-3.5 py-2.5 text-xs font-medium text-[var(--v4-accent-strong)] transition hover:border-[var(--v4-accent)] hover:bg-[var(--v4-accent-soft)] active:translate-y-px cursor-pointer"
+              className="ui-action shrink-0"
             >
               <MonitorPlay className="h-3.5 w-3.5" />
               {isMatchMode ? '更换片源' : '加入片源'}

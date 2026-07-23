@@ -140,18 +140,15 @@ export const SourceIdentityStrip: React.FC = () => {
             ) : null}
 
             {(hasScore || (tmdbData?.genres?.length ?? 0) > 0) && (
-              <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+              <div className="mt-2.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
                 {hasScore && (
-                  <span className="inline-flex items-center gap-1 rounded-md border border-[var(--v4-accent)]/25 bg-[var(--v4-accent-soft)] px-2.5 py-1 font-mono text-[13px] font-bold text-[var(--v4-accent-strong)]">
+                  <span className="ui-meta ui-meta--key gap-1">
                     <Star className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
                     {tmdbData!.voteAverage.toFixed(1)}
                   </span>
                 )}
                 {tmdbData?.genres?.slice(0, 4).map((genre) => (
-                  <span
-                    key={genre}
-                    className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-[13px] font-semibold text-[var(--v4-text-muted)]"
-                  >
+                  <span key={genre} className="ui-meta">
                     {genre}
                   </span>
                 ))}
@@ -196,7 +193,7 @@ export const SourceIdentityStrip: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setTmdbManualOpen(true)}
-                      className="v4-focus-ring mt-2 inline-flex h-8 w-full items-center justify-center rounded-md border border-[color:rgba(239,141,95,0.28)] bg-[var(--v4-accent-soft)] px-2.5 text-xs font-semibold text-[var(--v4-accent-strong)]"
+                      className="ui-action mt-2 w-full"
                     >
                       {filmNotice.actionLabel}
                     </button>
@@ -215,7 +212,7 @@ export const SourceIdentityStrip: React.FC = () => {
                   type="button"
                   onClick={() => { void swapTmdbAlternate(); }}
                   disabled={isSearchingTmdb}
-                  className="v4-focus-ring inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-3 text-sm font-semibold text-[var(--v4-accent-strong)] transition-colors hover:bg-[color:rgba(239,141,95,0.22)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="ui-action w-full"
                   title="切换到同一次搜索缓存的另一同名候选，不再发起检索"
                 >
                   <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
@@ -224,7 +221,7 @@ export const SourceIdentityStrip: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setTmdbManualOpen(true)}
-                  className="v4-focus-ring inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm font-semibold text-[var(--v4-text-muted)] transition-colors hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]"
+                  className="ui-action ui-action--secondary w-full"
                 >
                   <Search className="h-3.5 w-3.5" aria-hidden="true" />
                   手动匹配
@@ -234,7 +231,7 @@ export const SourceIdentityStrip: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setTmdbManualOpen(true)}
-                className="v4-focus-ring inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] px-3 text-sm font-semibold text-[var(--v4-accent-strong)] transition-colors hover:bg-[color:rgba(239,141,95,0.22)]"
+                className="ui-action w-full"
               >
                 <Search className="h-3.5 w-3.5" aria-hidden="true" />
                 {rematchLabel}

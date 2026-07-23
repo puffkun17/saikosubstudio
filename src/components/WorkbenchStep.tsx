@@ -73,12 +73,12 @@ export const WorkbenchStep: React.FC = () => {
         <>
           <button
             type="button"
-            className={`v4-focus-ring inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3.5 py-2 text-sm font-semibold transition-all
-              ${isSettingsOpen ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]'}`}
+            className={isSettingsOpen ? 'ui-action' : 'ui-action ui-action--secondary'}
             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
             title="调整字幕样式"
+            aria-pressed={isSettingsOpen}
           >
-            <SlidersHorizontal className="h-4 w-4 text-[var(--v4-accent-strong)]" />
+            <SlidersHorizontal className="h-4 w-4" />
             字幕样式
           </button>
           <ExportDropdown variant="ghost" />
@@ -201,14 +201,14 @@ export const WorkbenchStep: React.FC = () => {
                 <div className="mt-5 grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-4 py-2.5 text-sm font-semibold text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]"
+                    className="ui-action ui-action--quiet w-full"
                     onClick={() => setShowBackConfirm(false)}
                   >
                     留在工作台
                   </button>
                   <button
                     type="button"
-                    className="rounded-md border border-[color:rgba(239,141,95,0.32)] bg-[var(--v4-accent-soft)] px-4 py-2.5 text-sm font-semibold text-[var(--v4-accent-strong)] hover:bg-[color:rgba(239,141,95,0.22)]"
+                    className="ui-action w-full"
                     onClick={() => { setShowBackConfirm(false); setProcessedSubs(null); setWorkflowStep(1); }}
                   >
                     返回导入

@@ -98,7 +98,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
         </span>
         <span className="flex shrink-0 items-center gap-2 border-l border-[var(--v4-line)] pl-2.5">
           {countLabel != null && (
-            <span className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums text-[var(--v4-text-muted)]">
+            <span className="ui-meta font-mono text-[11px] tabular-nums">
               {countLabel}行
             </span>
           )}

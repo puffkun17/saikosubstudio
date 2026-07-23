@@ -375,14 +375,14 @@ export const SystemTray = () => {
               <div className="mt-5 grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-4 py-2.5 text-sm font-semibold text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]"
+                  className="ui-action ui-action--quiet w-full"
                   onClick={() => setPendingReset(false)}
                 >
                   继续编辑
                 </button>
                 <button
                   type="button"
-                  className="rounded-md border border-[color:rgba(201,138,134,0.32)] bg-[color:rgba(201,138,134,0.12)] px-4 py-2.5 text-sm font-semibold text-[var(--v4-danger)] hover:bg-[color:rgba(201,138,134,0.2)]"
+                  className="ui-action ui-action--danger w-full"
                   onClick={() => {
                     setPendingReset(false);
                     restartSystem();

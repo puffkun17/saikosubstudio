@@ -74,7 +74,7 @@ export const CreditTool: React.FC = () => {
         <div className="mt-3 grid gap-3 border-t border-[var(--v4-line)] pt-3">
           <div className="min-w-0">
             <div className="text-xs font-medium text-[var(--v4-text-muted)]">制作声明</div>
-            <div className="mt-2 flex flex-wrap gap-1.5" role="radiogroup" aria-label="制作声明">
+            <div className="mt-2 ui-choice-group" role="radiogroup" aria-label="制作声明">
               {DECLARATION_OPTIONS.map((option) => {
                 const active = creditDeclaration === option.value;
                 return (
@@ -85,11 +85,7 @@ export const CreditTool: React.FC = () => {
                     aria-checked={active}
                     title={option.hint}
                     onClick={() => setCreditDeclaration(option.value)}
-                    className={`v4-focus-ring inline-flex h-8 items-center rounded-md border px-2.5 text-xs font-semibold transition-colors ${
-                      active
-                        ? 'border-[var(--v4-accent)]/40 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
-                        : 'border-[var(--v4-line)] bg-[var(--v4-panel)] text-[var(--v4-text-muted)] hover:text-[var(--v4-text)]'
-                    }`}
+                    className={`ui-choice ${active ? 'ui-choice--on' : ''}`}
                   >
                     {option.label}
                   </button>
@@ -108,14 +104,14 @@ export const CreditTool: React.FC = () => {
               署名【可选】
             </div>
             {detectedAttributions.length > 0 ? (
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 {detectedAttributions.map((item) => (
                   <span
                     key={`${item.role}-${item.value}`}
-                    className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-[var(--v4-accent)]/18 bg-[var(--v4-accent-soft)] px-2.5 py-1 text-xs text-[var(--v4-accent-strong)]"
+                    className="ui-meta max-w-full"
                     title={`${item.label}: ${item.value}`}
                   >
-                    <span className="shrink-0 text-[var(--v4-accent-strong)]">{item.label}</span>
+                    <span className="text-[var(--v4-accent-strong)]">{item.label}</span>
                     <span className="truncate text-[var(--v4-text-muted)]">{item.value}</span>
                   </span>
                 ))}

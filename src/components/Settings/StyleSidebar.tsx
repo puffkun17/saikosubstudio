@@ -320,7 +320,7 @@ export const StyleSidebar: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsSettingsOpen(false)}
-            className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] transition-colors hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]"
+            className="ui-action ui-action--quiet ui-action--icon !min-h-9 !w-9"
             aria-label="关闭样式参数"
           >
             <X className="h-4 w-4" aria-hidden="true" />
@@ -328,7 +328,7 @@ export const StyleSidebar: React.FC = () => {
         </div>
       </div>
 
-      <div className="mb-4 grid grid-cols-3 rounded-md border border-[var(--v4-line)] bg-[var(--v4-canvas)] p-1" role="tablist" aria-label="样式设置分类">
+      <div className="ui-choice-group mb-4 w-full" role="tablist" aria-label="样式设置分类">
         {([
           { id: 'template', label: '模板' },
           { id: 'type', label: '文字' },
@@ -340,7 +340,7 @@ export const StyleSidebar: React.FC = () => {
             role="tab"
             aria-selected={activePanel === item.id}
             onClick={() => setActivePanel(item.id)}
-            className={`v4-focus-ring h-9 rounded-md text-sm font-semibold transition-colors ${activePanel === item.id ? 'bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel-muted)] hover:text-[var(--v4-text)]'}`}
+            className={`ui-choice min-h-9 flex-1 ${activePanel === item.id ? 'ui-choice--on' : ''}`}
           >
             {item.label}
           </button>

@@ -178,7 +178,7 @@ export const TheaterStep: React.FC = () => {
             <motion.button
             whileHover={{ scale: 1.03, y: -0.5 }}
             whileTap={{ scale: 0.97 }}
-            className="v4-focus-ring flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-accent-strong)] hover:bg-[var(--v4-panel)]"
+            className="ui-action ui-action--secondary ui-action--icon !min-h-9 !w-9"
             onClick={handleBack}
             aria-label="返回工作台"
           >
@@ -194,8 +194,8 @@ export const TheaterStep: React.FC = () => {
           <div className="relative z-[var(--z-dropdown)] flex items-center gap-2">
             <button
               onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-              className={`v4-focus-ring inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-4 py-2.5 text-sm font-medium transition-all
-                ${isSettingsOpen ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]'}`}
+              className={isSettingsOpen ? 'ui-action' : 'ui-action ui-action--secondary'}
+              aria-pressed={isSettingsOpen}
             >
               <SlidersHorizontal className="h-4 w-4 stroke-[2.25]" />
               字幕样式

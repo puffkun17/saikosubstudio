@@ -1208,7 +1208,7 @@ export const DragZone: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 md:gap-2.5">
-                  <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel)] px-3 text-sm font-medium text-[var(--v4-text-muted)] md:h-11 md:text-[15px]">
+                  <label className="inline-flex h-10 cursor-pointer items-center gap-2 px-1 text-sm font-medium text-[var(--v4-text-muted)] md:h-11 md:text-[15px]">
                     <input
                       type="checkbox"
                       checked={isOfficialSubtitle}
@@ -1221,12 +1221,12 @@ export const DragZone: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setAddMenuOpen((open) => !open)}
-                      className="v4-focus-ring inline-flex h-10 items-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)]/80 px-3.5 text-sm font-semibold text-[var(--v4-text)] backdrop-blur-sm hover:bg-[var(--v4-accent-soft)] md:h-11 md:px-4 md:text-[15px]"
+                      className="ui-action ui-action--secondary ui-action--lg"
                       aria-expanded={addMenuOpen}
                     >
                       <Plus className="h-4 w-4 md:h-[18px] md:w-[18px]" aria-hidden="true" />
                       添加
-                      <ChevronDown className={`h-3.5 w-3.5 text-[var(--v4-text-faint)] transition-transform md:h-4 md:w-4 ${addMenuOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`h-3.5 w-3.5 opacity-70 transition-transform md:h-4 md:w-4 ${addMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {addMenuOpen && (
                       <div className="absolute right-0 top-full z-20 mt-1.5 min-w-[12rem] overflow-hidden rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] shadow-[0_12px_28px_rgba(0,0,0,0.4)]">
@@ -1252,7 +1252,7 @@ export const DragZone: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => { setQueuedItems([]); setQueueIssue(null); }}
-                    className="v4-focus-ring inline-flex h-10 items-center gap-1.5 rounded-md px-3 text-sm font-normal text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)] md:h-11 md:px-3.5 md:text-[15px]"
+                    className="ui-action ui-action--quiet ui-action--lg"
                   >
                     <Trash2 className="h-4 w-4" />
                     清空

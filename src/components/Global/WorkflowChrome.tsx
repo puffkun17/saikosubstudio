@@ -38,13 +38,13 @@ export type InfoBarConfig = {
    */
   year?: string;
   /**
-   * 片源元数据徽章（集数等）——统一强调色 chip，跟在片名+年份旁。
+   * 片源元数据（集数等）——静态排印，非 chip。
    */
   badges?: string[];
   /** @deprecated 使用 badges */
   badge?: string;
   /**
-   * 本地状态徽章（任务数、格式、来源、匹配过程提示等）——统一中性 chip，与片源徽章分区。
+   * 本地状态摘要（任务数、格式、来源等）——静态文案行，非 chip。
    */
   localChips?: string[];
   /** @deprecated 改用 localChips；若仍传入则拆成芯片展示 */
@@ -117,8 +117,8 @@ export const WorkflowChromeProvider: React.FC<{ children: React.ReactNode }> = (
   useEffect(() => {
     document.documentElement.style.setProperty(
       '--info-bar-h',
-      // 片名左侧占满栏高，旁侧两行 chip
-      infoBarActive ? '4.25rem' : '0px',
+      // 片名 + 旁侧元数据（去 chip 后更矮）
+      infoBarActive ? '3.75rem' : '0px',
     );
     return () => {
       document.documentElement.style.setProperty('--info-bar-h', '0px');
@@ -186,7 +186,7 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
                 <button
                   type="button"
                   onClick={config.onBack}
-                  className="v4-focus-ring flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-accent-strong)] transition-colors hover:bg-[var(--v4-panel)]"
+                  className="ui-action ui-action--secondary ui-action--icon"
                   aria-label="返回"
                 >
                   <ChevronLeft className="h-5 w-5" />
@@ -210,32 +210,25 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
                   </time>
                 ) : null}
               </div>
-              {/* 旁侧分行：上片源元数据，下本地状态 */}
+              {/* 旁侧：静态元数据（非 chip / 非按钮） */}
               {(metaBadges.length > 0 || localChips.length > 0) && (
-                <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
+                <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
                   {metaBadges.length > 0 && (
-                    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                    <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
                       {metaBadges.map((item) => (
-                        <span
-                          key={`meta:${item}`}
-                          className="inline-flex h-7 shrink-0 items-center rounded-md border border-[var(--v4-accent)]/35 bg-[var(--v4-accent-soft)] px-2.5 font-mono text-[13px] font-bold tracking-wide text-[var(--v4-accent-strong)] md:h-8 md:text-[14px]"
-                        >
+                        <span key={`meta:${item}`} className="ui-meta ui-meta--key">
                           {item}
                         </span>
                       ))}
                     </div>
                   )}
                   {localChips.length > 0 && (
-                    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                      {localChips.map((item) => (
-                        <span
-                          key={`local:${item}`}
-                          className="inline-flex h-6 shrink-0 items-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2 text-[12px] font-semibold tracking-wide text-[var(--v4-text-muted)] md:h-7 md:px-2.5 md:text-[13px]"
-                        >
-                          {item}
-                        </span>
-                      ))}
-                    </div>
+                    <p
+                      className="ui-meta-row truncate"
+                      title={localChips.join(' · ')}
+                    >
+                      {localChips.join(' · ')}
+                    </p>
                   )}
                 </div>
               )}

@@ -437,14 +437,14 @@ export const TaskList: React.FC = () => {
             <>
               <button
                 type="button"
-                className="v4-focus-ring inline-flex h-9 items-center rounded-md border border-rose-500/25 bg-rose-500/10 px-3 text-xs font-semibold text-rose-300 transition-colors hover:bg-rose-500/18"
+                className="ui-action ui-action--danger"
                 onClick={() => { cancelCurrentUpload(); setPendingCancelUpload(false); }}
               >
                 清空本次导入
               </button>
               <button
                 type="button"
-                className="v4-focus-ring inline-flex h-9 items-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-xs font-semibold text-[var(--v4-text-muted)] hover:text-[var(--v4-text)]"
+                className="ui-action ui-action--quiet"
                 onClick={() => setPendingCancelUpload(false)}
               >
                 返回
@@ -453,7 +453,7 @@ export const TaskList: React.FC = () => {
           ) : (
             <button
               type="button"
-              className="v4-focus-ring inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-xs font-semibold text-[var(--v4-text-muted)] transition-colors hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]"
+              className="ui-action ui-action--quiet"
               onClick={() => setPendingCancelUpload(true)}
               title="取消本次导入并返回上传入口"
             >
@@ -464,7 +464,7 @@ export const TaskList: React.FC = () => {
           )}
           <button
             type="button"
-            className="v4-focus-ring inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-xs font-semibold text-[var(--v4-text)] transition-colors hover:bg-[var(--v4-panel)]"
+            className="ui-action ui-action--secondary"
             onClick={() => fileInputRef.current?.click()}
           >
             <Plus className="h-3.5 w-3.5" />
@@ -474,14 +474,14 @@ export const TaskList: React.FC = () => {
             <>
               <button
                 type="button"
-                className="v4-focus-ring inline-flex h-9 items-center rounded-md border border-rose-500/25 bg-rose-500/10 px-3 text-xs font-semibold text-rose-300"
+                className="ui-action ui-action--danger"
                 onClick={() => { deleteTask(activeTask.id); setPendingDeleteId(null); }}
               >
                 确认移除
               </button>
               <button
                 type="button"
-                className="v4-focus-ring inline-flex h-9 items-center rounded-md border border-[var(--v4-line)] px-3 text-xs font-semibold text-[var(--v4-text-muted)]"
+                className="ui-action ui-action--quiet"
                 onClick={() => setPendingDeleteId(null)}
               >
                 取消
@@ -490,7 +490,7 @@ export const TaskList: React.FC = () => {
           ) : (
             <button
               type="button"
-              className="v4-focus-ring inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-xs font-semibold text-[var(--v4-text-muted)] transition-colors hover:text-rose-300"
+              className="ui-action ui-action--quiet"
               onClick={() => setPendingDeleteId(activeTask.id)}
               aria-label="移除当前字幕任务"
             >
@@ -733,7 +733,7 @@ export const TaskList: React.FC = () => {
                             <span className="min-w-0 flex-1 truncate font-mono text-sm text-[var(--v4-text)]">
                               {dragFile.name}
                             </span>
-                            <span className="shrink-0 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2 py-0.5 font-mono text-xs text-[var(--v4-text-muted)]">
+                            <span className="ui-meta shrink-0 font-mono text-xs">
                               {getSubTitleCount(dragFile)}行
                             </span>
                             <GripVertical className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
@@ -839,7 +839,7 @@ export const TaskList: React.FC = () => {
                         <Paintbrush className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />
                         <h5 className="text-sm font-semibold text-[var(--v4-text)]">文件内嵌样式</h5>
                         {isFoundAssStyleApplied && !showAssHint && (
-                          <span className="inline-flex items-center gap-1 rounded-md border border-[var(--v4-accent)]/20 bg-[var(--v4-accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--v4-accent-strong)]">
+                          <span className="ui-meta ui-meta--key gap-1">
                             <Check className="h-3 w-3" />
                             已用于导出
                           </span>
@@ -848,21 +848,18 @@ export const TaskList: React.FC = () => {
                       <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
                         预览来自当前 ASS 文件。字体按当前设备可用版本近似呈现。
                       </p>
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-[var(--v4-text-muted)]">
-                        <span className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel)] px-2 py-1">
-                          中文 {foundAssStyle.zhFontSize || '--'} px
-                        </span>
-                        <span className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel)] px-2 py-1">
-                          第二语言 {foundAssStyle.enFontSize || '--'} px
-                        </span>
-                      </div>
+                      <p className="ui-meta-row mt-3">
+                        中文 {foundAssStyle.zhFontSize || '--'} px
+                        <span aria-hidden="true"> · </span>
+                        第二语言 {foundAssStyle.enFontSize || '--'} px
+                      </p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      {(showAssHint || !isFoundAssStyleApplied) && (
+                    {(showAssHint || !isFoundAssStyleApplied) && (
+                      <div className="ui-choice-group" role="group" aria-label="内嵌样式选择">
                         <button
                           type="button"
-                          className="v4-focus-ring inline-flex h-9 items-center justify-center rounded-lg border border-[var(--v4-accent)]/25 bg-[var(--v4-accent-soft)] px-3 text-xs font-semibold text-[var(--v4-accent-strong)] transition hover:bg-[var(--v4-accent)] hover:text-[var(--v4-accent-ink)] active:translate-y-px"
+                          className="ui-choice ui-choice--on"
                           onClick={() => {
                             setCustomStyle({ ...customStyle, ...foundAssStyle } as StyleSettings);
                             setActivePreset('ass_native');
@@ -872,20 +869,20 @@ export const TaskList: React.FC = () => {
                         >
                           使用源样式
                         </button>
-                      )}
-                      {showAssHint && (
-                        <button
-                          type="button"
-                          className="v4-focus-ring inline-flex h-9 items-center justify-center rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)] px-3 text-xs font-medium text-[var(--v4-text-muted)] transition hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] active:translate-y-px"
-                          onClick={() => {
-                            setShowAssHint(false);
-                            addLog('已保留当前字幕样式', 'info');
-                          }}
-                        >
-                          保留当前样式
-                        </button>
-                      )}
-                    </div>
+                        {showAssHint && (
+                          <button
+                            type="button"
+                            className="ui-choice"
+                            onClick={() => {
+                              setShowAssHint(false);
+                              addLog('已保留当前字幕样式', 'info');
+                            }}
+                          >
+                            保留当前样式
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>

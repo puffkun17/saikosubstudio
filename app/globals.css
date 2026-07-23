@@ -942,25 +942,208 @@ body {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--v4-accent) 45%, transparent);
 }
 
-/* Boxed meta chips — same fill as episode/year badges (not hollow, not orange). */
-.rd-chip {
+/*
+ * Affordance taxonomy — keep these three visually distinct:
+ *   .ui-meta*     静态信息（不可点）
+ *   .ui-choice*   同级可选项（确认选中，不跳页/不提交流程）
+ *   .ui-action*   动作（按了会改内容 / 推进流程）
+ */
+
+/* —— Meta: plain type, no box, no hover affordance —— */
+.ui-meta {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  border-radius: 0.375rem;
-  border: 1px solid var(--v4-line);
-  background: var(--v4-panel-muted);
-  padding: 0.25rem 0.625rem;
-  font-size: 0.75rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.8125rem;
   font-weight: 500;
-  line-height: 1.25;
-  color: var(--v4-text);
+  line-height: 1.35;
+  color: var(--v4-text-muted);
   white-space: nowrap;
 }
 
-.rd-chip--tight {
-  padding: 0.125rem 0.5rem;
+.ui-meta--key {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: var(--v4-accent-strong);
+}
+
+.ui-meta-row {
+  margin: 0;
+  min-width: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  color: var(--v4-text-faint);
+}
+
+/* Legacy alias: chips are meta now, not boxed pills */
+.rd-chip,
+.rd-chip--tight {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--v4-text-muted);
+  white-space: nowrap;
+}
+
+/* —— Choice: peer options in a quiet track —— */
+.ui-choice-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  border-radius: 0.625rem;
+  border: 1px solid var(--v4-line);
+  background: var(--v4-panel-muted);
+}
+
+.ui-choice-group.w-full {
+  display: flex;
+  width: 100%;
+}
+
+.ui-choice {
+  display: inline-flex;
+  min-height: 2rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border: 1px solid transparent;
+  border-radius: 0.45rem;
+  background: transparent;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--v4-text-muted);
+  transition:
+    color var(--v4-dur-fast) var(--v4-ease),
+    background-color var(--v4-dur-fast) var(--v4-ease),
+    border-color var(--v4-dur-fast) var(--v4-ease);
+}
+
+.ui-choice:hover {
+  color: var(--v4-text);
+  background: color-mix(in srgb, var(--v4-panel-raised) 70%, transparent);
+}
+
+.ui-choice--on,
+.ui-choice[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--v4-accent) 28%, transparent);
+  background: var(--v4-panel-raised);
+  color: var(--v4-accent-strong);
+  box-shadow: 0 1px 0 color-mix(in srgb, #fff 55%, transparent);
+}
+
+.ui-choice:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--v4-accent) 55%, transparent);
+  outline-offset: 1px;
+}
+
+/* —— Action: commits / mutates / opens flow —— */
+.ui-action {
+  display: inline-flex;
+  min-height: 2.25rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border: 1px solid color-mix(in srgb, var(--v4-accent) 42%, transparent);
+  border-radius: 0.5rem;
+  background: var(--v4-accent-soft);
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--v4-accent-strong);
+  transition:
+    color var(--v4-dur-fast) var(--v4-ease),
+    background-color var(--v4-dur-fast) var(--v4-ease),
+    border-color var(--v4-dur-fast) var(--v4-ease),
+    opacity var(--v4-dur-fast) var(--v4-ease);
+}
+
+.ui-action:hover {
+  border-color: color-mix(in srgb, var(--v4-accent) 65%, transparent);
+  background: color-mix(in srgb, var(--v4-accent) 22%, transparent);
+}
+
+.ui-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.ui-action:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--v4-accent) 55%, transparent);
+  outline-offset: 2px;
+}
+
+/* Secondary commit — still a button, never a meta tag */
+.ui-action--secondary {
+  border-color: var(--v4-line-strong);
+  background: var(--v4-panel-raised);
+  color: var(--v4-text);
+  font-weight: 600;
+}
+
+.ui-action--secondary:hover {
+  border-color: var(--v4-text-faint);
+  background: var(--v4-panel);
+  color: var(--v4-text);
+}
+
+/* Quiet dismiss / back — text weight, faint chrome */
+.ui-action--quiet {
+  min-height: 2.25rem;
+  border-color: transparent;
+  background: transparent;
+  color: var(--v4-text-muted);
+  font-weight: 600;
+}
+
+.ui-action--quiet:hover {
+  background: var(--v4-panel-muted);
+  color: var(--v4-text);
+}
+
+/* Destructive */
+.ui-action--danger {
+  border-color: color-mix(in srgb, var(--v4-danger) 35%, transparent);
+  background: color-mix(in srgb, var(--v4-danger) 10%, transparent);
+  color: var(--v4-danger);
+}
+
+.ui-action--danger:hover {
+  border-color: color-mix(in srgb, var(--v4-danger) 55%, transparent);
+  background: color-mix(in srgb, var(--v4-danger) 16%, transparent);
+}
+
+.ui-action--lg {
+  min-height: 2.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* Icon-only square action (back, tray icon controls) */
+.ui-action--icon {
+  width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
 }
 
 .app-main-pad {

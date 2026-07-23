@@ -129,17 +129,17 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
             href="https://www.themoviedb.org/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-8 items-center gap-2 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 transition-colors hover:border-[var(--v4-line-strong)]"
+            className="flex h-8 items-center gap-2 px-0.5 transition-colors hover:opacity-90"
             title="Powered by The Movie Database"
           >
-            <span className="text-xs text-[var(--v4-text-faint)] font-medium">Powered by</span>
+            <span className="text-xs font-medium text-[var(--v4-text-faint)]">Powered by</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/tmdb_logo_blue_square.svg" alt="TMDB Logo" className="h-full w-auto object-contain brightness-100 contrast-110 filter drop-shadow-[0_0_4px_rgba(59,130,246,0.6)]" />
           </a>}
         </div>
         {(tmdbData || !needsTitleInput) && (
           <button
-            className="v4-focus-ring group flex cursor-pointer items-center gap-1.5 rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] px-4 py-2.5 text-sm font-semibold text-[var(--v4-text)] transition-colors hover:bg-[var(--v4-accent-soft)]"
+            className="ui-action ui-action--secondary group"
             onClick={() => setTmdbManualOpen(true)}
           >
             <Search className="w-3.5 h-3.5 group-hover:scale-110 group-hover:rotate-6 transition-transform" />
@@ -217,22 +217,22 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                   })()}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-1.5 select-none">
+                <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 select-none">
                   {tmdbData.voteAverage > 0 && (
-                    <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--v4-accent)]/18 bg-[var(--v4-accent-soft)] px-2.5 py-1 font-mono text-[13px] font-bold text-[var(--v4-accent-strong)]">
+                    <span className="ui-meta ui-meta--key gap-1.5">
                       <Star className="h-3.5 w-3.5 fill-current" />
                       {tmdbData.voteAverage.toFixed(1)}
                     </span>
                   )}
                   {tmdbData.genres && tmdbData.genres.map((g: string, i: number) => (
-                    <span key={i} className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-1 text-[13px] font-semibold text-[var(--v4-text-muted)]">
+                    <span key={i} className="ui-meta">
                       {g}
                     </span>
                   ))}
                 </div>
 
                 {tmdbData.isAnime && (
-                  <div className="mt-0.5 flex w-max select-none items-center gap-1.5 rounded-md border border-[var(--v4-accent)]/20 bg-[var(--v4-accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--v4-accent-strong)]">
+                  <div className="ui-meta ui-meta--key mt-0.5 w-max select-none gap-1.5">
                     <motion.span
                       animate={{ scale: [1, 1.12, 1], y: [0, -1.5, 0] }}
                       transition={{
@@ -537,7 +537,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                 <div className="flex shrink-0 items-center gap-2">
                   <button
                     type="button"
-                    className="v4-focus-ring cursor-pointer rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)] px-3 py-2 text-sm font-semibold text-[var(--v4-text-muted)] transition hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]"
+                    className="ui-action ui-action--quiet"
                     onClick={handleClose}
                     disabled={isApplyingSuggestion}
                   >
@@ -545,7 +545,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                   </button>
                   <button
                     type="button"
-                    className="action-required-button v4-focus-ring inline-flex min-w-[8.5rem] items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-35"
+                    className="action-required-button ui-action ui-action--lg min-w-[8.5rem] disabled:cursor-not-allowed disabled:opacity-35"
                     onClick={() => pendingSuggestion && void handleApplySuggestion(pendingSuggestion)}
                     disabled={!pendingSuggestion || isApplyingSuggestion}
                   >
