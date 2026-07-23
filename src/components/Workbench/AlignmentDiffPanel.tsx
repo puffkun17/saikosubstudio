@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { ChevronDown, ChevronUp, FileSearch2, GitCompareArrows, LocateFixed, MoveHorizontal, Rows3, SplitSquareVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { SubRow } from '@/utils/subtitleCore';
+import { describeAuxiliaryReason, type SubRow } from '@/utils/subtitleCore';
 import { analyzeAlignmentDiff, type AlignmentDiffKind } from '@/utils/timeline/alignmentDiff';
 import { formatMsClock } from '@/utils/timeline/timecode';
 import { useStudioStore } from '@/store/useStudioStore';
@@ -17,6 +17,21 @@ const FILTERS: Array<{ id: DiffFilter; label: string }> = [
   { id: 'single-track', label: '仅一轨' },
 ];
 
+const isScreenTextRow = (row: SubRow) => (
+  row.cueKind === 'screen_text' || row.auxiliary?.category === 'screen_text'
+);
+
+const isSoundCaptionRow = (row: SubRow) => (
+  row.cueKind === 'sound_caption'
+  || row.auxiliary?.category === 'ambient_sdh'
+  || row.auxiliary?.category === 'music'
+);
+
+const reasonLabel = (row: SubRow) => {
+  const reason = row.auxiliary?.reasons?.[0];
+  return reason ? describeAuxiliaryReason(reason) : undefined;
+};
+
 export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [filter, setFilter] = useState<DiffFilter>('all');
@@ -24,13 +39,62 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
   const setPreviewIndex = useStudioStore((state) => state.setPreviewIndex);
   const setJumpLineVal = useStudioStore((state) => state.setJumpLineVal);
   const summary = useMemo(() => analyzeAlignmentDiff(rows), [rows]);
+  const screenTextRows = useMemo(() => rows.filter(isScreenTextRow), [rows]);
+  const soundCaptionRows = useMemo(() => rows.filter(isSoundCaptionRow), [rows]);
 
   const filteredEntries = summary.entries.filter(entry => filter === 'all' || entry.kind === filter);
-  const hasReviewItems = summary.entries.length > 0;
+  const hasReviewItems = summary.entries.length > 0 || screenTextRows.length > 0 || soundCaptionRows.length > 0;
 
   const handleLocate = (rowIndex: number) => {
     setPreviewIndex(rowIndex - 1);
     setJumpLineVal(String(rowIndex));
+  };
+
+  const renderTraceList = (
+    list: SubRow[],
+    badge: string,
+    intro: string,
+    keyPrefix: string,
+  ) => {
+    if (list.length === 0) return null;
+    return (
+      <div className="border-b border-[var(--v4-line)] px-5 py-3 md:px-6">
+        <p className="text-xs leading-5 text-[var(--v4-text-faint)]">{intro}</p>
+        <div className="mt-2 max-h-[min(22vh,220px)] space-y-2 overflow-y-auto">
+          {list.map(row => {
+            const why = reasonLabel(row);
+            return (
+              <div
+                key={`${keyPrefix}-${row.index}`}
+                className="flex flex-wrap items-start justify-between gap-2 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2.5"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="ui-meta">{badge}</span>
+                    <span className="font-mono text-xs tabular-nums text-[var(--v4-text-faint)]">#{row.index}</span>
+                  </div>
+                  <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-[var(--v4-text-muted)]">
+                    {row.text.replace(/\\N/gi, '\n')}
+                  </p>
+                  {why && (
+                    <p className="mt-1 text-xs leading-4 text-[var(--v4-text-faint)]">判定：{why}</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleLocate(row.index)}
+                  className="ui-action ui-action--quiet shrink-0"
+                  title={`定位到第 ${row.index} 行`}
+                >
+                  <LocateFixed className="h-3 w-3" />
+                  定位
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -45,6 +109,8 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
               <span className={summary.shiftedMatchCount > 0 ? 'text-[var(--v4-text-muted)]' : ''}>平移 {summary.shiftedMatchCount}</span>
               <span className={summary.expandedDialogueCount > 0 ? 'text-[var(--v4-accent-strong)]' : ''}>对话组 {summary.expandedDialogueCount}</span>
               <span className={summary.singleTrackCount > 0 ? 'text-[var(--v4-warning)]' : ''}>仅一轨 {summary.singleTrackCount}</span>
+              <span className={screenTextRows.length > 0 ? 'text-[var(--v4-text-muted)]' : ''}>画面文字 {screenTextRows.length}</span>
+              <span className={soundCaptionRows.length > 0 ? 'text-[var(--v4-text-muted)]' : ''}>声音说明 {soundCaptionRows.length}</span>
             </div>
           </div>
         </div>
@@ -73,6 +139,21 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
             transition={{ duration: 0.24, ease: 'easeOut' }}
             className="border-t border-[var(--v4-line)]"
           >
+            {renderTraceList(
+              screenTextRows,
+              '画面文字',
+              '倾向保留的画面文字（标题、地点、UI、短括号标注等）。可定位查看判定依据。',
+              'screen',
+            )}
+            {renderTraceList(
+              soundCaptionRows,
+              '声音说明',
+              '仅高置信音效事件；智能精简可剥离。可定位查看判定依据。',
+              'sound',
+            )}
+
+            {summary.entries.length > 0 && (
+            <>
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 md:px-6">
               <p className="text-xs leading-5 text-[var(--v4-text-faint)]">
                 此处标出结构差异与整体平移配对；不会自动删除或改写任一字幕轨。
@@ -192,6 +273,8 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                 );
               })}
             </div>
+            </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

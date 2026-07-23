@@ -233,7 +233,15 @@ export const StyleSidebar: React.FC = () => {
     if (!sub.text) return false;
     return /[♪♫♬♩🎵🎶]/.test(sub.text);
   });
-  const auxiliaryCount = processedSubs?.filter(sub => sub.auxiliary || sub.cueKind === 'sound_caption' || sub.cueKind === 'screen_text').length ?? 0;
+  const auxiliaryCount = processedSubs?.filter(sub => (
+    sub.cueKind === 'sound_caption'
+    || sub.cueKind === 'screen_text'
+    || sub.cueKind === 'narration'
+    || (sub.auxiliary?.category && sub.auxiliary.category !== 'unknown')
+  )).length ?? 0;
+  const screenTextCount = processedSubs?.filter(sub => (
+    sub.cueKind === 'screen_text' || sub.auxiliary?.category === 'screen_text'
+  )).length ?? 0;
   const smartHiddenCount = processedSubs ? processedSubs.length - applyAuxiliarySubtitleMode(processedSubs, 'smart').length : 0;
 
 
@@ -563,7 +571,7 @@ export const StyleSidebar: React.FC = () => {
             </div>
             {auxiliaryCount > 0 && (
               <p className="text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
-                检测到 {auxiliaryCount} 条辅助内容；智能精简预计隐去 {smartHiddenCount} 条环境音说明。
+                检测到 {auxiliaryCount} 条辅助内容（画面文字 {screenTextCount} 条倾向保留；仅高置信音效可被智能精简剥离约 {smartHiddenCount} 条）。可在「字幕检查」查看判定依据并定位。
               </p>
             )}
           </div>

@@ -108,9 +108,12 @@ export const createSourceMatchReport = (
   const specialMarks: SourceMatchReport['specialMarks'] = [];
   const seenMarkSlots = new Set<number>();
   rows.forEach((row, arrayIndex) => {
-    const isSound = row.cueKind === 'sound_caption' || row.auxiliary?.category === 'ambient_sdh';
+    const isSound = row.cueKind === 'sound_caption'
+      || (row.auxiliary?.category === 'ambient_sdh' && !row.auxiliary.suspicion);
     const isScreen = row.cueKind === 'screen_text';
-    const isAux = Boolean(row.auxiliary) || row.cueKind === 'sound_caption' || row.cueKind === 'screen_text';
+    const isAux = Boolean(row.auxiliary && row.auxiliary.category !== 'unknown')
+      || row.cueKind === 'sound_caption'
+      || row.cueKind === 'screen_text';
     if (!isAux) return;
     const startMs = parseSubtitleRange(row.ts).startMs;
     const position = clamp(startMs / basisDuration, 0, 1);

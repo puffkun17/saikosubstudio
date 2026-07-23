@@ -22,11 +22,22 @@ export type AuxiliaryCueCategory = 'ambient_sdh' | 'semantic_sdh' | 'screen_text
 export type AuxiliaryCueAction = 'hide_by_default' | 'keep_auxiliary' | 'keep_visible';
 export type AuxiliarySubtitleMode = 'smart' | 'keep' | 'clean';
 
+/** Soft review hint only — never changes cueKind, merge gates, or smart/clean export. */
+export type CueSuspicionKind = 'needs_review';
+
+export interface CueSuspicion {
+  kind: CueSuspicionKind;
+  confidence: number;
+  reasons: string[];
+  detail: string;
+}
+
 export interface AuxiliaryCueClassification {
   category: AuxiliaryCueCategory;
   confidence: number;
   action: AuxiliaryCueAction;
   reasons: string[];
+  suspicion?: CueSuspicion;
 }
 
 export interface CueClassification {
@@ -436,50 +447,112 @@ export const AUXILIARY_CLASSIFY_SCORES = {
   bracket: 58,
 } as const;
 
+const isFullyWrappedAuxiliaryCue = (cleanText: string): boolean => (
+  /^[\[(（【][\s\S]*[\])）】]$/.test(cleanText) || /^<[^>]+>$/.test(cleanText)
+);
+
+/** High-confidence sound EVENTS only. Bare nouns like "phone" /「电话」stay screen text (keep). */
+const CONFIRMED_AMBIENT_EN_RE = /\b(?:(?:phone|telephone|cell(?:phone)?)\s+(?:rings?|ringing|buzzes?|buzzing|vibrat(?:e|es|ing))|(?:door|gate)\s+(?:opens?|closes?|slams?|creaks?|knocking)|(?:soft |faint |distant |loud )?(?:beeps?|beeping|knocking|creaking)|footsteps?|wind(?:\s+howling)?|thunder|sirens?|engines?\s+revving|applause|laughter|(?:sighs?|groans?|crying|sniffling|chuckles?)\b|(?:rings?|ringing)\b)/i;
+const CONFIRMED_AMBIENT_ZH_RE = /(脚步声|腳步聲|风声|風聲|雨声|雨聲|雷声|雷聲|电话铃声|電話鈴聲|铃声|鈴聲|敲门声|敲門聲|开门声|開門聲|关门声|關門聲|笑声|笑聲|掌声|掌聲|哭声|哭聲|引擎声|引擎聲|警笛(?:声|聲)?|叹息声|嘆息聲|呼吸声|呼吸聲|嗡嗡声|滴滴声|咔嚓声)|(?:声|聲|响|響)$/;
+const SPEECH_CONTEXT_EN_RE = /\b(?:speaking|speaks|language|alien|robot|machine|computer|ai|voice|radio|intercom|announcer|broadcast|chatter|chirps?|responds?|whispers?|murmurs?)\b/i;
+const SPEECH_CONTEXT_ZH_RE = /(外星|语言|語言|机器|機器|人工智能|广播|廣播|电台|電台|对讲机|對講機|播报|播報|说话|說話|低语|低語)/;
+const MUSIC_KEYWORD_RE = /\b(?:song|singing|lyrics?)\b/i;
+const MUSIC_ZH_RE = /(歌词|歌声|唱歌|哼唱|音乐|音樂|歌声|歌聲)/;
+const TITLE_CARD_INNER_RE = /^(?:\d{4}年|\d{1,2}月|\d{1,2}日|[一二三四五六七八九十\d]+个月后|[一二三四五六七八九十\d]+年后|第[一二三四五六七八九十\d]+章|第[一二三四五六七八九十\d]+幕)/;
+
+const isConfirmedAmbientSound = (innerText: string): boolean => (
+  CONFIRMED_AMBIENT_EN_RE.test(innerText) || CONFIRMED_AMBIENT_ZH_RE.test(innerText)
+);
+
+/** Human-readable trace for why an auxiliary cue was classified. */
+export function describeAuxiliaryReason(reason: string): string {
+  switch (reason) {
+    case 'ambient-sound':
+      return '括号内为明确音效事件，智能精简可剥离';
+    case 'music-or-lyric':
+      return '歌词/音乐标记';
+    case 'screen-text':
+      return '屏幕文字关键词';
+    case 'title-card-pattern':
+      return '标题卡/时间卡形态';
+    case 'sign-like-uppercase':
+      return '全大写标牌形态';
+    case 'bracket-screen-text':
+      return '括号内容默认按画面文字保留（非明确音效）';
+    case 'semantic-speech-context':
+      return '括号内为发言语境说明';
+    case 'lyric-symbol':
+      return '音符歌词标记';
+    default:
+      return reason;
+  }
+}
+
 export function classifyAuxiliaryCue(text: string): AuxiliaryCueClassification {
   const rawText = text || '';
   const cleanText = stripSubtitleInlineTags(rawText);
   const innerText = stripWrappingBrackets(cleanText);
+  const fullyWrapped = isFullyWrappedAuxiliaryCue(cleanText);
   const reasons: string[] = [];
   let category: AuxiliaryCueCategory = 'unknown';
   let confidence: number = AUXILIARY_CLASSIFY_SCORES.unknownBase;
   let action: AuxiliaryCueAction = 'keep_auxiliary';
 
-  if (isLyricText(rawText) || /\b(song|singing|lyrics?)\b/i.test(innerText) || /(歌词|歌声|唱歌|哼唱)/.test(innerText)) {
+  // High confidence only: lyric symbols, or music keywords inside structural brackets.
+  if (isLyricText(rawText) || (fullyWrapped && (MUSIC_KEYWORD_RE.test(innerText) || MUSIC_ZH_RE.test(innerText)))) {
     category = 'music';
     confidence = AUXILIARY_CLASSIFY_SCORES.music;
     action = 'keep_auxiliary';
     reasons.push('music-or-lyric');
   }
 
-  if (/(ON SCREEN|SCREEN TEXT|TEXT|SIGN|TITLE CARD|CAPTION|SUBTITLE|sign reads|text reads|牌匾|招牌|标识|路牌|屏幕|短信|邮件|标题|告示|字幕显示)/i.test(innerText)) {
+  // Short English tokens need word boundaries — otherwise SIGN matches "signed"/"designed",
+  // and TEXT matches "treatment"/"context", which wrongly blocks dialogue pairing.
+  if (/\b(?:ON[\s-]?SCREEN|SCREEN[\s-]?TEXT|TITLE[\s-]?CARD|CAPTION|SUBTITLE|TEXT|SIGN)\b|sign reads|text reads|牌匾|招牌|标识|路牌|屏幕|短信|邮件|标题|告示|字幕显示/i.test(innerText)) {
     category = 'screen_text';
     confidence = AUXILIARY_CLASSIFY_SCORES.screenText;
     action = 'keep_visible';
     reasons.push('screen-text');
   }
 
-  if (/\b(speaking|speaks|language|alien|robot|machine|computer|ai|voice|radio|intercom|announcer|broadcast|chatter|chirps?|responds?|whispers?|murmurs?)\b/i.test(innerText)
-    || /(外星|语言|語言|机器|機器|人工智能|广播|廣播|电台|電台|对讲机|對講機|播报|播報|说话|說話|低语|低語)/i.test(innerText)) {
+  // Speech-context keywords are structural only when bracket-gated.
+  if (
+    category === 'unknown'
+    && fullyWrapped
+    && (SPEECH_CONTEXT_EN_RE.test(innerText) || SPEECH_CONTEXT_ZH_RE.test(innerText))
+  ) {
     category = 'speech_context';
     confidence = Math.max(confidence, AUXILIARY_CLASSIFY_SCORES.speechContext);
     action = 'keep_auxiliary';
     reasons.push('semantic-speech-context');
   }
 
-  if (/(wind|rain|thunder|music|beep|beeping|door|footsteps?|steps?|creak|creaking|knock|ringing|phone|siren|engine|laughs?|laughter|applause|breathing|sighs?|groans?|crying|wind howling|风声|風聲|雨声|雨聲|雷声|雷聲|音乐|音樂|铃声|鈴聲|脚步声|腳步聲|敲门|敲門|开门|開門|关门|關門|笑声|笑聲|掌声|掌聲|呼吸|叹息|嘆息|哭声|哭聲|引擎|警笛)/i.test(innerText)) {
-    if (category === 'unknown' || category === 'music') {
-      category = /\b(music|song|singing)\b/i.test(innerText) || /(音乐|音樂|歌声|歌聲)/.test(innerText) ? 'music' : 'ambient_sdh';
-      confidence = Math.max(confidence, AUXILIARY_CLASSIFY_SCORES.ambient);
-      action = 'hide_by_default';
-      reasons.push('ambient-sound');
-    }
+  // Only 100%-confirmed sound events may become strippable ambient SDH.
+  // 「电话」keep as screen text; 「电话铃声响」/ [phone ringing] may strip.
+  if (
+    (category === 'unknown' || category === 'music')
+    && fullyWrapped
+    && isConfirmedAmbientSound(innerText)
+  ) {
+    const isMusicAmbient = /\b(?:music|song|singing)\b/i.test(innerText) || /(音乐|音樂|歌声|歌聲)/.test(innerText);
+    category = isMusicAmbient ? 'music' : 'ambient_sdh';
+    confidence = Math.max(confidence, isMusicAmbient ? AUXILIARY_CLASSIFY_SCORES.music : AUXILIARY_CLASSIFY_SCORES.ambient);
+    action = isMusicAmbient ? 'keep_auxiliary' : 'hide_by_default';
+    reasons.push('ambient-sound');
   }
 
-  if (category === 'unknown' && (/^[\[(（【].*[\])）】]$/.test(cleanText) || /^<.*>$/.test(cleanText))) {
-    confidence = AUXILIARY_CLASSIFY_SCORES.bracket;
-    action = 'keep_auxiliary';
-    reasons.push('bracket-auxiliary');
+  // All other bracketed content defaults to keep-visible screen text.
+  if (category === 'unknown' && fullyWrapped) {
+    if (TITLE_CARD_INNER_RE.test(innerText)) {
+      reasons.push('title-card-pattern');
+    } else if (/^[A-Z0-9][A-Z0-9\s.'’:&-]{0,28}$/.test(innerText) && /[A-Z]/.test(innerText)) {
+      reasons.push('sign-like-uppercase');
+    } else {
+      reasons.push('bracket-screen-text');
+    }
+    category = 'screen_text';
+    confidence = AUXILIARY_CLASSIFY_SCORES.screenText;
+    action = 'keep_visible';
   }
 
   return { category, confidence, action, reasons };
@@ -594,7 +667,13 @@ export function classifySubtitleCue(
     };
   }
 
-  return { kind: 'dialogue', confidence: 55, reasons: [], placement };
+  // Keep soft suspicions on ordinary dialogue so UI can flag them without blocking merge.
+  const dialogueAuxiliary = auxiliary.suspicion
+    || (auxiliary.category !== 'unknown' && auxiliary.reasons.length > 0)
+    ? auxiliary
+    : undefined;
+
+  return { kind: 'dialogue', confidence: 55, reasons: auxiliary.suspicion?.reasons ?? [], placement, auxiliary: dialogueAuxiliary };
 }
 
 /**
@@ -813,7 +892,16 @@ const combineAuxiliaryCue = (...items: Array<AuxiliaryCueClassification | undefi
   if (known.length === 0) return undefined;
   const priority: AuxiliaryCueCategory[] = ['screen_text', 'semantic_sdh', 'speech_context', 'unknown', 'music', 'ambient_sdh'];
   const selected = [...known].sort((a, b) => priority.indexOf(a.category) - priority.indexOf(b.category))[0];
-  return selected.category === 'unknown' && selected.confidence < 50 ? undefined : selected;
+  const suspicion = known.find(item => item.suspicion)?.suspicion
+    || known.find(item => item.category === 'ambient_sdh' || item.category === 'speech_context')?.suspicion;
+  const withSuspicion = suspicion && !selected.suspicion
+    ? { ...selected, suspicion }
+    : selected;
+  // Drop empty unknown noise, but keep suspicion-only hints for user review.
+  if (withSuspicion.category === 'unknown' && withSuspicion.confidence < 50 && !withSuspicion.suspicion) {
+    return undefined;
+  }
+  return withSuspicion;
 };
 
 interface PreprocessedRow {
@@ -1019,7 +1107,7 @@ const createSingleTrackRow = (row: PreprocessedRow, timingSource: 'primary' | 's
   text: row.text,
   type: 'dialogue',
   cueKind: row.cueKind,
-  auxiliary: row.auxiliary?.category === 'unknown' && row.auxiliary.confidence < 50 ? undefined : row.auxiliary,
+  auxiliary: combineAuxiliaryCue(row.auxiliary),
   provenance: {
     method: 'single-track' as const,
     timingSource,

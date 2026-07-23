@@ -761,10 +761,48 @@ Movimiento ocular detectado.`;
 {
   assert.equal(classifySubtitleCue('{\\an8}禁止入内').kind, 'screen_text');
   assert.equal(classifySubtitleCue('POLICE DEPARTMENT').kind, 'screen_text');
+  assert.equal(classifySubtitleCue('EXIT SIGN').kind, 'screen_text');
   assert.equal(classifySubtitleCue('我们今天去吃 KFC。').kind, 'dialogue');
   assert.equal(classifySubtitleCue('（脚步声）').kind, 'sound_caption');
   assert.equal(classifySubtitleCue('[faint beeping]').kind, 'sound_caption');
   assert.equal(classifyAuxiliaryCue('[speaking alien language]').category, 'speech_context');
+  // Substring traps: SIGN⊂signed/designed, TEXT⊂treatment — must stay dialogue.
+  assert.equal(classifySubtitleCue('and the Minister of Defense already signed off on it.').kind, 'dialogue');
+  assert.equal(classifySubtitleCue('Go over those contracts and bring them signed,').kind, 'dialogue');
+  assert.equal(classifySubtitleCue("I put it together. It's designed to work with micromachines.").kind, 'dialogue');
+  assert.equal(classifySubtitleCue('is currently residing in our country under the pretext of seeking medical treatment.').kind, 'dialogue');
+
+  // Ungated ambient/speech keywords must stay ordinary dialogue — no soft spam marks.
+  const phoneCue = classifySubtitleCue('and I collect the trash and you make the phone call?');
+  assert.equal(phoneCue.kind, 'dialogue');
+  assert.equal(phoneCue.auxiliary?.suspicion, undefined);
+  assert.equal(classifyAuxiliaryCue('and I collect the trash and you make the phone call?').category, 'unknown');
+
+  const robotCue = classifySubtitleCue("Sorry, but I'm not a robot.");
+  assert.equal(robotCue.kind, 'dialogue');
+  assert.equal(robotCue.auxiliary?.suspicion, undefined);
+
+  const brainwashCue = classifySubtitleCue("At 8 a.m., you'll be at the collection of all of those brainwashing devices.");
+  assert.equal(brainwashCue.kind, 'dialogue');
+  assert.equal(brainwashCue.auxiliary?.suspicion, undefined, 'rain⊂brainwashing must not flag');
+
+  // Bracket-gated high confidence still promotes structure.
+  assert.equal(classifyAuxiliaryCue('[phone ringing]').category, 'ambient_sdh');
+  assert.equal(classifySubtitleCue('[phone ringing]').kind, 'sound_caption');
+  assert.equal(classifySubtitleCue('（电话铃声响）').kind, 'sound_caption');
+  assert.equal(classifyAuxiliaryCue('（三个月后）').category, 'screen_text');
+  assert.equal(classifySubtitleCue('（三个月后）').kind, 'screen_text');
+
+  // Bracketed content without a more specific class → screen text (not review).
+  assert.equal(classifyAuxiliaryCue('（机密）').category, 'screen_text');
+  assert.equal(classifySubtitleCue('（机密）').kind, 'screen_text');
+  assert.equal(classifySubtitleCue('（机密）').auxiliary?.suspicion, undefined);
+  assert.equal(classifyAuxiliaryCue('（青心精工）').category, 'screen_text');
+  // 「电话」是画面标注；「电话铃声响」才是可剥离音效。
+  assert.equal(classifyAuxiliaryCue('（电话）').category, 'screen_text');
+  assert.equal(classifySubtitleCue('（电话）').kind, 'screen_text');
+  assert.equal(classifySubtitleCue('[phone]').kind, 'screen_text');
+  assert.ok(classifySubtitleCue('（电话）').auxiliary?.reasons.includes('bracket-screen-text'));
 }
 
 {

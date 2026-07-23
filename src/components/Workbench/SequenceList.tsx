@@ -270,8 +270,10 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               const enText = parts[1] || '';
               const isLyric = isLyricText(sub.text);
               const isExpandedDialogue = sub.alignment === 'expanded-dialogue';
-              const isSoundCaption = sub.cueKind === 'sound_caption' || sub.auxiliary?.category === 'ambient_sdh';
-              const isAuxiliarySemantic = sub.auxiliary?.category === 'semantic_sdh' || sub.auxiliary?.category === 'speech_context';
+              const isSoundCaption = sub.cueKind === 'sound_caption';
+              const isAuxiliarySemantic = sub.cueKind === 'narration'
+                || sub.auxiliary?.category === 'semantic_sdh'
+                || sub.auxiliary?.category === 'speech_context';
 
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
               const endTime = sub.ts.split(' --> ')[1]?.replace(',', '.').trim() || '';
