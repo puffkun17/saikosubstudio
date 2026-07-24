@@ -1130,14 +1130,14 @@ export const DragZone: React.FC = () => {
               // 快出：空态元素迅速让位，让「文件落桌」成为主角
               exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.985, transition: { duration: 0.14 } }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.24, ease: [0.16, 1, 0.3, 1] }}
-              className="flex w-full max-w-5xl flex-col items-center"
+              className="flex w-full max-w-6xl flex-col items-center"
             >
               <header className="ingest-empty-intro px-3 text-center md:px-4">
                 <p className="ingest-empty-intro__eyebrow">LOCAL SUBTITLE STUDIO</p>
-                <h2 className="ingest-empty-intro__title text-balance">
+                <h2 className="ingest-empty-intro__title">
                   完全运行于本地浏览器的字幕处理工具
                 </h2>
-                <p className="ingest-empty-intro__sub text-pretty">
+                <p className="ingest-empty-intro__sub">
                   时间戳对齐合并、字幕样式修改，模拟播放效果预览，字幕所见即所得
                 </p>
               </header>

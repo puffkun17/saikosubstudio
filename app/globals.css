@@ -919,7 +919,7 @@ body {
 
 /* 空态：价值主张 → 开始卡 → 亮点轨（顶/底/信息栏不动） */
 .ingest-empty-intro {
-  width: min(36rem, 100%);
+  width: min(48rem, 100%);
   margin: 0 auto 0.75rem;
 }
 
@@ -944,7 +944,7 @@ body {
 
 .ingest-empty-intro__sub {
   margin: 0.65rem auto 0;
-  max-width: 28rem;
+  max-width: 42rem;
   font-size: 0.9375rem;
   font-weight: 500;
   line-height: 1.65;
@@ -959,35 +959,35 @@ body {
 
 .ingest-feature-rail {
   list-style: none;
-  width: min(52rem, 100%);
+  width: 100%;
   margin: 0.35rem auto 0;
-  padding: 1.1rem 0.25rem 0.25rem;
+  padding: 1.1rem 0.5rem 0.25rem;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.85rem 1.25rem;
+  gap: 0.85rem 1.5rem;
   border-top: 1px solid color-mix(in srgb, var(--v4-line) 85%, transparent);
   pointer-events: none;
 }
 
 @media (min-width: 720px) {
   .ingest-feature-rail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem 1.75rem;
+    grid-template-columns: repeat(2, minmax(16rem, 1fr));
+    gap: 1.1rem 2rem;
     padding-top: 1.35rem;
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1180px) {
   .ingest-feature-rail {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 1rem 1.1rem;
+    grid-template-columns: repeat(4, minmax(12.5rem, 1fr));
+    gap: 1rem 1.75rem;
   }
 }
 
 .ingest-feature-rail__item {
   display: flex;
   align-items: flex-start;
-  gap: 0.7rem;
+  gap: 0.75rem;
   min-width: 0;
   text-align: left;
 }
@@ -1014,7 +1014,7 @@ body {
 
 .ingest-feature-rail__detail {
   margin: 0.2rem 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   line-height: 1.55;
   letter-spacing: 0.01em;
