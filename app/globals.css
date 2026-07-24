@@ -919,8 +919,9 @@ body {
 
 /* 空态：价值主张 → 开始卡 → 亮点轨（顶/底/信息栏不动） */
 .ingest-empty-intro {
-  width: min(56rem, 100%);
+  width: min(44rem, 100%);
   margin: 0 auto 0.75rem;
+  text-align: center;
 }
 
 .ingest-empty-intro__eyebrow {
@@ -961,7 +962,7 @@ body {
 
 .ingest-empty-intro__sub {
   margin: 0.65rem auto 0;
-  max-width: 46rem;
+  max-width: 40rem;
   font-size: 0.9375rem;
   font-weight: 500;
   line-height: 1.65;
@@ -976,44 +977,44 @@ body {
 
 .ingest-feature-rail {
   list-style: none;
-  width: 100%;
-  margin: 0.35rem auto 0;
-  padding: 1.1rem 0.5rem 0.25rem;
+  width: min(56rem, 100%);
+  margin: 0.5rem auto 0;
+  padding: 1.25rem 0.25rem 0.25rem;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.85rem 1.5rem;
+  gap: 1.1rem 1.25rem;
   border-top: 1px solid color-mix(in srgb, var(--v4-line) 85%, transparent);
   pointer-events: none;
 }
 
-@media (min-width: 720px) {
+@media (min-width: 640px) {
   .ingest-feature-rail {
-    grid-template-columns: repeat(2, minmax(16rem, 1fr));
-    gap: 1.1rem 2rem;
-    padding-top: 1.35rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem 1.5rem;
   }
 }
 
-@media (min-width: 1180px) {
+@media (min-width: 1024px) {
   .ingest-feature-rail {
-    grid-template-columns: repeat(4, minmax(12.5rem, 1fr));
-    gap: 1rem 1.75rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem 1.25rem;
   }
 }
 
 .ingest-feature-rail__item {
   display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
   min-width: 0;
-  text-align: left;
+  text-align: center;
 }
 
 .ingest-feature-rail__icon {
   display: grid;
   place-items: center;
-  width: 1.85rem;
-  height: 1.85rem;
+  width: 2rem;
+  height: 2rem;
   flex-shrink: 0;
   border-radius: 0.55rem;
   color: var(--v4-accent-strong);
@@ -1022,7 +1023,7 @@ body {
 }
 
 .ingest-feature-rail__title {
-  margin: 0;
+  margin: 0.15rem 0 0;
   font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: 0.01em;
@@ -1030,10 +1031,11 @@ body {
 }
 
 .ingest-feature-rail__detail {
-  margin: 0.2rem 0 0;
+  margin: 0;
+  max-width: 11.5rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  line-height: 1.55;
+  line-height: 1.5;
   letter-spacing: 0.01em;
   color: var(--v4-text-muted);
 }

@@ -1140,7 +1140,7 @@ export const DragZone: React.FC = () => {
                   字幕处理工具
                 </h2>
                 <p className="ingest-empty-intro__sub">
-                  时间戳对齐合并、字幕样式修改，模拟播放效果预览，字幕所见即所得
+                  时间戳对齐合并 · 字幕样式修改 · 模拟播放预览 · 所见即所得
                 </p>
               </header>
 
@@ -1189,7 +1189,7 @@ export const DragZone: React.FC = () => {
                   <button
                     type="button"
                     onClick={(event) => { event.stopPropagation(); fileInputRef.current?.click(); }}
-                    className="v4-focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-[var(--v5-radius-panel)] bg-[var(--v4-accent)] px-9 text-sm font-bold text-[var(--v4-accent-ink)] shadow-[0_8px_24px_rgba(239,141,95,0.25)] transition-[filter,transform,background-color] duration-[var(--v4-dur-fast)] hover:brightness-105 hover:-translate-y-0.5"
+                    className="v4-focus-ring inline-flex h-12 min-w-[8.5rem] items-center justify-center gap-2 rounded-[var(--v5-radius-panel)] bg-[var(--v4-accent)] px-7 text-sm font-bold text-[var(--v4-accent-ink)] shadow-[0_8px_24px_rgba(239,141,95,0.25)] transition-[filter,transform,background-color] duration-[var(--v4-dur-fast)] hover:brightness-105 hover:-translate-y-0.5"
                   >
                     <FilePlus className="h-[18px] w-[18px] shrink-0 stroke-[2.25]" aria-hidden="true" />
                     选择字幕
@@ -1197,7 +1197,7 @@ export const DragZone: React.FC = () => {
                   <button
                     type="button"
                     onClick={(event) => { event.stopPropagation(); folderInputRef.current?.click(); }}
-                    className="v4-focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-[var(--v5-radius-panel)] border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)]/70 px-5 text-sm font-semibold text-[var(--v4-text-muted)] transition-colors duration-[var(--v4-dur-fast)] hover:bg-[var(--v4-panel-raised)] hover:text-[var(--v4-text)]"
+                    className="v4-focus-ring inline-flex h-12 min-w-[8.5rem] items-center justify-center gap-2 rounded-[var(--v5-radius-panel)] border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)]/70 px-7 text-sm font-semibold text-[var(--v4-text-muted)] transition-colors duration-[var(--v4-dur-fast)] hover:bg-[var(--v4-panel-raised)] hover:text-[var(--v4-text)]"
                   >
                     <FolderPlus className="h-[18px] w-[18px] shrink-0 stroke-[2]" aria-hidden="true" />
                     文件夹
@@ -1212,23 +1212,23 @@ export const DragZone: React.FC = () => {
                 {([
                   {
                     icon: ShieldCheck,
-                    title: '完全本地处理',
-                    detail: '坚守数据隐私可控，秉持本地处理原则',
+                    title: '本地处理',
+                    detail: '文件不上传，隐私可控',
                   },
                   {
                     icon: Layers2,
                     title: '多轨整理',
-                    detail: '提示差异，详情标注，便于核对',
+                    detail: '差异提示，便于核对',
                   },
                   {
                     icon: Palette,
-                    title: '样式工作台',
-                    detail: '字体、位置与样式细节自定义',
+                    title: '样式定制',
+                    detail: '字体位置，自由调整',
                   },
                   {
                     icon: Clapperboard,
                     title: '影院预览',
-                    detail: '逼真模拟实际播放效果，所见即所得',
+                    detail: '模拟播放，所见即所得',
                   },
                 ] as const).map((feature, index) => {
                   const Icon = feature.icon;
@@ -1247,10 +1247,8 @@ export const DragZone: React.FC = () => {
                       <span className="ingest-feature-rail__icon" aria-hidden="true">
                         <Icon className="h-4 w-4" strokeWidth={2.1} />
                       </span>
-                      <div className="min-w-0">
-                        <p className="ingest-feature-rail__title">{feature.title}</p>
-                        <p className="ingest-feature-rail__detail">{feature.detail}</p>
-                      </div>
+                      <p className="ingest-feature-rail__title">{feature.title}</p>
+                      <p className="ingest-feature-rail__detail">{feature.detail}</p>
                     </motion.li>
                   );
                 })}
