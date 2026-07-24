@@ -917,6 +917,123 @@ body {
   color: var(--v4-text-muted);
 }
 
+/* 空态：价值主张 → 开始卡 → 亮点轨（顶/底/信息栏不动） */
+.ingest-empty-intro {
+  width: min(36rem, 100%);
+  margin: 0 auto 0.75rem;
+}
+
+.ingest-empty-intro__eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--v4-accent-strong);
+}
+
+.ingest-empty-intro__title {
+  margin: 0.55rem 0 0;
+  font-family: var(--font-serif);
+  font-size: clamp(1.55rem, 3.2vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--v4-text);
+}
+
+.ingest-empty-intro__sub {
+  margin: 0.65rem auto 0;
+  max-width: 28rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
+  color: var(--v4-text-muted);
+}
+
+.ingest-stage.is-empty .ingest-start-card {
+  padding-top: 1.75rem;
+  padding-bottom: 1.75rem;
+}
+
+.ingest-feature-rail {
+  list-style: none;
+  width: min(52rem, 100%);
+  margin: 0.35rem auto 0;
+  padding: 1.1rem 0.25rem 0.25rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem 1.25rem;
+  border-top: 1px solid color-mix(in srgb, var(--v4-line) 85%, transparent);
+  pointer-events: none;
+}
+
+@media (min-width: 720px) {
+  .ingest-feature-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 1.75rem;
+    padding-top: 1.35rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .ingest-feature-rail {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem 1.1rem;
+  }
+}
+
+.ingest-feature-rail__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  min-width: 0;
+  text-align: left;
+}
+
+.ingest-feature-rail__icon {
+  display: grid;
+  place-items: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  flex-shrink: 0;
+  border-radius: 0.55rem;
+  color: var(--v4-accent-strong);
+  background: color-mix(in srgb, var(--v4-accent-soft) 70%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v4-accent) 16%, transparent);
+}
+
+.ingest-feature-rail__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--v4-text);
+}
+
+.ingest-feature-rail__detail {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  color: var(--v4-text-muted);
+}
+
+.ingest-stage.is-dragging .ingest-empty-intro,
+.ingest-stage.is-dragging .ingest-feature-rail {
+  opacity: 0.42;
+  transition: opacity var(--v4-dur-fast) var(--v4-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ingest-stage.is-dragging .ingest-empty-intro,
+  .ingest-stage.is-dragging .ingest-feature-rail {
+    transition: none;
+  }
+}
+
 /* Blank fields on cream panels — white rest, orange focus ring, no cream fill. */
 .rd-field {
   border: 1px solid var(--v4-line);
@@ -1304,6 +1421,29 @@ body {
 
   .ingest-drop-stage {
     min-height: 220px;
+  }
+
+  .ingest-empty-intro {
+    margin-bottom: 0.35rem;
+  }
+
+  .ingest-empty-intro__title {
+    font-size: clamp(1.35rem, 2.8vw, 1.7rem);
+  }
+
+  .ingest-empty-intro__sub {
+    margin-top: 0.4rem;
+    font-size: 0.875rem;
+  }
+
+  .ingest-stage.is-empty .ingest-start-card {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .ingest-feature-rail {
+    padding-top: 0.85rem;
+    gap: 0.65rem 1rem;
   }
 
 }

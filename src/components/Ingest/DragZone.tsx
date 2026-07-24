@@ -5,7 +5,19 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
 import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
-import { ChevronDown, FilePlus, FolderPlus, HardDrive, Plus, Trash2, X } from 'lucide-react';
+import {
+  ChevronDown,
+  Clapperboard,
+  FilePlus,
+  FolderPlus,
+  HardDrive,
+  Layers2,
+  Palette,
+  Plus,
+  ShieldCheck,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { CLIENT_IMPORT_LIMITS, getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
 import {
@@ -1105,7 +1117,7 @@ export const DragZone: React.FC = () => {
       onDrop={handleDrop}
     >
       <div
-        className={`ingest-stage relative z-10 select-none px-3 py-6 md:px-4 md:py-8 ${
+        className={`ingest-stage relative z-10 select-none px-3 py-4 md:px-4 md:py-6 ${
           queuedItems.length > 0 ? 'has-queue' : 'is-empty'
         } ${isDragging ? 'is-dragging' : ''} ${isAccepting ? 'is-accepting' : ''}`}
       >
@@ -1118,8 +1130,18 @@ export const DragZone: React.FC = () => {
               // 快出：空态元素迅速让位，让「文件落桌」成为主角
               exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.985, transition: { duration: 0.14 } }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.24, ease: [0.16, 1, 0.3, 1] }}
-              className="flex w-full justify-center"
+              className="flex w-full max-w-5xl flex-col items-center"
             >
+              <header className="ingest-empty-intro px-3 text-center md:px-4">
+                <p className="ingest-empty-intro__eyebrow">LOCAL SUBTITLE STUDIO</p>
+                <h2 className="ingest-empty-intro__title text-balance">
+                  完全运行于本地浏览器的字幕处理工具
+                </h2>
+                <p className="ingest-empty-intro__sub text-pretty">
+                  时间戳对齐合并、字幕样式修改，模拟播放效果预览，字幕所见即所得
+                </p>
+              </header>
+
               {/* 整卡即落点：点击任意处开文件选择，拖入高亮吸附 */}
               <div
                 className="ingest-start-card"
@@ -1180,9 +1202,57 @@ export const DragZone: React.FC = () => {
                   </button>
                 </div>
                 <p className="ingest-start-card__hint">
-                  支持 SRT / ASS 字幕，以及 ZIP / RAR / 7Z 字幕包
+                  支持 SRT / ASS 字幕，以及 ZIP / RAR / 7Z 压缩格式
                 </p>
               </div>
+
+              <ul className="ingest-feature-rail" aria-label="产品亮点">
+                {([
+                  {
+                    icon: ShieldCheck,
+                    title: '完全本地处理',
+                    detail: '坚守数据隐私可控，秉持本地处理原则',
+                  },
+                  {
+                    icon: Layers2,
+                    title: '多轨整理',
+                    detail: '提示差异，详情标注，便于核对',
+                  },
+                  {
+                    icon: Palette,
+                    title: '样式工作台',
+                    detail: '字体、位置与样式细节自定义',
+                  },
+                  {
+                    icon: Clapperboard,
+                    title: '影院预览',
+                    detail: '逼真模拟实际播放效果，所见即所得',
+                  },
+                ] as const).map((feature, index) => {
+                  const Icon = feature.icon;
+                  return (
+                    <motion.li
+                      key={feature.title}
+                      className="ingest-feature-rail__item"
+                      initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: shouldReduceMotion ? 0 : 0.34,
+                        delay: shouldReduceMotion ? 0 : 0.18 + index * 0.05,
+                        ease: [0.16, 1, 0.3, 1],
+                      }}
+                    >
+                      <span className="ingest-feature-rail__icon" aria-hidden="true">
+                        <Icon className="h-4 w-4" strokeWidth={2.1} />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="ingest-feature-rail__title">{feature.title}</p>
+                        <p className="ingest-feature-rail__detail">{feature.detail}</p>
+                      </div>
+                    </motion.li>
+                  );
+                })}
+              </ul>
             </motion.div>
           ) : (
             <motion.div
