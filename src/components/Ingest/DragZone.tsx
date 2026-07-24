@@ -1135,7 +1135,9 @@ export const DragZone: React.FC = () => {
               <header className="ingest-empty-intro px-3 text-center md:px-4">
                 <p className="ingest-empty-intro__eyebrow">LOCAL SUBTITLE STUDIO</p>
                 <h2 className="ingest-empty-intro__title">
-                  完全运行于本地浏览器的字幕处理工具
+                  完全运行于本地浏览器的
+                  <br className="ingest-empty-intro__break" />
+                  字幕处理工具
                 </h2>
                 <p className="ingest-empty-intro__sub">
                   时间戳对齐合并、字幕样式修改，模拟播放效果预览，字幕所见即所得

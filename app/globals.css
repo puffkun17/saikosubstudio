@@ -919,7 +919,7 @@ body {
 
 /* 空态：价值主张 → 开始卡 → 亮点轨（顶/底/信息栏不动） */
 .ingest-empty-intro {
-  width: min(48rem, 100%);
+  width: min(56rem, 100%);
   margin: 0 auto 0.75rem;
 }
 
@@ -935,16 +935,33 @@ body {
 .ingest-empty-intro__title {
   margin: 0.55rem 0 0;
   font-family: var(--font-serif);
-  font-size: clamp(1.55rem, 3.2vw, 2rem);
+  font-size: clamp(1.45rem, 2.8vw, 1.9rem);
   font-weight: 700;
   letter-spacing: -0.02em;
-  line-height: 1.25;
+  line-height: 1.3;
   color: var(--v4-text);
+}
+
+/* 宽屏单行；窄屏按语义断在「浏览器的 / 字幕处理工具」 */
+.ingest-empty-intro__break {
+  display: none;
+}
+
+@media (max-width: 719px) {
+  .ingest-empty-intro__break {
+    display: block;
+  }
+}
+
+@media (min-width: 720px) {
+  .ingest-empty-intro__title {
+    white-space: nowrap;
+  }
 }
 
 .ingest-empty-intro__sub {
   margin: 0.65rem auto 0;
-  max-width: 42rem;
+  max-width: 46rem;
   font-size: 0.9375rem;
   font-weight: 500;
   line-height: 1.65;
@@ -1428,7 +1445,7 @@ body {
   }
 
   .ingest-empty-intro__title {
-    font-size: clamp(1.35rem, 2.8vw, 1.7rem);
+    font-size: clamp(1.3rem, 2.6vw, 1.65rem);
   }
 
   .ingest-empty-intro__sub {
