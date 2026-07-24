@@ -571,7 +571,7 @@ export const StyleSidebar: React.FC = () => {
             </div>
             {auxiliaryCount > 0 && (
               <p className="text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
-                检测到 {auxiliaryCount} 条辅助内容（画面文字 {screenTextCount} 条倾向保留；仅高置信音效可被智能精简剥离约 {smartHiddenCount} 条）。可在「字幕检查」查看判定依据并定位。
+                检测到 {auxiliaryCount} 条辅助内容（画面文字 {screenTextCount} 条倾向保留；仅高置信音效可被智能精简剥离约 {smartHiddenCount} 条）。可在「字幕检查」分布图与详细内容中查看。
               </p>
             )}
           </div>

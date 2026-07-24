@@ -1,13 +1,70 @@
 'use client';
 
 import React, { useMemo, useRef, useState } from 'react';
-import { Activity, AlertTriangle, CheckCircle2, HardDrive, MonitorPlay, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, HardDrive, MonitorPlay, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { SubRow } from '@/utils/subtitleCore';
 import { createSourceMatchReport, type SourceMatchFinding, type SourceMatchReport } from '@/utils/timeline/sourceMatch';
+import { analyzeAlignmentDiff } from '@/utils/timeline/alignmentDiff';
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { useStudioStore } from '@/store/useStudioStore';
+
+export type InspectionMarkFilter = 'all' | 'structure' | 'screen-text' | 'sound-caption';
+
+export type InspectionMarkKind = 'structure' | 'screen' | 'sound';
+
+export type InspectionMark = {
+  position: number;
+  kind: InspectionMarkKind;
+  arrayIndex: number;
+  rowIndex: number;
+};
+
+const MARK_COLOR: Record<InspectionMarkKind, string> = {
+  structure: '#c45b55',
+  screen: '#3b82f6',
+  sound: '#c4893a',
+};
+
+const MARK_LABEL: Record<InspectionMarkKind, string> = {
+  structure: '结构差异',
+  screen: '画面文字',
+  sound: '声音说明',
+};
+
+const MARK_LANE_TOP: Record<InspectionMarkKind, string> = {
+  structure: '7px',
+  screen: '17px',
+  sound: '27px',
+};
+
+type MarkCluster = {
+  id: string;
+  position: number;
+  kind: InspectionMarkKind;
+  marks: InspectionMark[];
+};
+
+const clusterMarks = (marks: InspectionMark[], threshold = 0.01): MarkCluster[] => {
+  const sorted = [...marks].sort((a, b) => a.kind.localeCompare(b.kind) || a.position - b.position);
+  const clusters: MarkCluster[] = [];
+  for (const mark of sorted) {
+    const last = clusters[clusters.length - 1];
+    if (last && last.kind === mark.kind && Math.abs(last.position - mark.position) <= threshold) {
+      last.marks.push(mark);
+      last.position = last.marks.reduce((sum, item) => sum + item.position, 0) / last.marks.length;
+    } else {
+      clusters.push({
+        id: `${mark.kind}-${mark.rowIndex}-${mark.position.toFixed(4)}`,
+        position: mark.position,
+        kind: mark.kind,
+        marks: [mark],
+      });
+    }
+  }
+  return clusters.sort((a, b) => a.position - b.position);
+};
 
 const GRADE_META: Record<SourceMatchReport['grade'], { label: string; tone: string }> = {
   matched: { label: '跨度接近', tone: 'text-[var(--v4-text)]' },
@@ -25,7 +82,6 @@ const severityClass: Record<SourceMatchFinding['severity'], string> = {
 
 const getChartPath = (values: number[], width: number, height: number, offset = 0) => {
   if (values.length === 0) return '';
-  // 与跨度条共用 0→1 时间比例：每个 bin 中心映射到横轴，避免「波形看起来缩进、跨度条另算」
   const binCount = values.length;
   return values.map((value, index) => {
     const x = ((index + 0.5) / binCount) * width;
@@ -47,14 +103,46 @@ const FindingIcon = ({ severity }: { severity: SourceMatchFinding['severity'] })
 
 const formatCount = (value: number) => new Intl.NumberFormat('zh-CN').format(value);
 
+export function buildInspectionMarks(rows: SubRow[], basisDurationMs: number): InspectionMark[] {
+  const marks: InspectionMark[] = [];
+  const seen = new Set<string>();
+  const push = (kind: InspectionMarkKind, arrayIndex: number, rowIndex: number, startMs: number) => {
+    const position = Math.min(1, Math.max(0, startMs / Math.max(basisDurationMs, 1)));
+    const key = `${kind}:${Math.round(position * 200)}:${rowIndex}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    marks.push({ position, kind, arrayIndex, rowIndex });
+  };
+
+  rows.forEach((row, arrayIndex) => {
+    const startMs = parseSubtitleRange(row.ts).startMs;
+    if (row.cueKind === 'sound_caption' || row.auxiliary?.category === 'ambient_sdh' || row.auxiliary?.category === 'music') {
+      push('sound', arrayIndex, row.index, startMs);
+    } else if (row.cueKind === 'screen_text' || row.auxiliary?.category === 'screen_text') {
+      push('screen', arrayIndex, row.index, startMs);
+    }
+  });
+
+  const alignment = analyzeAlignmentDiff(rows);
+  for (const entry of alignment.entries) {
+    const rowIndex = entry.rowIndexes[0];
+    const arrayIndex = Math.max(0, rowIndex - 1);
+    push('structure', arrayIndex, rowIndex, entry.startMs);
+  }
+
+  return marks.sort((a, b) => a.position - b.position);
+}
+
 interface SourceMatchPanelProps {
   rows: SubRow[];
   onTimelineDurationChange?: (durationMs: number | undefined) => void;
+  markFilter?: InspectionMarkFilter;
 }
 
 export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
   rows,
   onTimelineDurationChange,
+  markFilter = 'all',
 }) => {
   const previewIndex = useStudioStore(state => state.previewIndex);
   const setPreviewIndex = useStudioStore(state => state.setPreviewIndex);
@@ -71,10 +159,6 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
     [rows, videoDurationMs]
   );
 
-  const chartWidth = 620;
-  const chartHeight = 142;
-  const subtitlePath = getChartPath(report.activityCurve, chartWidth, chartHeight);
-  const subtitleArea = buildAreaPath(subtitlePath, chartWidth, chartHeight);
   const timelineDurationMs = Math.max(report.videoDurationMs || 0, report.subtitleEndMs, 1);
   const coverageStart = Math.max(0, Math.min(1, report.subtitleStartMs / timelineDurationMs));
   const coverageEnd = Math.max(0, Math.min(1, report.subtitleEndMs / timelineDurationMs));
@@ -84,9 +168,34 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
   const activeRow = rows[Math.max(0, Math.min(previewIndex, rows.length - 1))];
   const activeTimeMs = activeRow ? parseSubtitleRange(activeRow.ts).startMs : 0;
   const activePosition = Math.max(0, Math.min(1, activeTimeMs / timelineDurationMs));
-  const activeX = activePosition * chartWidth;
   const meta = GRADE_META[report.grade];
   const isMatchMode = report.mode === 'match';
+
+  const chartWidth = 640;
+  const chartHeight = 72;
+  const subtitlePath = getChartPath(report.activityCurve, chartWidth, chartHeight, 0);
+  const subtitleArea = buildAreaPath(subtitlePath, chartWidth, chartHeight);
+
+  const inspectionMarks = useMemo(
+    () => buildInspectionMarks(rows, timelineDurationMs),
+    [rows, timelineDurationMs],
+  );
+
+  const visibleMarks = useMemo(() => {
+    if (markFilter === 'all') return inspectionMarks;
+    if (markFilter === 'structure') return inspectionMarks.filter(m => m.kind === 'structure');
+    if (markFilter === 'screen-text') return inspectionMarks.filter(m => m.kind === 'screen');
+    return inspectionMarks.filter(m => m.kind === 'sound');
+  }, [inspectionMarks, markFilter]);
+
+  const visibleClusters = useMemo(() => clusterMarks(visibleMarks), [visibleMarks]);
+  const dimClusters = useMemo(() => {
+    if (markFilter === 'all') return [] as MarkCluster[];
+    const visibleKeys = new Set(visibleMarks.map(m => `${m.kind}:${m.rowIndex}`));
+    const hidden = inspectionMarks.filter(m => !visibleKeys.has(`${m.kind}:${m.rowIndex}`));
+    return clusterMarks(hidden);
+  }, [inspectionMarks, markFilter, visibleMarks]);
+
   const timelinePoints = useMemo(() => rows
     .map((row, arrayIndex) => ({
       arrayIndex,
@@ -114,15 +223,11 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
     if (nearest.arrayIndex >= 100 && !showAllSubs) setShowAllSubs(true);
   };
 
-  const jumpToSpecialMark = (mark: SourceMatchReport['specialMarks'][number]) => {
+  const jumpToMark = (mark: InspectionMark) => {
     setPreviewIndex(mark.arrayIndex);
     setJumpLineVal(String(mark.rowIndex));
     if (mark.arrayIndex >= 100 && !showAllSubs) setShowAllSubs(true);
   };
-
-  const markKindLabel = (kind: SourceMatchReport['specialMarks'][number]['kind']) => (
-    kind === 'sound' ? '声音说明' : kind === 'screen' ? '画面文字' : '辅助字幕'
-  );
 
   const handleVideoFile = (file: File | undefined) => {
     if (!file) return;
@@ -149,319 +254,238 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
   };
 
   return (
-    <section className="w-full overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)]">
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] gap-0">
-        <div className="border-b xl:border-b-0 xl:border-r border-[var(--v4-line)] px-5 py-4 md:px-6 md:py-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 text-sm font-semibold tracking-normal text-[var(--v4-text)]">
-                <Activity className="h-4 w-4 text-[var(--v4-accent-strong)]" />
-                {isMatchMode ? '片源时长参照' : '字幕概览'}
-              </div>
-              <p className="mt-1 max-w-[28ch] text-xs leading-5 text-[var(--v4-text-muted)]">
-                {isMatchMode ? '已读取片源时长，用于检查字幕覆盖范围。' : '先确认字幕规模与分布，再加入本地片源检查时长覆盖。'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className="ui-action shrink-0"
+    <section className="w-full overflow-hidden rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel)]">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3 md:px-5">
+        <div className="min-w-0">
+          <div className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--v4-text)]">
+            {isMatchMode ? '片源覆盖分布' : '字幕时间分布'}
+            <InfoHint label="字幕分布图说明">
+              上方曲线表示字幕疏密；下方三层色点分别是结构差异、画面文字、声音说明。靠近的同色点会合并且标数量，点击可定位。
+            </InfoHint>
+          </div>
+          <div className="mt-0.5 text-xs text-[var(--v4-text-faint)]">
+            {report.stats.distributionLabel} · {formatCount(report.stats.lineCount)} 行
+            {isMatchMode ? ` · ${meta.label}` : ''}
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-3 text-[11px] text-[var(--v4-text-faint)] sm:flex">
+            {([
+              ['structure', '结构'],
+              ['screen', '画面'],
+              ['sound', '声音'],
+            ] as const).map(([kind, label]) => (
+              <span key={kind} className="inline-flex items-center gap-1.5">
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ background: MARK_COLOR[kind] }}
+                />
+                {label}
+              </span>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="ui-action ui-action--secondary shrink-0"
+          >
+            <MonitorPlay className="h-3.5 w-3.5" />
+            {isMatchMode ? '更换片源' : '加入片源'}
+          </button>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="video/*,.mkv"
+            className="hidden"
+            onChange={(event) => handleVideoFile(event.target.files?.[0])}
+          />
+        </div>
+      </div>
+
+      <div className="px-4 pb-3 pt-2 md:px-5 md:pb-4">
+        <div className="relative overflow-hidden rounded-lg bg-[color-mix(in_srgb,var(--v4-panel-muted)_70%,transparent)] ring-1 ring-[var(--v4-line)]">
+          {/* Density curve — marks live in HTML lane below to avoid SVG stretch */}
+          <div className="relative px-3 pt-3">
+            <svg
+              viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+              preserveAspectRatio="none"
+              role="img"
+              aria-label="字幕密度曲线"
+              className="h-14 w-full"
             >
-              <MonitorPlay className="h-3.5 w-3.5" />
-              {isMatchMode ? '更换片源' : '加入片源'}
-            </button>
+              <defs>
+                <linearGradient id="densityFill" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor="#c4893a" stopOpacity="0.22" />
+                  <stop offset="100%" stopColor="#c4893a" stopOpacity="0.02" />
+                </linearGradient>
+              </defs>
+              {[0.25, 0.5, 0.75].map(tick => (
+                <line
+                  key={tick}
+                  x1={tick * chartWidth}
+                  x2={tick * chartWidth}
+                  y1="0"
+                  y2={chartHeight}
+                  stroke="var(--v4-line)"
+                  strokeOpacity="0.55"
+                />
+              ))}
+              <rect
+                x={coverageStart * chartWidth}
+                y="0"
+                width={Math.max(1, (coverageEnd - coverageStart) * chartWidth)}
+                height={chartHeight}
+                fill="var(--v4-accent)"
+                opacity="0.05"
+              />
+              <path d={subtitleArea} fill="url(#densityFill)" />
+              <motion.path
+                d={subtitlePath}
+                fill="none"
+                stroke="#c4893a"
+                strokeOpacity="0.55"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+              />
+              {videoEnd !== undefined && videoEnd < 0.999 && (
+                <line
+                  x1={videoEnd * chartWidth}
+                  x2={videoEnd * chartWidth}
+                  y1="4"
+                  y2={chartHeight - 2}
+                  stroke="var(--v4-warning)"
+                  strokeOpacity="0.55"
+                  strokeWidth="1"
+                  strokeDasharray="3 4"
+                  vectorEffect="non-scaling-stroke"
+                />
+              )}
+            </svg>
+
             <input
-              ref={inputRef}
-              type="file"
-              accept="video/*,.mkv"
-              className="hidden"
-              onChange={(event) => handleVideoFile(event.target.files?.[0])}
+              type="range"
+              min="0"
+              max={timelineDurationMs}
+              step="100"
+              value={activeTimeMs}
+              onChange={event => selectTimelineTime(Number(event.target.value))}
+              className="absolute inset-0 z-10 h-full w-full cursor-ew-resize opacity-0"
+              aria-label="在字幕分布图中定位时间"
             />
           </div>
 
-          {isMatchMode ? (
-            <div className="mt-5 flex items-end justify-between gap-4 border-y border-[var(--v4-line)] py-4">
-              <div>
-                <motion.div
-                  key={report.coverageRatio}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`text-[2rem] leading-none font-semibold ${meta.tone}`}
+          {/* Three-lane mark rail — circular dots stay circular */}
+          <div className="relative mx-3 mb-1.5 h-9">
+            <div className="pointer-events-none absolute inset-x-0 top-[7px] h-px bg-[var(--v4-line)]/70" />
+            <div className="pointer-events-none absolute inset-x-0 top-[17px] h-px bg-[var(--v4-line)]/70" />
+            <div className="pointer-events-none absolute inset-x-0 top-[27px] h-px bg-[var(--v4-line)]/70" />
+
+            {dimClusters.map(cluster => (
+              <span
+                key={`dim-${cluster.id}`}
+                className="absolute h-1.5 w-1.5 -translate-x-1/2 rounded-full opacity-25"
+                style={{
+                  left: `${cluster.position * 100}%`,
+                  top: MARK_LANE_TOP[cluster.kind],
+                  background: MARK_COLOR[cluster.kind],
+                }}
+              />
+            ))}
+
+            {visibleClusters.map(cluster => {
+              const primary = cluster.marks[0];
+              const count = cluster.marks.length;
+              return (
+                <button
+                  key={cluster.id}
+                  type="button"
+                  className="group absolute z-20 flex h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-[var(--v4-accent)]"
+                  style={{
+                    left: `${cluster.position * 100}%`,
+                    top: MARK_LANE_TOP[cluster.kind],
+                  }}
+                  title={
+                    count > 1
+                      ? `${MARK_LABEL[cluster.kind]} ×${count}（点击定位首条 · 第 ${primary.rowIndex} 行）`
+                      : `${MARK_LABEL[cluster.kind]} · 第 ${primary.rowIndex} 行`
+                  }
+                  aria-label={`${MARK_LABEL[cluster.kind]}，第 ${primary.rowIndex} 行`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    jumpToMark(primary);
+                  }}
                 >
-                  {report.coverageRatio ? `${Math.round(report.coverageRatio * 100)}%` : '--'}
-                </motion.div>
-                <div className="mt-1 inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-[0.12em] text-[var(--v4-text-faint)]">
-                  字幕跨度占比
-                  <InfoHint label="时间覆盖说明">
-                    这里只比较字幕起止范围与片源总时长，不读取音频，也不代表对白已经合轴。
-                  </InfoHint>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className={`text-sm font-semibold ${meta.tone}`}>{meta.label}</div>
-                <div className="mt-1 text-xs font-medium text-[var(--v4-text-muted)]">依据：时长与字幕时间轴</div>
-              </div>
-            </div>
-          ) : (
-            <dl className="mt-5 grid grid-cols-3 gap-0 overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]">
-              <div className="min-w-0 px-3 py-3">
-                <dt className="whitespace-nowrap text-xs font-medium text-[var(--v4-text-muted)]">文本量</dt>
-                <dd className="mt-1.5 whitespace-nowrap text-lg leading-none font-semibold tabular-nums text-[var(--v4-text)]">{formatCount(report.stats.characterCount)}</dd>
-              </div>
-              <div className="min-w-0 border-l border-[var(--v4-line)] px-3 py-3">
-                <dt className="whitespace-nowrap text-xs font-medium text-[var(--v4-text-muted)]">时间跨度</dt>
-                <dd className="mt-1.5 whitespace-nowrap text-lg leading-none font-semibold tabular-nums text-[var(--v4-text)]">{formatMsClock(report.stats.spanMs)}</dd>
-              </div>
-              <div className="min-w-0 border-l border-[var(--v4-line)] px-3 py-3">
-                <dt className="inline-flex items-center gap-1 whitespace-nowrap text-xs text-[var(--v4-text-faint)]">
-                  字幕密度
-                  <InfoHint label="字幕密度说明">
-                    每分钟字幕行数，用于观察字幕分布是否异常。声音说明、歌词和画面文字也会影响这个指标。
-                  </InfoHint>
-                </dt>
-                <dd className="mt-1.5 whitespace-nowrap text-lg leading-none font-semibold tabular-nums text-[var(--v4-accent-strong)]">{report.stats.densityPerMinute}</dd>
-              </div>
-            </dl>
-          )}
-
-          <div className="mt-4">
-            <div className="text-sm font-semibold tracking-normal text-[var(--v4-text)]">{report.title}</div>
-            <p className="mt-1.5 max-w-[36ch] text-xs leading-5 text-[var(--v4-text-muted)]">{report.summary}</p>
-          </div>
-
-          <div className="mt-4 flex items-center gap-2 text-xs text-[var(--v4-text-faint)]">
-            <HardDrive className="h-3.5 w-3.5 shrink-0 text-[var(--v4-text-faint)]" />
-            <span className="min-w-0 truncate">
-              {videoName ? `${videoName}${videoDurationMs ? ` · ${formatMsClock(videoDurationMs)}` : ''}` : '本地读取元数据，不上传文件'}
-            </span>
-          </div>
-          {metadataError && <div className="mt-2 text-xs text-[var(--v4-warning)]">{metadataError}</div>}
-        </div>
-
-        <div className="px-5 py-4 md:px-6 md:py-5 min-w-0">
-          <figure className="overflow-visible">
-            <figcaption className="flex items-start justify-between gap-3 pb-2 text-xs text-[var(--v4-text-faint)]">
-              <div>
-                <div className="text-xs font-medium text-[var(--v4-text-muted)] inline-flex items-center gap-1.5">
-                  {isMatchMode ? '统一时间轴上的字幕分布' : '字幕时间分布'}
-                  <InfoHint label="字幕分布图说明">
-                    曲线、跨度条和下方时间线共用同一时间刻度。加入片源后，较长的一方决定横轴终点，避免隐藏字幕越界。
-                  </InfoHint>
-                </div>
-                <div className="mt-0.5 text-xs text-[var(--v4-text-faint)]">{report.stats.distributionLabel} · {formatCount(report.stats.lineCount)} 行</div>
-              </div>
-              <span className="shrink-0 tabular-nums">{report.stats.densityPerMinute} 行/分钟</span>
-            </figcaption>
-            <div className="relative">
-              <div className="relative">
-                <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none" role="img" aria-label={isMatchMode ? '片源覆盖与字幕活动图' : '字幕时间分布图'} className="h-[142px] w-full overflow-visible">
-                  <defs>
-                    <linearGradient id="subtitleArea" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0%" stopColor="var(--v4-accent)" stopOpacity="0.24" />
-                      <stop offset="100%" stopColor="var(--v4-accent)" stopOpacity="0.015" />
-                    </linearGradient>
-                  </defs>
-                  {Array.from({ length: 7 }).map((_, index) => (
-                    <line
-                      key={index}
-                      x1={(chartWidth / 6) * index}
-                      x2={(chartWidth / 6) * index}
-                      y1="12"
-                      y2={chartHeight - 8}
-                      stroke="var(--v4-line)"
-                      strokeWidth="1"
-                    />
-                  ))}
-                  {/* 字幕跨度区间：与下方跨度条同一比例 */}
-                  <rect
-                    x={coverageStart * chartWidth}
-                    y="12"
-                    width={Math.max(1, (coverageEnd - coverageStart) * chartWidth)}
-                    height={chartHeight - 20}
-                    fill="var(--v4-accent)"
-                    opacity="0.04"
+                  <span
+                    className="block h-2 w-2 rounded-full shadow-[0_0_0_2px_color-mix(in_srgb,var(--v4-panel-muted)_85%,white)] transition-transform group-hover:scale-125"
+                    style={{ background: MARK_COLOR[cluster.kind] }}
                   />
-                  <path d={subtitleArea} fill="url(#subtitleArea)" />
-                  <motion.path
-                    d={subtitlePath}
-                    fill="none"
-                    stroke="var(--v4-accent)"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ duration: 1.05, ease: 'easeOut', delay: 0.08 }}
-                  />
-                  {report.specialMarks.map((mark, index) => (
-                    <line
-                      key={`mark-${index}`}
-                      x1={mark.position * chartWidth}
-                      x2={mark.position * chartWidth}
-                      y1={chartHeight - 22}
-                      y2={chartHeight - 6}
-                      stroke={mark.kind === 'sound' ? 'var(--v4-warning)' : 'var(--v4-text-faint)'}
-                      strokeWidth="2"
-                      strokeOpacity="0.9"
-                      pointerEvents="none"
-                    />
-                  ))}
-                  {videoEnd !== undefined && videoEnd < 0.999 && (
-                    <line
-                      x1={videoEnd * chartWidth}
-                      x2={videoEnd * chartWidth}
-                      y1="12"
-                      y2={chartHeight - 8}
-                      stroke="var(--v4-warning)"
-                      strokeOpacity="0.72"
-                      strokeWidth="1.5"
-                      strokeDasharray="4 5"
-                    />
-                  )}
-                  <motion.line
-                    x1={activeX}
-                    x2={activeX}
-                    y1="8"
-                    y2={chartHeight - 4}
-                    stroke="var(--v4-accent-strong)"
-                    strokeOpacity="0.56"
-                    strokeWidth="1"
-                    animate={{ x1: activeX, x2: activeX }}
-                    transition={{ duration: 0.18, ease: 'easeOut' }}
-                  />
-                  <motion.circle
-                    cy={chartHeight - 7}
-                    r="4"
-                    fill="var(--v4-accent-strong)"
-                    stroke="var(--v4-canvas)"
-                    strokeWidth="2"
-                    animate={{ cx: activeX }}
-                    transition={{ duration: 0.18, ease: 'easeOut' }}
-                  />
-                </svg>
-                {/* 非对白节点：可点跳到对应字幕行 */}
-                {report.specialMarks.map((mark, index) => (
-                  <button
-                    key={`mark-hit-${index}`}
-                    type="button"
-                    className="absolute bottom-1 z-10 h-7 w-3 -translate-x-1/2 cursor-pointer rounded-sm bg-transparent hover:bg-[var(--v4-accent-soft)]"
-                    style={{ left: `${mark.position * 100}%` }}
-                    title={`${markKindLabel(mark.kind)} · 第 ${mark.rowIndex} 行`}
-                    aria-label={`跳转到第 ${mark.rowIndex} 行（${markKindLabel(mark.kind)}）`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      jumpToSpecialMark(mark);
-                    }}
-                  />
-                ))}
-                <input
-                  type="range"
-                  min="0"
-                  max={timelineDurationMs}
-                  step="100"
-                  value={activeTimeMs}
-                  onChange={event => selectTimelineTime(Number(event.target.value))}
-                  className="absolute inset-0 z-0 h-full w-full cursor-ew-resize opacity-0"
-                  aria-label="在字幕分布图中定位时间"
-                />
-              </div>
-
-              <div className="mt-1 grid grid-cols-3 font-mono text-[11px] tabular-nums text-[var(--v4-text-faint)]">
-                <span>00:00</span>
-                <span className="text-center">{formatMsClock(timelineDurationMs / 2)}</span>
-                <span className="text-right">{formatMsClock(timelineDurationMs)}</span>
-              </div>
-
-              <div className="mt-3 border-t border-[var(--v4-line)] pt-3">
-                <div className="mb-2.5 flex items-center justify-between gap-3 text-xs text-[var(--v4-text-faint)]">
-                  <span>{isMatchMode ? '片源与字幕跨度' : '字幕跨度'}</span>
-                  <span className="tabular-nums">
-                    当前 {formatMsClock(activeTimeMs)} · 字幕 {formatMsClock(report.subtitleStartMs)} - {formatMsClock(report.subtitleEndMs)}
-                  </span>
-                </div>
-                <div className="relative py-1.5">
-                  <div className="relative h-2 overflow-hidden rounded-full bg-[var(--v4-panel-muted)]">
-                    {videoEnd !== undefined && (
-                      <div
-                        className="absolute inset-y-0 left-0 bg-[var(--v4-line-strong)]"
-                        style={{ width: `${videoEnd * 100}%` }}
-                      />
-                    )}
-                    <motion.div
-                      className="absolute inset-y-0 rounded-full bg-[var(--v4-accent)]"
-                      style={{ opacity: 0.78 }}
-                      initial={{ left: `${coverageStart * 100}%`, right: `${100 - coverageStart * 100}%` }}
-                      animate={{ left: `${coverageStart * 100}%`, right: `${100 - coverageEnd * 100}%` }}
-                      transition={{ duration: 0.6, ease: 'easeOut' }}
-                    />
-                  </div>
-                  {report.specialMarks.length > 0 && (
-                    <div className="pointer-events-none absolute inset-x-0 top-1.5 h-2">
-                      {report.specialMarks.map((mark, index) => (
-                        <span
-                          key={`span-mark-${index}`}
-                          className="absolute top-0 h-2 w-px"
-                          style={{
-                            left: `${mark.position * 100}%`,
-                            background: mark.kind === 'sound' ? 'var(--v4-warning)' : 'var(--v4-text-faint)',
-                            opacity: 0.9,
-                          }}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {report.specialMarks.map((mark, index) => (
-                    <button
-                      key={`span-hit-${index}`}
-                      type="button"
-                      className="absolute top-0 z-10 h-5 w-3 -translate-x-1/2 cursor-pointer rounded-sm hover:bg-[var(--v4-accent-soft)]"
-                      style={{ left: `${mark.position * 100}%` }}
-                      title={`${markKindLabel(mark.kind)} · 第 ${mark.rowIndex} 行`}
-                      aria-label={`跳转到第 ${mark.rowIndex} 行（${markKindLabel(mark.kind)}）`}
-                      onClick={() => jumpToSpecialMark(mark)}
-                    />
-                  ))}
-                  {videoEnd !== undefined && videoEnd < 0.999 && (
+                  {count > 1 && (
                     <span
-                      className="absolute top-0 h-5 w-px bg-[var(--v4-warning)]"
-                      style={{ left: `${videoEnd * 100}%`, opacity: 0.8 }}
-                      title={`片源结束于 ${formatMsClock(report.videoDurationMs || 0)}`}
-                    />
+                      className="absolute -right-1.5 -top-1.5 min-w-3 rounded-full px-0.5 text-center text-[9px] font-semibold leading-3 text-white"
+                      style={{ background: MARK_COLOR[cluster.kind] }}
+                    >
+                      {count}
+                    </span>
                   )}
-                  <motion.span
-                    className="pointer-events-none absolute top-0 h-5 w-px bg-[var(--v4-accent-strong)]"
-                    animate={{ left: `${activePosition * 100}%` }}
-                    transition={{ duration: 0.18, ease: 'easeOut' }}
-                  />
-                </div>
-                {report.specialMarks.length > 0 && (
-                  <p className="mt-2 text-[11px] text-[var(--v4-text-faint)]">
-                    短竖线为非对白节点，点击可跳到对应字幕行
-                  </p>
-                )}
-              </div>
-            </div>
-          </figure>
+                </button>
+              );
+            })}
+          </div>
 
-          {isMatchMode ? (
-            <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-3">
-              {report.findings.slice(0, 3).map(finding => (
-                <div key={finding.id} className={`rounded-lg border p-3 ${severityClass[finding.severity]}`}>
-                  <div className="flex items-center gap-2 text-xs font-semibold">
-                    <FindingIcon severity={finding.severity} />
-                    {finding.label}
-                  </div>
-                  <p className="mt-1.5 text-xs leading-5 text-current/75">
-                    {finding.detail}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-3 text-xs leading-5 text-[var(--v4-text-faint)]">
-              这张图只描述字幕自身的时间分布。加入片源后也只检查时长覆盖，不会分析声音。
-            </p>
-          )}
+          {/* Continuous playhead across density + marks */}
+          <div className="pointer-events-none absolute inset-x-3 top-3 bottom-7 z-[15]">
+            <motion.div
+              className="absolute top-0 bottom-0 w-px bg-[var(--v4-accent-strong)]"
+              style={{ opacity: 0.75 }}
+              animate={{ left: `${activePosition * 100}%` }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+            >
+              <span className="absolute -top-0.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[var(--v4-accent-strong)]" />
+            </motion.div>
+          </div>
+
+          <div className="flex items-center justify-between px-3 pb-2 font-mono text-[10px] tabular-nums text-[var(--v4-text-faint)]">
+            <span>00:00</span>
+            <span>{formatMsClock(timelineDurationMs / 2)}</span>
+            <span>{formatMsClock(timelineDurationMs)}</span>
+          </div>
         </div>
+
+        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--v4-text-faint)]">
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <HardDrive className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">
+              {videoName
+                ? `${videoName}${videoDurationMs ? ` · ${formatMsClock(videoDurationMs)}` : ''}`
+                : '本地读取元数据，不上传'}
+            </span>
+          </span>
+          <span className="tabular-nums">
+            当前 {formatMsClock(activeTimeMs)}
+            <span className="mx-1.5 text-[var(--v4-line-strong)]">·</span>
+            字幕 {formatMsClock(report.subtitleStartMs)}–{formatMsClock(report.subtitleEndMs)}
+          </span>
+        </div>
+        {metadataError && <div className="mt-1 text-xs text-[var(--v4-warning)]">{metadataError}</div>}
+
+        {isMatchMode ? (
+          <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-3">
+            {report.findings.slice(0, 3).map(finding => (
+              <div key={finding.id} className={`rounded-lg border p-2.5 ${severityClass[finding.severity]}`}>
+                <div className="flex items-center gap-2 text-xs font-semibold">
+                  <FindingIcon severity={finding.severity} />
+                  {finding.label}
+                </div>
+                <p className="mt-1 text-xs leading-5 text-current/75">{finding.detail}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
     </section>
   );

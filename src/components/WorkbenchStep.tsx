@@ -5,19 +5,31 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { SequenceList } from '@/components/Workbench/SequenceList';
 import { AlignmentDiffPanel } from '@/components/Workbench/AlignmentDiffPanel';
-import { SourceMatchPanel } from '@/components/Workbench/SourceMatchPanel';
+import { SourceMatchPanel, type InspectionMarkFilter } from '@/components/Workbench/SourceMatchPanel';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
 import { useWorkflowChrome } from '@/components/Global/WorkflowChrome';
 import { ChevronDown, GitCompareArrows, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { analyzeAlignmentDiff } from '@/utils/timeline/alignmentDiff';
+import { createSourceMatchReport } from '@/utils/timeline/sourceMatch';
+import { formatMsClock } from '@/utils/timeline/timecode';
+import { InfoHint } from '@/components/ui/InfoHint';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 
+const MARK_FILTERS: Array<{ id: InspectionMarkFilter; label: string }> = [
+  { id: 'all', label: '全部' },
+  { id: 'structure', label: '结构差异' },
+  { id: 'screen-text', label: '画面文字' },
+  { id: 'sound-caption', label: '声音说明' },
+];
+
+const formatCount = (value: number) => new Intl.NumberFormat('zh-CN').format(value);
+
 export const WorkbenchStep: React.FC = () => {
-  const { 
-    processedSubs, 
-    customFilename, 
+  const {
+    processedSubs,
+    customFilename,
     setWorkflowStep,
     setProcessedSubs,
     selectedTaskId,
@@ -38,21 +50,35 @@ export const WorkbenchStep: React.FC = () => {
 
   const [showBackConfirm, setShowBackConfirm] = useState(false);
   const [sourceDurationMs, setSourceDurationMs] = useState<number | undefined>(undefined);
-  const [isInspectionOpen, setIsInspectionOpen] = useState(true);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [markFilter, setMarkFilter] = useState<InspectionMarkFilter>('all');
+
   const alignmentSummary = useMemo(
-    () => processedSubs ? analyzeAlignmentDiff(processedSubs) : null,
-    [processedSubs]
+    () => (processedSubs ? analyzeAlignmentDiff(processedSubs) : null),
+    [processedSubs],
   );
+  const profileStats = useMemo(
+    () => (processedSubs ? createSourceMatchReport(processedSubs, sourceDurationMs).stats : null),
+    [processedSubs, sourceDurationMs],
+  );
+  const structureCount = alignmentSummary?.entries.length ?? 0;
+  const screenCount = processedSubs?.filter(row => row.cueKind === 'screen_text' || row.auxiliary?.category === 'screen_text').length ?? 0;
+  const soundCount = processedSubs?.filter(row => (
+    row.cueKind === 'sound_caption'
+    || row.auxiliary?.category === 'ambient_sdh'
+    || row.auxiliary?.category === 'music'
+  )).length ?? 0;
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       if (showBackConfirm) setShowBackConfirm(false);
       else if (isSettingsOpen) setIsSettingsOpen(false);
+      else if (isDetailOpen) setIsDetailOpen(false);
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [isSettingsOpen, setIsSettingsOpen, showBackConfirm]);
+  }, [isDetailOpen, isSettingsOpen, setIsSettingsOpen, showBackConfirm]);
 
   useEffect(() => {
     setInfoBar({
@@ -102,41 +128,97 @@ export const WorkbenchStep: React.FC = () => {
 
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[var(--v4-canvas)]">
-      {/* Main Split stage */}
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
-        {/* Center Panel: Subtitle sequence list */}
         <div className="flex-1 p-4 md:p-6 min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
           <div className="max-w-[1480px] w-full flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
             {processedSubs && processedSubs.length > 0 && (
-              <section className="flex-shrink-0 overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]">
-                <button
-                  type="button"
-                  className="v4-focus-ring flex w-full items-center justify-between gap-4 px-4 py-3 text-left md:px-5"
-                  onClick={() => setIsInspectionOpen(value => !value)}
-                  aria-expanded={isInspectionOpen}
-                >
-                  <span className="flex min-w-0 items-center gap-3">
-                    <GitCompareArrows className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-[var(--v4-text)]">字幕检查</span>
-                      <span className="mt-0.5 block truncate text-sm font-medium text-[var(--v4-text-muted)]">
-                        {alignmentSummary && alignmentSummary.entries.length > 0
-                          ? `${alignmentSummary.entries.length} 处结构差异待复核`
-                          : '未发现需要复核的结构差异'}
-                      </span>
-                    </span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-2 text-sm font-medium text-[var(--v4-text-muted)]">
-                    {isInspectionOpen ? '收起报告' : '查看报告'}
-                    <ChevronDown className={`h-4 w-4 transition-transform ${isInspectionOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
-                  </span>
-                </button>
-                <div hidden={!isInspectionOpen} className="space-y-3 border-t border-[var(--v4-line)] p-3 md:p-4">
+              <section className="flex-shrink-0 overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)]">
+                <div className="flex flex-col gap-2.5 px-4 py-3 md:flex-row md:items-center md:justify-between md:gap-4 md:px-5">
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+                    <div className="flex items-center gap-2">
+                      <GitCompareArrows className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
+                      <h2 className="text-sm font-semibold text-[var(--v4-text)]">字幕检查</h2>
+                      {structureCount > 0 ? (
+                        <span
+                          className="inline-flex min-w-6 items-center justify-center rounded-md bg-[var(--v4-danger)]/12 px-1.5 py-0.5 text-sm font-semibold tabular-nums text-[var(--v4-danger)]"
+                          title={`${structureCount} 处结构差异待复核`}
+                        >
+                          {structureCount}
+                        </span>
+                      ) : (
+                        <span className="text-xs font-medium text-[var(--v4-text-faint)]">无结构差异</span>
+                      )}
+                    </div>
+
+                    {profileStats && (
+                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-[var(--v4-text-muted)]">
+                        <span>
+                          文本量{' '}
+                          <strong className="font-semibold tabular-nums text-[var(--v4-text)]">
+                            {formatCount(profileStats.characterCount)}
+                          </strong>
+                        </span>
+                        <span className="text-[var(--v4-line-strong)]">·</span>
+                        <span>
+                          跨度{' '}
+                          <strong className="font-semibold tabular-nums text-[var(--v4-text)]">
+                            {formatMsClock(profileStats.spanMs)}
+                          </strong>
+                        </span>
+                        <span className="text-[var(--v4-line-strong)]">·</span>
+                        <span className="inline-flex items-center gap-1">
+                          密度
+                          <InfoHint label="字幕密度说明">
+                            每分钟字幕行数。声音说明、歌词和画面文字也会影响该指标。
+                          </InfoHint>
+                          <strong className="font-semibold tabular-nums text-[var(--v4-accent-strong)]">
+                            {profileStats.densityPerMinute}
+                          </strong>
+                        </span>
+                        {(screenCount > 0 || soundCount > 0) && (
+                          <>
+                            <span className="text-[var(--v4-line-strong)]">·</span>
+                            <span className="text-[var(--v4-text-faint)]">画面 {screenCount} · 声音 {soundCount}</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2 md:justify-end">
+                    <div className="ui-choice-group" role="tablist" aria-label="时间轴标记筛选">
+                      {MARK_FILTERS.map(item => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          role="tab"
+                          aria-selected={markFilter === item.id}
+                          onClick={() => setMarkFilter(item.id)}
+                          className={`ui-choice ${markFilter === item.id ? 'ui-choice--on' : ''}`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="v4-focus-ring inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-[var(--v4-text-muted)] hover:text-[var(--v4-text)]"
+                      onClick={() => setIsDetailOpen(value => !value)}
+                      aria-expanded={isDetailOpen}
+                    >
+                      {isDetailOpen ? '收起详细内容' : '点击查看详细内容'}
+                      <ChevronDown className={`h-4 w-4 transition-transform ${isDetailOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3 border-t border-[var(--v4-line)] p-3 md:p-4">
                   <SourceMatchPanel
                     rows={processedSubs}
                     onTimelineDurationChange={setSourceDurationMs}
+                    markFilter={markFilter}
                   />
-                  <AlignmentDiffPanel rows={processedSubs} />
+                  {isDetailOpen && <AlignmentDiffPanel rows={processedSubs} />}
                 </div>
               </section>
             )}
@@ -146,7 +228,6 @@ export const WorkbenchStep: React.FC = () => {
           </div>
         </div>
 
-        {/* Floating Style Drawer */}
         <AnimatePresence>
           {isSettingsOpen && (
             <>
@@ -164,7 +245,7 @@ export const WorkbenchStep: React.FC = () => {
                 initial={{ x: 360, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: 360, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 className="v4-panel absolute inset-y-4 right-4 z-50 flex w-[min(390px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg lg:relative lg:inset-auto lg:z-20 lg:my-6 lg:mr-6 lg:w-[390px] lg:shrink-0"
               >
                 <StyleSidebar />
@@ -182,7 +263,9 @@ export const WorkbenchStep: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
-              onClick={(event) => { if (event.target === event.currentTarget) setShowBackConfirm(false); }}
+              onClick={(event) => {
+                if (event.target === event.currentTarget) setShowBackConfirm(false);
+              }}
             >
               <motion.div
                 role="alertdialog"
@@ -194,7 +277,9 @@ export const WorkbenchStep: React.FC = () => {
                 exit={{ opacity: 0, y: 8, scale: 0.98 }}
                 className="w-full max-w-sm rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] p-5 shadow-[0_18px_48px_rgba(0,0,0,0.42)]"
               >
-                <h3 id="workbench-back-title" className="text-lg font-semibold text-[var(--v4-text)]">返回导入页？</h3>
+                <h3 id="workbench-back-title" className="text-lg font-semibold text-[var(--v4-text)]">
+                  返回导入页？
+                </h3>
                 <p id="workbench-back-description" className="mt-2 text-sm leading-6 text-[var(--v4-text-muted)]">
                   已导入的文件与轨道选择会保留。再次进入工作台时，将按当前选择重新生成预览。
                 </p>
@@ -204,12 +289,16 @@ export const WorkbenchStep: React.FC = () => {
                     className="ui-action ui-action--quiet w-full"
                     onClick={() => setShowBackConfirm(false)}
                   >
-                    留在工作台
+                    继续编辑
                   </button>
                   <button
                     type="button"
                     className="ui-action w-full"
-                    onClick={() => { setShowBackConfirm(false); setProcessedSubs(null); setWorkflowStep(1); }}
+                    onClick={() => {
+                      setShowBackConfirm(false);
+                      setProcessedSubs(null);
+                      setWorkflowStep(1);
+                    }}
                   >
                     返回导入
                   </button>
