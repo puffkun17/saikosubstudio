@@ -35,15 +35,15 @@ export const SUBTITLE_CUE_TYPE_DICTIONARY: Record<SubtitleCueTerm, {
     exportDefault: true,
   },
   sound_caption: {
-    zh: '声音说明',
+    zh: '声音描述',
     en: 'Sound Caption / SDH Cue',
     description: '风声、门响、音乐、笑声等非对白声音提示，常见于 SDH/CC 字幕。',
     exportDefault: true,
   },
   speaker_label: {
-    zh: '说话人标识',
+    zh: '台词来源角色',
     en: 'Speaker Label',
-    description: '标注说话人身份或声音来源，例如“广播：”“旁白：”“警察：”。',
+    description: '标注说话人身份或声音来源，例如“电台：”“旁白：”“观众：”。',
     exportDefault: true,
   },
   narration: {

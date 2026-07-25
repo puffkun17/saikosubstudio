@@ -89,9 +89,9 @@ const makeSingleTrackEntry = (group: TimelineRow[], firstStartMs: number, lastEn
     endMs: last.endMs,
     primaryText: isPrimary ? preview : '',
     secondaryText: isPrimary ? '' : preview,
-    label: isBoundaryCandidate ? `片头/片尾单轨 · ${rangeLabel}` : `仅一轨 · ${rangeLabel}`,
+    label: isBoundaryCandidate ? `片头/片尾单轨 · ${rangeLabel}` : `单侧字轨 · ${rangeLabel}`,
     detail: isBoundaryCandidate
-      ? '可能是版本附加内容、片头片尾信息或未配对对白，未自动删除。'
+      ? '可能是版本附加内容、片头片尾信息或未配对台词对白，未自动删除。'
       : `连续 ${count} 行未配对，未自动改写。`,
     isBoundaryCandidate,
     provenance: group.flatMap(item => item.row.provenance ? [item.row.provenance] : []),
@@ -203,7 +203,7 @@ export function analyzeAlignmentDiff(rows: SubRow[]): AlignmentDiffSummary {
         primaryText,
         secondaryText,
         label: '已展开的对话组',
-        detail: '压缩的双人对话已按另一轨的连续时间轴拆为两句。',
+        detail: '压缩的角色间对白已按另一轨的连续时间轴拆为两句。',
         isBoundaryCandidate: false,
         provenance: row.provenance ? [row.provenance] : [],
       });

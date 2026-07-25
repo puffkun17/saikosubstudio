@@ -88,7 +88,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
       kind: 'sound-caption' as const,
       startMs: parseSubtitleRange(row.ts).startMs,
       locateIndex: row.index,
-      badge: '声音说明',
+      badge: '声音描述',
       text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
       reason: reasonFromRow(row),
     }));
@@ -116,7 +116,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
     <section className="overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)]">
       <div className="flex items-center justify-between gap-3 border-b border-[var(--v4-line)] px-4 py-2 md:px-5">
         <p className="text-xs text-[var(--v4-text-faint)]">
-          完整列出结构差异、画面文字与声音说明（{items.length}）
+          完整列出结构差异、画面文字与声音描述（{items.length}）
         </p>
       </div>
 

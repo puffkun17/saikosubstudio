@@ -6,6 +6,7 @@ import { useStudioStore } from '@/store/useStudioStore';
 import { SequenceList } from '@/components/Workbench/SequenceList';
 import { AlignmentDiffPanel } from '@/components/Workbench/AlignmentDiffPanel';
 import { SourceMatchPanel, type InspectionMarkFilter } from '@/components/Workbench/SourceMatchPanel';
+import { InspectionMarkGlyph, MARK_FILTERS, MARK_LABEL } from '@/components/Workbench/inspectionMarks';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
 import { useWorkflowChrome } from '@/components/Global/WorkflowChrome';
@@ -16,13 +17,6 @@ import { createSourceMatchReport } from '@/utils/timeline/sourceMatch';
 import { formatMsClock } from '@/utils/timeline/timecode';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
-
-const MARK_FILTERS: Array<{ id: InspectionMarkFilter; label: string }> = [
-  { id: 'all', label: '全部' },
-  { id: 'structure', label: '结构差异' },
-  { id: 'screen-text', label: '画面文字' },
-  { id: 'sound-caption', label: '声音说明' },
-];
 
 const formatCount = (value: number) => new Intl.NumberFormat('zh-CN').format(value);
 
@@ -82,7 +76,7 @@ export const WorkbenchStep: React.FC = () => {
 
   useEffect(() => {
     setInfoBar({
-      title: '字幕工作台',
+      title: '字幕调校',
       localChips: [
         `${processedSubs?.length || 0} 行`,
         customFilename || '未命名字幕',
@@ -120,7 +114,7 @@ export const WorkbenchStep: React.FC = () => {
       label: '打开预览',
       disabled: !hasTimeline,
       ready: hasTimeline,
-      disabledReason: '还没有可预览的字幕时间轴，请先完成合轴。',
+      disabledReason: '还没有可预览的字幕时间轴，请先完成合轴或分配。',
       onClick: () => setWorkflowStep(3),
     });
     return () => setEdgeNext(null);
@@ -137,11 +131,11 @@ export const WorkbenchStep: React.FC = () => {
                   <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                     <div className="flex items-center gap-2">
                       <GitCompareArrows className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
-                      <h2 className="text-sm font-semibold text-[var(--v4-text)]">字幕检查</h2>
+                      <h2 className="text-sm font-semibold text-[var(--v4-text)]">字幕信息概览</h2>
                       {structureCount > 0 ? (
                         <span
                           className="inline-flex min-w-6 items-center justify-center rounded-md bg-[var(--v4-danger)]/12 px-1.5 py-0.5 text-sm font-semibold tabular-nums text-[var(--v4-danger)]"
-                          title={`${structureCount} 处结构差异待复核`}
+                          title={`${structureCount} 处结构差异请复核`}
                         >
                           {structureCount}
                         </span>
@@ -169,7 +163,7 @@ export const WorkbenchStep: React.FC = () => {
                         <span className="inline-flex items-center gap-1">
                           密度
                           <InfoHint label="字幕密度说明">
-                            每分钟字幕行数。声音说明、歌词和画面文字也会影响该指标。
+                            每分钟字幕行数。声音描述、歌词和画面文字也会影响该指标。
                           </InfoHint>
                           <strong className="font-semibold tabular-nums text-[var(--v4-accent-strong)]">
                             {profileStats.densityPerMinute}
@@ -178,7 +172,20 @@ export const WorkbenchStep: React.FC = () => {
                         {(screenCount > 0 || soundCount > 0) && (
                           <>
                             <span className="text-[var(--v4-line-strong)]">·</span>
-                            <span className="text-[var(--v4-text-faint)]">画面 {screenCount} · 声音 {soundCount}</span>
+                            <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[var(--v4-text-faint)]">
+                              {screenCount > 0 && (
+                                <span className="inline-flex items-center gap-1">
+                                  <InspectionMarkGlyph kind="screen" size={7} />
+                                  {MARK_LABEL.screen} {screenCount}
+                                </span>
+                              )}
+                              {soundCount > 0 && (
+                                <span className="inline-flex items-center gap-1">
+                                  <InspectionMarkGlyph kind="sound" size={7} />
+                                  {MARK_LABEL.sound} {soundCount}
+                                </span>
+                              )}
+                            </span>
                           </>
                         )}
                       </div>
@@ -194,8 +201,9 @@ export const WorkbenchStep: React.FC = () => {
                           role="tab"
                           aria-selected={markFilter === item.id}
                           onClick={() => setMarkFilter(item.id)}
-                          className={`ui-choice ${markFilter === item.id ? 'ui-choice--on' : ''}`}
+                          className={`ui-choice inline-flex items-center gap-1.5 ${markFilter === item.id ? 'ui-choice--on' : ''}`}
                         >
+                          {item.kind ? <InspectionMarkGlyph kind={item.kind} size={8} /> : null}
                           {item.label}
                         </button>
                       ))}
@@ -206,7 +214,7 @@ export const WorkbenchStep: React.FC = () => {
                       onClick={() => setIsDetailOpen(value => !value)}
                       aria-expanded={isDetailOpen}
                     >
-                      {isDetailOpen ? '收起详细内容' : '点击查看详细内容'}
+                      {isDetailOpen ? '返回概览' : '查看详细内容'}
                       <ChevronDown className={`h-4 w-4 transition-transform ${isDetailOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
                     </button>
                   </div>
@@ -278,7 +286,7 @@ export const WorkbenchStep: React.FC = () => {
                 className="w-full max-w-sm rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] p-5 shadow-[0_18px_48px_rgba(0,0,0,0.42)]"
               >
                 <h3 id="workbench-back-title" className="text-lg font-semibold text-[var(--v4-text)]">
-                  返回导入页？
+                  是否重新导入
                 </h3>
                 <p id="workbench-back-description" className="mt-2 text-sm leading-6 text-[var(--v4-text-muted)]">
                   已导入的文件与轨道选择会保留。再次进入工作台时，将按当前选择重新生成预览。

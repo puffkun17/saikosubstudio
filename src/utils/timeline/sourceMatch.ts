@@ -148,7 +148,7 @@ export const createSourceMatchReport = (
     findings.push({
       id: 'overlap',
       label: '存在并行字幕',
-      detail: `检测到 ${overlapCount} 处时间重叠，可能来自画面文字、声音说明或多角色排版，不直接判定为错误。`,
+      detail: `检测到 ${overlapCount} 处时间重叠，可能来自画面文字、声音描述或多角色排版，不直接判定为错误。`,
       severity: 'notice',
     });
   } else {

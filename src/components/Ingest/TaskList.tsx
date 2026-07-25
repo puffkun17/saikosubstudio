@@ -798,7 +798,7 @@ export const TaskList: React.FC = () => {
                   <div className={`text-sm font-semibold ${
                     alignmentMode === 'industrial' ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text)]'
                   }`}>
-                    细致
+                    精校
                   </div>
                   <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
                     用更完整的对齐搜索处理插入、删减与断句不一致，准确度更高。适合翻译节奏不同、一侧多句或少句的片子。

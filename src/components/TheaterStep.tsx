@@ -10,13 +10,13 @@ import { TimelineControls } from '@/components/Workbench/TimelineControls';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
-import { ChevronLeft, LampCeiling, LightbulbOff, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, SlidersHorizontal } from 'lucide-react';
 import { SubtitleDataSlot, BackdropSlot, StyleSettings } from '@/types/subtitleTypes';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * 只有这个小组件按帧订阅播放时钟——
- * TheaterStep 本体（含标题栏 / ControlDeck / 样式抽屉）不再跟着 60fps 重渲染。
+ * TheaterStep 本体（含标题栏 / 样式抽屉）不再跟着 60fps 重渲染。
  */
 const SimulatorWithClock: React.FC<{
   subtitle: SubtitleDataSlot;
@@ -202,7 +202,6 @@ export const TheaterStep: React.FC = () => {
             <ExportDropdown variant="primary" />
           </div>
         </div>
-        <ControlDeck />
       </div>
 
       {/* 主体：关灯时整块（预览 + 夜光侧栏）提到暗幕之上 */}
@@ -222,39 +221,20 @@ export const TheaterStep: React.FC = () => {
             </SimulatorBoundary>
           </div>
 
-          {/* 播放条贴在「屏幕」下方；侧栏展开时抬到上层，保证关灯可点 */}
+          {/* 播放条：工具图标 + 进度；关灯后仅进度条。侧栏展开时抬层保证可点。 */}
           <div
-            className={`theater-stage-chrome flex w-full max-w-[1080px] shrink-0 items-center gap-2 px-1 ${
+            className={`theater-stage-chrome flex w-full max-w-[1080px] shrink-0 px-1 ${
               isSettingsOpen ? 'relative z-50' : ''
             }`}
           >
-            <div className="min-w-0 flex-1">
-              <TimelineControls variant="theater" />
-            </div>
-            <div className="relative shrink-0">
-              <button
-                type="button"
-                onClick={() => setLightsOff(!isLightsOff)}
-                aria-pressed={isLightsOff}
-                title={isLightsOff ? '开灯（L / Esc）' : '关灯观影（L）'}
-                aria-label={isLightsOff ? '开灯' : '关灯观影'}
-                className={`theater-chrome-chip v4-focus-ring grid h-10 w-10 cursor-pointer place-items-center rounded-lg border transition-colors
-                  ${isLightsOff
-                    ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
-                    : 'border-[var(--v4-line)] text-[var(--v4-text-muted)] hover:text-[var(--v4-text)]'}`}
-              >
-                {isLightsOff ? (
-                  <LightbulbOff className="h-[18px] w-[18px] stroke-[2]" aria-hidden="true" />
-                ) : (
-                  <LampCeiling className="h-[18px] w-[18px] stroke-[2]" aria-hidden="true" />
-                )}
-              </button>
-              {!isLightsOff && (
-                <span className="pointer-events-none absolute -top-7 right-0 whitespace-nowrap rounded-md bg-[var(--v4-panel-raised)] px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-[var(--v4-text-muted)] opacity-80 shadow-sm ring-1 ring-[var(--v4-line)]">
-                  关灯 L
-                </span>
-              )}
-            </div>
+            <TimelineControls
+              variant="theater"
+              theaterChrome={{
+                lightsOff: isLightsOff,
+                onToggleLights: () => setLightsOff(!isLightsOff),
+                tools: <ControlDeck />,
+              }}
+            />
           </div>
         </div>
 

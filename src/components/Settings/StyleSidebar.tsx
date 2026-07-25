@@ -453,7 +453,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
           icon={<ALargeSmall className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}
           action={
             <InfoHint label="尺寸单位说明" side="left">
-              数值为字幕参考单位（以 288 高的参考画布计），导出时会按「输出」页的画面规格自动换算，预览所见即最终比例。
+              字幕参考数值单位（以 288 高度画幅为基准），导出时规格自动换算为预览最终比例呈现。
             </InfoHint>
           }
         >
@@ -464,7 +464,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             max={1.8}
             step={0.05}
             suffix="x"
-            hint="统一影响字幕整体大小"
+            hint="调整字幕整体大小比例"
             onChange={value => handleStyleChange('globalScale', value)}
           />
           <SliderControl
@@ -552,7 +552,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             <span className="text-sm font-medium text-[var(--v4-text-muted)] inline-flex items-center gap-1.5">
               辅助字幕策略
               <InfoHint label="辅助字幕说明" side="left">
-                指声音说明、画面文字、歌词或非对白表达。完整保留最安全；智能精简会隐藏明确低价值环境音；清洁对白更适合普通观影导出。
+                将声音描述、画面文字、歌词或非对白表达完整保留；智能精简模式会隐藏明确低价值环境音等。
               </InfoHint>
             </span>
             <div className="grid grid-cols-3 gap-1 rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-1">
@@ -580,7 +580,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             </div>
             {auxiliaryCount > 0 && (
               <p className="text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
-                检测到 {auxiliaryCount} 条辅助内容（画面文字 {screenTextCount} 条倾向保留；仅高置信音效可被智能精简剥离约 {smartHiddenCount} 条）。可在「字幕检查」分布图与详细内容中查看。
+                检测到 {auxiliaryCount} 条辅助内容（画面文字 {screenTextCount} 条倾向保留；仅高置信音效可被智能精简剥离约 {smartHiddenCount} 条）。可在「字幕信息概览」分布图与详细内容中查看。
               </p>
             )}
           </div>
@@ -589,7 +589,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             <span className="text-sm font-medium text-[var(--v4-text-muted)] inline-flex items-center gap-1.5">
               画面规格
               <InfoHint label="画面规格说明" side="left">
-                用作 ASS 字幕样式的参考画布尺寸，影响字号、边距和描边换算；不会改变视频文件本身的分辨率。
+                声明 ASS 字幕样式的参考画布尺寸，影响字号、边距和描边等样式呈现。
               </InfoHint>
             </span>
             <select
@@ -598,8 +598,8 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
               onChange={e => handleStyleChange('resolution', e.target.value as StyleSettings['resolution'])}
             >
               <option value="SD">标清 SD</option>
-              <option value="1080p">全高清 1080p</option>
-              <option value="4K">超高清 4K</option>
+              <option value="1080p">全高清 HD 1080p</option>
+              <option value="4K">超高清 UHD 4K</option>
             </select>
           </div>
         </SettingSection>

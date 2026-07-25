@@ -406,7 +406,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                         {isSoundCaption && (
                           <span className="ui-meta mb-0.5">
                             <Volume2 className="h-3 w-3" />
-                            声音说明
+                            声音描述
                           </span>
                         )}
                         {isAuxiliarySemantic && (

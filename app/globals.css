@@ -1571,13 +1571,16 @@ button {
     0 18px 46px rgba(0, 0, 0, 0.65);
 }
 
-/* 播放条 / 关灯钮：与样式侧栏同套毛玻璃 */
-.theater-chrome-bar,
-.theater-chrome-chip {
+/* 播放条毛玻璃；图标钮仅半透明底，避免嵌套 backdrop 发糊 */
+.theater-chrome-bar {
   background: color-mix(in srgb, #142e29 72%, transparent);
   backdrop-filter: blur(16px) saturate(1.15);
   -webkit-backdrop-filter: blur(16px) saturate(1.15);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.theater-chrome-chip {
+  background: color-mix(in srgb, #1a3d37 55%, transparent);
 }
 
 .theater-chrome-chip:hover {
@@ -1588,18 +1591,22 @@ button {
   transition: opacity var(--v5-dur-slow) var(--v5-ease);
 }
 
+/* 关灯后 JS 已隐藏按钮，进度条保持可拖；不再息屏透明度 */
 .lights-off-stage .theater-stage-chrome {
-  opacity: 0.32;
-}
-
-/* 调参时播放条保持可发现，避免关灯钮被息屏透明度藏住 */
-.lights-off-stage:has(.theater-style-shell) .theater-stage-chrome {
   opacity: 1;
 }
 
-.lights-off-stage .theater-stage-chrome:hover,
-.lights-off-stage .theater-stage-chrome:focus-within {
-  opacity: 1;
+.theater-chrome-bar--lights-off {
+  background: color-mix(in srgb, #0a0e0d 70%, transparent);
+  border-color: rgba(245, 241, 234, 0.1);
+  box-shadow: none;
+  padding-inline: 0.65rem;
+}
+
+.lights-off-stage .theater-chrome-bar,
+.lights-off-stage .theater-chrome-chip {
+  background: color-mix(in srgb, #0a0e0d 78%, transparent);
+  border-color: rgba(239, 141, 95, 0.16);
 }
 
 /* 放映厅样式抽屉：深绿毛玻璃；关灯时更深、更透，夜光 LCD 感 */
@@ -1628,12 +1635,6 @@ button {
   box-shadow:
     0 0 36px 2px rgba(239, 141, 95, 0.06),
     0 18px 48px rgba(0, 0, 0, 0.55);
-}
-
-.lights-off-stage .theater-chrome-bar,
-.lights-off-stage .theater-chrome-chip {
-  background: color-mix(in srgb, #0a0e0d 78%, transparent);
-  border-color: rgba(239, 141, 95, 0.16);
 }
 
 @media (prefers-reduced-motion: reduce) {

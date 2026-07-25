@@ -9,34 +9,22 @@ import { analyzeAlignmentDiff } from '@/utils/timeline/alignmentDiff';
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { useStudioStore } from '@/store/useStudioStore';
+import {
+  InspectionMarkGlyph,
+  MARK_COLOR,
+  MARK_LABEL,
+  MARK_LANE_TOP,
+  type InspectionMarkFilter,
+  type InspectionMarkKind,
+} from '@/components/Workbench/inspectionMarks';
 
-export type InspectionMarkFilter = 'all' | 'structure' | 'screen-text' | 'sound-caption';
-
-export type InspectionMarkKind = 'structure' | 'screen' | 'sound';
+export type { InspectionMarkFilter, InspectionMarkKind };
 
 export type InspectionMark = {
   position: number;
   kind: InspectionMarkKind;
   arrayIndex: number;
   rowIndex: number;
-};
-
-const MARK_COLOR: Record<InspectionMarkKind, string> = {
-  structure: '#c45b55',
-  screen: '#3b82f6',
-  sound: '#c4893a',
-};
-
-const MARK_LABEL: Record<InspectionMarkKind, string> = {
-  structure: '结构差异',
-  screen: '画面文字',
-  sound: '声音说明',
-};
-
-const MARK_LANE_TOP: Record<InspectionMarkKind, string> = {
-  structure: '7px',
-  screen: '17px',
-  sound: '27px',
 };
 
 type MarkCluster = {
@@ -246,7 +234,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
       URL.revokeObjectURL(url);
     };
     video.onerror = () => {
-      setMetadataError('无法读取该片源时长，请尝试常见 MP4 / MKV / MOV 文件。');
+      setMetadataError('无法读取该文件，请尝试常见 MP4 / MKV / MOV 等支持的视频文件。');
       onTimelineDurationChange?.(undefined);
       URL.revokeObjectURL(url);
     };
@@ -260,7 +248,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
           <div className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--v4-text)]">
             {isMatchMode ? '片源覆盖分布' : '字幕时间分布'}
             <InfoHint label="字幕分布图说明">
-              上方曲线表示字幕疏密；下方三层色点分别是结构差异、画面文字、声音说明。靠近的同色点会合并且标数量，点击可定位。
+              上方曲线表示字幕疏密；下方三层标记表示字幕分类，点击可定位位置。
             </InfoHint>
           </div>
           <div className="mt-0.5 text-xs text-[var(--v4-text-faint)]">
@@ -270,17 +258,10 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
         </div>
         <div className="flex items-center gap-3">
           <div className="hidden items-center gap-3 text-[11px] text-[var(--v4-text-faint)] sm:flex">
-            {([
-              ['structure', '结构'],
-              ['screen', '画面'],
-              ['sound', '声音'],
-            ] as const).map(([kind, label]) => (
+            {(['structure', 'screen', 'sound'] as const).map((kind) => (
               <span key={kind} className="inline-flex items-center gap-1.5">
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ background: MARK_COLOR[kind] }}
-                />
-                {label}
+                <InspectionMarkGlyph kind={kind} size={8} />
+                {MARK_LABEL[kind]}
               </span>
             ))}
           </div>
@@ -290,7 +271,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
             className="ui-action ui-action--secondary shrink-0"
           >
             <MonitorPlay className="h-3.5 w-3.5" />
-            {isMatchMode ? '更换片源' : '加入片源'}
+            {isMatchMode ? '更换视频文件' : '视频文件对比'}
           </button>
           <input
             ref={inputRef}
@@ -379,7 +360,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
             />
           </div>
 
-          {/* Three-lane mark rail — circular dots stay circular */}
+          {/* Three-lane mark rail — square / circle / triangle */}
           <div className="relative mx-3 mb-1.5 h-9">
             <div className="pointer-events-none absolute inset-x-0 top-[7px] h-px bg-[var(--v4-line)]/70" />
             <div className="pointer-events-none absolute inset-x-0 top-[17px] h-px bg-[var(--v4-line)]/70" />
@@ -388,13 +369,14 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
             {dimClusters.map(cluster => (
               <span
                 key={`dim-${cluster.id}`}
-                className="absolute h-1.5 w-1.5 -translate-x-1/2 rounded-full opacity-25"
+                className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"
                 style={{
                   left: `${cluster.position * 100}%`,
                   top: MARK_LANE_TOP[cluster.kind],
-                  background: MARK_COLOR[cluster.kind],
                 }}
-              />
+              >
+                <InspectionMarkGlyph kind={cluster.kind} size={6} muted />
+              </span>
             ))}
 
             {visibleClusters.map(cluster => {
@@ -420,10 +402,9 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                     jumpToMark(primary);
                   }}
                 >
-                  <span
-                    className="block h-2 w-2 rounded-full shadow-[0_0_0_2px_color-mix(in_srgb,var(--v4-panel-muted)_85%,white)] transition-transform group-hover:scale-125"
-                    style={{ background: MARK_COLOR[cluster.kind] }}
-                  />
+                  <span className="flex items-center justify-center transition-transform group-hover:scale-125">
+                    <InspectionMarkGlyph kind={cluster.kind} size={8} />
+                  </span>
                   {count > 1 && (
                     <span
                       className="absolute -right-1.5 -top-1.5 min-w-3 rounded-full px-0.5 text-center text-[9px] font-semibold leading-3 text-white"
@@ -462,7 +443,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
             <span className="truncate">
               {videoName
                 ? `${videoName}${videoDurationMs ? ` · ${formatMsClock(videoDurationMs)}` : ''}`
-                : '本地读取元数据，不上传'}
+                : '仅用于查询元数据信息，不关联任何用户'}
             </span>
           </span>
           <span className="tabular-nums">

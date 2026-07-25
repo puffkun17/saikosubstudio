@@ -1135,9 +1135,7 @@ export const DragZone: React.FC = () => {
               <header className="ingest-empty-intro px-3 text-center md:px-4">
                 <p className="ingest-empty-intro__eyebrow">LOCAL SUBTITLE STUDIO</p>
                 <h2 className="ingest-empty-intro__title">
-                  完全运行于本地浏览器的
-                  <br className="ingest-empty-intro__break" />
-                  字幕处理工具
+                  完全本地运行的轻字幕处理工具
                 </h2>
                 <p className="ingest-empty-intro__sub">
                   时间戳对齐合并 · 字幕样式修改 · 模拟播放预览 · 所见即所得
@@ -1176,10 +1174,10 @@ export const DragZone: React.FC = () => {
                   ))}
                 </div>
                 <h3 className="ingest-start-card__title">
-                  {isDragging ? '松开即可加入' : '把字幕放进来'}
+                  {isDragging ? '松开即可加入' : '欢迎提交字幕'}
                 </h3>
                 <p className="ingest-start-card__sub">
-                  拖入文件、文件夹或字幕包，全程只在本机处理
+                  拖入文件、文件夹或字幕包，全程本地环境处理
                 </p>
                 <div
                   className={`ingest-start-card__cta transition-opacity duration-[var(--v4-dur)] ${
@@ -1218,17 +1216,17 @@ export const DragZone: React.FC = () => {
                   {
                     icon: Layers2,
                     title: '多轨整理',
-                    detail: '差异提示，便于核对',
+                    detail: '差异提示，核对微调',
                   },
                   {
                     icon: Palette,
                     title: '样式定制',
-                    detail: '字体位置，自由调整',
+                    detail: '字形色效，随心调整',
                   },
                   {
                     icon: Clapperboard,
-                    title: '影院预览',
-                    detail: '模拟播放，所见即所得',
+                    title: '效果预览',
+                    detail: '实际呈现，所见所得',
                   },
                 ] as const).map((feature, index) => {
                   const Icon = feature.icon;

@@ -128,14 +128,14 @@ const EXPORT_OPTIONS = [
     format: 'ass' as const,
     badge: 'ASS',
     title: '高级字幕',
-    description: '保留字体、颜色与样式，推荐本地播放',
+    description: '配置颜色与样式；丰富字幕表达需求',
     emphasized: true,
   },
   {
     format: 'srt' as const,
     badge: 'SRT',
     title: '纯文本字幕',
-    description: '兼容性最好，不带样式信息',
+    description: '轻便兼容；朴素简洁',
     emphasized: false,
   },
 ];
@@ -197,7 +197,7 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
         >
           <div className="border-b border-[var(--v4-line)] px-3.5 py-2.5">
             <p className="text-xs font-semibold tracking-wide text-[var(--v4-text)]">选择格式</p>
-            <p className="mt-0.5 text-[11px] leading-4 text-[var(--v4-text-faint)]">下载到本地，可直接用于播放器</p>
+            <p className="mt-0.5 text-[11px] leading-4 text-[var(--v4-text-faint)]">下载到本地，如视频文件所在目录等</p>
           </div>
           <div className="p-1.5">
             {EXPORT_OPTIONS.map((option) => (

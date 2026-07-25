@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Pause, Play } from 'lucide-react';
+import { Pause, Play, LampCeiling } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
@@ -9,6 +9,12 @@ import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 interface TimelineControlsProps {
   variant?: 'full' | 'compact' | 'theater';
   timelineDurationMs?: number;
+  /** 放映厅：关灯时只留进度条；附带工具条与关灯钮。 */
+  theaterChrome?: {
+    lightsOff: boolean;
+    onToggleLights: () => void;
+    tools?: React.ReactNode;
+  };
 }
 
 type TimelinePoint = {
@@ -58,6 +64,7 @@ const findActivePoint = (points: TimelinePoint[], targetMs: number): TimelinePoi
 export const TimelineControls: React.FC<TimelineControlsProps> = ({
   variant = 'full',
   timelineDurationMs,
+  theaterChrome,
 }) => {
   const {
     processedSubs,
@@ -85,6 +92,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
     setIsPreviewPlaying: state.setIsPreviewPlaying,
   })));
   const [scrubTimeMs, setScrubTimeMs] = useState<number | null>(null);
+  const [sliderTip, setSliderTip] = useState<{ x: number; y: number } | null>(null);
   const isPointerScrubbing = useRef(false);
   const playStartedAtRef = useRef(0);
   const playClockAtStartRef = useRef(0);
@@ -258,7 +266,9 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
     <button
       type="button"
       onClick={togglePlayback}
-      className="v4-focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel)] text-[var(--v4-accent-strong)] transition-colors hover:bg-[var(--v4-accent-soft)]"
+      className={`v4-focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[var(--v4-line)] text-[var(--v4-accent-strong)] transition-colors hover:bg-[var(--v4-accent-soft)] ${
+        variant === 'theater' ? 'theater-chrome-chip' : 'bg-[var(--v4-panel)]'
+      }`}
       aria-label={isPreviewPlaying ? '暂停预览' : '播放字幕轴'}
       title={isPreviewPlaying ? '暂停' : '播放（便于查看渐入渐出）'}
     >
@@ -293,43 +303,95 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
   }
 
   if (variant === 'theater') {
+    const lightsOff = Boolean(theaterChrome?.lightsOff);
+    const tipPoint = findActivePoint(timelinePoints, displayTimeMs)
+      || findNearestPoint(timelinePoints, displayTimeMs);
+    const tipLine = tipPoint.rowIndex + 1;
+    const showSliderTip = sliderTip !== null;
+
+    const updateSliderTip = (clientX: number, clientY: number) => {
+      setSliderTip({ x: clientX, y: clientY });
+    };
+
     return (
-      <div className="theater-chrome-bar flex w-full flex-col gap-3 rounded-lg border border-[var(--v4-line)] px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
-        <div className="flex shrink-0 items-center gap-2">
-          {playButton}
-          <span className="text-xs font-semibold text-[var(--v4-text-muted)]">预览时间</span>
-          <span className="font-mono text-xs tabular-nums text-[var(--v4-accent-strong)]">{timeReadout}</span>
-        </div>
-        <input
-          type="range"
-          min="0"
-          max={sharedDurationMs}
-          step="16"
-          value={displayTimeMs}
-          onChange={event => handleTimelineChange(event.target.value)}
-          onPointerDown={beginScrub}
-          onPointerUp={event => endScrub(event.currentTarget.value)}
-          onPointerCancel={() => { isPointerScrubbing.current = false; setScrubTimeMs(null); }}
-          onBlur={event => { if (scrubTimeMs !== null) endScrub(event.currentTarget.value); }}
-          style={timelineStyle}
-          className="v9-timeline-dial-slider w-full min-w-0 flex-1"
-          aria-label="字幕预览时间"
-        />
-        <form onSubmit={handleJumpToLine} className="v9-dial-gauge flex shrink-0 items-center gap-2">
-          <span className="v9-dial-gauge-label">行</span>
+      <div
+        className={`theater-chrome-bar flex w-full items-center gap-1.5 rounded-lg border border-[var(--v4-line)] px-2 py-2 sm:gap-2 sm:px-2.5 ${
+          lightsOff ? 'theater-chrome-bar--lights-off' : ''
+        }`}
+      >
+        {!lightsOff && (
+          <>
+            {playButton}
+            {theaterChrome?.tools ? (
+              <>
+                <div className="mx-0.5 hidden h-5 w-px shrink-0 bg-[var(--v4-line)] md:block" aria-hidden="true" />
+                <div className="min-w-0 max-w-[min(100%,34rem)] overflow-x-auto scrollbar-none">
+                  {theaterChrome.tools}
+                </div>
+              </>
+            ) : null}
+          </>
+        )}
+
+        <div
+          className="relative min-w-0 flex-1 px-0.5"
+          onPointerEnter={(event) => updateSliderTip(event.clientX, event.clientY)}
+          onPointerMove={(event) => updateSliderTip(event.clientX, event.clientY)}
+          onPointerLeave={() => {
+            if (!isPointerScrubbing.current) setSliderTip(null);
+          }}
+        >
           <input
-            type="number"
-            min="1"
-            max={processedSubs.length}
-            value={jumpLineVal}
-            onChange={event => setJumpLineVal(event.target.value)}
-            onBlur={() => handleJumpToLine()}
-            className="v9-dial-gauge-input no-spin"
-            aria-label="跳转到字幕行"
+            type="range"
+            min="0"
+            max={sharedDurationMs}
+            step="16"
+            value={displayTimeMs}
+            onChange={(event) => handleTimelineChange(event.target.value)}
+            onPointerDown={(event) => {
+              beginScrub(event);
+              updateSliderTip(event.clientX, event.clientY);
+            }}
+            onPointerUp={(event) => {
+              endScrub(event.currentTarget.value);
+              updateSliderTip(event.clientX, event.clientY);
+            }}
+            onPointerCancel={() => {
+              isPointerScrubbing.current = false;
+              setScrubTimeMs(null);
+              setSliderTip(null);
+            }}
+            onBlur={(event) => {
+              if (scrubTimeMs !== null) endScrub(event.currentTarget.value);
+            }}
+            style={timelineStyle}
+            className="v9-timeline-dial-slider w-full min-w-0"
+            aria-label={`字幕预览时间，第 ${tipLine} 行，${timelinePercent}%`}
+            title={`第 ${tipLine} 行 · ${timelinePercent}%`}
           />
-          <div className="h-3 w-px bg-[var(--v4-line-strong)]" />
-          <span className="v9-dial-gauge-value text-[var(--v4-text-muted)]">{timelinePercent}%</span>
-        </form>
+          {showSliderTip && (
+            <div
+              className="pointer-events-none fixed z-[var(--z-dropdown)] -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-md border border-[var(--v4-line-strong)] bg-[color-mix(in_srgb,#0a0e0d_88%,transparent)] px-2 py-1 font-mono text-[11px] font-semibold tabular-nums text-[var(--v4-accent-strong)] shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md"
+              style={{ left: sliderTip.x, top: sliderTip.y }}
+              role="status"
+            >
+              行 {tipLine} · {timelinePercent}%
+            </div>
+          )}
+        </div>
+
+        {!lightsOff && theaterChrome && (
+          <button
+            type="button"
+            onClick={theaterChrome.onToggleLights}
+            aria-pressed={false}
+            title="关灯观影（L）"
+            aria-label="关灯观影"
+            className="theater-chrome-chip v4-focus-ring grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-md border border-[var(--v4-line)] text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)]"
+          >
+            <LampCeiling className="h-3.5 w-3.5 stroke-[2]" aria-hidden="true" />
+          </button>
+        )}
       </div>
     );
   }
