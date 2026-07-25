@@ -452,17 +452,34 @@ const isFullyWrappedAuxiliaryCue = (cleanText: string): boolean => (
 );
 
 /** High-confidence sound EVENTS only. Bare nouns like "phone" /「电话」stay screen text (keep). */
-const CONFIRMED_AMBIENT_EN_RE = /\b(?:(?:phone|telephone|cell(?:phone)?)\s+(?:rings?|ringing|buzzes?|buzzing|vibrat(?:e|es|ing))|(?:door|gate)\s+(?:opens?|closes?|slams?|creaks?|knocking)|(?:soft |faint |distant |loud )?(?:beeps?|beeping|knocking|creaking)|footsteps?|wind(?:\s+howling)?|thunder|sirens?|engines?\s+revving|applause|laughter|(?:sighs?|groans?|crying|sniffling|chuckles?)\b|(?:rings?|ringing)\b)/i;
+// EN seeds: Netflix/CC reaction + impact (Lucky / Prada). No bare nouns (phone/TEXT stay screen).
+const CONFIRMED_AMBIENT_EN_RE = /\b(?:(?:phone|telephone|cell(?:phone)?|doorbell)\s+(?:rings?|ringing|buzzes?|buzzing|vibrat(?:e|es|ing)|chimes?)|(?:door|gate)\s+(?:opens?|closes?|slams?|creaks?|knocking)|(?:soft |faint |distant |loud |strained )?(?:beeps?|beeping|knocking|creaking)|footsteps?|wind(?:\s+howling)?|thunder|sirens?|engines?\s+revving|applause|applauding|laughter|no\s+audible\s+dialogue|(?:sighs?|groans?|grunts?|gasps?|gasping|panting|pants|whimpers?|gulps?|moans?|crying|sniffling|chuckles?|chuckling|laughs?|laughing|scoffs?|tuts?|coughs?|exhales?|inhales?|screams?|exclaims?|stammers?|vocaliz(?:es|ing)|muttering|mumbling|shuffling|clears\s+throat|breathes?(?:\s+deeply)?)\b|(?:cheering|clamoring|chattering|whistling)\b|(?:honks?|honking|clatter|clatters?|dings?|chimes?|thuds?|bangs?|crashes?|clanks?|kisses?|clicks?|clicking)\b|(?:horns?\s+honks?|horns?\s+honking|keys?\s+clatter|elevator\s+bell\s+dings?|bell\s+tolling|keyboard\s+clicking|pen\s+clicks?|pages?\s+shuffling)\b|(?:rings?|ringing)\b)/i;
 const CONFIRMED_AMBIENT_ZH_RE = /(脚步声|腳步聲|风声|風聲|雨声|雨聲|雷声|雷聲|电话铃声|電話鈴聲|铃声|鈴聲|敲门声|敲門聲|开门声|開門聲|关门声|關門聲|笑声|笑聲|掌声|掌聲|哭声|哭聲|引擎声|引擎聲|警笛(?:声|聲)?|叹息声|嘆息聲|呼吸声|呼吸聲|嗡嗡声|滴滴声|咔嚓声)|(?:声|聲|响|響)$/;
 const SPEECH_CONTEXT_EN_RE = /\b(?:speaking|speaks|language|alien|robot|machine|computer|ai|voice|radio|intercom|announcer|broadcast|chatter|chirps?|responds?|whispers?|murmurs?)\b/i;
 const SPEECH_CONTEXT_ZH_RE = /(外星|语言|語言|机器|機器|人工智能|广播|廣播|电台|電台|对讲机|對講機|播报|播報|说话|說話|低语|低語)/;
-const MUSIC_KEYWORD_RE = /\b(?:song|singing|lyrics?)\b/i;
+const MUSIC_KEYWORD_RE = /\b(?:song|singing|lyrics?|playing)\b/i;
 const MUSIC_ZH_RE = /(歌词|歌声|唱歌|哼唱|音乐|音樂|歌声|歌聲)/;
 const TITLE_CARD_INNER_RE = /^(?:\d{4}年|\d{1,2}月|\d{1,2}日|[一二三四五六七八九十\d]+个月后|[一二三四五六七八九十\d]+年后|第[一二三四五六七八九十\d]+章|第[一二三四五六七八九十\d]+幕)/;
 
 const isConfirmedAmbientSound = (innerText: string): boolean => (
   CONFIRMED_AMBIENT_EN_RE.test(innerText) || CONFIRMED_AMBIENT_ZH_RE.test(innerText)
 );
+
+/** Peel CC/Netflix speaker or group prefix inside [] so "Amari gasps" → "gasps". */
+const stripEnglishSdhSpeakerPrefix = (innerText: string): string => {
+  const text = innerText.trim();
+  if (!text) return text;
+  let next = text
+    .replace(/^person\s+\d+\s+/i, '')
+    .replace(/^[A-Z][\w.'’\-]+(?:\s+[A-Z][\w.'’\-]+)?\s*:\s*/, '')
+    .replace(/^(?:both|all|crowd|guests?|staff|mourners?|patrons?|people|singer)\s+/i, '')
+    // Capitalized character name(s) before a lowercase sound phrase
+    .replace(/^[A-Z][\w.'’\-]{0,20}(?:\s+[A-Z][\w.'’\-]{0,20})?\s+(?=[a-z])/u, '');
+  next = next.trim();
+  return next || text;
+};
+
+const isAsciiSquareWrappedCue = (cleanText: string): boolean => /^\[[\s\S]*\]$/.test(cleanText);
 
 /** Human-readable trace for why an auxiliary cue was classified. */
 export function describeAuxiliaryReason(reason: string): string {
@@ -493,6 +510,10 @@ export function classifyAuxiliaryCue(text: string): AuxiliaryCueClassification {
   const cleanText = stripSubtitleInlineTags(rawText);
   const innerText = stripWrappingBrackets(cleanText);
   const fullyWrapped = isFullyWrappedAuxiliaryCue(cleanText);
+  // EN [] only: peel speaker/group prefix before ambient match (中文括号不走此剥皮).
+  const ambientInner = fullyWrapped && isAsciiSquareWrappedCue(cleanText)
+    ? stripEnglishSdhSpeakerPrefix(innerText)
+    : innerText;
   const reasons: string[] = [];
   let category: AuxiliaryCueCategory = 'unknown';
   let confidence: number = AUXILIARY_CLASSIFY_SCORES.unknownBase;
@@ -529,12 +550,13 @@ export function classifyAuxiliaryCue(text: string): AuxiliaryCueClassification {
 
   // Only 100%-confirmed sound events may become strippable ambient SDH.
   // 「电话」keep as screen text; 「电话铃声响」/ [phone ringing] may strip.
+  // EN [] uses ambientInner (prefix-stripped); 中文 （） still uses raw innerText.
   if (
     (category === 'unknown' || category === 'music')
     && fullyWrapped
-    && isConfirmedAmbientSound(innerText)
+    && isConfirmedAmbientSound(ambientInner)
   ) {
-    const isMusicAmbient = /\b(?:music|song|singing)\b/i.test(innerText) || /(音乐|音樂|歌声|歌聲)/.test(innerText);
+    const isMusicAmbient = /\b(?:music|song|singing|playing)\b/i.test(innerText) || /(音乐|音樂|歌声|歌聲)/.test(innerText);
     category = isMusicAmbient ? 'music' : 'ambient_sdh';
     confidence = Math.max(confidence, isMusicAmbient ? AUXILIARY_CLASSIFY_SCORES.music : AUXILIARY_CLASSIFY_SCORES.ambient);
     action = isMusicAmbient ? 'keep_auxiliary' : 'hide_by_default';
@@ -542,6 +564,7 @@ export function classifyAuxiliaryCue(text: string): AuxiliaryCueClassification {
   }
 
   // All other bracketed content defaults to keep-visible screen text.
+  // 中文 （） 与未命中的 EN [] 仍走此保守回落（本轮不改默认分叉）。
   if (category === 'unknown' && fullyWrapped) {
     if (TITLE_CARD_INNER_RE.test(innerText)) {
       reasons.push('title-card-pattern');

@@ -803,6 +803,44 @@ Movimiento ocular detectado.`;
   assert.equal(classifySubtitleCue('（电话）').kind, 'screen_text');
   assert.equal(classifySubtitleCue('[phone]').kind, 'screen_text');
   assert.ok(classifySubtitleCue('（电话）').auxiliary?.reasons.includes('bracket-screen-text'));
+
+  // EN [] pure SDH reactions (Lucky / Prada): must not fall through to screen_text.
+  for (const sample of [
+    '[grunts]',
+    '[gasps]',
+    '[panting]',
+    '[thuds]',
+    '[cheering]',
+    '[horn honks]',
+    '[clears throat]',
+    '[person 1 panting]',
+    '[Amari clears throat]',
+    '[Miranda groans]',
+    '[guests gasping]',
+    '[horns honking]',
+    '[laughs]',
+    '[both laughing]',
+    '[Lily laughing]',
+    '[Andy muttering indistinctly]',
+    '[crowd applauding]',
+    '[stammers]',
+    '[exclaims]',
+    '[pages shuffling]',
+    '[Lady Gaga vocalizes]',
+    '[no audible dialogue]',
+    '[doorbell chimes]',
+  ]) {
+    const aux = classifyAuxiliaryCue(sample);
+    assert.equal(aux.category, 'ambient_sdh', `${sample} should be strippable ambient SDH`);
+    assert.equal(aux.action, 'hide_by_default', `${sample} should hide_by_default`);
+    assert.equal(classifySubtitleCue(sample).kind, 'sound_caption', `${sample} cueKind`);
+  }
+  // Music "… playing" stays auxiliary music, not screen_text.
+  assert.equal(classifyAuxiliaryCue('[Jamiroquai "Diskokid" playing]').category, 'music');
+  // Counterexamples: bare nouns / 中文画面字 keep visible.
+  assert.equal(classifyAuxiliaryCue('[phone]').category, 'screen_text');
+  assert.equal(classifyAuxiliaryCue('[TEXT]').category, 'screen_text');
+  assert.equal(classifyAuxiliaryCue('[Someone speaks softly]').category, 'speech_context');
 }
 
 {
