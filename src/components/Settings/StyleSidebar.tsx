@@ -44,7 +44,7 @@ const FontFamilySelect = ({
   <div className="flex items-center justify-between gap-3 py-2">
     <span className="text-sm text-[var(--v4-text-muted)] font-medium shrink-0">{label}</span>
     <select
-      className="min-w-0 w-40 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-2 text-right text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-white cursor-pointer"
+      className="min-w-0 w-40 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-2 text-right text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
       value={value}
       onChange={e => onChange(e.target.value)}
     >
@@ -194,7 +194,9 @@ const SliderControl = ({
   </div>
 );
 
-export const StyleSidebar: React.FC = () => {
+type StyleSidebarTone = 'cream' | 'theater';
+
+export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cream' }) => {
   const {
     processedSubs,
     customStyle,
@@ -298,7 +300,14 @@ export const StyleSidebar: React.FC = () => {
   };
 
   return (
-    <div data-surface="cream" className="flex h-full w-full flex-col overflow-y-auto bg-[var(--v5-cream)] p-5 text-left text-[var(--v4-text)] scrollbar-thin">
+    <div
+      data-surface={tone === 'theater' ? 'forest' : 'cream'}
+      className={
+        tone === 'theater'
+          ? 'theater-style-drawer flex h-full w-full flex-col overflow-y-auto p-5 text-left text-[var(--v4-text)] scrollbar-thin'
+          : 'flex h-full w-full flex-col overflow-y-auto bg-[var(--v5-cream)] p-5 text-left text-[var(--v4-text)] scrollbar-thin'
+      }
+    >
       <div className="mb-5 flex flex-shrink-0 items-start justify-between gap-4 border-b border-[var(--v4-line)] pb-4">
         <div className="min-w-0 select-none">
           <div className="flex items-center gap-2">
@@ -389,7 +398,7 @@ export const StyleSidebar: React.FC = () => {
                     value={templateNameInput}
                     onChange={e => setTemplateNameInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleSaveTemplate(); if (e.key === 'Escape') setShowTemplateSave(false); }}
-              className="min-w-0 flex-1 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2 text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-white"
+              className="min-w-0 flex-1 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2 text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)]"
                     placeholder="模板名称"
                   />
                   <button
@@ -414,7 +423,7 @@ export const StyleSidebar: React.FC = () => {
                   if (tpl) handleApplyPreset(tpl);
                 }
               }}
-              className="h-10 min-w-0 flex-1 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-white cursor-pointer"
+              className="h-10 min-w-0 flex-1 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
             >
               <option value="classic">默认经典样式</option>
               {customTemplates.map(tpl => (
@@ -584,7 +593,7 @@ export const StyleSidebar: React.FC = () => {
               </InfoHint>
             </span>
             <select
-              className="h-10 w-36 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-right text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-white cursor-pointer"
+              className="h-10 w-36 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-right text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
               value={customStyle.resolution || '1080p'}
               onChange={e => handleStyleChange('resolution', e.target.value as StyleSettings['resolution'])}
             >
@@ -636,7 +645,7 @@ export const StyleSidebar: React.FC = () => {
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-sm font-medium text-[var(--v4-text-muted)]">位置</span>
                       <select
-                        className="h-10 w-32 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-right text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-white cursor-pointer"
+                        className="h-10 w-32 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-right text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
                         value={customStyle.lyricPosition ?? 'top'}
                         onChange={e => handleStyleChange('lyricPosition', e.target.value as StyleSettings['lyricPosition'])}
                       >

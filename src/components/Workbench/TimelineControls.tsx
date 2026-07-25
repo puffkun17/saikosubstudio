@@ -294,7 +294,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
 
   if (variant === 'theater') {
     return (
-      <div className="flex w-full flex-col gap-3 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
+      <div className="theater-chrome-bar flex w-full flex-col gap-3 rounded-lg border border-[var(--v4-line)] px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
         <div className="flex shrink-0 items-center gap-2">
           {playButton}
           <span className="text-xs font-semibold text-[var(--v4-text-muted)]">预览时间</span>

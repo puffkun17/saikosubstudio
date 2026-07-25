@@ -102,6 +102,8 @@ export const TheaterStep: React.FC = () => {
   useEffect(() => {
     if (!isSettingsOpen) return;
     const handleEscape = (event: KeyboardEvent) => {
+      // 关灯优先吃掉 Esc；再按一次才关样式抽屉。
+      if (useStudioStore.getState().isLightsOff) return;
       if (event.key === 'Escape') setIsSettingsOpen(false);
     };
     document.addEventListener('keydown', handleEscape);
@@ -109,11 +111,8 @@ export const TheaterStep: React.FC = () => {
   }, [isSettingsOpen, setIsSettingsOpen]);
 
   // ── 关灯模式退出规则 ────────────────────────────────────────────
-  // 1) Esc / 点击暗幕 / 再按 L → 退出；2) 打开样式抽屉 → 自动开灯；3) 离开放映厅 → 复位。
-  useEffect(() => {
-    if (isSettingsOpen && isLightsOff) setLightsOff(false);
-  }, [isSettingsOpen, isLightsOff, setLightsOff]);
-
+  // Esc / 点击暗幕 / 再按 L → 退出；离开放映厅 → 复位。
+  // 样式抽屉可与关灯共存（夜光 LCD 侧栏）；不再因开抽屉强制开灯。
   useEffect(() => () => setLightsOff(false), [setLightsOff]);
 
   // 放映厅键盘操作：← / → 切行，空格播放暂停，L 关灯。
@@ -206,10 +205,10 @@ export const TheaterStep: React.FC = () => {
         <ControlDeck />
       </div>
 
-      {/* 主体内容 */}
-      <div className="flex-1 flex min-h-0 overflow-hidden relative">
-        {/* Theater 预览区域（关灯时提到暗幕之上，保持点亮） */}
-        <div className={`flex-1 flex flex-col items-center justify-center gap-3 p-3 md:p-5 xl:p-6 relative min-w-0 ${isLightsOff ? 'lights-off-stage' : ''}`}>
+      {/* 主体：关灯时整块（预览 + 夜光侧栏）提到暗幕之上 */}
+      <div className={`flex-1 flex min-h-0 overflow-hidden relative ${isLightsOff ? 'lights-off-stage' : ''}`}>
+        {/* Theater 预览区域 */}
+        <div className="relative flex min-w-0 flex-1 flex-col items-center justify-center gap-3 p-3 md:p-5 xl:p-6">
           <div className="flex-1 w-full min-h-0 flex items-center justify-center">
             <SimulatorBoundary>
               <SimulatorWithClock
@@ -223,8 +222,12 @@ export const TheaterStep: React.FC = () => {
             </SimulatorBoundary>
           </div>
 
-          {/* 播放条贴在「屏幕」下方，符合日常观影直觉 */}
-          <div className="theater-stage-chrome flex w-full max-w-[1080px] shrink-0 items-center gap-2 px-1">
+          {/* 播放条贴在「屏幕」下方；侧栏展开时抬到上层，保证关灯可点 */}
+          <div
+            className={`theater-stage-chrome flex w-full max-w-[1080px] shrink-0 items-center gap-2 px-1 ${
+              isSettingsOpen ? 'relative z-50' : ''
+            }`}
+          >
             <div className="min-w-0 flex-1">
               <TimelineControls variant="theater" />
             </div>
@@ -235,10 +238,10 @@ export const TheaterStep: React.FC = () => {
                 aria-pressed={isLightsOff}
                 title={isLightsOff ? '开灯（L / Esc）' : '关灯观影（L）'}
                 aria-label={isLightsOff ? '开灯' : '关灯观影'}
-                className={`v4-focus-ring grid h-10 w-10 cursor-pointer place-items-center rounded-lg border transition-colors
+                className={`theater-chrome-chip v4-focus-ring grid h-10 w-10 cursor-pointer place-items-center rounded-lg border transition-colors
                   ${isLightsOff
                     ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
-                    : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]'}`}
+                    : 'border-[var(--v4-line)] text-[var(--v4-text-muted)] hover:text-[var(--v4-text)]'}`}
               >
                 {isLightsOff ? (
                   <LightbulbOff className="h-[18px] w-[18px] stroke-[2]" aria-hidden="true" />
@@ -255,7 +258,7 @@ export const TheaterStep: React.FC = () => {
           </div>
         </div>
 
-        {/* 样式侧边栏 */}
+        {/* 样式侧边栏：放映厅夜光毛玻璃（与播放条同语汇） */}
         <AnimatePresence>
           {isSettingsOpen && (
             <>
@@ -274,9 +277,10 @@ export const TheaterStep: React.FC = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: 360, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="v4-panel absolute inset-y-4 right-4 z-40 flex w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg xl:relative xl:inset-auto xl:z-20 xl:my-5 xl:mr-5 xl:w-[380px] xl:shrink-0"
+                // 始终 absolute 浮层：不进 flex 文档流，避免预览屏随开合左右挪动。
+                className="theater-style-shell absolute inset-y-4 right-4 z-40 flex w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg xl:w-[380px]"
               >
-                <StyleSidebar />
+                <StyleSidebar tone="theater" />
               </motion.aside>
             </>
           )}
