@@ -280,12 +280,12 @@ const WorkflowEdgeNext: React.FC<{ config: EdgeNextConfig }> = ({ config }) => {
     >
       <span className="workflow-edge-next__rail" aria-hidden="true" />
       <span className="workflow-edge-next__glyph">
-        <ChevronRight className="h-5 w-5" strokeWidth={2.25} />
+        <ChevronRight className="h-5 w-5" strokeWidth={2} />
       </span>
       <span className="workflow-edge-next__label">{config.label}</span>
       <span className="workflow-edge-next__expanded" aria-hidden="true">
         {config.label}
-        <ChevronRight className="h-[18px] w-[18px]" strokeWidth={2.5} />
+        <ChevronRight className="h-5 w-5" strokeWidth={2} />
       </span>
     </button>
   );

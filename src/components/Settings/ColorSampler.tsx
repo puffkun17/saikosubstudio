@@ -152,7 +152,7 @@ export const ColorSampler: React.FC = () => {
                 className="w-full py-2.5 bg-[var(--v4-accent)] hover:bg-[var(--v4-accent-strong)] text-[var(--v4-accent-ink)] font-semibold rounded-lg text-sm flex items-center justify-center gap-1.5 transition-all shadow"
                 onClick={triggerEyeDropper}
               >
-                <Pipette className="w-3.5 h-3.5" />
+                <Pipette className="h-4 w-4" />
                 启动吸色器
               </button>
             ) : (

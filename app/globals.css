@@ -762,7 +762,7 @@ body {
   font-size: 0.6875rem;
   line-height: 1.2;
   font-weight: 500;
-  color: rgba(245, 241, 234, 0.55);
+  color: rgba(245, 241, 234, 0.68);
 }
 
 .bottom-status-deck__steps {
@@ -805,12 +805,12 @@ body {
 }
 
 .bottom-status-deck__step.is-pending {
-  color: rgba(245, 241, 234, 0.38);
+  color: rgba(245, 241, 234, 0.55);
 }
 
 .bottom-status-deck__subtitle {
   margin: 0;
-  color: rgba(245, 241, 234, 0.5);
+  color: rgba(245, 241, 234, 0.68);
 }
 
 @keyframes bottomStatusPulse {
@@ -930,7 +930,8 @@ body {
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--v4-accent-strong);
+  /* 可读次要句：纯柑橘在奶油上仅 ~2.2:1；混入墨绿达到 ≥4.5:1 且保留柑橘色相 */
+  color: color-mix(in srgb, var(--v5-accent) 40%, var(--v5-text));
 }
 
 .ingest-empty-intro__title {

@@ -31,29 +31,29 @@ const PRESETS: Preset[] = [
     name: 'Netflix',
     desc: '轻阴影',
     styles: { zhFontSize: 22, enFontSize: 13, zhColor: '#FFFFFF', enColor: '#FFFFFF', zhOutline: '#000000', marginV: 25 },
-    icon: <Tv className="h-3.5 w-3.5 stroke-[2.25]" aria-hidden="true" />,
+    icon: <Tv className="h-4 w-4 stroke-[2]" aria-hidden="true" />,
   },
   {
     id: 'classic',
     name: '大银幕',
     desc: '黄白配',
     styles: { zhFontSize: 20, enFontSize: 12, zhColor: '#FFFFFF', enColor: '#B0B0B0', zhOutline: '#4B5563', marginV: 20 },
-    icon: <Clapperboard className="h-3.5 w-3.5 stroke-[2.25]" aria-hidden="true" />,
+    icon: <Clapperboard className="h-4 w-4 stroke-[2]" aria-hidden="true" />,
   },
   {
     id: 'anime',
     name: '动漫',
     desc: '深描边',
     styles: { zhFontSize: 24, enFontSize: 14, zhColor: '#FFFFFF', enColor: '#FFFFFF', zhOutline: '#6D4438', marginV: 30 },
-    icon: <Sparkles className="h-3.5 w-3.5 stroke-[2.25]" aria-hidden="true" />,
+    icon: <Sparkles className="h-4 w-4 stroke-[2]" aria-hidden="true" />,
   },
 ];
 
 const ASPECT_RATIOS = [
-  { id: '4:3', label: '4:3', description: '标准画幅', icon: <Square className="h-3.5 w-3.5 stroke-[2.25]" aria-hidden="true" /> },
-  { id: '16:9', label: '16:9', description: '宽屏', icon: <RectangleHorizontal className="h-3.5 w-3.5 stroke-[2.25]" aria-hidden="true" /> },
-  { id: '2.39:1', label: '2.39:1', description: '宽银幕', icon: <StretchHorizontal className="h-3.5 w-3.5 stroke-[2.25]" aria-hidden="true" /> },
-  { id: '1.9:1', label: 'IMAX', description: '沉浸画幅', icon: <Maximize2 className="h-3.5 w-3.5 stroke-[2.25]" aria-hidden="true" /> },
+  { id: '4:3', label: '4:3', description: '标准画幅', icon: <Square className="h-4 w-4 stroke-[2]" aria-hidden="true" /> },
+  { id: '16:9', label: '16:9', description: '宽屏', icon: <RectangleHorizontal className="h-4 w-4 stroke-[2]" aria-hidden="true" /> },
+  { id: '2.39:1', label: '2.39:1', description: '宽银幕', icon: <StretchHorizontal className="h-4 w-4 stroke-[2]" aria-hidden="true" /> },
+  { id: '1.9:1', label: 'IMAX', description: '沉浸画幅', icon: <Maximize2 className="h-4 w-4 stroke-[2]" aria-hidden="true" /> },
 ];
 
 const IconChip = ({
@@ -143,7 +143,7 @@ export const ControlDeck: React.FC = () => {
         label="默认背景"
         onClick={() => setTmdbBackdrop(null)}
       >
-        <ImageOff className="h-3.5 w-3.5 stroke-[2.25]" aria-hidden="true" />
+        <ImageOff className="h-4 w-4 stroke-[2]" aria-hidden="true" />
       </IconChip>
       <IconChip
         active={Boolean(tmdbBackdrop)}
@@ -154,7 +154,7 @@ export const ControlDeck: React.FC = () => {
         }}
         disabled={!hasBackdropPool}
       >
-        <ImageIcon className="h-3.5 w-3.5 stroke-[2.25]" aria-hidden="true" />
+        <ImageIcon className="h-4 w-4 stroke-[2]" aria-hidden="true" />
       </IconChip>
       {canShuffleBackdrop && tmdbBackdrop ? (
         <IconChip
@@ -162,7 +162,7 @@ export const ControlDeck: React.FC = () => {
           label="换一张剧照"
           onClick={shuffleBackdrop}
         >
-          <Shuffle className="h-3.5 w-3.5 stroke-[2.25]" aria-hidden="true" />
+          <Shuffle className="h-4 w-4 stroke-[2]" aria-hidden="true" />
         </IconChip>
       ) : null}
 

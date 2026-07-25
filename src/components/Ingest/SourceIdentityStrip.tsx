@@ -180,9 +180,9 @@ export const SourceIdentityStrip: React.FC = () => {
                       type="button"
                       aria-label="关闭提示"
                       onClick={() => dismissStatusNotice(filmNotice.id)}
-                      className="v4-focus-ring grid h-7 w-7 shrink-0 place-items-center rounded-md text-[var(--v4-text-faint)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]"
+                      className="v4-focus-ring grid h-7 w-7 shrink-0 place-items-center rounded-md text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                   {filmNotice.actionLabel && (
@@ -211,7 +211,7 @@ export const SourceIdentityStrip: React.FC = () => {
                   className="ui-action w-full"
                   title="切换到同一次搜索缓存的另一同名候选，不再发起检索"
                 >
-                  <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
                   不是这个？
                 </button>
                 <button
@@ -219,7 +219,7 @@ export const SourceIdentityStrip: React.FC = () => {
                   onClick={() => setTmdbManualOpen(true)}
                   className="ui-action ui-action--secondary w-full"
                 >
-                  <Search className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Search className="h-4 w-4" aria-hidden="true" />
                   手动匹配
                 </button>
               </>
@@ -229,7 +229,7 @@ export const SourceIdentityStrip: React.FC = () => {
                 onClick={() => setTmdbManualOpen(true)}
                 className="ui-action w-full"
               >
-                <Search className="h-3.5 w-3.5" aria-hidden="true" />
+                <Search className="h-4 w-4" aria-hidden="true" />
                 {rematchLabel}
               </button>
             )}
@@ -239,7 +239,7 @@ export const SourceIdentityStrip: React.FC = () => {
               href="https://www.themoviedb.org/"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 flex w-full items-center justify-center gap-2 text-[12px] font-medium text-[var(--v4-text-faint)] transition-colors hover:text-[var(--v4-text-muted)]"
+              className="mt-3 flex w-full items-center justify-center gap-2 text-[12px] font-medium text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)]"
               title="This product uses the TMDB API but is not endorsed or certified by TMDB."
             >
               <span>Powered by</span>

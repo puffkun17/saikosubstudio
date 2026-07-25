@@ -68,7 +68,7 @@ export default function FeedbackPage() {
       <div className="mx-auto w-full max-w-2xl pb-12 pt-3">
         <header className="mt-3">
           <div className="flex items-center gap-3 text-[var(--v4-accent-strong)]">
-            <MessageSquareText className="h-7 w-7 stroke-[2.25]" aria-hidden="true" />
+            <MessageSquareText className="h-7 w-7 stroke-[2]" aria-hidden="true" />
             <span className="text-xs font-semibold tracking-[0.12em]">SAIKOSUBSTUDIO / FEEDBACK</span>
           </div>
           <h1 className="font-display mt-5 text-3xl tracking-tight text-[var(--v4-text)] md:text-[2rem]">提交反馈</h1>
@@ -101,7 +101,7 @@ export default function FeedbackPage() {
                         : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)]'}`}
                     aria-pressed={selected}
                   >
-                    <Icon className={`h-5 w-5 stroke-[2.25] ${selected ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-faint)]'}`} aria-hidden="true" />
+                    <Icon className={`h-5 w-5 stroke-[2] ${selected ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-faint)]'}`} aria-hidden="true" />
                     <span>
                       <span className="block text-sm font-semibold text-[var(--v4-text)]">{item.label}</span>
                       <span className="mt-1 block text-xs leading-5 text-[var(--v4-text-muted)]">{item.description}</span>
@@ -150,7 +150,7 @@ export default function FeedbackPage() {
                 disabled={hasLiked}
                 className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-[var(--v4-accent)]/35 bg-[var(--v4-panel-raised)] px-4 text-sm font-semibold text-[var(--v4-accent-strong)] transition-colors hover:bg-[var(--v4-accent-soft)] disabled:cursor-default disabled:border-[var(--v4-line)] disabled:bg-[var(--v4-panel-muted)] disabled:text-[var(--v4-text-faint)]"
               >
-                <ThumbsUp className="h-5 w-5 stroke-[2.25]" aria-hidden="true" />
+                <ThumbsUp className="h-5 w-5 stroke-[2]" aria-hidden="true" />
                 {hasLiked ? '已点赞支持' : '点赞支持'}
               </button>
             </div>
@@ -163,14 +163,14 @@ export default function FeedbackPage() {
               className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--v4-accent)] px-5 text-base font-semibold text-[var(--v4-accent-ink)] transition-colors hover:bg-[var(--v4-accent-strong)] disabled:cursor-not-allowed disabled:opacity-45"
             >
               {state === 'sending'
-                ? <LoaderCircle className="h-5 w-5 animate-spin stroke-[2.25]" aria-hidden="true" />
-                : <Send className="h-5 w-5 stroke-[2.25]" aria-hidden="true" />}
+                ? <LoaderCircle className="h-5 w-5 animate-spin stroke-[2]" aria-hidden="true" />
+                : <Send className="h-5 w-5 stroke-[2]" aria-hidden="true" />}
               发送反馈 <span className="opacity-70">/ Send</span>
             </button>
 
             {state === 'sent' && (
               <p className="inline-flex items-center gap-2 text-sm font-medium text-[var(--v4-accent-strong)]" role="status">
-                <CheckCircle2 className="h-5 w-5 stroke-[2.25]" aria-hidden="true" />
+                <CheckCircle2 className="h-5 w-5 stroke-[2]" aria-hidden="true" />
                 反馈已送达，感谢参与。
               </p>
             )}

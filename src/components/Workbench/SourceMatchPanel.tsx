@@ -270,7 +270,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
             onClick={() => inputRef.current?.click()}
             className="ui-action ui-action--secondary shrink-0"
           >
-            <MonitorPlay className="h-3.5 w-3.5" />
+            <MonitorPlay className="h-4 w-4" />
             {isMatchMode ? '更换视频文件' : '视频文件对比'}
           </button>
           <input
@@ -407,7 +407,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                   </span>
                   {count > 1 && (
                     <span
-                      className="absolute -right-1.5 -top-1.5 min-w-3 rounded-full px-0.5 text-center text-[9px] font-semibold leading-3 text-white"
+                      className="absolute -right-1.5 -top-1.5 min-w-3 rounded-md px-0.5 text-center text-[9px] font-semibold leading-3 text-white"
                       style={{ background: MARK_COLOR[cluster.kind] }}
                     >
                       {count}
@@ -439,7 +439,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
 
         <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--v4-text-faint)]">
           <span className="inline-flex min-w-0 items-center gap-1.5">
-            <HardDrive className="h-3.5 w-3.5 shrink-0" />
+            <HardDrive className="h-4 w-4 shrink-0" />
             <span className="truncate">
               {videoName
                 ? `${videoName}${videoDurationMs ? ` · ${formatMsClock(videoDurationMs)}` : ''}`

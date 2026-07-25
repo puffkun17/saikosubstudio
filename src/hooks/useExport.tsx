@@ -181,10 +181,10 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        <SquareArrowRightExit className="h-3.5 w-3.5" aria-hidden="true" />
+        <SquareArrowRightExit className="h-4 w-4" aria-hidden="true" />
         导出字幕
         <ChevronDown
-          className={`h-3.5 w-3.5 opacity-70 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 opacity-70 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
           aria-hidden="true"
         />
       </button>

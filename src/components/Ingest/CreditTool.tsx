@@ -99,7 +99,7 @@ export const CreditTool: React.FC = () => {
 
           <div>
             <div className="flex items-center gap-2 text-xs font-medium text-[var(--v4-text-muted)]">
-              <BadgeCheck className="h-3.5 w-3.5 text-[var(--v4-accent-strong)]" aria-hidden="true" />
+              <BadgeCheck className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />
               署名【可选】
             </div>
             {detectedAttributions.length > 0 ? (

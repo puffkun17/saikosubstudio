@@ -133,9 +133,9 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
             className="flex h-8 items-center gap-2 px-0.5 transition-colors hover:opacity-90"
             title="Powered by The Movie Database"
           >
-            <span className="text-xs font-medium text-[var(--v4-text-faint)]">Powered by</span>
+            <span className="text-xs font-medium text-[var(--v4-text-muted)]">Powered by</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/tmdb_logo_blue_square.svg" alt="TMDB Logo" className="h-full w-auto object-contain brightness-100 contrast-110 filter drop-shadow-[0_0_4px_rgba(59,130,246,0.6)]" />
+            <img src="/tmdb_logo_blue_square.svg" alt="TMDB Logo" className="h-full w-auto object-contain brightness-100 contrast-110" />
           </a>}
         </div>
         {(tmdbData || !needsTitleInput) && (
@@ -143,7 +143,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
             className="ui-action ui-action--secondary group"
             onClick={() => setTmdbManualOpen(true)}
           >
-            <Search className="w-3.5 h-3.5 group-hover:scale-110 group-hover:rotate-6 transition-transform" />
+            <Search className="h-4 w-4 group-hover:scale-110 group-hover:rotate-6 transition-transform" />
             {tmdbData ? '重新检索' : '手动检索'}
           </button>
         )}
@@ -234,7 +234,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                       }}
                       className="inline-flex"
                     >
-                      <Sparkles className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />
+                      <Sparkles className="h-4 w-4 stroke-[2]" aria-hidden="true" />
                     </motion.span>
                     动漫预设模板已激活
                   </div>
@@ -336,7 +336,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                   )}
                 </div>
                 <button
-                  className="v4-focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] transition hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] cursor-pointer"
+                  className="v4-focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-md bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] transition hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] cursor-pointer"
                   onClick={handleClose}
                   type="button"
                   aria-label="关闭片源检索"
@@ -479,7 +479,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                                   <img src={posterUrl} alt="" className="h-full w-full object-cover" />
                                 ) : (
                                   <div className="flex h-full w-full items-center justify-center text-[var(--v4-text-faint)]">
-                                    <ImageIcon className="h-3.5 w-3.5" />
+                                    <ImageIcon className="h-4 w-4" />
                                   </div>
                                 )}
                               </div>
@@ -501,7 +501,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                               </div>
 
                               <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border ${isChosen ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]' : 'border-[var(--v4-line)] text-transparent'}`}>
-                                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                               </span>
                             </button>
                           );

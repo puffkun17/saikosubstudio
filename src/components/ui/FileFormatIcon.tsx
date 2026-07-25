@@ -41,7 +41,7 @@ const ADOBE: Record<FileFormat, AdobePalette> = {
   // Muted plum — styled / ASS track
   ass: { face: '#8A6FC0', fold: '#7157A6', ink: '#FFFFFF' },
   // Citrus-adjacent zip（呼应柑橘强调色）
-  zip: { face: '#D98E4F', fold: '#BC7439', ink: '#FFFFFF' },
+  zip: { face: '#C07A42', fold: '#A46332', ink: '#FFFFFF' }, // 低于 accent #ef8d5f，避免抢 CTA
   // Soft brick archive
   rar: { face: '#C9646B', fold: '#AC4E56', ink: '#FFFFFF' },
   // Dusty indigo archive
@@ -309,7 +309,7 @@ const LANG_VISUAL: Record<string, LangVisual> = {
 /** 表面自适应的芯片配色：随 data-surface（cream/forest）自动取得可读对比。 */
 const chipSurfaceStyle = (face: string): React.CSSProperties => ({
   borderColor: `color-mix(in srgb, ${face} 48%, var(--v4-line-strong))`,
-  background: `color-mix(in srgb, ${face} 16%, transparent)`,
+  background: `color-mix(in srgb, ${face} 12%, transparent)`,
   // 文字侧更靠近主色，避免浅奶油上「有色但发灰」
   color: `color-mix(in srgb, ${face} 28%, var(--v4-text))`,
   fontWeight: 600,

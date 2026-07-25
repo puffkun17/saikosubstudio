@@ -198,7 +198,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
       className="ui-action ui-action--secondary"
       title="折叠回前 100 行"
     >
-      <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
+      <ChevronUp className="h-4 w-4" aria-hidden="true" />
       折叠显示
     </button>
   ) : null;
@@ -240,7 +240,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     onClick={() => setShowAllSubs(true)}
                     className="ui-action ui-action--secondary"
                   >
-                    <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+                    <ChevronDown className="h-4 w-4" aria-hidden="true" />
                     显示全部
                   </button>
                 )}
@@ -340,7 +340,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     </div>
                     {isLyric && (
                       <span className="inline-flex shrink-0 select-none text-[var(--v4-accent-strong)]">
-                        <Music2 className="h-3.5 w-3.5" />
+                        <Music2 className="h-4 w-4" />
                       </span>
                     )}
                     <div className={`flex min-w-0 flex-col whitespace-nowrap font-mono text-[13px] leading-tight tabular-nums tracking-tight ${isActive ? 'font-semibold text-[var(--v4-accent-strong)]' : 'font-medium text-[var(--v4-text-muted)]'}`}>
@@ -379,14 +379,14 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                         )}
                         <div className="mt-1 flex justify-end gap-2">
                           <button type="button" className="ui-action ui-action--quiet" onClick={(e) => { e.stopPropagation(); cancelEditing(); }}>
-                            <X className="h-3.5 w-3.5" aria-hidden="true" />取消
+                            <X className="h-4 w-4" aria-hidden="true" />取消
                           </button>
                           <button
                             type="button"
                             className="ui-action"
                             onClick={(e) => { e.stopPropagation(); commitEditing(); }}
                           >
-                            <Check className="h-3.5 w-3.5" aria-hidden="true" />保存
+                            <Check className="h-4 w-4" aria-hidden="true" />保存
                           </button>
                         </div>
                       </div>
@@ -443,7 +443,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                         aria-label={`编辑第 ${sub.index} 行`}
                         title="编辑 (F2 / 双击)"
                       >
-                        <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                        <Pencil className="h-4 w-4" aria-hidden="true" />
                       </button>
                     )}
                   </div>

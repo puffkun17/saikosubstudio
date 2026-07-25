@@ -6,6 +6,7 @@ import { describeAuxiliaryReason, type SubRow } from '@/utils/subtitleCore';
 import { analyzeAlignmentDiff, type AlignmentDiffEntry, type AlignmentDiffKind } from '@/utils/timeline/alignmentDiff';
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 import { useStudioStore } from '@/store/useStudioStore';
+import { MARK_COLOR } from '@/components/Workbench/inspectionMarks';
 
 type UnifiedKind = AlignmentDiffKind | 'screen-text' | 'sound-caption';
 
@@ -38,9 +39,19 @@ const reasonFromRow = (row: SubRow) => {
 const badgeTone = (kind: UnifiedKind) => {
   if (kind === 'shifted-match') return 'bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]';
   if (kind === 'expanded-dialogue') return 'bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]';
-  if (kind === 'screen-text') return 'bg-[color-mix(in_srgb,#3d8bfd_16%,transparent)] text-[#3d8bfd]';
+  if (kind === 'screen-text') {
+    return undefined; // inline style via MARK_COLOR.screen — 禁止散落蓝
+  }
   if (kind === 'sound-caption') return 'bg-[var(--v4-warning)]/12 text-[var(--v4-warning)]';
   return 'bg-[var(--v4-danger)]/10 text-[var(--v4-danger)]';
+};
+
+const badgeToneStyle = (kind: UnifiedKind): React.CSSProperties | undefined => {
+  if (kind !== 'screen-text') return undefined;
+  return {
+    background: `color-mix(in srgb, ${MARK_COLOR.screen} 16%, transparent)`,
+    color: MARK_COLOR.screen,
+  };
 };
 
 const BadgeIcon = ({ kind }: { kind: UnifiedKind }) => {
@@ -142,7 +153,10 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                   <div className="font-mono text-xs tabular-nums text-[var(--v4-text-muted)]">
                     {formatMsClock(item.startMs)}
                   </div>
-                  <span className={`mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium ${badgeTone(item.kind)}`}>
+                  <span
+                    className={`mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium ${badgeTone(item.kind) ?? ''}`}
+                    style={badgeToneStyle(item.kind)}
+                  >
                     <BadgeIcon kind={item.kind} />
                     <span className="truncate">{item.badge}</span>
                   </span>

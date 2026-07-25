@@ -11,7 +11,7 @@ const CONTEXTUAL_NOTICE_IDS = new Set(['media-match', 'media-identity']);
 
 const errorLogStyle = {
   shell: 'border-[color:rgba(196,91,85,0.28)] bg-[color:rgba(255,252,247,0.96)] text-[var(--v4-danger)]',
-  icon: <AlertTriangle className="h-3.5 w-3.5 text-[var(--v4-danger)]" />,
+  icon: <AlertTriangle className="h-4 w-4 text-[var(--v4-danger)]" />,
 };
 
 const noticeStyles = {
@@ -76,7 +76,7 @@ export const FeedbackCenter: React.FC = () => {
                   onClick={() => dismissStatusNotice(latestNotice.id)}
                   className="v4-focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-md text-current/45 transition-colors hover:bg-white/[0.06] hover:text-current"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             </motion.aside>

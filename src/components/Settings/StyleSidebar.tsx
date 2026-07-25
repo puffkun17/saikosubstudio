@@ -327,11 +327,11 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-all cursor-pointer
               ${showGuides
                 ? 'border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-text)]'
-                : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] hover:text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)]'}`}
+                : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:text-[var(--v4-text)] hover:bg-[var(--v4-panel)]'}`}
             onClick={() => setShowGuides(!showGuides)}
             aria-pressed={showGuides}
           >
-            <SquareCenterlineDashedHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
+            <SquareCenterlineDashedHorizontal className="h-4 w-4" aria-hidden="true" />
             辅助线
           </button>
           <button
@@ -377,7 +377,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
                 setShowTemplateSave(v => !v);
               }}
             >
-              <Save className="h-3.5 w-3.5" />
+              <Save className="h-4 w-4" />
               保存
             </button>
           }
@@ -436,10 +436,10 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             {activePreset !== 'classic' && activePreset !== 'custom' && (
               <button
                 onClick={() => deleteCustomTemplate(activePreset)}
-                className="grid h-10 w-10 place-items-center rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] transition-colors hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text-muted)] cursor-pointer"
+                className="grid h-10 w-10 place-items-center rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] transition-colors hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)] cursor-pointer"
                 title="删除当前模板"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-4 w-4" />
               </button>
             )}
           </div>
@@ -568,11 +568,11 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
                   className={`min-h-11 rounded-lg px-1.5 py-1.5 text-left transition-all cursor-pointer
                     ${(customStyle.auxiliaryMode || 'keep') === item.value
                       ? 'bg-[var(--v4-accent)] text-[var(--v4-accent-ink)] shadow-[0_0_18px_color-mix(in_srgb,var(--v4-accent)_14%,transparent)]'
-                      : 'text-[var(--v4-text-faint)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text-muted)]'}`}
+                      : 'text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]'}`}
                   onClick={() => handleStyleChange('auxiliaryMode', item.value)}
                 >
                   <span className="block text-center text-xs font-semibold leading-tight">{item.label}</span>
-                  <span className={`mt-0.5 block text-center text-xs leading-tight ${(customStyle.auxiliaryMode || 'keep') === item.value ? 'text-[var(--v4-accent-ink)]/55' : 'text-[var(--v4-text-faint)]'}`}>
+                  <span className={`mt-0.5 block text-center text-xs leading-tight ${(customStyle.auxiliaryMode || 'keep') === item.value ? 'text-[var(--v4-accent-ink)]/55' : 'text-[var(--v4-text-muted)]'}`}>
                     {item.desc}
                   </span>
                 </button>
@@ -610,10 +610,10 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             action={
               <button
                 type="button"
-                className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-1 text-[var(--v4-text-faint)] transition-colors hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)] cursor-pointer"
+                className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-1 text-[var(--v4-text-muted)] transition-colors hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)] cursor-pointer"
                 onClick={() => setIsLyricsExpanded(!isLyricsExpanded)}
               >
-                {isLyricsExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                {isLyricsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
             }
           >
@@ -658,7 +658,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
                       className={`h-9 rounded-lg border px-3 text-sm font-semibold transition-all cursor-pointer
                         ${customStyle.lyricItalic ?? true
                           ? 'border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-text)]'
-                          : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] hover:text-[var(--v4-text-muted)]'}`}
+                          : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:text-[var(--v4-text)]'}`}
                       onClick={() => handleStyleChange('lyricItalic', !(customStyle.lyricItalic ?? true))}
                     >
                       斜体歌词

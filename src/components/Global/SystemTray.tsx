@@ -232,8 +232,8 @@ export const SystemTray = () => {
                           ${isFilled
                             ? 'text-[var(--v5-green)]'
                             : disabled
-                              ? 'cursor-help text-[color:rgba(245,241,234,0.32)]'
-                              : 'text-[color:rgba(245,241,234,0.72)] hover:text-[var(--v5-cream)]'}
+                              ? 'cursor-help text-[color:rgba(245,241,234,0.65)]'
+                              : 'text-[color:rgba(245,241,234,0.78)] hover:text-[var(--v5-cream)]'}
                           ${isActive ? 'underline decoration-2 underline-offset-4' : ''}`}
                         aria-current={isActive ? 'step' : undefined}
                         aria-disabled={disabled}
@@ -260,7 +260,7 @@ export const SystemTray = () => {
           )}
 
           {!isInfoPage && (
-            <span className="truncate text-[15px] font-medium text-[color:rgba(245,241,234,0.45)] min-[720px]:hidden">
+            <span className="truncate text-[15px] font-medium text-[color:rgba(245,241,234,0.72)] min-[720px]:hidden">
               {STEP_LABEL[workflowStep]}
             </span>
           )}
@@ -290,11 +290,11 @@ export const SystemTray = () => {
             <span className="text-[16px] font-semibold tabular-nums text-[var(--v5-cream)]" suppressHydrationWarning>
               {time || '--:--:--'}
             </span>
-            <span className="hidden font-mono text-[13px] text-[color:rgba(245,241,234,0.62)] min-[900px]:inline" suppressHydrationWarning>
+            <span className="hidden font-mono text-[13px] text-[color:rgba(245,241,234,0.72)] min-[900px]:inline" suppressHydrationWarning>
               {zoneShort}
             </span>
             {zoneCity ? (
-              <span className="hidden text-[13px] text-[color:rgba(245,241,234,0.48)] min-[1100px]:inline" suppressHydrationWarning>
+              <span className="hidden text-[13px] text-[color:rgba(245,241,234,0.62)] min-[1100px]:inline" suppressHydrationWarning>
                 {zoneCity}
               </span>
             ) : null}
@@ -323,7 +323,7 @@ export const SystemTray = () => {
                 title="历史存档字幕"
                 aria-label="历史存档"
               >
-                <FolderClock className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.2]" aria-hidden="true" />
+                <FolderClock className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
                 <span className={trayLabelLong}>历史存档</span>
                 {libraryCount > 0 && (
                   <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-[color:rgba(239,141,95,0.22)] px-1.5 py-0.5 text-xs font-semibold text-[var(--v5-orange)]">
@@ -333,11 +333,11 @@ export const SystemTray = () => {
               </button>
             )}
             <Link href="/about" className={trayCtrl} title="隐私与版权" aria-label="隐私与版权">
-              <ShieldCheck className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.2]" aria-hidden="true" />
+              <ShieldCheck className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
               <span className={trayLabelLong}>隐私与版权</span>
             </Link>
             <Link href="/feedback" className={trayCtrl} title="提交反馈" aria-label="反馈">
-              <MessageSquareText className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.2]" aria-hidden="true" />
+              <MessageSquareText className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
               <span className={trayLabelShort}>反馈</span>
             </Link>
           </div>

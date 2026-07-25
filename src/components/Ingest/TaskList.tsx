@@ -457,7 +457,7 @@ export const TaskList: React.FC = () => {
               onClick={() => setPendingCancelUpload(true)}
               title="取消本次导入并返回上传入口"
             >
-              <RotateCcw className="h-3.5 w-3.5" />
+              <RotateCcw className="h-4 w-4" />
               <span className="hidden sm:inline">取消本次导入</span>
               <span className="sm:hidden">取消</span>
             </button>
@@ -467,7 +467,7 @@ export const TaskList: React.FC = () => {
             className="ui-action ui-action--secondary"
             onClick={() => fileInputRef.current?.click()}
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-4 w-4" />
             继续添加
           </button>
           {pendingDeleteId === activeTask.id ? (
@@ -494,7 +494,7 @@ export const TaskList: React.FC = () => {
               onClick={() => setPendingDeleteId(activeTask.id)}
               aria-label="移除当前字幕任务"
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash2 className="h-4 w-4" />
               <span className="hidden md:inline">移除</span>
             </button>
           )}
@@ -537,7 +537,7 @@ export const TaskList: React.FC = () => {
                 className={`max-w-[220px] cursor-pointer truncate rounded-xl border px-4 py-2 font-sans text-sm transition-all
                   ${isActive
                     ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] font-semibold text-[var(--v4-accent-strong)] shadow-[0_0_12px_color-mix(in_srgb,var(--v4-accent)_12%,transparent)]'
-                    : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]'}`}
+                    : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]'}`}
                 onClick={() => selectTask(t.id)}
               >
                 {t.title}
@@ -561,7 +561,7 @@ export const TaskList: React.FC = () => {
               className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-[var(--v4-accent)] px-2.5 text-xs font-semibold text-[var(--v4-accent-ink)]"
               onClick={() => setTmdbManualOpen(true)}
             >
-              <Search className="h-3.5 w-3.5" />
+              <Search className="h-4 w-4" />
               补充片名
             </button>
           </div>
@@ -651,13 +651,13 @@ export const TaskList: React.FC = () => {
                         }}
                         aria-label={canReorderTracks ? `拖动以对调${trackKey === 'zh' ? '主字幕' : '第二语言'}顺序` : undefined}
                         title={canReorderTracks ? '按住拖动，对调主副轨' : undefined}
-                        className={`grid h-11 w-8 shrink-0 place-items-center rounded-md text-[var(--v4-text-faint)] transition-colors touch-none ${
+                        className={`grid h-11 w-8 shrink-0 place-items-center rounded-md text-[var(--v4-text-muted)] transition-colors touch-none ${
                           canReorderTracks
                             ? 'cursor-grab hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] active:cursor-grabbing'
                             : 'cursor-default opacity-25'
                         }`}
                       >
-                        <GripVertical className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
+                        <GripVertical className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
                       </span>
                     </motion.div>
                   );
@@ -728,7 +728,7 @@ export const TaskList: React.FC = () => {
                             className="flex items-center gap-2 rounded-xl border border-[var(--v4-accent)]/40 bg-[var(--v4-panel-raised)] px-3 py-2.5 shadow-[0_18px_40px_rgba(26,61,55,0.12)] backdrop-blur-md"
                             style={{ height: dragCardSize.h }}
                           >
-                            <FileFormatIcon name={dragFile.name} size="sm" />
+                            <FileFormatIcon name={dragFile.name} size="md" />
                             <LanguageMark lang={dragFile.lang} languagePair={dragFile.languagePair} />
                             <span className="min-w-0 flex-1 truncate font-mono text-sm text-[var(--v4-text)]">
                               {dragFile.name}

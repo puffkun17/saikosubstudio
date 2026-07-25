@@ -7,10 +7,11 @@ export type InspectionMarkKind = 'structure' | 'screen' | 'sound';
 
 export type InspectionMarkFilter = 'all' | 'structure' | 'screen-text' | 'sound-caption';
 
+/** Ridgeline 辅色：Danger / Forest slate / Warning — 禁止体系外蓝 */
 export const MARK_COLOR: Record<InspectionMarkKind, string> = {
-  structure: '#c45b55',
-  screen: '#3b82f6',
-  sound: '#c4893a',
+  structure: '#c45b55', // --v5-danger
+  screen: '#456660', // forest slate（墨绿派生，替代 #3b82f6）
+  sound: '#c4893a', // --v5-warning
 };
 
 /** 全局全称，禁止缩成「结构 / 画面 / 声音」 */

@@ -25,7 +25,7 @@ export default function AboutPage() {
       <div className="mx-auto w-full max-w-3xl pb-10 pt-3">
         <div className="mt-3 flex items-start gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--v4-accent)]/25 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]">
-            <ShieldCheck className="h-5 w-5 stroke-[2.25]" aria-hidden="true" />
+            <ShieldCheck className="h-5 w-5 stroke-[2]" aria-hidden="true" />
           </div>
           <div>
             <p className="text-xs font-semibold tracking-[0.12em] text-[var(--v4-accent-strong)]">SAIKOSUBSTUDIO / POLICY</p>

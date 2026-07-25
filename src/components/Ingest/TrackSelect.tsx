@@ -93,7 +93,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
               <FileNameText name={selectedOption.name} className="min-w-0 flex-1 text-[14px] font-medium text-[var(--v4-text)]" />
             </>
           ) : (
-            <span className="pl-1 text-[var(--v4-text-faint)]">{placeholder}</span>
+            <span className="pl-1 text-[var(--v4-text-muted)]">{placeholder}</span>
           )}
         </span>
         <span className="flex shrink-0 items-center gap-2 border-l border-[var(--v4-line)] pl-2.5">
@@ -106,7 +106,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
             className={`h-5 w-5 shrink-0 transition-transform duration-200 ${
               open ? 'rotate-180 text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-muted)]'
             }`}
-            strokeWidth={2.5}
+            strokeWidth={2}
             aria-hidden="true"
           />
           <span className="sr-only">{selectedOption ? '更换字幕' : '选择字幕'}</span>
@@ -124,7 +124,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
               ${!value ? 'bg-[var(--v4-panel-muted)] font-semibold text-[var(--v4-text)]' : 'text-[var(--v4-text-muted)]'}`}
             onClick={() => { onChange(''); setOpen(false); }}
           >
-            {!value ? <Check className="h-3.5 w-3.5 shrink-0 text-[var(--v4-accent-strong)]" /> : <span className="w-3.5 shrink-0" />}
+            {!value ? <Check className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" /> : <span className="w-3.5 shrink-0" />}
             <span>未选择</span>
           </button>
 
@@ -140,7 +140,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
                 title={opt.name}
               >
                 {isSelected
-                  ? <Check className="h-3.5 w-3.5 shrink-0 text-[var(--v4-accent-strong)]" />
+                  ? <Check className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" />
                   : <span className="w-3.5 shrink-0" />
                 }
                 <FileFormatIcon name={opt.name} size="md" />

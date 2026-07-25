@@ -1,0 +1,263 @@
+# SubStudio Design Language
+
+> **所有 Agent 在改 UI / 样式 / 资产 / 文案呈现之前，必须先读完本文。**  
+> 本文是共享设计真相源。Prompt 可以不同，语言必须一致。  
+> 详细审计见 `DESIGN_AUDIT.md`；执行队列见 `DESIGN_BACKLOG.md`；设计方案（决策+验收）见 `DESIGN_PLAN.md`；实现 token 见 `app/globals.css`（`--v5-*`）。
+
+---
+
+## Creed
+
+SaikoSubStudio is not an AI SaaS website.  
+It is an editorial desktop application.
+
+Every visual decision must reinforce this identity.
+
+Never introduce generic Bootstrap, Material, Windows,  
+or modern AI startup aesthetics.
+
+Preserve calmness, restraint, typography and paper-like warmth  
+before introducing visual novelty.
+
+---
+
+## 1. 品牌定位
+
+**SubStudio 是 Editorial Desktop Application —— 字幕剪辑用的桌面编辑工作台。**
+
+它不是：
+
+- AI SaaS 落地页
+- 通用 B2B 仪表盘
+- 营销站或「智能助手」产品壳
+
+它应该感觉像：
+
+- 冷静、温暖、克制
+- 编辑室 / 片场后台，而不是创业公司官网
+- Desktop-first：双托盘（顶栏 + 底栏）框住奶油工作面
+- 每一次视觉决策都有意图，不为「好看一点」而加料
+
+一句话检验：
+
+> **去掉 Logo 之后，这还像 SubStudio，还是像随便一个 AI 工具？**
+
+---
+
+## 2. 色彩原则
+
+### 核心三元（Ridgeline）
+
+| 角色 | Token | 值 | 用途 |
+|------|-------|-----|------|
+| Cream | `--v5-cream` / `--v5-canvas` | `#f5f1ea` | 工作区底 |
+| Forest | `--v5-green` / `--v5-text` | `#1a3d37` | 墨水手、托盘、主文字 |
+| Citrus | `--v5-accent` / `--v5-orange` | `#ef8d5f` | 唯一强调色、主操作 |
+
+### 表面阶
+
+- Canvas：`cream` → `canvas-raised` → `panel` → `panel-muted`
+- 线：`--v5-line` / `--v5-line-strong`（墨绿 alpha，禁止冷灰蓝边线）
+- 字：`text` → `text-muted` → `text-faint`（faint 只做装饰/占位，不作正文）
+- 语义：`danger` `#c45b55` · `warning` `#c4893a` · success 从 forest 派生，**禁止再引入独立翠绿**
+
+### 规则
+
+1. 新代码只写 `--v5-*`（或已有的 `--v4-*` 别名）。禁止再发明 `mint` / `emerald` / 暗色 `@theme` 伪名。
+2. 禁止组件内散落裸 hex / 随意 `rgba(239,141,95,*)`；用 `color-mix(in srgb, var(--v5-*) …)`。
+3. 阴影优先 **墨绿 tint**，奶油面上避免冷黑 elevation。
+4. 第三方品牌色（如 TMDB 蓝）只允许出现在对方 Logo 本体，不得污染 chrome / glow / 控件。
+5. 数据辅色（文件格式、语言标、检查标记）是**有限封闭色板**，不得临时加第 13 种语言色或 Tailwind 默认蓝。
+
+### 三套表面契约
+
+| 表面 | 背景气质 | 文字/控件 |
+|------|----------|-----------|
+| Cream desk | 工作区 | 墨绿字 + 柑橘强调 |
+| Forest chrome | 顶/底托盘 | 奶油半透明 ink，勿当第二套亮色主题 |
+| Theater dim | 预览关灯 | 允许更深，但仍用 triad 派生，禁止霓虹 |
+
+---
+
+## 3. 字体原则
+
+| 角色 | 字体 | 用在哪里 |
+|------|------|----------|
+| UI Sans | PingFang / 雅黑 → Geist Sans | 控件、正文、导航 |
+| Display Serif | Noto Serif SC（自托管） | **仅**片源名、空态主句 |
+| Mono | Geist Mono | 时间码、缩放、语言标、评分、键值 |
+
+### 字阶（产品 UI）
+
+| 角色 | 约略尺寸 | 备注 |
+|------|----------|------|
+| Caption / meta | 12–13px | 旁注、托盘 meta |
+| Control / label | 14–15px | 按钮、chip |
+| Body | 16px | 默认阅读 |
+| Section title | 18px | 区块标题 |
+| Display | 22–26px + serif | 空态/片名，极少用 |
+
+### 规则
+
+- 宋体不是「高级装饰」，是**片名与空态的编辑声口**；工具栏、按钮、表单禁止衬线。
+- 禁止同屏用一堆 `text-[11px]` / `text-[14px]` / `text-[17px]` 打穿字阶。
+- Tracking：eyebrow / 大写品牌标可用略宽字距；正文保持克制，禁止 0.04～0.12em 随意混用。
+- 字重以 medium / semibold 为主；少用 bold 喊话。
+
+---
+
+## 4. Icon System
+
+### 来源分工（不可混用职责）
+
+| 体系 | 来源 | 职责 |
+|------|------|------|
+| UI 线框 | **Lucide React** | 动作、状态、工具栏、导航 |
+| 文件字形 | `FileFormatIcon` | 格式识别（非装饰） |
+| 语言字牌 | `LanguageMark` | 轨语言身份 |
+| 检查几何 | `inspectionMarks` | ■ 结构 · ● 画面 · ▲ 声音 |
+| 品牌 / 插画 | `BrandMark`、空态 PNG | Logo、空态说明；**不进工具栏** |
+
+### Lucide 规范
+
+- 尺寸：默认 **16 / 20**（`h-4` / `h-5`）；托盘可略大，但不要发明 `h-[18px]` 中间值。
+- 描边：**stroke 2** 为默认；托盘若需 2.25，整区统一，禁止同栏 2 / 2.2 / 2.5 混用。
+- 以描边为主；填充仅用于明确「实心态」（如播放中），不要把半个工具栏填实。
+- 禁止引入第二套图标库（Heroicons、Phosphor、Remix 等）。
+- **范围：** 上述 size/stroke 纪律**仅约束 Lucide UI 线框**。原生 checkbox、分布图命中点、检查几何 ■●▲、文件/语言字形不在此条内。
+
+### 规则
+
+- 插画只出现在空态 / 关于 / 营销位。
+- 语义图标与数据字形可以同屏，但**不要用 Lucide 再画一套文件类型图标**。
+
+---
+
+## 5. Badge System
+
+徽章不是装饰贴纸。先问：**这是身份、分类、元信息，还是 chrome 状态？**
+
+| 角色 | 形态 | 实现 | 例子 |
+|------|------|------|------|
+| Meta text | 无底、无边框 | `.rd-chip` / 纯排印 | 任务旁注、年份旁信息 |
+| Category tag | 小方角 chip | `.ui-tag` | 影片类型 |
+| Identity mark | 色块字牌 / 文件剪影 | `LanguageMark` / `FileFormatIcon` | 语言、格式 |
+| Status / filter | 方角 chip（非胶囊） | 工作区 filter | 检查类型筛选 |
+| Chrome pill | `rounded-full` **仅托盘** | 顶/底栏 | 缩放 `Aa 100%`、LOCAL |
+| Rating | 大写品牌 + mono 分 | `.ui-rating*` | TMDB 分 |
+
+### 规则
+
+1. **片源元数据优先排印，不要堆 chip**（见 WorkflowChrome 的「去 chip」决策）。
+2. 禁止把 shadcn `Badge`（`rounded-4xl` 胶囊）接入产品面。
+3. 工作区默认方角；全圆胶囊只属于 chrome，不属于内容区。
+4. 同一信息只选一种徽章角色，禁止「标签套标签」。
+
+---
+
+## 6. 文件图标规范
+
+实现：`src/components/ui/FileFormatIcon.tsx`
+
+### 语言
+
+Adobe CC 式文件徽章，经 Ridgeline **降饱和、偏暖** 调和：
+
+- 一类剪影一种语义：
+  - **document**（折角纸）：SRT / ASS / unknown
+  - **archive**（箱体+盖+卡扣）：ZIP / RAR / 7Z
+  - **folder**（吊挂文件夹）：DIR
+- 大写扩展名码是主体；禁止再加装饰、渐变、玻璃、外发光。
+- 尺寸 API：`sm 24` · `md 30` · `lg 36` · `xl 44`  
+  - 列表 / 选择器默认 **md**  
+  - 空态展示条可用 **lg**  
+  - 禁止同列表随意混 sm/xl
+
+### 色板（封闭）
+
+| Format | 气质 | 说明 |
+|--------|------|------|
+| SRT | Forest-teal | 呼应墨绿 |
+| ASS | Muted plum | 样式轨 |
+| ZIP | Citrus-adjacent | 靠近强调色，勿再提亮 |
+| RAR | Soft brick | |
+| 7Z | Dusty indigo | |
+| Folder | Warm gold-dust | |
+| Unknown | Warm stone | |
+
+### 规则
+
+- 新格式必须走同一剪影体系 + 降饱和原则，禁止直接贴高饱和 Adobe 原色或系统文件图标。
+- 与 `LanguageMark` 并排时：语言色已避开文件色；不要再给任一侧加描边光晕抢戏。
+- 颜色日后应升为 token；在此之前，**只改 `ADOBE` 一处**，禁止在业务组件里覆盖 fill。
+
+---
+
+## 7. 组件设计原则
+
+### 控件真相源
+
+| 需求 | 使用 |
+|------|------|
+| 按钮 | `.ui-action`（含 `--secondary` / `--quiet` / `--danger` / `--lg` / `--icon`） |
+| 分段选择 | `.ui-choice-group` / `.ui-choice` |
+| 面板 | `.v4-panel`（或等价 v5 面板类） |
+| 类型标签 | `.ui-tag` |
+| 评分 | `.ui-rating` |
+
+空态主 CTA 可以更高更圆（hero），但应视为 `ui-action` 的 **hero 变体**，不是另一套按钮系统。
+
+### 原则
+
+1. **一个组合、一个焦点**：桌面工作台不是卡片墙；能去边框/阴影/底就去。
+2. **卡片是例外**：只有承载交互时才需要容器感。
+3. **圆角有限档**：xs 2 · sm 6 · md 8 · lg 12 · xl 20 · pill 999。禁止 `rounded-[11px]` 等一次性值。
+4. **密度分区**：工作台紧（约 16px padding），关于/空态文案区可松（24px+）。
+5. **动效克制**：用现有 `--v5-ease` 与时长阶；动效服务层级与状态，不服务炫耀。
+6. **禁止双轨**：不要一边用 `.ui-action`，一边手写第三套按钮；闲置 shadcn Button/Badge/Card 不得作为新 UI 入口。
+7. **先身份，后便利**：技术上「用现成紫色组件更快」不构成设计理由。
+
+### 改 UI 前的自问
+
+1. 这是在加强 Editorial Desktop，还是在往 AI SaaS 靠？
+2. 能否用现有 token / `.ui-*` / 既有徽章角色完成？
+3. 会不会引入新的圆角、阴影、色相、图标库？
+4. Design Director / 本文是否已覆盖？若冲突，停，先对齐文档。
+
+---
+
+## 8. Do / Don't
+
+### Do
+
+- 维持奶油工作面 + 墨绿双托盘 + 柑橘单点强调
+- 片名 / 空态主句用思源宋体；控件用系统黑体
+- Lucide 做 UI；文件/语言/检查走既有专用体系
+- 元信息尽量排印化；徽章按角色表选用
+- 新色、新半径、新 elevation 先写入本文与 token，再落地组件
+- Desktop-first：尊重托盘、工作区、预览区的表面契约
+
+### Don't（绝对不要引入）
+
+| 禁止 | 为什么 |
+|------|--------|
+| 紫/靛渐变、霓虹 glow、玻璃拟态 | AI SaaS / 通用暗黑仪表盘指纹 |
+| Material / Bootstrap / Windows 系统控件感 / 圆角胶囊成灾 | 通用桌面壳或 OS 皮肤，冲掉编辑气质 |
+| Inter / Roboto / 默认系统栈当品牌展示 | 无身份 |
+| 第二套图标库或彩色扁平 emoji 图标 | 打断 Lucide + 数据字形语言 |
+| shadcn Badge 式超圆 pill 铺内容区 | 与 Ridgeline chip 语言冲突 |
+| 冷灰蓝暗色主题当默认产品面 | 已封存的 tungsten 方向，不是 Ridgeline |
+| 检查标记 / 状态随便借用 Tailwind `blue-500` 等 | 破坏三元与封闭辅色板 |
+| 为「更科技」加网格、扫描线、终端绿、赛博边 | 不是本产品 |
+| 首屏堆统计条、功能胶囊、浮动贴纸徽章 | 营销站噪音 |
+| 无故重设计整页「换个风格试试」 | 身份靠连贯，不靠刷新感 |
+
+---
+
+## 维护
+
+- 本文优先于任何 Agent 的个人审美或临时 Prompt。
+- 若实现与本文冲突：先改实现，或先提案修订本文并经 Design Director 确认——**禁止静默分叉**。
+- 审计细节（只读）：`DESIGN_AUDIT.md`。  
+- 执行队列与验收：`DESIGN_BACKLOG.md`。  
+- 实值与控件 CSS：`app/globals.css`。

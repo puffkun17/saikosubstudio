@@ -1037,7 +1037,7 @@ export const DragZone: React.FC = () => {
     onRemove?: () => void;
   }) => (
     <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2.5 md:gap-3.5">
-      <FileFormatIcon name={name} size="lg" />
+      <FileFormatIcon name={name} size="md" />
       <div className="min-w-0">
         <p
           className={`truncate text-[15px] font-medium leading-snug md:text-[16px] lg:text-[17px] ${accepted ? 'text-[var(--v4-text)]' : 'text-[var(--v4-danger)]'}`}
@@ -1052,7 +1052,7 @@ export const DragZone: React.FC = () => {
       {languageLabels.length > 0 ? (
         <span className="inline-flex flex-wrap items-center justify-end gap-1 md:gap-1.5">
           {languageLabels.map((label) => (
-            <LanguageMark key={`${keyName}:${label}`} label={label} size="lg" />
+            <LanguageMark key={`${keyName}:${label}`} label={label} size="md" />
           ))}
         </span>
       ) : (
@@ -1062,10 +1062,10 @@ export const DragZone: React.FC = () => {
         <button
           type="button"
           onClick={onRemove}
-          className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-faint)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)] md:h-10 md:w-10"
+          className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-muted)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)] md:h-10 md:w-10"
           aria-label={`移除 ${name}`}
         >
-          <X className="h-4 w-4" strokeWidth={2.25} />
+          <X className="h-4 w-4" strokeWidth={2} />
         </button>
       ) : (
         <span className="h-9 w-9 md:h-10 md:w-10" aria-hidden="true" />
@@ -1189,7 +1189,7 @@ export const DragZone: React.FC = () => {
                     onClick={(event) => { event.stopPropagation(); fileInputRef.current?.click(); }}
                     className="v4-focus-ring inline-flex h-12 min-w-[8.5rem] items-center justify-center gap-2 rounded-[var(--v5-radius-panel)] bg-[var(--v4-accent)] px-7 text-sm font-bold text-[var(--v4-accent-ink)] shadow-[0_8px_24px_rgba(239,141,95,0.25)] transition-[filter,transform,background-color] duration-[var(--v4-dur-fast)] hover:brightness-105 hover:-translate-y-0.5"
                   >
-                    <FilePlus className="h-[18px] w-[18px] shrink-0 stroke-[2.25]" aria-hidden="true" />
+                    <FilePlus className="h-5 w-5 shrink-0 stroke-[2]" aria-hidden="true" />
                     选择字幕
                   </button>
                   <button
@@ -1197,7 +1197,7 @@ export const DragZone: React.FC = () => {
                     onClick={(event) => { event.stopPropagation(); folderInputRef.current?.click(); }}
                     className="v4-focus-ring inline-flex h-12 min-w-[8.5rem] items-center justify-center gap-2 rounded-[var(--v5-radius-panel)] border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)]/70 px-7 text-sm font-semibold text-[var(--v4-text-muted)] transition-colors duration-[var(--v4-dur-fast)] hover:bg-[var(--v4-panel-raised)] hover:text-[var(--v4-text)]"
                   >
-                    <FolderPlus className="h-[18px] w-[18px] shrink-0 stroke-[2]" aria-hidden="true" />
+                    <FolderPlus className="h-5 w-5 shrink-0 stroke-[2]" aria-hidden="true" />
                     文件夹
                   </button>
                 </div>
@@ -1243,7 +1243,7 @@ export const DragZone: React.FC = () => {
                       }}
                     >
                       <span className="ingest-feature-rail__icon" aria-hidden="true">
-                        <Icon className="h-4 w-4" strokeWidth={2.1} />
+                        <Icon className="h-4 w-4" strokeWidth={2} />
                       </span>
                       <p className="ingest-feature-rail__title">{feature.title}</p>
                       <p className="ingest-feature-rail__detail">{feature.detail}</p>
@@ -1292,9 +1292,9 @@ export const DragZone: React.FC = () => {
                       className="ui-action ui-action--secondary ui-action--lg"
                       aria-expanded={addMenuOpen}
                     >
-                      <Plus className="h-4 w-4 md:h-[18px] md:w-[18px]" aria-hidden="true" />
+                      <Plus className="h-4 w-4 md:h-5 md:w-5" aria-hidden="true" />
                       添加
-                      <ChevronDown className={`h-3.5 w-3.5 opacity-70 transition-transform md:h-4 md:w-4 ${addMenuOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`h-4 w-4 opacity-70 transition-transform md:h-4 md:w-4 ${addMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {addMenuOpen && (
                       <div className="absolute right-0 top-full z-20 mt-1.5 min-w-[12rem] overflow-hidden rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] shadow-[0_12px_28px_rgba(0,0,0,0.4)]">
@@ -1355,7 +1355,7 @@ export const DragZone: React.FC = () => {
                       <motion.div key={`folder:${node.folder}`} {...landing} className="min-w-0">
                         <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 md:gap-4">
                           <div className="ingest-halo-root">
-                            <FileFormatIcon format="folder" size="xl" />
+                            <FileFormatIcon format="folder" size="md" />
                           </div>
                           <div className="min-w-0">
                             <p className="truncate text-[16px] font-semibold leading-snug tracking-tight text-[var(--v4-text)] md:text-[17px] lg:text-[18px]" title={node.folder}>
@@ -1372,7 +1372,7 @@ export const DragZone: React.FC = () => {
                             className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-muted)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)] md:h-10 md:w-10"
                             aria-label={`移除文件夹 ${node.folder}`}
                           >
-                            <X className="h-4 w-4" strokeWidth={2.25} />
+                            <X className="h-4 w-4" strokeWidth={2} />
                           </button>
                         </div>
 
@@ -1439,7 +1439,7 @@ export const DragZone: React.FC = () => {
                     <motion.div key={item.key} {...landing} className="min-w-0">
                       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 md:gap-4">
                         <div className="ingest-halo-root">
-                          <FileFormatIcon format={resolveFileFormat(item.name)} size="xl" />
+                          <FileFormatIcon format={resolveFileFormat(item.name)} size="md" />
                         </div>
                         <div className="min-w-0">
                           <p className="truncate text-[16px] font-semibold leading-snug tracking-tight text-[var(--v4-text)] md:text-[17px] lg:text-[18px]" title={item.name}>
@@ -1475,7 +1475,7 @@ export const DragZone: React.FC = () => {
                           className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-muted)] transition-colors hover:bg-[color:rgba(201,138,134,0.1)] hover:text-[var(--v4-danger)] md:h-10 md:w-10"
                           aria-label={`移除 ${item.name}`}
                         >
-                          <X className="h-4 w-4" strokeWidth={2.25} />
+                          <X className="h-4 w-4" strokeWidth={2} />
                         </button>
                       </div>
 

@@ -103,7 +103,7 @@ export const IngestStep: React.FC = () => {
                   <h2 id="library-title" className="text-base font-bold text-[var(--v4-text)] tracking-wide">历史存档字幕</h2>
                 </div>
                 <button
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--v4-panel-muted)] hover:bg-[var(--v4-accent-soft)] text-[var(--v4-text-faint)] hover:text-[var(--v4-text)] transition cursor-pointer"
+                  className="w-8 h-8 flex items-center justify-center rounded-md bg-[var(--v4-panel-muted)] hover:bg-[var(--v4-accent-soft)] text-[var(--v4-text-muted)] hover:text-[var(--v4-text)] transition cursor-pointer"
                   onClick={() => setLibraryOpen(false)}
                   type="button"
                   aria-label="关闭历史存档"
@@ -136,7 +136,7 @@ export const IngestStep: React.FC = () => {
                             </h4>
                             <div className="flex items-center gap-3 mt-2 text-xs text-[var(--v4-text-faint)] font-mono pl-3">
                               <span className="flex items-center gap-1.5">
-                                <Calendar className="w-3.5 h-3.5 text-[var(--v4-text-faint)]" />
+                                <Calendar className="h-4 w-4 text-[var(--v4-text-faint)]" />
                                 {item.date}
                               </span>
                               <span className="w-1 h-1 rounded-full bg-[var(--v4-line-strong)]" />
@@ -152,7 +152,7 @@ export const IngestStep: React.FC = () => {
                             </span>
                             <button
                               type="button"
-                              className="text-[var(--v4-text-faint)] hover:text-[var(--v4-danger)] p-2 rounded-xl hover:bg-[var(--v4-accent-soft)] transition cursor-pointer"
+                              className="text-[var(--v4-text-muted)] hover:text-[var(--v4-danger)] p-2 rounded-md hover:bg-[var(--v4-accent-soft)] transition cursor-pointer"
                               onClick={(e) => { e.stopPropagation(); deleteFromLibrary(item.id); }}
                               aria-label={`删除存档：${item.name}`}
                             >

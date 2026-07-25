@@ -272,7 +272,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
       aria-label={isPreviewPlaying ? '暂停预览' : '播放字幕轴'}
       title={isPreviewPlaying ? '暂停' : '播放（便于查看渐入渐出）'}
     >
-      {isPreviewPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5 fill-current" />}
+      {isPreviewPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current" />}
     </button>
   );
 
@@ -389,7 +389,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
             aria-label="关灯观影"
             className="theater-chrome-chip v4-focus-ring grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-md border border-[var(--v4-line)] text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)]"
           >
-            <LampCeiling className="h-3.5 w-3.5 stroke-[2]" aria-hidden="true" />
+            <LampCeiling className="h-4 w-4 stroke-[2]" aria-hidden="true" />
           </button>
         )}
       </div>

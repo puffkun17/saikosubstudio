@@ -196,7 +196,7 @@ export const TheaterStep: React.FC = () => {
               className={isSettingsOpen ? 'ui-action' : 'ui-action ui-action--secondary'}
               aria-pressed={isSettingsOpen}
             >
-              <SlidersHorizontal className="h-4 w-4 stroke-[2.25]" />
+              <SlidersHorizontal className="h-4 w-4 stroke-[2]" />
               字幕样式
             </button>
             <ExportDropdown variant="primary" />
