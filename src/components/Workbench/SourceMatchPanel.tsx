@@ -4,7 +4,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, HardDrive, MonitorPlay, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { SubRow } from '@/utils/subtitleCore';
-import { isLyricText } from '@/utils/subtitleCore';
+import { isLyricText, isSubtitleCreditText } from '@/utils/subtitleCore';
 import { createSourceMatchReport, type SourceMatchFinding, type SourceMatchReport } from '@/utils/timeline/sourceMatch';
 import { analyzeAlignmentDiff } from '@/utils/timeline/alignmentDiff';
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
@@ -98,6 +98,12 @@ const isLyricsInspectionRow = (row: SubRow) => (
   || isLyricText(row.text)
 );
 
+const isCreditInspectionRow = (row: SubRow) => (
+  row.type === 'credit'
+  || row.cueKind === 'credit'
+  || isSubtitleCreditText(row.text)
+);
+
 export function buildInspectionMarks(rows: SubRow[], basisDurationMs: number): InspectionMark[] {
   const marks: InspectionMark[] = [];
   const seen = new Set<string>();
@@ -111,6 +117,10 @@ export function buildInspectionMarks(rows: SubRow[], basisDurationMs: number): I
 
   rows.forEach((row, arrayIndex) => {
     const startMs = parseSubtitleRange(row.ts).startMs;
+    if (isCreditInspectionRow(row)) {
+      push('credit', arrayIndex, row.index, startMs);
+      return;
+    }
     if (isLyricsInspectionRow(row)) {
       push('lyrics', arrayIndex, row.index, startMs);
       return;
@@ -185,7 +195,8 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
     if (markFilter === 'structure') return inspectionMarks.filter(m => m.kind === 'structure');
     if (markFilter === 'screen-text') return inspectionMarks.filter(m => m.kind === 'screen');
     if (markFilter === 'sound-caption') return inspectionMarks.filter(m => m.kind === 'sound');
-    return inspectionMarks.filter(m => m.kind === 'lyrics');
+    if (markFilter === 'lyrics') return inspectionMarks.filter(m => m.kind === 'lyrics');
+    return inspectionMarks.filter(m => m.kind === 'credit');
   }, [inspectionMarks, markFilter]);
 
   const visibleClusters = useMemo(() => clusterMarks(visibleMarks), [visibleMarks]);
@@ -260,7 +271,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
           <div className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--v4-text)]">
             {isMatchMode ? '片源覆盖分布' : '字幕时间分布'}
             <InfoHint label="字幕分布图说明">
-              上方曲线表示字幕疏密；下方四层标记表示字幕分类（结构差异、画面文字、声音描述、歌词），点击可定位到对应行。
+              上方曲线表示字幕疏密；下方标记轨表示分类（结构差异、画面文字、声音描述、歌词、署名信息），点击可定位到对应行。
             </InfoHint>
           </div>
           <div className="mt-0.5 text-xs text-[var(--v4-text-faint)]">
@@ -372,12 +383,13 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
             />
           </div>
 
-          {/* Four-lane mark rail — square / circle / triangle / note */}
-          <div className="relative mx-3 mb-1.5 h-10">
-            <div className="pointer-events-none absolute inset-x-0 top-[5px] h-px bg-[var(--v4-line)]/70" />
-            <div className="pointer-events-none absolute inset-x-0 top-[14px] h-px bg-[var(--v4-line)]/70" />
-            <div className="pointer-events-none absolute inset-x-0 top-[23px] h-px bg-[var(--v4-line)]/70" />
-            <div className="pointer-events-none absolute inset-x-0 top-[32px] h-px bg-[var(--v4-line)]/70" />
+          {/* Five-lane mark rail — square / circle / triangle / note / star */}
+          <div className="relative mx-3 mb-1.5 h-11">
+            <div className="pointer-events-none absolute inset-x-0 top-[4px] h-px bg-[var(--v4-line)]/70" />
+            <div className="pointer-events-none absolute inset-x-0 top-[12px] h-px bg-[var(--v4-line)]/70" />
+            <div className="pointer-events-none absolute inset-x-0 top-[20px] h-px bg-[var(--v4-line)]/70" />
+            <div className="pointer-events-none absolute inset-x-0 top-[28px] h-px bg-[var(--v4-line)]/70" />
+            <div className="pointer-events-none absolute inset-x-0 top-[36px] h-px bg-[var(--v4-line)]/70" />
 
             {dimClusters.map(cluster => (
               <span

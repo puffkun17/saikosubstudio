@@ -2,36 +2,45 @@
 
 import React from 'react';
 
-/** 时间轴检查标记：结构差异 / 画面文字 / 声音描述 / 歌词 */
-export type InspectionMarkKind = 'structure' | 'screen' | 'sound' | 'lyrics';
+/** 时间轴检查标记：结构差异 / 画面文字 / 声音描述 / 歌词 / 署名信息 */
+export type InspectionMarkKind = 'structure' | 'screen' | 'sound' | 'lyrics' | 'credit';
 
-export type InspectionMarkFilter = 'all' | 'structure' | 'screen-text' | 'sound-caption' | 'lyrics';
+export type InspectionMarkFilter =
+  | 'all'
+  | 'structure'
+  | 'screen-text'
+  | 'sound-caption'
+  | 'lyrics'
+  | 'credit';
 
-/** Ridgeline 辅色：Danger / Forest slate / Warning / Bronze — 禁止体系外蓝与紫 */
+/** Ridgeline 辅色 — 禁止体系外蓝与紫 */
 export const MARK_COLOR: Record<InspectionMarkKind, string> = {
   structure: '#c45b55', // --v5-danger
-  screen: '#456660', // forest slate（墨绿派生，替代 #3b82f6）
+  screen: '#456660', // forest slate
   sound: '#c4893a', // --v5-warning
-  lyrics: '#9a7b4f', // bronze，与 warning 琥珀区分
+  lyrics: '#9a7b4f', // bronze
+  credit: '#8a7355', // warm stone，署名星标
 };
 
-/** 全局全称，禁止缩成「结构 / 画面 / 声音 / 歌词」以外的简称乱造 */
+/** 全局全称 */
 export const MARK_LABEL: Record<InspectionMarkKind, string> = {
   structure: '结构差异',
   screen: '画面文字',
   sound: '声音描述',
   lyrics: '歌词',
+  credit: '署名信息',
 };
 
-/** 四轨 ridgeline 纵向位置（配合 h-10 轨道） */
+/** 五轨 ridgeline 纵向位置（配合 h-11 轨道） */
 export const MARK_LANE_TOP: Record<InspectionMarkKind, string> = {
-  structure: '5px',
-  screen: '14px',
-  sound: '23px',
-  lyrics: '32px',
+  structure: '4px',
+  screen: '12px',
+  sound: '20px',
+  lyrics: '28px',
+  credit: '36px',
 };
 
-export const MARK_KIND_ORDER: InspectionMarkKind[] = ['structure', 'screen', 'sound', 'lyrics'];
+export const MARK_KIND_ORDER: InspectionMarkKind[] = ['structure', 'screen', 'sound', 'lyrics', 'credit'];
 
 export const MARK_FILTERS: Array<{ id: InspectionMarkFilter; kind?: InspectionMarkKind; label: string }> = [
   { id: 'all', label: '全部' },
@@ -39,17 +48,17 @@ export const MARK_FILTERS: Array<{ id: InspectionMarkFilter; kind?: InspectionMa
   { id: 'screen-text', kind: 'screen', label: MARK_LABEL.screen },
   { id: 'sound-caption', kind: 'sound', label: MARK_LABEL.sound },
   { id: 'lyrics', kind: 'lyrics', label: MARK_LABEL.lyrics },
+  { id: 'credit', kind: 'credit', label: MARK_LABEL.credit },
 ];
 
 type GlyphProps = {
   kind: InspectionMarkKind;
   size?: number;
   className?: string;
-  /** 暗点轨用半透明 */
   muted?: boolean;
 };
 
-/** 方块 = 结构差异；圆形 = 画面文字；三角形 = 声音描述；音符 = 歌词 */
+/** 方块=结构；圆=画面；三角=声音；音符=歌词；五角星=署名 */
 export function InspectionMarkGlyph({ kind, size = 8, className = '', muted = false }: GlyphProps) {
   const color = MARK_COLOR[kind];
   const opacity = muted ? 0.28 : 1;
@@ -92,7 +101,24 @@ export function InspectionMarkGlyph({ kind, size = 8, className = '', muted = fa
     );
   }
 
-  // sound — triangle
+  if (kind === 'credit') {
+    return (
+      <svg
+        className={`shrink-0 ${className}`}
+        width={size}
+        height={size}
+        viewBox="0 0 10 10"
+        aria-hidden="true"
+        style={{ opacity }}
+      >
+        <path
+          fill={color}
+          d="M5 0.9l1.18 2.39 2.64.38-1.91 1.86.45 2.63L5 6.92 2.64 8.16l.45-2.63L1.18 3.67l2.64-.38L5 0.9z"
+        />
+      </svg>
+    );
+  }
+
   return (
     <svg
       className={`shrink-0 ${className}`}

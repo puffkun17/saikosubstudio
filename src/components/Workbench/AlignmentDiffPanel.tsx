@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { Captions, FileSearch2, LocateFixed, MoveHorizontal, Music2, Rows3, SplitSquareVertical, Volume2 } from 'lucide-react';
-import { describeAuxiliaryReason, isLyricText, type SubRow } from '@/utils/subtitleCore';
+import { Captions, FileSearch2, LocateFixed, MoveHorizontal, Music2, Rows3, SplitSquareVertical, Star, Volume2 } from 'lucide-react';
+import { describeAuxiliaryReason, isLyricText, isSubtitleCreditText, type SubRow } from '@/utils/subtitleCore';
 import { analyzeAlignmentDiff, type AlignmentDiffEntry, type AlignmentDiffKind } from '@/utils/timeline/alignmentDiff';
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 import { useStudioStore } from '@/store/useStudioStore';
 import { MARK_COLOR, MARK_LABEL } from '@/components/Workbench/inspectionMarks';
 
-type UnifiedKind = AlignmentDiffKind | 'screen-text' | 'sound-caption' | 'lyrics';
+type UnifiedKind = AlignmentDiffKind | 'screen-text' | 'sound-caption' | 'lyrics' | 'credit';
 
 interface UnifiedReviewItem {
   id: string;
@@ -31,8 +31,15 @@ const isLyricsRow = (row: SubRow) => (
   || isLyricText(row.text)
 );
 
+const isCreditRow = (row: SubRow) => (
+  row.type === 'credit'
+  || row.cueKind === 'credit'
+  || isSubtitleCreditText(row.text)
+);
+
 const isSoundCaptionRow = (row: SubRow) => (
   !isLyricsRow(row)
+  && !isCreditRow(row)
   && (
     row.cueKind === 'sound_caption'
     || row.auxiliary?.category === 'ambient_sdh'
@@ -48,8 +55,8 @@ const reasonFromRow = (row: SubRow) => {
 const badgeTone = (kind: UnifiedKind) => {
   if (kind === 'shifted-match') return 'bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]';
   if (kind === 'expanded-dialogue') return 'bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]';
-  if (kind === 'screen-text' || kind === 'lyrics') {
-    return undefined; // inline style via MARK_COLOR
+  if (kind === 'screen-text' || kind === 'lyrics' || kind === 'credit') {
+    return undefined;
   }
   if (kind === 'sound-caption') return 'bg-[var(--v4-warning)]/12 text-[var(--v4-warning)]';
   return 'bg-[var(--v4-danger)]/10 text-[var(--v4-danger)]';
@@ -68,6 +75,12 @@ const badgeToneStyle = (kind: UnifiedKind): React.CSSProperties | undefined => {
       color: MARK_COLOR.lyrics,
     };
   }
+  if (kind === 'credit') {
+    return {
+      background: `color-mix(in srgb, ${MARK_COLOR.credit} 16%, transparent)`,
+      color: MARK_COLOR.credit,
+    };
+  }
   return undefined;
 };
 
@@ -77,6 +90,7 @@ const BadgeIcon = ({ kind }: { kind: UnifiedKind }) => {
   if (kind === 'screen-text') return <Captions className="h-2.5 w-2.5" />;
   if (kind === 'sound-caption') return <Volume2 className="h-2.5 w-2.5" />;
   if (kind === 'lyrics') return <Music2 className="h-2.5 w-2.5" />;
+  if (kind === 'credit') return <Star className="h-2.5 w-2.5" />;
   return <Rows3 className="h-2.5 w-2.5" />;
 };
 
@@ -103,22 +117,24 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
       provenance: entry.provenance,
     }));
 
-    const screenItems: UnifiedReviewItem[] = rows.filter(isScreenTextRow).map(row => ({
-      id: `screen-${row.index}`,
-      kind: 'screen-text' as const,
-      startMs: parseSubtitleRange(row.ts).startMs,
-      locateIndex: row.index,
-      badge: '画面文字',
-      text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
-      reason: reasonFromRow(row),
-    }));
+    const screenItems: UnifiedReviewItem[] = rows
+      .filter(row => isScreenTextRow(row) && !isCreditRow(row) && !isLyricsRow(row))
+      .map(row => ({
+        id: `screen-${row.index}`,
+        kind: 'screen-text' as const,
+        startMs: parseSubtitleRange(row.ts).startMs,
+        locateIndex: row.index,
+        badge: MARK_LABEL.screen,
+        text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
+        reason: reasonFromRow(row),
+      }));
 
     const soundItems: UnifiedReviewItem[] = rows.filter(isSoundCaptionRow).map(row => ({
       id: `sound-${row.index}`,
       kind: 'sound-caption' as const,
       startMs: parseSubtitleRange(row.ts).startMs,
       locateIndex: row.index,
-      badge: '声音描述',
+      badge: MARK_LABEL.sound,
       text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
       reason: reasonFromRow(row),
     }));
@@ -134,7 +150,17 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
       reason: `歌词显示平面 · ${lyricPosLabel}`,
     }));
 
-    return [...structureItems, ...screenItems, ...soundItems, ...lyricItems]
+    const creditItems: UnifiedReviewItem[] = rows.filter(isCreditRow).map(row => ({
+      id: `credit-${row.index}`,
+      kind: 'credit' as const,
+      startMs: parseSubtitleRange(row.ts).startMs,
+      locateIndex: row.index,
+      badge: MARK_LABEL.credit,
+      text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
+      reason: '字幕制作署名，不属于影片画面或对白',
+    }));
+
+    return [...structureItems, ...screenItems, ...soundItems, ...lyricItems, ...creditItems]
       .sort((a, b) => a.startMs - b.startMs || a.locateIndex - b.locateIndex);
   }, [summary.entries, rows, lyricPosition]);
 
@@ -157,7 +183,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
     <section className="overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)]">
       <div className="flex items-center justify-between gap-3 border-b border-[var(--v4-line)] px-4 py-2 md:px-5">
         <p className="text-xs text-[var(--v4-text-faint)]">
-          完整列出结构差异、画面文字、声音描述与歌词（{items.length}）
+          完整列出结构差异、画面文字、声音描述、歌词与署名信息（{items.length}）
         </p>
       </div>
 

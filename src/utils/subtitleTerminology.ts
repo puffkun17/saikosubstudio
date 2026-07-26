@@ -65,9 +65,9 @@ export const SUBTITLE_CUE_TYPE_DICTIONARY: Record<SubtitleCueTerm, {
     exportDefault: false,
   },
   credit: {
-    zh: '制作信息',
-    en: 'Credit / Subtitle Credit',
-    description: '字幕组、翻译、校对、压制等制作署名信息。',
+    zh: '署名信息',
+    en: 'Credits / Subtitle Credits',
+    description: '字幕组、翻译、校对、时间轴等制作署名，不属于影片画面或对白内容。',
     exportDefault: false,
   },
   metadata_note: {

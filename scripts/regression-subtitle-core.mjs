@@ -56,6 +56,7 @@ const {
   generateAssContent,
   generateSrtContent,
   applyAuxiliarySubtitleMode,
+  isSubtitleCreditText,
   mergeSubtitles,
   normalizeSingleBilingualRows,
   parseMediaFilename,
@@ -410,6 +411,21 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
   assert.ok(aligned.some(row => row.text === '你好\nHello'), 'Industrial align should pair the first matching cue.');
   assert.ok(aligned.some(row => row.text === '再见\nBye'), 'Industrial align should recover after an inserted cue.');
   assert.ok(aligned.some(row => row.text === '插入中文'), 'Inserted unpaired cues should be preserved.');
+}
+
+{
+  assert.equal(classifySubtitleCue('字幕翻译：凌武翎').kind, 'credit', 'Official translator credit must not be screen_text.');
+  assert.equal(classifySubtitleCue('翻译：某人').kind, 'credit');
+  assert.equal(classifySubtitleCue('字幕制作：Saiko').kind, 'credit');
+  assert.equal(classifySubtitleCue('（机密）').kind, 'screen_text', 'Bracket confidential remains on-screen text.');
+  assert.equal(isSubtitleCreditText('字幕翻译：凌武翎'), true);
+  assert.equal(isSubtitleCreditText('下一集'), false);
+
+  const smartGone = applyAuxiliarySubtitleMode(
+    [{ index: 1, ts: '00:00:01,000 --> 00:00:02,000', text: '字幕翻译：凌武翎', type: 'credit', cueKind: 'credit' }],
+    'smart',
+  );
+  assert.equal(smartGone.length, 0, 'Smart mode should strip subtitle credits by default.');
 }
 
 {

@@ -3,11 +3,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
-import { isLyricText } from '@/utils/subtitleCore';
+import { isLyricText, isSubtitleCreditText } from '@/utils/subtitleCore';
 import type { SubRow } from '@/utils/subtitleCore';
-import { Check, Captions, ChevronDown, ChevronUp, Music2, Pencil, Redo2, Undo2, Volume2, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Pencil, Redo2, Undo2, X } from 'lucide-react';
 import { TimelineControls } from '@/components/Workbench/TimelineControls';
-import { MARK_COLOR, MARK_LABEL, InspectionMarkGlyph } from '@/components/Workbench/inspectionMarks';
+import { MARK_LABEL, InspectionMarkGlyph, type InspectionMarkKind } from '@/components/Workbench/inspectionMarks';
 
 interface SequenceListProps {
   timelineDurationMs?: number;
@@ -272,21 +272,47 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               const zhText = parts[0] || '';
               const enText = parts[1] || '';
               const isLyric = sub.type === 'lyrics' || sub.cueKind === 'lyrics' || isLyricText(sub.text);
+              const isCredit = !isLyric && (
+                sub.type === 'credit'
+                || sub.cueKind === 'credit'
+                || isSubtitleCreditText(sub.text)
+              );
               const isExpandedDialogue = sub.alignment === 'expanded-dialogue';
-              const isSoundCaption = !isLyric && sub.cueKind === 'sound_caption';
-              const isAuxiliarySemantic = !isLyric && (
+              const isSoundCaption = !isLyric && !isCredit && sub.cueKind === 'sound_caption';
+              const isScreenText = !isLyric && !isCredit && (
+                sub.cueKind === 'screen_text' || sub.auxiliary?.category === 'screen_text'
+              );
+              const isAuxiliarySemantic = !isLyric && !isCredit && (
                 sub.cueKind === 'narration'
                 || sub.auxiliary?.category === 'semantic_sdh'
                 || sub.auxiliary?.category === 'speech_context'
               );
               const lyricPosLabel = lyricPosition === 'bottom' ? '底部' : '顶部';
+              const rowMarkKind: InspectionMarkKind | null = isCredit
+                ? 'credit'
+                : isLyric
+                  ? 'lyrics'
+                  : isSoundCaption
+                    ? 'sound'
+                    : isScreenText
+                      ? 'screen'
+                      : null;
+              const rowMarkTitle = rowMarkKind === 'lyrics'
+                ? `${MARK_LABEL.lyrics} · ${lyricPosLabel}`
+                : rowMarkKind
+                  ? MARK_LABEL[rowMarkKind]
+                  : isAuxiliarySemantic
+                    ? '辅助信息'
+                    : isExpandedDialogue
+                      ? '对话组'
+                      : undefined;
 
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
               const endTime = sub.ts.split(' --> ')[1]?.replace(',', '.').trim() || '';
 
               const rowClass = `group relative grid grid-cols-[3rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] md:grid-cols-[3.5rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] items-center gap-2 md:gap-3 py-2.5 px-3 md:px-5 border-b border-[var(--v4-line)] cursor-pointer text-left overflow-hidden transition-colors duration-150
                 ${isActive ? 'glass-lens-active' : isSelected ? 'bg-[var(--v4-accent-soft)]/55' : 'bg-transparent hover:bg-[var(--v4-panel-muted)]'}
-                ${isLyric && !isActive && !isSelected ? 'bg-[var(--v4-panel-muted)]/50' : ''}
+                ${(isLyric || isCredit) && !isActive && !isSelected ? 'bg-[var(--v4-panel-muted)]/50' : ''}
                 ${sub.index > 30 ? 'timeline-row-deferred' : ''}`;
 
               return (
@@ -344,9 +370,22 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                       <span className={`mt-0.5 h-2 w-2 rounded-full border ${isActive ? 'bg-[var(--v4-accent-strong)] border-[var(--v4-accent-strong)] shadow-[0_0_10px_color-mix(in_srgb,var(--v4-accent)_40%,transparent)]' : 'bg-[var(--v4-accent-soft)] border-[var(--v4-line-strong)]'}`} />
                       <span className="mt-1 flex-1 w-px bg-[var(--v4-line)]" />
                     </div>
-                    {isLyric && (
-                      <span className="inline-flex shrink-0 select-none" title={`${MARK_LABEL.lyrics} · ${lyricPosLabel}`} style={{ color: MARK_COLOR.lyrics }}>
-                        <InspectionMarkGlyph kind="lyrics" size={12} />
+                    {rowMarkKind && (
+                      <span
+                        className="inline-flex shrink-0 select-none"
+                        title={rowMarkTitle}
+                        aria-label={rowMarkTitle}
+                      >
+                        <InspectionMarkGlyph kind={rowMarkKind} size={12} />
+                      </span>
+                    )}
+                    {!rowMarkKind && (isAuxiliarySemantic || isExpandedDialogue) && (
+                      <span
+                        className="inline-flex h-3 min-w-3 shrink-0 items-center justify-center rounded-[2px] border border-[var(--v4-line-strong)] px-0.5 font-mono text-[9px] font-semibold leading-none text-[var(--v4-text-faint)]"
+                        title={rowMarkTitle}
+                        aria-label={rowMarkTitle}
+                      >
+                        {isExpandedDialogue ? '组' : '辅'}
                       </span>
                     )}
                     <div className={`flex min-w-0 flex-col whitespace-nowrap font-mono text-[13px] leading-tight tabular-nums tracking-tight ${isActive ? 'font-semibold text-[var(--v4-accent-strong)]' : 'font-medium text-[var(--v4-text-muted)]'}`}>
@@ -398,36 +437,6 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                       </div>
                     ) : (
                       <>
-                        {isExpandedDialogue && (
-                          <span className="ui-meta ui-meta--key mb-0.5">
-                            对话组
-                          </span>
-                        )}
-                        {isLyric && (
-                          <span className="ui-meta mb-0.5" style={{ color: MARK_COLOR.lyrics }}>
-                            <Music2 className="h-3 w-3" />
-                            {MARK_LABEL.lyrics}
-                            <span className="text-[var(--v4-text-faint)]">· {lyricPosLabel}</span>
-                          </span>
-                        )}
-                        {sub.cueKind === 'screen_text' && !isLyric && (
-                          <span className="ui-meta mb-0.5">
-                            <Captions className="h-3 w-3" />
-                            画面文字
-                          </span>
-                        )}
-                        {isSoundCaption && (
-                          <span className="ui-meta mb-0.5">
-                            <Volume2 className="h-3 w-3" />
-                            声音描述
-                          </span>
-                        )}
-                        {isAuxiliarySemantic && (
-                          <span className="ui-meta ui-meta--key mb-0.5">
-                            <Captions className="h-3 w-3" />
-                            辅助信息
-                          </span>
-                        )}
                         <div className="break-words font-sans text-[15px] font-semibold leading-snug text-[var(--v4-text)]">
                           {zhText}
                         </div>

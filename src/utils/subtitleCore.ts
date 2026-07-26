@@ -17,7 +17,7 @@ export {
 } from './mediaIdentity';
 export { OFFSET_DIAGNOSIS_POLICY, type GlobalOffsetDiagnosis } from './timeline/offsetDiagnosis';
 
-export type CueKind = 'dialogue' | 'screen_text' | 'sound_caption' | 'narration' | 'lyrics' | 'commentary' | 'unknown';
+export type CueKind = 'dialogue' | 'screen_text' | 'sound_caption' | 'narration' | 'lyrics' | 'commentary' | 'credit' | 'unknown';
 export type AuxiliaryCueCategory = 'ambient_sdh' | 'semantic_sdh' | 'screen_text' | 'music' | 'speech_context' | 'unknown';
 export type AuxiliaryCueAction = 'hide_by_default' | 'keep_auxiliary' | 'keep_visible';
 export type AuxiliarySubtitleMode = 'smart' | 'keep' | 'clean';
@@ -500,6 +500,8 @@ export function describeAuxiliaryReason(reason: string): string {
       return '括号内为发言语境说明';
     case 'lyric-symbol':
       return '音符歌词标记';
+    case 'subtitle-credit':
+      return '字幕制作署名';
     default:
       return reason;
   }
@@ -596,6 +598,10 @@ export function classifySubtitleCue(
 
   if (isLyricText(rawText)) {
     return { kind: 'lyrics', confidence: 92, reasons: ['lyric-symbol'] };
+  }
+
+  if (isSubtitleCreditText(rawText)) {
+    return { kind: 'credit', confidence: 94, reasons: ['subtitle-credit'] };
   }
 
   const auxiliary = classifyAuxiliaryCue(rawText);
@@ -903,6 +909,7 @@ const resolveCueKind = (text: string, explicit?: CueKind): CueKind => explicit |
 const combineCueKind = (...kinds: Array<CueKind | undefined>): CueKind | undefined => {
   const known = kinds.filter(Boolean) as CueKind[];
   if (known.includes('lyrics')) return 'lyrics';
+  if (known.includes('credit')) return 'credit';
   if (known.length > 0 && known.every(kind => kind === 'screen_text')) return 'screen_text';
   if (known.length > 0 && known.every(kind => kind === 'sound_caption')) return 'sound_caption';
   if (known.length > 0 && known.every(kind => kind === 'narration')) return 'narration';
@@ -993,6 +1000,7 @@ const isStructuralCueKind = (kind?: CueKind): boolean => (
   || kind === 'narration'
   || kind === 'lyrics'
   || kind === 'commentary'
+  || kind === 'credit'
 );
 
 interface CueMergeCompatibility {
@@ -1597,10 +1605,13 @@ export function mergeSubtitles(
     .sort((a, b) => timeToMs(a.ts.split(" --> ")[0]) - timeToMs(b.ts.split(" --> ")[0]))
     .map((item, idx) => {
       let type = item.type;
-      const cueKind = item.cueKind === 'lyrics' || isLyricText(item.text)
+      let cueKind = item.cueKind === 'lyrics' || isLyricText(item.text)
         ? 'lyrics' as CueKind
         : (item.cueKind || resolveCueKind(item.text));
-      if (cueKind === 'lyrics' || isLyricText(item.text)) {
+      if (cueKind === 'credit' || (!item.cueKind && isSubtitleCreditText(item.text))) {
+        cueKind = 'credit';
+        type = 'credit';
+      } else if (cueKind === 'lyrics' || isLyricText(item.text)) {
         type = 'lyrics';
       }
       return { ...item, type, cueKind, index: idx + 1 };
@@ -1755,10 +1766,13 @@ export function alignSubtitlesIndustrial(
     .sort((a, b) => timeToMs(a.ts.split(" --> ")[0]) - timeToMs(b.ts.split(" --> ")[0]))
     .map((item, idx) => {
       let type = item.type;
-      const cueKind = item.cueKind === 'lyrics' || isLyricText(item.text)
+      let cueKind = item.cueKind === 'lyrics' || isLyricText(item.text)
         ? 'lyrics' as CueKind
         : (item.cueKind || resolveCueKind(item.text));
-      if (cueKind === 'lyrics' || isLyricText(item.text)) {
+      if (cueKind === 'credit' || (!item.cueKind && isSubtitleCreditText(item.text))) {
+        cueKind = 'credit';
+        type = 'credit';
+      } else if (cueKind === 'lyrics' || isLyricText(item.text)) {
         type = 'lyrics';
       }
       return { ...item, type, cueKind, index: idx + 1 };
@@ -1769,14 +1783,25 @@ export function alignSubtitlesIndustrial(
 
 const ATTRIBUTION_PATTERNS: Array<{ role: SubtitleAttributionRole; label: string; pattern: RegExp }> = [
   { role: 'publisher', label: '发布 / 字幕组', pattern: /^(?:发行(?:方)?|发布(?:者)?|字幕组|字幕(?:制作)?组|Publisher|Release(?:d)?\s*By)\s*[:：]\s*(.+)$/i },
-  { role: 'translator', label: '翻译', pattern: /^(?:翻译|译者|听译|Translator|Translation)\s*[:：]\s*(.+)$/i },
+  { role: 'translator', label: '翻译', pattern: /^(?:字幕翻译|翻译|译者|听译|Translator|Translation|Translated\s*By)\s*[:：]\s*(.+)$/i },
   { role: 'editor', label: '编校', pattern: /^(?:编辑|编者|后期|润色|Editor|Editing)\s*[:：]\s*(.+)$/i },
   { role: 'timing', label: '时间轴', pattern: /^(?:时间轴|校轴|轴(?:制)?|Timing|Sync(?:hronization)?)\s*[:：]\s*(.+)$/i },
   { role: 'proofreader', label: '校对', pattern: /^(?:校对|校订|Proofread(?:er)?)\s*[:：]\s*(.+)$/i },
   { role: 'encoder', label: '压制 / 合并', pattern: /^(?:压制|编码|合并|Encoder|Encode(?:d)?\s*By|Mux(?:ed)?\s*By)\s*[:：]\s*(.+)$/i },
   { role: 'website', label: '来源', pattern: /^(?:网站|来源|主页|Website|Web|URL)\s*[:：]\s*(.+)$/i },
-  { role: 'producer', label: '制作', pattern: /^(?:制作(?:者)?|字幕制作|Produced\s*By|Author)\s*[:：]\s*(.+)$/i },
+  { role: 'producer', label: '制作', pattern: /^(?:制作(?:者)?|字幕制作|Produced\s*By|Author|Subtitles?\s*By)\s*[:：]\s*(.+)$/i },
 ];
+
+/** True for standalone subtitle-credit cues such as「字幕翻译：凌武翎」. */
+export function isSubtitleCreditText(text: string): boolean {
+  const clean = stripSubtitleInlineTags(text || '')
+    .replace(/\\N/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!clean || clean.length > 80) return false;
+  if (ATTRIBUTION_PATTERNS.some((definition) => definition.pattern.test(clean))) return true;
+  return /^(?:字幕(?:翻译|制作|组|校对|时间轴|听译)|翻译|译者|校对|时间轴|压制|制作)\s*[:：]/.test(clean);
+}
 
 const cleanAttributionValue = (value: string) => value
   .replace(/\{\\[^}]+\}/g, '')
@@ -1871,6 +1896,10 @@ const shouldKeepSubtitleForAuxiliaryMode = (sub: SubRow, mode: AuxiliarySubtitle
   if (mode === 'keep') return true;
   // 歌词正文（含译词合并行）不因 music 辅助类被 smart/clean 剥掉。
   if (sub.type === 'lyrics' || sub.cueKind === 'lyrics' || isLyricText(sub.text)) return true;
+  // 署名信息默认不进观看轨
+  if (sub.type === 'credit' || sub.cueKind === 'credit' || isSubtitleCreditText(sub.text)) {
+    return false;
+  }
   const category = sub.auxiliary?.category;
   if (!category) return true;
   if (mode === 'clean') {
@@ -2203,6 +2232,7 @@ const combineRowCueKind = (...kinds: Array<CueKind | undefined>): CueKind | unde
   const known = kinds.filter(Boolean) as CueKind[];
   if (known.length === 0) return undefined;
   if (known.includes('lyrics')) return 'lyrics';
+  if (known.includes('credit')) return 'credit';
   if (known.every(kind => kind === 'screen_text')) return 'screen_text';
   if (known.every(kind => kind === 'narration')) return 'narration';
   if (known.includes('commentary')) return 'commentary';
