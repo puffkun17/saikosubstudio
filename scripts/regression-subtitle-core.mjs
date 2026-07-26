@@ -50,6 +50,8 @@ const {
   detectLanguageByFilename,
   detectSubtitleLanguage,
   detectSubtitleLanguagePair,
+  isMainPathSecondaryLanguage,
+  mainPathPrimaryRank,
   appendCreatorCredit,
   extractStylesFromAss,
   extractSubtitleAttributions,
@@ -768,10 +770,15 @@ What's wrong?
 00:00:04,000 --> 00:00:06,000
 始めましょう。`;
   assert.equal(detectLanguageByContent('おかえりなさい。'), 'ja');
-  assert.equal(checkIsBilingual(chineseJapaneseSrt), true, 'Chinese/Japanese same-time cues should be treated as bilingual.');
+  assert.equal(checkIsBilingual(chineseJapaneseSrt), true, 'Structural zh/ja timing pairs may still fold; main-path detect demotes them.');
   const rows = normalizeSingleBilingualRows(parseSubtitle(chineseJapaneseSrt));
   assert.equal(rows.length, 2, 'Chinese/Japanese same-time cues should fold into one timeline row.');
-  assert.deepEqual(detectSubtitleLanguagePair(chineseJapaneseSrt), { primary: 'zh-CN', secondary: 'ja' });
+  assert.equal(detectSubtitleLanguagePair(chineseJapaneseSrt), undefined, 'Japanese must not enter main-path secondary.');
+  assert.deepEqual(
+    detectSubtitleLanguage('Movie.CHS.JPN.srt', chineseJapaneseSrt),
+    { lang: 'zh-CN', isBilingual: false },
+    'zh+ja content must demote out of bilingual main path.',
+  );
 }
 
 {
@@ -783,8 +790,9 @@ What's wrong?
 00:00:01,000 --> 00:00:03,000
 괜찮아요?`;
   assert.equal(detectLanguageByContent('괜찮아요?'), 'ko');
-  assert.equal(checkIsBilingual(chineseKoreanSrt), true, 'Chinese/Korean same-time cues should be treated as bilingual.');
-  assert.deepEqual(detectSubtitleLanguagePair(chineseKoreanSrt), { primary: 'zh-CN', secondary: 'ko' });
+  assert.equal(checkIsBilingual(chineseKoreanSrt), true, 'Structural zh/ko timing pairs may still fold; main-path detect demotes them.');
+  assert.equal(detectSubtitleLanguagePair(chineseKoreanSrt), undefined, 'Korean must not enter main-path secondary.');
+  assert.equal(detectSubtitleLanguage('Movie.CHS.KOR.srt', chineseKoreanSrt).isBilingual, false);
 }
 
 {
@@ -807,12 +815,47 @@ What's wrong?
 3
 00:00:01,000 --> 00:00:03,000
 Movimiento ocular detectado.`;
-  assert.equal(checkIsBilingual(chineseSpanishSrt), true, 'Chinese/Spanish same-time cues should be treated as bilingual.');
-  assert.deepEqual(detectSubtitleLanguagePair(chineseSpanishSrt, 'Project.Hail.Mary.2026.Chinese.Traditional.Spanish.srt'), { primary: 'zh-TW', secondary: 'es' });
+  assert.equal(checkIsBilingual(chineseSpanishSrt), true, 'Structural zh/es timing pairs may still fold; main-path detect demotes them.');
+  assert.equal(
+    detectSubtitleLanguagePair(chineseSpanishSrt, 'Project.Hail.Mary.2026.Chinese.Traditional.Spanish.srt'),
+    undefined,
+    'Spanish must not enter main-path secondary.',
+  );
   assert.deepEqual(
     detectSubtitleLanguage('Project.Hail.Mary.2026.Chinese.Traditional.Spanish.srt', chineseSpanishSrt),
-    { lang: 'bilingual', isBilingual: true, languagePair: { primary: 'zh-TW', secondary: 'es' } },
+    { lang: 'zh-TW', isBilingual: false },
+    'zh+es must demote to primary Chinese, not bilingual.',
   );
+}
+
+{
+  const chineseEnglishSrt = `1
+00:00:01,000 --> 00:00:03,000
+欢迎回来。
+
+2
+00:00:01,000 --> 00:00:03,000
+Welcome back.
+
+3
+00:00:04,000 --> 00:00:06,000
+我们开始吧。
+
+4
+00:00:04,000 --> 00:00:06,000
+Lets begin.`;
+  assert.deepEqual(
+    detectSubtitleLanguagePair(chineseEnglishSrt, 'Movie.EN&CHS.srt'),
+    { primary: 'zh-CN', secondary: 'en' },
+    'Short English lines must still form a main-path EN secondary pair.',
+  );
+  assert.deepEqual(
+    detectSubtitleLanguage('Movie.EN&CHS.srt', chineseEnglishSrt),
+    { lang: 'bilingual', isBilingual: true, languagePair: { primary: 'zh-CN', secondary: 'en' } },
+  );
+  assert.equal(isMainPathSecondaryLanguage('en'), true);
+  assert.equal(isMainPathSecondaryLanguage('ja'), false);
+  assert.ok(mainPathPrimaryRank('zh-CN') > mainPathPrimaryRank('zh-TW'), 'Simplified Chinese ranks above Traditional.');
 }
 
 {
@@ -1002,6 +1045,55 @@ const resetStoreForTmdb = () => {
     filenameSource: 'unknown',
   });
 };
+
+{
+  resetStoreForTmdb();
+  const zhCn = {
+    id: 'f-zhcn',
+    name: 'Sample.Movie.2024.CHS.ass',
+    text: 'Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,你好世界',
+    lang: 'zh-CN',
+    isBilingual: false,
+    isCommentary: false,
+    size: 100,
+  };
+  const zhTw = {
+    id: 'f-zhtw',
+    name: 'Sample.Movie.2024.CHT.ass',
+    text: 'Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,你好世界',
+    lang: 'zh-TW',
+    isBilingual: false,
+    isCommentary: false,
+    size: 200,
+  };
+  const en = {
+    id: 'f-en',
+    name: 'Sample.Movie.2024.ENG.ass',
+    text: 'Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,Hello world',
+    lang: 'en',
+    isBilingual: false,
+    isCommentary: false,
+    size: 50,
+  };
+  const ja = {
+    id: 'f-ja',
+    name: 'Sample.Movie.2024.JPN.ass',
+    text: 'Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,こんにちは',
+    lang: 'ja',
+    isBilingual: false,
+    isCommentary: false,
+    size: 900,
+  };
+  useStudioStore.getState().processFiles([zhTw, zhCn, ja, en]);
+  const task = useStudioStore.getState().tasks[0];
+  assert.equal(task?.zh?.id, 'f-zhcn', 'Binding must prefer Simplified Chinese over Traditional.');
+  assert.equal(task?.en?.id, 'f-en', 'Binding secondary must be English only.');
+  assert.notEqual(task?.en?.lang, 'ja', 'Japanese must not occupy the secondary slot even if larger.');
+  assert.equal(task?.status, 'paired');
+
+  useStudioStore.getState().bindTrack(task.id, 'en', 'f-ja');
+  assert.equal(useStudioStore.getState().tasks[0]?.en, null, 'Post-bind filter must demote non-English secondary selections.');
+}
 
 {
   resetStoreForTmdb();

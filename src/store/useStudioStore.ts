@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity } from '../utils/subtitleCore';
+import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity, isMainPathSecondaryLanguage, mainPathPrimaryRank } from '../utils/subtitleCore';
 import { assessTvYearFit, parseSeasonNumber, parseYearToken, shouldDemoteBySeasonSpan } from '../utils/tmdbCandidateFit';
 import { estimateJsonBytes, readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
 import { tmdbFetch } from '../services/tmdb';
@@ -1603,8 +1603,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             if (updated.isBilingualSingle) {
               updated.en = null;
             }
-          } else if (trackKey === 'en' && selectedFile) {
+          } else if (trackKey === 'en') {
             updated.isBilingualSingle = false;
+            // Post-bind filter: secondary slot is English-only; demote other languages.
+            if (selectedFile && !isMainPathSecondaryLanguage(selectedFile.lang)) {
+              updated.en = null;
+            }
           }
 
           updated.status = (updated.isBilingualSingle && updated.zh) || (updated.zh && updated.en) ? 'paired' : 'unpaired';
@@ -1869,8 +1873,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         );
         const normalFiles = files.filter(f => !commentaryFiles.includes(f));
 
+        // Main path: primary = 简中优先 / 繁中回退；secondary = English only；其他语言 demote。
         const zhFiles = normalFiles.filter(f => f.lang === 'zh' || f.lang === 'zh-CN' || f.lang === 'zh-TW');
-        const foreignFiles = normalFiles.filter(f => ['en', 'ja', 'ko', 'fr', 'es', 'latin'].includes(f.lang));
+        const enFiles = normalFiles.filter(f => isMainPathSecondaryLanguage(f.lang));
         const bilingualFiles = normalFiles.filter(f => f.lang === 'bilingual');
 
         const getBestFile = (list: Subfile[]): Subfile | null => {
@@ -1883,16 +1888,28 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           })[0];
         };
 
-        const bestZh = getBestFile(zhFiles);
-        const bestForeign = getBestFile(foreignFiles);
+        const getBestPrimary = (list: Subfile[]): Subfile | null => {
+          if (list.length === 0) return null;
+          return [...list].sort((a, b) => {
+            const rankDiff = mainPathPrimaryRank(b.lang) - mainPathPrimaryRank(a.lang);
+            if (rankDiff !== 0) return rankDiff;
+            const aAss = a.name.toLowerCase().endsWith('.ass') ? 1 : 0;
+            const bAss = b.name.toLowerCase().endsWith('.ass') ? 1 : 0;
+            if (aAss !== bAss) return bAss - aAss;
+            return b.size - a.size;
+          })[0];
+        };
+
+        const bestZh = getBestPrimary(zhFiles);
+        const bestEn = getBestFile(enFiles);
         const bestBilingual = getBestFile(bilingualFiles);
         const bestCommentary = getBestFile(commentaryFiles);
 
         task.commentary = bestCommentary;
 
-        if (bestZh && bestForeign) {
+        if (bestZh && bestEn) {
           task.zh = bestZh;
-          task.en = bestForeign;
+          task.en = bestEn;
           task.isBilingualSingle = false;
         } else if (bestBilingual) {
           task.zh = bestBilingual;
@@ -1902,9 +1919,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           task.zh = bestZh;
           task.en = null;
           task.isBilingualSingle = false;
-        } else if (bestForeign) {
+        } else if (bestEn) {
           task.zh = null;
-          task.en = bestForeign;
+          task.en = bestEn;
           task.isBilingualSingle = false;
         } else {
           const bestAny = getBestFile(normalFiles);
@@ -1913,12 +1930,17 @@ export const useStudioStore = create<StudioState>((set, get) => ({
               task.zh = bestAny;
               task.en = null;
               task.isBilingualSingle = true;
-            } else if (['en', 'ja', 'ko', 'fr', 'es', 'latin'].includes(bestAny.lang)) {
+            } else if (isMainPathSecondaryLanguage(bestAny.lang)) {
               task.zh = null;
               task.en = bestAny;
               task.isBilingualSingle = false;
-            } else {
+            } else if (mainPathPrimaryRank(bestAny.lang) > 0) {
               task.zh = bestAny;
+              task.en = null;
+              task.isBilingualSingle = false;
+            } else {
+              // ja/ko/fr/es/latin 等：demote，不进入主 secondary 槽。
+              task.zh = null;
               task.en = null;
               task.isBilingualSingle = false;
             }

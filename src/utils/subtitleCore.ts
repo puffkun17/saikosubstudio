@@ -103,7 +103,8 @@ export type SubtitleLanguage =
 
 export interface SubtitleLanguagePair {
   primary: 'zh-CN' | 'zh-TW';
-  secondary: 'en' | 'ja' | 'ko' | 'fr' | 'es' | 'latin' | 'unknown';
+  /** Main-path secondary is English only; other languages are demoted before pairing. */
+  secondary: 'en';
 }
 
 export interface SubtitleLanguageDetection {
@@ -237,14 +238,17 @@ const hasFilenameToken = (name: string, tokens: string[]): boolean => {
   return tokens.some(token => new RegExp(`(^|\\s|-)${token}(\\s|-|$)`, 'i').test(normalized));
 };
 
-const isSecondarySubtitleLanguage = (language: SubtitleLanguage): language is SubtitleLanguagePair['secondary'] => (
-  language === 'en'
-  || language === 'ja'
-  || language === 'ko'
-  || language === 'fr'
-  || language === 'es'
-  || language === 'latin'
-);
+/** Main-path secondary slot accepts English only. */
+export function isMainPathSecondaryLanguage(language: string): language is 'en' {
+  return language === 'en';
+}
+
+/** Prefer Simplified Chinese over Traditional when both are candidates. */
+export function mainPathPrimaryRank(language: string): number {
+  if (language === 'zh-CN' || language === 'zh') return 2;
+  if (language === 'zh-TW') return 1;
+  return 0;
+}
 
 export function detectLanguageByFilename(name: string): SubtitleLanguage {
   const normalized = name.toLowerCase();
@@ -262,16 +266,22 @@ export function detectLanguageByFilename(name: string): SubtitleLanguage {
 
 export function detectSubtitleLanguage(name: string, text: string): SubtitleLanguageDetection {
   const filenameLang = detectLanguageByFilename(name);
-  const contentBilingual = checkIsBilingual(text);
-  const isBilingual = contentBilingual || filenameLang === 'bilingual';
-  const languagePair = isBilingual ? detectSubtitleLanguagePair(text, name) : undefined;
-  const lang = isBilingual
+  const languagePair = detectSubtitleLanguagePair(text, name);
+  // Main path: only zh(+TW) + English counts as bilingual; other secondaries are demoted.
+  const isBilingual = Boolean(languagePair);
+  const contentLang = detectLanguageByContent(text);
+  const lang: SubtitleLanguage = isBilingual
     ? 'bilingual'
-    : filenameLang !== 'unknown'
-      ? filenameLang
-      : detectLanguageByContent(text);
+    : filenameLang === 'bilingual'
+      // Filename claims bilingual (e.g. 中日) but no English secondary → demote to content/primary.
+      ? (contentLang !== 'unknown' ? contentLang : 'zh-CN')
+      : filenameLang !== 'unknown'
+        ? filenameLang
+        : contentLang;
 
-  return { lang, isBilingual, languagePair };
+  return languagePair
+    ? { lang, isBilingual, languagePair }
+    : { lang, isBilingual };
 }
 
 /**
@@ -2297,18 +2307,33 @@ export function detectSubtitleLanguagePair(text: string, name = ''): SubtitleLan
   }
 
   const filenameLang = name ? detectLanguageByFilename(name) : 'unknown';
-  const primary = filenameLang === 'zh-TW' || filenameLang === 'zh-CN'
-    ? filenameLang
-    : (counts.get('zh-TW') || 0) > (counts.get('zh-CN') || 0) ? 'zh-TW' : 'zh-CN';
-  if ((counts.get('zh-CN') || 0) + (counts.get('zh-TW') || 0) === 0) return undefined;
-
-  const secondary = (['en', 'ja', 'ko', 'fr', 'es', 'latin'] as const)
-    .map(language => ({ language, count: counts.get(language) || 0 }))
-    .sort((a, b) => b.count - a.count)[0];
-
-  if (isSecondarySubtitleLanguage(filenameLang)) {
-    return { primary, secondary: filenameLang };
+  // Explicit non-English foreign filenames cannot form a main-path language pair.
+  if (filenameLang === 'ja' || filenameLang === 'ko' || filenameLang === 'fr' || filenameLang === 'es') {
+    return undefined;
   }
-  if (!secondary || secondary.count === 0) return undefined;
-  return { primary, secondary: secondary.language };
+
+  const zhCn = counts.get('zh-CN') || 0;
+  const zhTw = counts.get('zh-TW') || 0;
+  if (zhCn + zhTw === 0) return undefined;
+
+  // 简中优先：无文件名提示时，平局取 zh-CN。
+  const primary: 'zh-CN' | 'zh-TW' = filenameLang === 'zh-TW' || filenameLang === 'zh-CN'
+    ? filenameLang
+    : zhCn >= zhTw ? 'zh-CN' : 'zh-TW';
+
+  const enCount = counts.get('en') || 0;
+  const latinCount = counts.get('latin') || 0;
+  const demotedForeignCount = (['ja', 'ko', 'fr', 'es'] as const)
+    .reduce((sum, language) => sum + (counts.get(language) || 0), 0);
+
+  // English only. Latin-script lines without lexicon hits may count as English when no
+  // demoted foreign language is present (keeps short EN lines like "Lets begin." eligible).
+  const englishEligible = isMainPathSecondaryLanguage(filenameLang)
+    || enCount > 0
+    || (latinCount > 0 && demotedForeignCount === 0);
+
+  if (!englishEligible) return undefined;
+  if (demotedForeignCount > enCount + latinCount) return undefined;
+
+  return { primary, secondary: 'en' };
 }
