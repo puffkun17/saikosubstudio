@@ -152,10 +152,7 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
   const { handleDownload } = useExport();
 
   useEffect(() => {
-    if (!open) {
-      setMenuPos(null);
-      return;
-    }
+    if (!open) return;
 
     const updatePosition = () => {
       const rect = buttonRef.current?.getBoundingClientRect();
