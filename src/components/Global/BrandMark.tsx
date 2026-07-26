@@ -3,7 +3,7 @@ import React from 'react';
 /** 顶栏品牌标：内联 SVG，避免 /favicon.svg 的 CDN / 浏览器死缓存。 */
 export const BrandMark: React.FC<{ className?: string; title?: string }> = ({
   className = 'h-10 w-10',
-  title = 'SubStudio',
+  title = 'SaikoSubStudio',
 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -14,11 +14,13 @@ export const BrandMark: React.FC<{ className?: string; title?: string }> = ({
     className={className}
   >
     {title ? <title>{title}</title> : null}
-    <rect width="512" height="512" rx="118" fill="#1a3d37" />
-    <path
-      fill="#f5f1ea"
-      d="M338 156c-12 22-36 34-70 36-44 4-74-8-74-36 0-26 24-40 68-40 30 0 54 8 72 24l26-40C334 78 300 66 256 66c-78 0-128 38-128 96 0 52 36 82 104 90 42 6 62 18 62 40 0 26-26 42-74 42-38 0-68-12-84-34l-28 38c24 32 66 50 116 50 84 0 134-40 134-100 0-54-36-84-92-94z"
-    />
-    <rect x="168" y="404" width="176" height="22" rx="11" fill="#ef8d5f" />
+    {/* Warm forest container — 家庭观影 / 阅片环境 */}
+    <rect width="512" height="512" rx="88" fill="#1a3d37" />
+    {/* Primary subtitle track (简中优先) */}
+    <rect x="96" y="148" width="320" height="50" rx="8" fill="#f5f1ea" />
+    {/* Secondary subtitle track (English) */}
+    <rect x="96" y="212" width="248" height="38" rx="6" fill="#f5f1ea" />
+    {/* Accent / studio foundation bar */}
+    <rect x="152" y="278" width="208" height="20" rx="10" fill="#ef8d5f" />
   </svg>
 );
