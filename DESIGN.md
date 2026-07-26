@@ -114,9 +114,15 @@ before introducing visual novelty.
 |------|------|------|
 | UI 线框 | **Lucide React** | 动作、状态、工具栏、导航 |
 | 文件字形 | `FileFormatIcon` | 格式识别（非装饰） |
-| 语言字牌 | `LanguageMark` | 轨语言身份 |
+| 语言字牌 | `LanguageMark` | 轨语言身份；**字标用 UI Sans（保证 CJK）**；右侧标签可用 mono |
 | 检查几何 | `inspectionMarks` | ■ 结构 · ● 画面 · ▲ 声音 |
 | 品牌 / 插画 | `BrandMark`、空态 PNG | Logo、空态说明；**不进工具栏** |
+
+### 语言字标限制（ICON-005）
+
+- 色块内字标（简 / 繁 / あ / 한 / En…）优先 **系统 / UI Sans**，避免 mono 在部分 Windows 字体链上缺字方框。  
+- 右侧语言标签文案可继续 mono semibold。  
+- 若抽样仍见方框：记录 OS + 字体回退，再考虑显式 `font-family` 栈；勿为此引入第二套图标库。
 
 ### Lucide 规范
 

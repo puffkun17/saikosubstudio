@@ -393,21 +393,28 @@
 ```
 UP-0:  ICON-001 → ASSET-001 → ICON-002 → ICON-003
        → BADGE-001 → BADGE-002 → BADGE-003 → ASSET-002
-       【方案已批准 · 实现进行中 · 验收 = 有条件通过，不可标全部 Done】
+       【Done · 2026-07-26 Design Director 复验关闭】
 
 UP-1:  BUTTON-001 → BUTTON-002 → BUTTON-003
        → SHELL-001 → SHELL-002 → SHELL-003 → SHELL-004 → SHELL-005
        → BADGE-004 → ICON-004 → ICON-005
-       【方案待批准】
+       【Done · 2026-07-27 Design Director 复验关闭】
+
+CLEAN-A（可选清扫）:
+       ColorSampler faint → muted
+       → 底栏 .is-pending 0.55→0.65
+       → SequenceList undo/redo → .ui-action--icon
+       → SourceIdentityStrip / TmdbPanel 去冗余 rounded-lg
+       → StyleSidebar 零星 toggle 能收则收
+       【Done · 2026-07-27 Design Director 复验关闭】
 
 EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
        → TOKEN-004 + ASSET-003 + ASSET-004
        → TOKEN-005 → TOKEN-006 → TOKEN-007 → TOKEN-008
        → TOKEN-009 → TOKEN-010 → TOKEN-011 → TOKEN-012
        → SHELL-006
-       【方案待批准】
+       【Authorized · 可开工 · 2026-07-27】
 ```
-
 ---
 
 # 批准闸门
@@ -426,9 +433,14 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 | 梯队 | 范围 | 状态 | 日期 | 备注 |
 |------|------|------|------|------|
 | **UP-0** | 设计决策与验收标准 | **Approved** | 2026-07-26 | Design Director 方案批准 |
-| **UP-0** | 实现开工 | **In Progress** | 2026-07-26 | 工作区已有实质改动；状态机与此对齐 |
-| **UP-1** | BUTTON / SHELL / BADGE-004 / ICON-004/005 | Pending | — | 未批准 |
-| **EP-0** | TOKEN / ASSET-003/004 / SHELL-006 | Pending | — | 未批准 |
+| **UP-0** | 实现开工 | ~~In Progress~~ → **Done** | 2026-07-26 | 实现已验收关闭 |
+| **UP-0** | 实现验收（八条） | **Done** | 2026-07-26 | 扫尾关闭 ASSET-002 / BADGE-001 |
+| **UP-0** | Design Director 终裁 | **Approved / Closed** | **2026-07-27** | 独立复验通过；Wave 1 正式关闭 |
+| **UP-1** | 设计决策与验收标准（`DESIGN_PLAN.md` UP-1 节） | **Approved** | **2026-07-27** | 方案以计划原文为准，不另开设计轮 |
+| **UP-1** | 实现开工 | **Authorized** → **Done** | **2026-07-27** | UI Engineer 已落地 |
+| **UP-1** | 实现验收（十一条） | **Done** | **2026-07-27** | Design Director 复验关闭 Wave 2 |
+| **CLEAN-A** | 可选清扫（UP-0/UP-1 残留） | **Done** | **2026-07-27** | Design Director 复验通过 A1–A5；解锁 EP-0 |
+| **EP-0** | TOKEN / ASSET-003/004 / SHELL-006 | **Authorized** | **2026-07-27** | CLEAN-A Done 后自动开工授权；仍禁止与清扫混 PR |
 
 ---
 
@@ -438,7 +450,9 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 |------|------|------|------|
 | 2026-07-26 | `DESIGN_PLAN.md` 决策稿 | **Pass** | 可作为 UP-0 唯一验收契约 |
 | 2026-07-26 | UP-0 实现（unstaged） | **Conditional Pass** | 完工声明驳回；不可标全部 Done |
-| 2026-07-26 | ASSET-002 / BADGE-001 扫尾（UI Engineer） | **待 Design Director 复验** | 已补对比度/可点 faint/eyebrow；已归档胶囊抽检表。**未标 Done** |
+| 2026-07-26 | ASSET-002 / BADGE-001 扫尾（UI Engineer） | **Submitted** | 已补对比度/可点 faint/eyebrow；已归档胶囊抽检表 |
+| 2026-07-26 | ASSET-002 / BADGE-001 初复验记录 | **Pass → Done** | 抽检表与代码对齐；对比度声称写入计划 |
+| **2026-07-27** | **Design Director 终裁复验** | **Approved / Done** | 独立核对代码 + 对比度核算；**确认关闭 UP-0** |
 
 ### 逐条
 
@@ -450,12 +464,12 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 | BADGE-002 | **Done** | — |
 | BADGE-003 | **Done** | — |
 | ICON-002 | **Done** | 边界已写入 `DESIGN.md` §4（仅约束 Lucide） |
-| BADGE-001 | **Conditional → 待复验** | 抽检表已归档（见下）；越权内容区 pill 已清 |
-| ASSET-002 | **Conditional → 待复验** | 禁用步骤 cream@0.65 ≈5.45:1；可点 faint 已抬；eyebrow `color-mix(accent 40%, text)` ≈5.59:1 |
+| BADGE-001 | **Done** | §5 抽检表已 Director 复核；内容区越权全圆已清 |
+| ASSET-002 | **Done** | 禁用步骤 5.45:1；eyebrow ≈5.6:1；声称可点 faint 已抬至 muted |
 
 ### BADGE-001｜信息胶囊目视抽检（DESIGN.md §5）
 
-抽检日期：2026-07-26 · 工程师自检 · **待 Design Director 裁定**
+抽检日期：2026-07-26 · 工程师自检 · **Design Director 2026-07-26 裁定：Pass → Done**
 
 | 表面 / 落点 | 所见 | §5 角色判定 | 结果 | 处置 |
 |-------------|------|-------------|------|------|
@@ -476,17 +490,140 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 
 | 表面 | 抽检项 | 修复前 | 修复后 | 结果 |
 |------|--------|--------|--------|------|
-| Forest 托盘 | 禁用步骤文案（仍可点 / cursor-help） | cream@0.55 ≈**4.37:1** | cream@0.65 ≈**5.45:1** | **待复验** |
-| Forest 托盘 | 可点步骤 / 底栏步骤标签 | 已抬至 ≥0.72 档 | 维持 | **待复验** |
-| Cream 空态 | eyebrow `LOCAL SUBTITLE STUDIO`（柑橘） | accent-strong ≈**2.2:1** | `color-mix(accent 40%, text)` ≈**5.59:1** | **待复验** |
-| Cream | 可点控件唯一色为 `text-faint` | InfoHint / 关闭 / 拖柄 / 清除 等 | 改为 `text-muted` | **待复验** |
+| Forest 托盘 | 禁用步骤文案（仍可点 / cursor-help） | cream@0.55 ≈**4.37:1** | cream@0.65 ≈**5.45:1**（Director 实机 **5.45:1**） | **Pass** |
+| Forest 托盘 | 可点步骤 / 底栏步骤标签 | 已抬至 ≥0.72 档 | 维持 | **Pass** |
+| Cream 空态 | eyebrow `LOCAL SUBTITLE STUDIO`（柑橘） | accent-strong ≈**2.2:1** | `color-mix(accent 40%, text)` ≈**5.59:1**（Director 复核 mix ≈**5.6:1**） | **Pass** |
+| Cream | 可点控件唯一色为 `text-faint` | InfoHint / 关闭 / 拖柄 / 清除 / Powered by | 改为 `text-muted` | **Pass** |
 | Cream | placeholder / 装饰旁注 | 允许 faint | 未改（符合决策） | Pass（策略） |
 
 ### 关闭 UP-0 全集前的清单
 
-1. ~~文档状态与实现一致~~（本记录 + Backlog 已同步）。  
-2. ~~ASSET-002 对比度与可点 faint 扫尾~~（代码已补；**待 Design Director 复验**）。  
+1. ~~文档状态与实现一致~~。  
+2. ~~ASSET-002 对比度与可点 faint 扫尾~~ → **Done（Director 复验 Pass）**。  
 3. ~~ICON-002 边界~~（已写入 `DESIGN.md` §4）。  
-4. ~~BADGE-001 抽检表归档~~（见上表；**待 Design Director 复验**）。  
+4. ~~BADGE-001 抽检表归档~~ → **Done（Director 复验 Pass）**。  
 
-**UP-1 / EP-0：** 本次不验收、不批准开工。
+**UP-0 全集：Done（2026-07-26 扫尾 · 2026-07-27 Design Director 终裁确认）。**
+
+### Design Director 终裁批注（2026-07-27）
+
+**裁定：批准关闭 UP-0 / Wave 1。**
+
+| 复核项 | 证据 | 结果 |
+|--------|------|------|
+| ASSET-002 禁用步骤 | `SystemTray` `rgba(245,241,234,0.65)`；核算 **5.45:1** ≥ 4.5 | Pass |
+| ASSET-002 eyebrow | `.ingest-empty-intro__eyebrow` = `color-mix(accent 40%, text)`；核算 **5.60:1** | Pass |
+| ASSET-002 可点 faint | `InfoHint` 等已改 `text-muted` + `rounded-md` | Pass |
+| BADGE-001 越权胶囊 | SourceMatch 计数 `rounded-md`；托盘 LOCAL 保留 `rounded-full` | Pass |
+| BADGE-001 抽检表 | 计划内 §5 表完整，与代码一致 | Pass |
+| ICON-001 未回退 | `screen: #456660`；无检查用途蓝 | Pass |
+
+**残留（不重开 UP-0，日常清扫即可）：** ColorSampler 上传区图标仍 `text-faint`；底栏 `.is-pending` 仍 cream@0.55（≈4.36:1，若视为可读步骤可随后抬到 0.65）。
+
+**下一步（已更新）：** UP-1 Closed · CLEAN-A Closed · **EP-0 Authorized（可开工）**。发布债未授权。
+
+---
+
+# 验收记录（UP-1）
+
+| 日期 | 对象 | 裁定 | 说明 |
+|------|------|------|------|
+| 2026-07-27 | UP-1 方案 | **Approved** | 计划原文即契约 |
+| 2026-07-27 | UP-1 实现开工 | **Authorized** | 允许按序实施 |
+| 2026-07-27 | UP-1 实现提交（UI Engineer） | **Submitted** | hero / 三壳 / choice / panel / lang+fmt token |
+| **2026-07-27** | **Design Director 复验** | **Pass → Done** | 逐条对照验收标准；Wave 2 关闭 |
+
+### 逐条
+
+| ID | 裁定 | Director 复核要点 |
+|----|------|-------------------|
+| BUTTON-001 | **Done** | 空态双 CTA = `.ui-action--hero`；全库仅 DragZone |
+| BUTTON-002 | **Done** | `.ui-action--icon` = 36；`--icon-sm` = 32；主路径关闭/删除已迁入 |
+| BUTTON-003 | **Done** | 产品面无裸 `rgba(201,138,134,*)`；danger hover 走 color-mix |
+| SHELL-001 | **Done** | SystemTray / Workbench / Tmdb / Ingest → `.ui-modal`；墨绿 tint |
+| SHELL-002 | **Done** | TrackSelect / Export / DragZone → `.ui-menu`；冷黑阴影已去 |
+| SHELL-003 | **Done** | FeedbackCenter → `.ui-toast` |
+| SHELL-004 | **Done** | StyleSidebar 分类 tab + 辅助策略 → `.ui-choice-group` |
+| SHELL-005 | **Done** | Workbench 概览/序列/差异/样式抽屉 → 单一 `.v4-panel` |
+| BADGE-004 | **Done** | `--lang-*-face/ink` 集中于 `globals.css`；组件只引 var |
+| ICON-004 | **Done** | `--fmt-*-face/fold` + `--fmt-ink`；无内联 face hex |
+| ICON-005 | **Done** | `LangTile` 字标 `font-sans`；`DESIGN.md` §4 已文档化 |
+
+### 残留（不重开 UP-1）
+
+| 项 | 说明 |
+|----|------|
+| SequenceList 撤销/重做 | 仍手写 `h-9 w-9`（边长已是 36）；可改 `.ui-action--icon` |
+| SourceIdentityStrip / TmdbPanel | `v4-panel` 上多余 `rounded-lg`（同值冗余） |
+| StyleSidebar 辅助线 / 斜体歌词 | 少量自定义 toggle，非主 CTA 竞品皮肤 |
+| InfoHint 浮层 | tip ≠ menu/modal，未强制归入三壳 |
+
+**UP-1 全集：Done（2026-07-27）。残留转入 CLEAN-A，不重开 Wave 2。**
+
+---
+
+# 当前授权（2026-07-27）· 先 A 再 B
+
+> **硬顺序：~~CLEAN-A 全部 Done + Design Director 复验通过 → 才可开工 EP-0。~~**  
+> **当前：CLEAN-A = Done → EP-0 = Authorized。** 禁止同一 PR 混清扫与 token 重构（清扫已关）。
+
+## CLEAN-A｜可选清扫 · **Done（2026-07-27 Design Director 复验）**
+
+### 范围与验收
+
+| # | 项 | 验收 | 实现 | Director |
+|---|-----|------|------|----------|
+| A1 | ColorSampler 上传区图标 | 可点态不用 `text-faint` 作唯一色 → `text-muted` | `ImageIcon` → `text-muted` | **Pass** |
+| A2 | 底栏 `.is-pending` | cream α `0.55` → `0.65` | globals `0.65` | **Pass** |
+| A3 | SequenceList 撤销 / 重做 | `.ui-action--icon` | `quiet` + `icon` | **Pass** |
+| A4 | SourceIdentityStrip / TmdbPanel | 去掉与 `.v4-panel` 同值的多余 `rounded-lg` | 外壳去冗余 | **Pass** |
+| A5 | StyleSidebar 零星 toggle | 能收进 `.ui-choice` 则收 | 辅助线 / 斜体歌词 → choice | **Pass** |
+
+### 禁止（本档关闭后仍有效于 EP-0）
+
+- 发布债（嵌套 button / Modal 焦点 / 窄屏）混入 EP-0  
+- 借 token 重构重做品牌或控件语言  
+
+### 状态机
+
+`Authorized` → 实施 → `Submitted` → **Director 复验 → Done** → **EP-0 Authorized** ✓
+
+---
+
+## EP-0｜工程真相源 · **Authorized（可开工 · 2026-07-27）**
+
+方案以本文 **EP-0** 各节为准。实施序：
+
+```
+TOKEN-001 → 002 → 003
+→ TOKEN-004 + ASSET-003 + ASSET-004
+→ TOKEN-005 → 006 → 007 → 008
+→ TOKEN-009 → 010 → 011 → 012
+→ SHELL-006
+```
+
+**约束：** 纯工程收敛；产品面无故意视觉改版；完成后交 Director 复验标 Done。
+
+---
+
+# 剩余工作（2026-07-27 · CLEAN-A 关闭后）
+
+## 已关闭
+
+| 梯队 | 状态 |
+|------|------|
+| **UP-0 / Wave 1** | **Done** |
+| **UP-1 / Wave 2** | **Done** |
+| **CLEAN-A** | **Done** |
+
+## 进行中
+
+| 轨 | 状态 |
+|----|------|
+| **EP-0** Wave 3 | **Authorized · 可开工** |
+
+## 产品发布债（Wave 外 · 未授权）
+
+P1：嵌套 button · Modal 焦点陷阱 · 窄屏步骤可达性。  
+P2：品牌命名三轨 · 超宽桌面空洞。  
+**勿混入 EP-0。**
