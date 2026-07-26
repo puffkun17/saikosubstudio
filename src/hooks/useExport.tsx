@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, SquareArrowRightExit } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, type CreditDeclaration } from '@/store/useStudioStore';
+import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import {
   appendCreatorCredit as appendCreatorCreditCue,
   applyAuxiliarySubtitleMode,
@@ -141,20 +142,52 @@ const EXPORT_OPTIONS = [
 ];
 
 /**
- * #9 — Export dropdown that closes on outside click
+ * #9 — Export dropdown：菜单走 OverlayPortal + fixed，避免被放映厅样式壳压住。
  */
 export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ variant = 'primary' }) => {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const { handleDownload } = useExport();
 
-  // Close on outside click
+  useEffect(() => {
+    if (!open) {
+      setMenuPos(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const width = Math.min(18.5 * 16, window.innerWidth - 32);
+      const left = Math.min(
+        window.innerWidth - width - 16,
+        Math.max(16, rect.right - width),
+      );
+      setMenuPos({
+        top: rect.bottom + 8,
+        left,
+        width,
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [open]);
+
+  // Close on outside click（按钮 + 菜单均算内部）
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const target = e.target as Node;
+      if (buttonRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+      setOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -173,8 +206,9 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
   const ghostClass = 'ui-action ui-action--secondary ui-action--lg';
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative">
       <button
+        ref={buttonRef}
         type="button"
         className={variant === 'primary' ? primaryClass : ghostClass}
         onClick={() => setOpen(!open)}
@@ -189,44 +223,53 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
         />
       </button>
 
-      {open && (
-        <div
-          role="menu"
-          aria-label="选择导出格式"
-          className="ui-menu dropdown-pop absolute right-0 top-full z-[110] mt-2 w-[min(18.5rem,calc(100vw-2rem))]"
-        >
-          <div className="border-b border-[var(--v4-line)] px-3.5 py-2.5">
-            <p className="text-xs font-semibold tracking-wide text-[var(--v4-text)]">选择格式</p>
-            <p className="mt-0.5 text-[11px] leading-4 text-[var(--v4-text-faint)]">下载到本地，如视频文件所在目录等</p>
-          </div>
-          <div className="p-1.5">
-            {EXPORT_OPTIONS.map((option) => (
-              <button
-                key={option.format}
-                type="button"
-                role="menuitem"
-                className="v4-focus-ring flex w-full cursor-pointer items-start gap-3 rounded-md px-2.5 py-2.5 text-left transition-colors hover:bg-[var(--v4-accent-soft)]"
-                onClick={() => {
-                  handleDownload(option.format);
-                  setOpen(false);
-                }}
-              >
-                <span
-                  className={`mt-0.5 inline-flex min-w-[2.75rem] shrink-0 items-center justify-center rounded-md px-1.5 py-1 font-mono text-[11px] font-bold tracking-wide
-                    ${option.emphasized
-                      ? 'border border-[var(--v4-accent)]/25 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
-                      : 'border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]'}`}
+      {open && menuPos && (
+        <OverlayPortal>
+          <div
+            ref={menuRef}
+            role="menu"
+            aria-label="选择导出格式"
+            style={{
+              position: 'fixed',
+              top: menuPos.top,
+              left: menuPos.left,
+              width: menuPos.width,
+            }}
+            className="ui-menu dropdown-pop z-[var(--z-dropdown)]"
+          >
+            <div className="border-b border-[var(--v4-line)] px-3.5 py-2.5">
+              <p className="text-xs font-semibold tracking-wide text-[var(--v4-text)]">选择格式</p>
+              <p className="mt-0.5 text-[11px] leading-4 text-[var(--v4-text-faint)]">下载到本地，如视频文件所在目录等</p>
+            </div>
+            <div className="p-1.5">
+              {EXPORT_OPTIONS.map((option) => (
+                <button
+                  key={option.format}
+                  type="button"
+                  role="menuitem"
+                  className="v4-focus-ring flex w-full cursor-pointer items-start gap-3 rounded-md px-2.5 py-2.5 text-left transition-colors hover:bg-[var(--v4-accent-soft)]"
+                  onClick={() => {
+                    handleDownload(option.format);
+                    setOpen(false);
+                  }}
                 >
-                  {option.badge}
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-[var(--v4-text)]">{option.title}</span>
-                  <span className="mt-0.5 block text-[11px] leading-4 text-[var(--v4-text-muted)]">{option.description}</span>
-                </span>
-              </button>
-            ))}
+                  <span
+                    className={`mt-0.5 inline-flex min-w-[2.75rem] shrink-0 items-center justify-center rounded-md px-1.5 py-1 font-mono text-[11px] font-bold tracking-wide
+                      ${option.emphasized
+                        ? 'border border-[var(--v4-accent)]/25 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
+                        : 'border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]'}`}
+                  >
+                    {option.badge}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-[var(--v4-text)]">{option.title}</span>
+                    <span className="mt-0.5 block text-[11px] leading-4 text-[var(--v4-text-muted)]">{option.description}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        </OverlayPortal>
       )}
     </div>
   );

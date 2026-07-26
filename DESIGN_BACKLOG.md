@@ -87,7 +87,7 @@
 | **CLEAN-A4** | 片源/TMDB 去冗余 `rounded-lg` | **Done** |
 | **CLEAN-A5** | StyleSidebar 零星 toggle 能收则收 | **Done** |
 
-> **Design Director：** CLEAN-A **Closed**。EP-0 现为 **Authorized**（可开工）。未授权发布债。
+> **Design Director：** CLEAN-A **Closed**。**THEATER-LAYER Done**；EP-0 **Authorized**（可开工）。未授权发布债。
 
 ### Wave 3 — 工程真相源（EP-0）· **Authorized（可开工 · 2026-07-27）**
 
@@ -110,7 +110,18 @@
 | **SHELL-006** | Low | ⭐ | Low | 删除/隔离闲置 shadcn | Authorized |
 | **DOC-001** | — | — | — | `DESIGN.md` + 本 Backlog（**Done**） | Done |
 
-> **剩余工作摘要：** Wave 1+2 + CLEAN-A **Done**。**EP-0 可开工。** 产品发布债仍未授权。
+> **剩余工作摘要：** Wave 1+2 + CLEAN-A + **THEATER-LAYER Done**。EP-0 **Authorized** 可开工。产品发布债仍未授权。
+
+### THEATER-LAYER — 放映厅叠层 · **Done（2026-07-27）**
+
+| ID | 一句话 | Status |
+|----|--------|--------|
+| **TL-D1** | 导出菜单 Portal + fixed，走 `--z-dropdown` | **Done** |
+| **TL-D2** | 去掉播放条临时 z-50；抽屉 bottom 让出播放条 | **Done** |
+| **TL-D3** | 开合不横跳 / 不改预览几何 | **Done** |
+| **TL-D4** | 小屏遮罩不盖顶栏 | **Done** |
+
+> 契约与验收见 `DESIGN_PLAN.md`「THEATER-LAYER」。Design Director 复验 6/6 Pass。
 ---
 
 ## 全量条目

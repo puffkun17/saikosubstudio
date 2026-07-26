@@ -190,7 +190,7 @@ export const TheaterStep: React.FC = () => {
             </div>
           </div>
 
-          <div className="relative z-[var(--z-dropdown)] flex items-center gap-2">
+          <div className="relative flex items-center gap-2">
             <button
               onClick={() => setIsSettingsOpen(!isSettingsOpen)}
               className={isSettingsOpen ? 'ui-action' : 'ui-action ui-action--secondary'}
@@ -221,12 +221,8 @@ export const TheaterStep: React.FC = () => {
             </SimulatorBoundary>
           </div>
 
-          {/* 播放条：工具图标 + 进度；关灯后仅进度条。侧栏展开时抬层保证可点。 */}
-          <div
-            className={`theater-stage-chrome flex w-full max-w-[1080px] shrink-0 px-1 ${
-              isSettingsOpen ? 'relative z-50' : ''
-            }`}
-          >
+          {/* 播放条：L0 Stage；几何避让由抽屉 bottom 让出，禁止临时抬 z。 */}
+          <div className="theater-stage-chrome relative z-[var(--z-theater-stage)] flex w-full max-w-[1080px] shrink-0 px-1">
             <TimelineControls
               variant="theater"
               theaterChrome={{
@@ -238,7 +234,7 @@ export const TheaterStep: React.FC = () => {
           </div>
         </div>
 
-        {/* 样式侧边栏：放映厅夜光毛玻璃（与播放条同语汇） */}
+        {/* 样式侧边栏：L1 Style；absolute 浮层不挤预览。遮罩仅限主区，不盖顶栏导出。 */}
         <AnimatePresence>
           {isSettingsOpen && (
             <>
@@ -248,7 +244,7 @@ export const TheaterStep: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 z-30 bg-black/55 xl:hidden"
+                className="absolute inset-x-0 top-0 bottom-[var(--theater-deck-h)] z-[var(--z-theater-style)] bg-black/55 xl:hidden"
                 onClick={() => setIsSettingsOpen(false)}
               />
               <motion.aside
@@ -258,7 +254,8 @@ export const TheaterStep: React.FC = () => {
                 exit={{ x: 360, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 // 始终 absolute 浮层：不进 flex 文档流，避免预览屏随开合左右挪动。
-                className="theater-style-shell absolute inset-y-4 right-4 z-40 flex w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg xl:w-[380px]"
+                // bottom 让出 --theater-deck-h（播放条 + 底 padding 写死档）。
+                className="theater-style-shell absolute top-4 right-4 bottom-[var(--theater-deck-h)] z-[var(--z-theater-style)] flex w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg xl:w-[380px]"
               >
                 <StyleSidebar tone="theater" />
               </motion.aside>

@@ -177,6 +177,12 @@
   --z-feedback: 90;
   --z-overlay: 200;
   --z-modal: 210;
+
+  /* Theater 局部叠层（相对主区）：L0 舞台 < L1 样式。导出菜单走全局 --z-dropdown（Portal）。 */
+  --z-theater-stage: 1;
+  --z-theater-style: 2;
+  /* 播放条外高 + 舞台底 padding（xl:p-6）写死档；抽屉 bottom 让出，禁止每帧测量。 */
+  --theater-deck-h: 5.25rem;
 }
 
 html {
