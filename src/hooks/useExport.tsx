@@ -193,7 +193,7 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
         <div
           role="menu"
           aria-label="选择导出格式"
-          className="dropdown-pop absolute right-0 top-full z-[110] mt-2 w-[min(18.5rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] shadow-[0_18px_48px_rgba(26,61,55,0.18)]"
+          className="ui-menu dropdown-pop absolute right-0 top-full z-[110] mt-2 w-[min(18.5rem,calc(100vw-2rem))]"
         >
           <div className="border-b border-[var(--v4-line)] px-3.5 py-2.5">
             <p className="text-xs font-semibold tracking-wide text-[var(--v4-text)]">选择格式</p>

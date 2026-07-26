@@ -96,7 +96,7 @@ export const ColorSampler: React.FC = () => {
             className="h-28 border border-dashed border-[var(--v4-line)] hover:border-[var(--v4-line-strong)] rounded-xl bg-[var(--v4-panel)] hover:bg-[var(--v4-panel-muted)] transition cursor-pointer flex flex-col items-center justify-center gap-2"
             onClick={() => fileInputRef.current?.click()}
           >
-            <ImageIcon className="w-6 h-6 text-[var(--v4-text-faint)]" />
+            <ImageIcon className="w-6 h-6 text-[var(--v4-text-muted)]" />
             <span className="text-sm text-[var(--v4-text-muted)]">上传剧照或截图参考</span>
           </div>
         ) : (

@@ -177,7 +177,7 @@ export const TheaterStep: React.FC = () => {
             <motion.button
             whileHover={{ scale: 1.03, y: -0.5 }}
             whileTap={{ scale: 0.97 }}
-            className="ui-action ui-action--secondary ui-action--icon !min-h-9 !w-9"
+            className="ui-action ui-action--secondary ui-action--icon"
             onClick={handleBack}
             aria-label="返回工作台"
           >

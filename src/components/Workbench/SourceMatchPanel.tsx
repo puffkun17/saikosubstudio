@@ -12,6 +12,7 @@ import { InfoHint } from '@/components/ui/InfoHint';
 import { useStudioStore } from '@/store/useStudioStore';
 import {
   InspectionMarkGlyph,
+  MARK_COLOR,
   MARK_KIND_ORDER,
   MARK_LABEL,
   MARK_LANE_TOP,
@@ -265,7 +266,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
   };
 
   return (
-    <section className="w-full overflow-hidden rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel)]">
+    <section className="v4-panel w-full overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3 md:px-5">
         <div className="min-w-0">
           <div className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--v4-text)]">

@@ -357,7 +357,7 @@ export const SystemTray = () => {
               aria-modal="true"
               aria-labelledby="restart-title"
               aria-describedby="restart-description"
-              className="w-full max-w-sm rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] p-5 text-left shadow-[0_18px_48px_rgba(0,0,0,0.42)]"
+              className="ui-modal"
             >
               <div className="flex items-start gap-3">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]">

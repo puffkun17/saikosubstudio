@@ -322,22 +322,21 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-all cursor-pointer
-              ${showGuides
-                ? 'border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-text)]'
-                : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:text-[var(--v4-text)] hover:bg-[var(--v4-panel)]'}`}
-            onClick={() => setShowGuides(!showGuides)}
-            aria-pressed={showGuides}
-          >
-            <SquareCenterlineDashedHorizontal className="h-4 w-4" aria-hidden="true" />
-            辅助线
-          </button>
+          <div className="ui-choice-group" role="group" aria-label="辅助线">
+            <button
+              type="button"
+              className={`ui-choice gap-2 ${showGuides ? 'ui-choice--on' : ''}`}
+              onClick={() => setShowGuides(!showGuides)}
+              aria-pressed={showGuides}
+            >
+              <SquareCenterlineDashedHorizontal className="h-4 w-4" aria-hidden="true" />
+              辅助线
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => setIsSettingsOpen(false)}
-            className="ui-action ui-action--quiet ui-action--icon !min-h-9 !w-9"
+            className="ui-action ui-action--quiet ui-action--icon"
             aria-label="关闭样式参数"
           >
             <X className="h-4 w-4" aria-hidden="true" />
@@ -402,8 +401,9 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
                     placeholder="模板名称"
                   />
                   <button
+                    type="button"
                     onClick={handleSaveTemplate}
-                    className="rounded-lg bg-[var(--v4-accent)] px-3 py-2 text-sm font-semibold text-[var(--v4-accent-ink)] transition hover:bg-[var(--v4-accent-strong)] cursor-pointer"
+                    className="ui-action"
                   >
                     确定
                   </button>
@@ -436,7 +436,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             {activePreset !== 'classic' && activePreset !== 'custom' && (
               <button
                 onClick={() => deleteCustomTemplate(activePreset)}
-                className="grid h-10 w-10 place-items-center rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] transition-colors hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)] cursor-pointer"
+                className="ui-action ui-action--quiet ui-action--icon"
                 title="删除当前模板"
               >
                 <Trash2 className="h-4 w-4" />
@@ -555,7 +555,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
                 将声音描述、画面文字、歌词或非对白表达完整保留；智能精简模式会隐藏明确低价值环境音等。
               </InfoHint>
             </span>
-            <div className="grid grid-cols-3 gap-1 rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-1">
+            <div className="ui-choice-group w-full" role="group" aria-label="辅助字幕策略">
               {([
                 { value: 'keep', label: '完整', desc: '全保留' },
                 { value: 'smart', label: '智能', desc: '隐去环境音' },
@@ -565,14 +565,13 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
                   key={item.value}
                   type="button"
                   aria-pressed={(customStyle.auxiliaryMode || 'keep') === item.value}
-                  className={`min-h-11 rounded-lg px-1.5 py-1.5 text-left transition-all cursor-pointer
-                    ${(customStyle.auxiliaryMode || 'keep') === item.value
-                      ? 'bg-[var(--v4-accent)] text-[var(--v4-accent-ink)] shadow-[0_0_18px_color-mix(in_srgb,var(--v4-accent)_14%,transparent)]'
-                      : 'text-[var(--v4-text-muted)] hover:bg-[var(--v4-panel)] hover:text-[var(--v4-text)]'}`}
+                  className={`ui-choice min-h-11 flex-1 flex-col !items-stretch !justify-center gap-0.5 px-1.5 py-1.5 ${
+                    (customStyle.auxiliaryMode || 'keep') === item.value ? 'ui-choice--on' : ''
+                  }`}
                   onClick={() => handleStyleChange('auxiliaryMode', item.value)}
                 >
                   <span className="block text-center text-xs font-semibold leading-tight">{item.label}</span>
-                  <span className={`mt-0.5 block text-center text-xs leading-tight ${(customStyle.auxiliaryMode || 'keep') === item.value ? 'text-[var(--v4-accent-ink)]/55' : 'text-[var(--v4-text-muted)]'}`}>
+                  <span className="mt-0.5 block text-center text-xs leading-tight opacity-70">
                     {item.desc}
                   </span>
                 </button>
@@ -653,16 +652,16 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
                         <option value="bottom">底部</option>
                       </select>
                     </div>
-                    <button
-                      type="button"
-                      className={`h-9 rounded-lg border px-3 text-sm font-semibold transition-all cursor-pointer
-                        ${customStyle.lyricItalic ?? true
-                          ? 'border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-text)]'
-                          : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:text-[var(--v4-text)]'}`}
-                      onClick={() => handleStyleChange('lyricItalic', !(customStyle.lyricItalic ?? true))}
-                    >
-                      斜体歌词
-                    </button>
+                    <div className="ui-choice-group" role="group" aria-label="斜体歌词">
+                      <button
+                        type="button"
+                        className={`ui-choice ${(customStyle.lyricItalic ?? true) ? 'ui-choice--on' : ''}`}
+                        aria-pressed={customStyle.lyricItalic ?? true}
+                        onClick={() => handleStyleChange('lyricItalic', !(customStyle.lyricItalic ?? true))}
+                      >
+                        斜体歌词
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               )}

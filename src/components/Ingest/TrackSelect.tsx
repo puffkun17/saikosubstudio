@@ -116,7 +116,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
       {open && (
         <div
           id={listId}
-          className="dropdown-pop absolute left-0 right-0 top-full z-[200] mt-1.5 max-h-64 overflow-y-auto overflow-x-hidden rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] shadow-[0_12px_36px_rgba(26,61,55,0.14)] scrollbar-thin"
+          className="ui-menu dropdown-pop absolute left-0 right-0 top-full z-[200] mt-1.5 max-h-64 overflow-y-auto overflow-x-hidden scrollbar-thin"
         >
           <button
             type="button"

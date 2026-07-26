@@ -207,7 +207,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
   ) : null;
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)]">
+    <div className="v4-panel flex flex-1 flex-col overflow-hidden">
       {total > 0 && (
         <div className="flex flex-col gap-3 px-5 md:px-6 py-3.5 border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] flex-shrink-0">
             <div className="flex items-center justify-between gap-4">
@@ -231,10 +231,10 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               )}
             </div>
               <div className="flex shrink-0 items-center gap-1.5">
-                <button type="button" onClick={undoEdit} disabled={!canUndo} className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] disabled:cursor-not-allowed disabled:opacity-25" aria-label="撤销字幕文本修改" title="撤销 (Ctrl+Z)">
+                <button type="button" onClick={undoEdit} disabled={!canUndo} className="ui-action ui-action--quiet ui-action--icon" aria-label="撤销字幕文本修改" title="撤销 (Ctrl+Z)">
                   <Undo2 className="h-4 w-4" aria-hidden="true" />
                 </button>
-                <button type="button" onClick={redoEdit} disabled={!canRedo} className="v4-focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] disabled:cursor-not-allowed disabled:opacity-25" aria-label="重做字幕文本修改" title="重做 (Ctrl+Shift+Z)">
+                <button type="button" onClick={redoEdit} disabled={!canRedo} className="ui-action ui-action--quiet ui-action--icon" aria-label="重做字幕文本修改" title="重做 (Ctrl+Shift+Z)">
                   <Redo2 className="h-4 w-4" aria-hidden="true" />
                 </button>
                 {hasMore && (

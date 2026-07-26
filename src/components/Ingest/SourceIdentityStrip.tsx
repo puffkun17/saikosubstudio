@@ -72,7 +72,7 @@ export const SourceIdentityStrip: React.FC = () => {
   const rematchLabel = tmdbData ? '手动匹配' : needsTitleInput ? '补充片名' : '搜索影片';
 
   return (
-    <aside className="source-identity-rail v4-panel flex h-full w-full flex-col overflow-hidden rounded-lg">
+    <aside className="source-identity-rail v4-panel flex h-full w-full flex-col overflow-hidden">
       <div className="source-identity-rail__poster relative w-full shrink-0 overflow-hidden border-b border-[var(--v4-line)]">
         <AnimatePresence mode="wait">
           {tmdbData?.posterUrl ? (

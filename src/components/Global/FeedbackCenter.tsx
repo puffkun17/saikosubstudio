@@ -56,7 +56,7 @@ export const FeedbackCenter: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={shouldReduceMotion ? undefined : { opacity: 0, y: 6 }}
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className={`pointer-events-auto rounded-xl border px-3.5 py-3 shadow-[0_12px_32px_rgba(26,61,55,0.12)] backdrop-blur-md ${noticeStyles[latestNotice.tone]}`}
+              className={`ui-toast pointer-events-auto border px-3.5 py-3 backdrop-blur-md ${noticeStyles[latestNotice.tone]}`}
             >
               <div className="flex items-start gap-2.5">
                 <div className="min-w-0 flex-1">
@@ -92,7 +92,7 @@ export const FeedbackCenter: React.FC = () => {
                   animate={{ opacity: log.fade ? 0 : 1, y: log.fade ? 4 : 0 }}
                   exit={shouldReduceMotion ? undefined : { opacity: 0, y: 6 }}
                   transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                  className={`pointer-events-auto flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-sm font-medium leading-relaxed shadow-[0_10px_28px_rgba(26,61,55,0.12)] ${errorLogStyle.shell}`}
+                  className={`ui-toast pointer-events-auto flex items-start gap-2.5 border px-3.5 py-2.5 text-sm font-medium leading-relaxed ${errorLogStyle.shell}`}
                 >
                   <span className="mt-0.5 shrink-0">{errorLogStyle.icon}</span>
                   <span className="min-w-0 flex-1 break-words">{log.msg}</span>

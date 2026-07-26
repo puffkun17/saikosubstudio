@@ -78,6 +78,49 @@
   --v5-accent-ink: #ffffff;
   --v5-danger: #c45b55;
   --v5-warning: #c4893a;
+
+  /* Language identity faces（BADGE-004）— 组件只引 var(--lang-*-face/ink/mark) */
+  --lang-zh-cn-face: #C9A430;
+  --lang-zh-cn-ink: #241C06;
+  --lang-zh-tw-face: #3D9E5F;
+  --lang-zh-tw-ink: #F2FFF6;
+  --lang-zh-face: #B8952A;
+  --lang-zh-ink: #241C06;
+  --lang-en-face: #6D6A63;
+  --lang-en-ink: #F3EBE2;
+  --lang-ja-face: #C45A8A;
+  --lang-ja-ink: #FFF7FA;
+  --lang-ko-face: #8B6B4A;
+  --lang-ko-ink: #FFF8F2;
+  --lang-fr-face: #5F7A6A;
+  --lang-fr-ink: #F5FAF7;
+  --lang-es-face: #9B5A6F;
+  --lang-es-ink: #FFF5F8;
+  --lang-latin-face: #7A756C;
+  --lang-latin-ink: #F3EBE2;
+  --lang-bilingual-face: #3A342E;
+  --lang-bilingual-ink: #E8C547;
+  --lang-commentary-face: #5C5650;
+  --lang-commentary-ink: #F3EBE2;
+  --lang-unknown-face: #847C70;
+  --lang-unknown-ink: #F5F1EA;
+
+  /* File format Adobe-like faces（ICON-004）— 业务禁止覆盖 fill */
+  --fmt-srt-face: #3D8B7A;
+  --fmt-srt-fold: #2F7060;
+  --fmt-ass-face: #8A6FC0;
+  --fmt-ass-fold: #7157A6;
+  --fmt-zip-face: #C07A42;
+  --fmt-zip-fold: #A46332;
+  --fmt-rar-face: #C9646B;
+  --fmt-rar-fold: #AC4E56;
+  --fmt-7z-face: #7A80B8;
+  --fmt-7z-fold: #62689E;
+  --fmt-folder-face: #B8934A;
+  --fmt-folder-fold: #9A7838;
+  --fmt-unknown-face: #857D72;
+  --fmt-unknown-fold: #6B655B;
+  --fmt-ink: #FFFFFF;
   --v5-desk-glow: rgba(26, 61, 55, 0.06);
   --v5-desk-veil: linear-gradient(
     165deg,
@@ -204,6 +247,7 @@ body {
 
 .v4-panel {
   border: 1px solid var(--v4-line);
+  border-radius: 0.5rem; /* radius-md — 单一面板壳，勿外再套 rounded-lg border */
   background: var(--v4-panel);
   box-shadow: 0 1px 0 rgba(26, 61, 55, 0.04);
 }
@@ -805,7 +849,7 @@ body {
 }
 
 .bottom-status-deck__step.is-pending {
-  color: rgba(245, 241, 234, 0.55);
+  color: rgba(245, 241, 234, 0.65);
 }
 
 .bottom-status-deck__subtitle {
@@ -1262,13 +1306,13 @@ body {
 /* —— Action: commits / mutates / opens flow —— */
 .ui-action {
   display: inline-flex;
-  min-height: 2.25rem;
+  min-height: 2.25rem; /* md 36 */
   cursor: pointer;
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
   border: 1px solid color-mix(in srgb, var(--v4-accent) 42%, transparent);
-  border-radius: 0.5rem;
+  border-radius: 0.5rem; /* control ≈ 8px */
   background: var(--v4-accent-soft);
   padding: 0.4rem 0.85rem;
   font-size: 0.8125rem;
@@ -1279,7 +1323,10 @@ body {
     color var(--v4-dur-fast) var(--v4-ease),
     background-color var(--v4-dur-fast) var(--v4-ease),
     border-color var(--v4-dur-fast) var(--v4-ease),
-    opacity var(--v4-dur-fast) var(--v4-ease);
+    filter var(--v4-dur-fast) var(--v4-ease),
+    transform var(--v4-dur-fast) var(--v4-ease),
+    opacity var(--v4-dur-fast) var(--v4-ease),
+    box-shadow var(--v4-dur-fast) var(--v4-ease);
 }
 
 .ui-action:hover {
@@ -1325,7 +1372,7 @@ body {
   color: var(--v4-text);
 }
 
-/* Destructive */
+/* Destructive — hover only via danger color-mix（禁裸粉红 rgba） */
 .ui-action--danger {
   border-color: color-mix(in srgb, var(--v4-danger) 35%, transparent);
   background: color-mix(in srgb, var(--v4-danger) 10%, transparent);
@@ -1337,17 +1384,110 @@ body {
   background: color-mix(in srgb, var(--v4-danger) 16%, transparent);
 }
 
+/* Quiet + danger：列表删除等图标钮 */
+.ui-action--quiet.ui-action--danger {
+  border-color: transparent;
+  background: transparent;
+  color: var(--v4-text-muted);
+}
+
+.ui-action--quiet.ui-action--danger:hover {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--v4-danger) 12%, transparent);
+  color: var(--v4-danger);
+}
+
 .ui-action--lg {
-  min-height: 2.5rem;
+  min-height: 2.5rem; /* 40 */
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
 }
 
-/* Icon-only square action (back, tray icon controls) */
+/* Icon-only square — 默认 36；sm 场景用 --icon-sm = 32 */
 .ui-action--icon {
-  width: 2.5rem;
-  min-height: 2.5rem;
+  width: 2.25rem;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
   padding: 0;
+}
+
+.ui-action--icon-sm {
+  width: 2rem;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+}
+
+/*
+ * Hero — 仅空态双 CTA（DragZone）。
+ * 高 48 · radius-xl ≈ 20px；主钮允许唯一 CTA glow。
+ */
+.ui-action--hero {
+  min-height: 3rem;
+  min-width: 8.5rem;
+  padding: 0.65rem 1.75rem;
+  border-radius: 1.25rem; /* xl ≈ 20px */
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.ui-action--hero:not(.ui-action--secondary) {
+  border-color: transparent;
+  background: var(--v4-accent);
+  color: var(--v4-accent-ink);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--v4-accent) 25%, transparent);
+}
+
+.ui-action--hero:not(.ui-action--secondary):hover {
+  border-color: transparent;
+  background: var(--v4-accent);
+  color: var(--v4-accent-ink);
+  filter: brightness(1.05);
+  transform: translateY(-0.125rem);
+}
+
+.ui-action--hero.ui-action--secondary {
+  background: color-mix(in srgb, var(--v4-panel-raised) 70%, transparent);
+  color: var(--v4-text-muted);
+}
+
+.ui-action--hero.ui-action--secondary:hover {
+  background: var(--v4-panel-raised);
+  color: var(--v4-text);
+}
+
+/* —— Shell triad（UP-1）：统一角色与墨绿 tint；数值可于 EP-0 升 token —— */
+.ui-modal {
+  width: 100%;
+  max-width: 24rem;
+  border-radius: 0.5rem; /* md */
+  border: 1px solid var(--v4-line-strong);
+  background: var(--v4-panel-raised);
+  padding: 1.25rem;
+  text-align: left;
+  box-shadow:
+    0 18px 48px color-mix(in srgb, var(--v5-green) 18%, transparent),
+    0 2px 0 color-mix(in srgb, #fff 40%, transparent);
+}
+
+.ui-modal--wide {
+  max-width: 56rem;
+}
+
+.ui-menu {
+  min-width: 12rem;
+  overflow: hidden;
+  border-radius: 0.5rem; /* md */
+  border: 1px solid var(--v4-line-strong);
+  background: var(--v4-panel-raised);
+  box-shadow: 0 12px 36px color-mix(in srgb, var(--v5-green) 14%, transparent);
+}
+
+.ui-toast {
+  border-radius: 0.75rem; /* lg */
+  border: 1px solid var(--v4-line-strong);
+  background: var(--v4-panel-raised);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--v5-green) 12%, transparent);
 }
 
 .app-main-pad {

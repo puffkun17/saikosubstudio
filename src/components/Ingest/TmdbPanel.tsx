@@ -116,7 +116,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
   return (
     <>
     {mode === 'panel' && (
-    <div className={`v4-panel relative flex flex-col gap-5 rounded-lg p-5 desktop-panel-fit-hidden md:p-6 xl:p-7
+    <div className={`v4-panel relative flex flex-col gap-5 p-5 desktop-panel-fit-hidden md:p-6 xl:p-7
       ${tmdbData
         ? 'border-[var(--v4-line-strong)]'
         : ''}`}>
@@ -312,7 +312,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="flex max-h-[min(78vh,640px)] w-full max-w-xl flex-col overflow-hidden rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] shadow-[0_24px_70px_rgba(26,61,55,0.18)]"
+              className="ui-modal flex max-h-[min(78vh,640px)] w-full max-w-xl flex-col overflow-hidden !p-0"
               role="dialog"
               aria-modal="true"
               aria-labelledby="tmdb-search-title"
@@ -336,9 +336,9 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                   )}
                 </div>
                 <button
-                  className="v4-focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-md bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] transition hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] cursor-pointer"
-                  onClick={handleClose}
                   type="button"
+                  className="ui-action ui-action--quiet ui-action--icon ui-action--icon-sm shrink-0"
+                  onClick={handleClose}
                   aria-label="关闭片源检索"
                 >
                   <X className="h-4 w-4" />

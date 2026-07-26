@@ -173,14 +173,14 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
 
   if (items.length === 0) {
     return (
-      <div className="rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)] px-4 py-6 text-center text-xs text-[var(--v4-text-faint)]">
+      <div className="v4-panel px-4 py-6 text-center text-xs text-[var(--v4-text-faint)]">
         没有需要列出的非直接配对或存疑内容
       </div>
     );
   }
 
   return (
-    <section className="overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)]">
+    <section className="v4-panel overflow-hidden">
       <div className="flex items-center justify-between gap-3 border-b border-[var(--v4-line)] px-4 py-2 md:px-5">
         <p className="text-xs text-[var(--v4-text-faint)]">
           完整列出结构差异、画面文字、声音描述、歌词与署名信息（{items.length}）

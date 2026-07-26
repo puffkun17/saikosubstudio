@@ -144,7 +144,7 @@ export const WorkbenchStep: React.FC = () => {
         <div className="flex-1 p-4 md:p-6 min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
           <div className="max-w-[1480px] w-full flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
             {processedSubs && processedSubs.length > 0 && (
-              <section className="flex-shrink-0 overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)]">
+              <section className="v4-panel flex-shrink-0 overflow-hidden">
                 <div className="flex flex-col gap-2.5 px-4 py-3 md:flex-row md:items-center md:justify-between md:gap-4 md:px-5">
                   <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                     <div className="flex items-center gap-2">
@@ -284,7 +284,7 @@ export const WorkbenchStep: React.FC = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: 360, opacity: 0 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="v4-panel absolute inset-y-4 right-4 z-50 flex w-[min(390px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg lg:relative lg:inset-auto lg:z-20 lg:my-6 lg:mr-6 lg:w-[390px] lg:shrink-0"
+                className="v4-panel absolute inset-y-4 right-4 z-50 flex w-[min(390px,calc(100vw-2rem))] flex-col overflow-hidden lg:relative lg:inset-auto lg:z-20 lg:my-6 lg:mr-6 lg:w-[390px] lg:shrink-0"
               >
                 <StyleSidebar />
               </motion.aside>
@@ -313,7 +313,7 @@ export const WorkbenchStep: React.FC = () => {
                 initial={{ opacity: 0, y: 10, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                className="w-full max-w-sm rounded-lg border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] p-5 shadow-[0_18px_48px_rgba(0,0,0,0.42)]"
+                className="ui-modal"
               >
                 <h3 id="workbench-back-title" className="text-lg font-semibold text-[var(--v4-text)]">
                   是否重新导入

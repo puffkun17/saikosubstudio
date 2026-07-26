@@ -92,7 +92,7 @@ export const IngestStep: React.FC = () => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="glass-panel-ar flex max-h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden rounded-lg shadow-[0_24px_70px_rgba(0,0,0,0.46)]"
+              className="ui-modal ui-modal--wide glass-panel-ar flex max-h-[85vh] w-full flex-col gap-0 overflow-hidden !p-0"
               role="dialog"
               aria-modal="true"
               aria-labelledby="library-title"
@@ -103,9 +103,9 @@ export const IngestStep: React.FC = () => {
                   <h2 id="library-title" className="text-base font-bold text-[var(--v4-text)] tracking-wide">历史存档字幕</h2>
                 </div>
                 <button
-                  className="w-8 h-8 flex items-center justify-center rounded-md bg-[var(--v4-panel-muted)] hover:bg-[var(--v4-accent-soft)] text-[var(--v4-text-muted)] hover:text-[var(--v4-text)] transition cursor-pointer"
-                  onClick={() => setLibraryOpen(false)}
                   type="button"
+                  className="ui-action ui-action--quiet ui-action--icon ui-action--icon-sm"
+                  onClick={() => setLibraryOpen(false)}
                   aria-label="关闭历史存档"
                 >
                   <X className="w-4 h-4" />

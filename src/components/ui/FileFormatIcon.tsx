@@ -36,18 +36,13 @@ type AdobePalette = {
  * 让徽章融进 奶油/墨绿/柑橘 三色体系而不是像贴纸浮在纸面上。
  */
 const ADOBE: Record<FileFormat, AdobePalette> = {
-  // Forest-teal — plain dialogue track（呼应墨绿主色）
-  srt: { face: '#3D8B7A', fold: '#2F7060', ink: '#FFFFFF' },
-  // Muted plum — styled / ASS track
-  ass: { face: '#8A6FC0', fold: '#7157A6', ink: '#FFFFFF' },
-  // Citrus-adjacent zip（呼应柑橘强调色）
-  zip: { face: '#C07A42', fold: '#A46332', ink: '#FFFFFF' }, // 低于 accent #ef8d5f，避免抢 CTA
-  // Soft brick archive
-  rar: { face: '#C9646B', fold: '#AC4E56', ink: '#FFFFFF' },
-  // Dusty indigo archive
-  '7z': { face: '#7A80B8', fold: '#62689E', ink: '#FFFFFF' },
-  folder: { face: '#B8934A', fold: '#9A7838', ink: '#FFFFFF' },
-  unknown: { face: '#857D72', fold: '#6B655B', ink: '#FFFFFF' },
+  srt: { face: 'var(--fmt-srt-face)', fold: 'var(--fmt-srt-fold)', ink: 'var(--fmt-ink)' },
+  ass: { face: 'var(--fmt-ass-face)', fold: 'var(--fmt-ass-fold)', ink: 'var(--fmt-ink)' },
+  zip: { face: 'var(--fmt-zip-face)', fold: 'var(--fmt-zip-fold)', ink: 'var(--fmt-ink)' },
+  rar: { face: 'var(--fmt-rar-face)', fold: 'var(--fmt-rar-fold)', ink: 'var(--fmt-ink)' },
+  '7z': { face: 'var(--fmt-7z-face)', fold: 'var(--fmt-7z-fold)', ink: 'var(--fmt-ink)' },
+  folder: { face: 'var(--fmt-folder-face)', fold: 'var(--fmt-folder-fold)', ink: 'var(--fmt-ink)' },
+  unknown: { face: 'var(--fmt-unknown-face)', fold: 'var(--fmt-unknown-fold)', ink: 'var(--fmt-ink)' },
 };
 
 const CODE: Record<FileFormat, string> = {
@@ -292,18 +287,18 @@ type LangVisual = {
  * --v4-text / --v4-line-strong：奶油面上自动变深、墨绿面上自动变浅，两边都可读。
  */
 const LANG_VISUAL: Record<string, LangVisual> = {
-  'zh-CN': { label: '简中', face: '#C9A430', ink: '#241C06', mark: '简' },
-  'zh-TW': { label: '繁中', face: '#3D9E5F', ink: '#F2FFF6', mark: '繁' },
-  zh: { label: '中文', face: '#B8952A', ink: '#241C06', mark: '中' },
-  en: { label: '英语', face: '#6D6A63', ink: '#F3EBE2', mark: 'En' },
-  ja: { label: '日语', face: '#C45A8A', ink: '#FFF7FA', mark: 'あ' },
-  ko: { label: '韩语', face: '#8B6B4A', ink: '#FFF8F2', mark: '한' },
-  fr: { label: '法语', face: '#5F7A6A', ink: '#F5FAF7', mark: 'Fr' },
-  es: { label: '西语', face: '#9B5A6F', ink: '#FFF5F8', mark: 'Ñ' },
-  latin: { label: '拉丁', face: '#7A756C', ink: '#F3EBE2', mark: 'L' },
-  bilingual: { label: '双语', face: '#3A342E', ink: '#E8C547', mark: '双' },
-  commentary: { label: '导评', face: '#5C5650', ink: '#F3EBE2', mark: '评' },
-  unknown: { label: '待识别', face: '#847C70', ink: '#F5F1EA', mark: '?' },
+  'zh-CN': { label: '简中', face: 'var(--lang-zh-cn-face)', ink: 'var(--lang-zh-cn-ink)', mark: '简' },
+  'zh-TW': { label: '繁中', face: 'var(--lang-zh-tw-face)', ink: 'var(--lang-zh-tw-ink)', mark: '繁' },
+  zh: { label: '中文', face: 'var(--lang-zh-face)', ink: 'var(--lang-zh-ink)', mark: '中' },
+  en: { label: '英语', face: 'var(--lang-en-face)', ink: 'var(--lang-en-ink)', mark: 'En' },
+  ja: { label: '日语', face: 'var(--lang-ja-face)', ink: 'var(--lang-ja-ink)', mark: 'あ' },
+  ko: { label: '韩语', face: 'var(--lang-ko-face)', ink: 'var(--lang-ko-ink)', mark: '한' },
+  fr: { label: '法语', face: 'var(--lang-fr-face)', ink: 'var(--lang-fr-ink)', mark: 'Fr' },
+  es: { label: '西语', face: 'var(--lang-es-face)', ink: 'var(--lang-es-ink)', mark: 'Ñ' },
+  latin: { label: '拉丁', face: 'var(--lang-latin-face)', ink: 'var(--lang-latin-ink)', mark: 'L' },
+  bilingual: { label: '双语', face: 'var(--lang-bilingual-face)', ink: 'var(--lang-bilingual-ink)', mark: '双' },
+  commentary: { label: '导评', face: 'var(--lang-commentary-face)', ink: 'var(--lang-commentary-ink)', mark: '评' },
+  unknown: { label: '待识别', face: 'var(--lang-unknown-face)', ink: 'var(--lang-unknown-ink)', mark: '?' },
 };
 
 /** 表面自适应的芯片配色：随 data-surface（cream/forest）自动取得可读对比。 */
@@ -340,7 +335,7 @@ const LangTile: React.FC<{ visual: LangVisual; flipKey?: string; size?: MarkSize
       style={{ background: face }}
     >
       <span
-        className={`font-mono font-bold leading-none tracking-normal ${
+        className={`font-sans font-bold leading-none tracking-normal ${
           isLg
             ? isWide ? 'text-[15px]' : 'text-[17px]'
             : isWide ? 'text-[14px]' : 'text-[16px]'

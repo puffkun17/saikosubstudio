@@ -524,7 +524,7 @@ export const TaskList: React.FC = () => {
   ));
 
   return (
-    <div className="v4-panel relative flex h-full w-full max-w-[760px] flex-col gap-4 rounded-lg p-5 md:p-6 lg:max-w-none">
+    <div className="v4-panel relative flex h-full w-full max-w-[760px] flex-col gap-4 p-5 md:p-6 lg:max-w-none">
 
       {/* Task tab switcher (if multiple tasks exist) */}
       {tasks.length > 1 && (
