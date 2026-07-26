@@ -257,7 +257,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
       <div ref={listRef} className="flex-1 overflow-y-auto">
         {visibleSubs.length > 0 ? (
           <div className="flex flex-col relative">
-            <div className="sticky top-0 z-20 grid grid-cols-[3rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] items-center gap-2 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-3 py-2 text-xs font-semibold tracking-wide text-[var(--v4-text-muted)] select-none md:grid-cols-[3.5rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] md:gap-3 md:px-5">
+            <div className="sticky top-0 z-20 grid grid-cols-[3.75rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] items-center gap-2 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-3 py-2 text-xs font-semibold tracking-wide text-[var(--v4-text-muted)] select-none md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] md:gap-3 md:px-5">
               <div className="pl-0.5">行号</div>
               <div>时间轴</div>
               <div>字幕内容</div>
@@ -310,7 +310,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
               const endTime = sub.ts.split(' --> ')[1]?.replace(',', '.').trim() || '';
 
-              const rowClass = `group relative grid grid-cols-[3rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] md:grid-cols-[3.5rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] items-center gap-2 md:gap-3 py-2.5 px-3 md:px-5 border-b border-[var(--v4-line)] cursor-pointer text-left overflow-hidden transition-colors duration-150
+              const rowClass = `group relative grid grid-cols-[3.75rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] items-center gap-2 md:gap-3 py-2.5 px-3 md:px-5 border-b border-[var(--v4-line)] cursor-pointer select-none text-left overflow-hidden transition-colors duration-150
                 ${isActive ? 'glass-lens-active' : isSelected ? 'bg-[var(--v4-accent-soft)]/55' : 'bg-transparent hover:bg-[var(--v4-panel-muted)]'}
                 ${(isLyric || isCredit) && !isActive && !isSelected ? 'bg-[var(--v4-panel-muted)]/50' : ''}
                 ${sub.index > 30 ? 'timeline-row-deferred' : ''}`;
@@ -361,8 +361,23 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                   aria-label={`第 ${sub.index} 行字幕，按 F2 编辑；Shift 连选，⌥/⌘/Ctrl 跳选`}
                   className={rowClass}
                 >
-                  <div className={`self-center pl-0.5 font-mono text-[13px] font-semibold tabular-nums whitespace-nowrap ${isActive ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-muted)]'}`}>
-                    #{sub.index}
+                  <div className={`flex min-w-0 items-center gap-1 self-center pl-0.5 font-mono text-[13px] font-semibold tabular-nums whitespace-nowrap ${isActive ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-muted)]'}`}>
+                    <span>#{sub.index}</span>
+                    {/* 检查标记放在行号后的固定槽，不挤占时间轴列对齐 */}
+                    <span
+                      className="inline-flex h-3 w-3 shrink-0 items-center justify-center"
+                      title={rowMarkTitle}
+                      aria-label={rowMarkKind || isAuxiliarySemantic || isExpandedDialogue ? rowMarkTitle : undefined}
+                      aria-hidden={!rowMarkKind && !isAuxiliarySemantic && !isExpandedDialogue}
+                    >
+                      {rowMarkKind ? (
+                        <InspectionMarkGlyph kind={rowMarkKind} size={10} />
+                      ) : (isAuxiliarySemantic || isExpandedDialogue) ? (
+                        <span className="inline-flex h-3 min-w-3 items-center justify-center rounded-[2px] border border-[var(--v4-line-strong)] px-0.5 font-mono text-[8px] font-semibold leading-none text-[var(--v4-text-faint)]">
+                          {isExpandedDialogue ? '组' : '辅'}
+                        </span>
+                      ) : null}
+                    </span>
                   </div>
 
                   <div className="flex min-w-0 items-center gap-2 self-center select-none">
@@ -370,24 +385,6 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                       <span className={`mt-0.5 h-2 w-2 rounded-full border ${isActive ? 'bg-[var(--v4-accent-strong)] border-[var(--v4-accent-strong)] shadow-[0_0_10px_color-mix(in_srgb,var(--v4-accent)_40%,transparent)]' : 'bg-[var(--v4-accent-soft)] border-[var(--v4-line-strong)]'}`} />
                       <span className="mt-1 flex-1 w-px bg-[var(--v4-line)]" />
                     </div>
-                    {rowMarkKind && (
-                      <span
-                        className="inline-flex shrink-0 select-none"
-                        title={rowMarkTitle}
-                        aria-label={rowMarkTitle}
-                      >
-                        <InspectionMarkGlyph kind={rowMarkKind} size={12} />
-                      </span>
-                    )}
-                    {!rowMarkKind && (isAuxiliarySemantic || isExpandedDialogue) && (
-                      <span
-                        className="inline-flex h-3 min-w-3 shrink-0 items-center justify-center rounded-[2px] border border-[var(--v4-line-strong)] px-0.5 font-mono text-[9px] font-semibold leading-none text-[var(--v4-text-faint)]"
-                        title={rowMarkTitle}
-                        aria-label={rowMarkTitle}
-                      >
-                        {isExpandedDialogue ? '组' : '辅'}
-                      </span>
-                    )}
                     <div className={`flex min-w-0 flex-col whitespace-nowrap font-mono text-[13px] leading-tight tabular-nums tracking-tight ${isActive ? 'font-semibold text-[var(--v4-accent-strong)]' : 'font-medium text-[var(--v4-text-muted)]'}`}>
                       <span>{startTime}</span>
                       <span className="mt-0.5 opacity-80">{endTime}</span>
@@ -396,7 +393,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
 
                   <div className="flex min-w-0 flex-col gap-1 pr-1">
                     {editingIndex === sub.index ? (
-                      <div className="z-10 flex w-full flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+                      <div className="z-10 flex w-full cursor-auto select-text flex-col gap-2" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="text"
                           value={draftZh}
@@ -423,12 +420,12 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                           />
                         )}
                         <div className="mt-1 flex justify-end gap-2">
-                          <button type="button" className="ui-action ui-action--quiet" onClick={(e) => { e.stopPropagation(); cancelEditing(); }}>
+                          <button type="button" className="ui-action ui-action--quiet cursor-pointer" onClick={(e) => { e.stopPropagation(); cancelEditing(); }}>
                             <X className="h-4 w-4" aria-hidden="true" />取消
                           </button>
                           <button
                             type="button"
-                            className="ui-action"
+                            className="ui-action cursor-pointer"
                             onClick={(e) => { e.stopPropagation(); commitEditing(); }}
                           >
                             <Check className="h-4 w-4" aria-hidden="true" />保存
@@ -452,14 +449,14 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     )}
                   </div>
 
-                  <div className="flex items-center justify-end self-center select-none">
+                  <div className="flex items-center justify-end self-center">
                     {editingIndex !== sub.index && (
                       <button
                         type="button"
-                        className={`v4-focus-ring inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--v4-text-muted)] transition-opacity hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] ${
+                        className={`v4-focus-ring inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-[var(--v4-text-muted)] transition-opacity hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto focus-visible:pointer-events-auto focus-visible:opacity-100 ${
                           isActive
-                            ? 'opacity-70 group-hover:opacity-100 focus-visible:opacity-100'
-                            : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
+                            ? 'opacity-70 group-hover:opacity-100'
+                            : 'opacity-0 group-hover:opacity-100'
                         }`}
                         onClick={(event) => { event.stopPropagation(); beginEditing(sub); }}
                         aria-label={`编辑第 ${sub.index} 行`}

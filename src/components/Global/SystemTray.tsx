@@ -24,7 +24,7 @@ const WORKFLOW_STEPS = [
 ];
 
 const trayChrome =
-  'flex h-[var(--tray-h)] w-full items-center gap-2.5 border-[var(--v4-line)] px-3 backdrop-blur-md transition-colors duration-300 sm:px-5 md:px-6';
+  'flex h-[var(--tray-h)] w-full items-center gap-2.5 border-[var(--v4-line)] px-3 backdrop-blur-md transition-colors duration-300 sm:px-4 md:px-5';
 
 /** Icon+label control: never squash copy — hide label via container query instead. */
 const trayCtrl =
@@ -93,7 +93,6 @@ export const SystemTray = () => {
     libraryCount,
     setLibraryOpen,
     setWorkflowStep,
-    setStatusNotice,
   } = useStudioStore(useShallow((state) => ({
     workflowStep: state.workflowStep,
     restartSystem: state.restartSystem,
@@ -102,7 +101,6 @@ export const SystemTray = () => {
     libraryCount: state.libraryList.length,
     setLibraryOpen: state.setLibraryOpen,
     setWorkflowStep: state.setWorkflowStep,
-    setStatusNotice: state.setStatusNotice,
   })));
   const isInfoPage = pathname === '/about' || pathname === '/feedback';
   const showLibrary = !isInfoPage && workflowStep === 1;
@@ -121,12 +119,7 @@ export const SystemTray = () => {
 
     if (targetStep === 2) {
       if (!hasUploadData && !hasWorkbenchData) {
-        setStatusNotice({
-          id: 'workflow-guard',
-          tone: 'notice',
-          title: '请先导入字幕',
-          message: '加入文件并整理后，即可进入工作台。',
-        });
+        window.alert('请先导入字幕\n\n加入文件并整理后，即可进入工作台。');
         return;
       }
       setWorkflowStep(2);
@@ -135,12 +128,7 @@ export const SystemTray = () => {
 
     if (targetStep === 3) {
       if (!hasWorkbenchData) {
-        setStatusNotice({
-          id: 'workflow-guard',
-          tone: 'notice',
-          title: '请先生成预览',
-          message: '在工作台确认轨道后，再打开预览。',
-        });
+        window.alert('请先生成预览\n\n在工作台确认轨道后，再打开预览。');
         return;
       }
       setWorkflowStep(3);

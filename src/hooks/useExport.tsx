@@ -143,8 +143,12 @@ const EXPORT_OPTIONS = [
 
 /**
  * #9 — Export dropdown：菜单走 OverlayPortal + fixed，避免被放映厅样式壳压住。
+ * Theater 下复用 theater-style-shell 玻璃，不单独改配色。
  */
-export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ variant = 'primary' }) => {
+export const ExportDropdown: React.FC<{
+  variant?: 'primary' | 'ghost';
+  menuShell?: 'default' | 'theater';
+}> = ({ variant = 'primary', menuShell = 'default' }) => {
   const [open, setOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -201,6 +205,10 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
 
   const primaryClass = 'ui-action ui-action--lg';
   const ghostClass = 'ui-action ui-action--secondary ui-action--lg';
+  const menuClass =
+    menuShell === 'theater'
+      ? 'theater-style-shell dropdown-pop z-[var(--z-dropdown)] min-w-[12rem] overflow-hidden rounded-lg'
+      : 'ui-menu dropdown-pop z-[var(--z-dropdown)]';
 
   return (
     <div className="relative">
@@ -232,7 +240,7 @@ export const ExportDropdown: React.FC<{ variant?: 'primary' | 'ghost' }> = ({ va
               left: menuPos.left,
               width: menuPos.width,
             }}
-            className="ui-menu dropdown-pop z-[var(--z-dropdown)]"
+            className={menuClass}
           >
             <div className="border-b border-[var(--v4-line)] px-3.5 py-2.5">
               <p className="text-xs font-semibold tracking-wide text-[var(--v4-text)]">选择格式</p>

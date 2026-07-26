@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, HardDrive, MonitorPlay, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { SubRow } from '@/utils/subtitleCore';
@@ -160,6 +160,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
   const showAllSubs = useStudioStore(state => state.showAllSubs);
   const setShowAllSubs = useStudioStore(state => state.setShowAllSubs);
   const inputRef = useRef<HTMLInputElement>(null);
+  const densityScrubRef = useRef<HTMLDivElement>(null);
   const [videoName, setVideoName] = useState('');
   const [videoDurationMs, setVideoDurationMs] = useState<number | undefined>(undefined);
   const [metadataError, setMetadataError] = useState('');
@@ -216,7 +217,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
     }))
     .sort((left, right) => left.startMs - right.startMs), [rows]);
 
-  const selectTimelineTime = (targetMs: number) => {
+  const selectTimelineTime = useCallback((targetMs: number) => {
     if (timelinePoints.length === 0) return;
     let low = 0;
     let high = timelinePoints.length - 1;
@@ -233,7 +234,27 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
     setPreviewIndex(nearest.arrayIndex);
     setJumpLineVal(String(nearest.rowIndex));
     if (nearest.arrayIndex >= 100 && !showAllSubs) setShowAllSubs(true);
-  };
+  }, [setJumpLineVal, setPreviewIndex, setShowAllSubs, showAllSubs, timelinePoints]);
+
+  const scrubDensityFromClientX = useCallback((clientX: number) => {
+    const el = densityScrubRef.current;
+    if (!el || timelineDurationMs <= 0) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    selectTimelineTime(ratio * timelineDurationMs);
+  }, [selectTimelineTime, timelineDurationMs]);
+
+  const onDensityPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    scrubDensityFromClientX(event.clientX);
+  }, [scrubDensityFromClientX]);
+
+  const onDensityPointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    scrubDensityFromClientX(event.clientX);
+  }, [scrubDensityFromClientX]);
 
   const jumpToMark = (mark: InspectionMark) => {
     setPreviewIndex(mark.arrayIndex);
@@ -310,13 +331,18 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
       <div className="px-4 pb-3 pt-2 md:px-5 md:pb-4">
         <div className="relative overflow-hidden rounded-lg bg-[color-mix(in_srgb,var(--v4-panel-muted)_70%,transparent)] ring-1 ring-[var(--v4-line)]">
           {/* Density curve — marks live in HTML lane below to avoid SVG stretch */}
-          <div className="relative px-3 pt-3">
+          <div
+            ref={densityScrubRef}
+            className="relative cursor-ew-resize px-3 pt-3"
+            onPointerDown={onDensityPointerDown}
+            onPointerMove={onDensityPointerMove}
+          >
             <svg
               viewBox={`0 0 ${chartWidth} ${chartHeight}`}
               preserveAspectRatio="none"
               role="img"
               aria-label="字幕密度曲线"
-              className="h-14 w-full"
+              className="pointer-events-none h-14 w-full"
             >
               <defs>
                 <linearGradient id="densityFill" x1="0" x2="0" y1="0" y2="1">
@@ -372,6 +398,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
               )}
             </svg>
 
+            {/* 键盘/读屏仍可用；pointer-events-none 退出鼠标命中，避免 ↔/箭头闪烁 */}
             <input
               type="range"
               min="0"
@@ -379,13 +406,13 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
               step="100"
               value={activeTimeMs}
               onChange={event => selectTimelineTime(Number(event.target.value))}
-              className="absolute inset-0 z-10 h-full w-full cursor-ew-resize opacity-0"
+              className="pointer-events-none absolute inset-0 z-10 h-full w-full opacity-0"
               aria-label="在字幕分布图中定位时间"
             />
           </div>
 
-          {/* Five-lane mark rail — square / circle / triangle / note / star */}
-          <div className="relative mx-3 mb-1.5 h-11">
+          {/* Five-lane mark rail — 容器统一光标，避免空白/标记来回切 */}
+          <div className="relative mx-3 mb-1.5 h-11 cursor-ew-resize">
             <div className="pointer-events-none absolute inset-x-0 top-[4px] h-px bg-[var(--v4-line)]/70" />
             <div className="pointer-events-none absolute inset-x-0 top-[12px] h-px bg-[var(--v4-line)]/70" />
             <div className="pointer-events-none absolute inset-x-0 top-[20px] h-px bg-[var(--v4-line)]/70" />
@@ -412,7 +439,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                 <button
                   key={cluster.id}
                   type="button"
-                  className="group absolute z-20 flex h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-[var(--v4-accent)]"
+                  className="group absolute z-20 flex h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-[var(--v4-accent)]"
                   style={{
                     left: `${cluster.position * 100}%`,
                     top: MARK_LANE_TOP[cluster.kind],

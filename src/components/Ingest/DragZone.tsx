@@ -922,12 +922,11 @@ export const DragZone: React.FC = () => {
   if (isParsing) {
     return (
       <div className="relative mx-auto flex w-full max-w-lg min-h-[280px] flex-col items-center justify-center px-2">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <span
-            className="h-9 w-9 rounded-full border-2 border-[var(--v4-line-strong)] border-t-[var(--v4-accent)] animate-spin"
-            aria-hidden="true"
-          />
-          <p className="text-sm font-medium text-[var(--v4-text-muted)]">文件仅在本机处理</p>
+        <div className="flex flex-col items-center gap-2.5 text-center">
+          <span className="ingest-local-spinner" aria-hidden="true" />
+          <p className="text-base font-semibold tracking-tight text-[var(--v4-text)]">
+            文件仅在本机处理
+          </p>
         </div>
       </div>
     );

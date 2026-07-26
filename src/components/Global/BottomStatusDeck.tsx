@@ -32,16 +32,16 @@ export const BottomStatusDeck: React.FC = () => {
             <p className="bottom-status-deck__title truncate" title={status.title}>
               {status.title}
             </p>
-            <div className="bottom-status-deck__meta mt-0.5 flex min-w-0 items-center gap-x-2 gap-y-0.5 overflow-hidden">
+            <div className="bottom-status-deck__meta flex min-w-0 items-center gap-x-2.5 gap-y-0.5 overflow-hidden">
               {status.steps && status.steps.length > 0 ? (
-                <ol className="bottom-status-deck__steps flex shrink-0 items-center gap-2.5">
+                <ol className="bottom-status-deck__steps flex shrink-0 items-center">
                   {status.steps.map((step, index) => {
                     const prevDone = status.steps!.slice(0, index).every((s) => s.done);
                     const isActive = !step.done && prevDone;
                     return (
                       <li
                         key={step.label}
-                        className={`bottom-status-deck__step inline-flex items-center gap-1 ${
+                        className={`bottom-status-deck__step inline-flex items-center ${
                           step.done ? 'is-done' : isActive ? 'is-active' : 'is-pending'
                         }`}
                       >

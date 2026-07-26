@@ -199,15 +199,15 @@ export const TheaterStep: React.FC = () => {
               <SlidersHorizontal className="h-4 w-4 stroke-[2]" />
               字幕样式
             </button>
-            <ExportDropdown variant="primary" />
+            <ExportDropdown variant="primary" menuShell="theater" />
           </div>
         </div>
       </div>
 
       {/* 主体：关灯时整块（预览 + 夜光侧栏）提到暗幕之上 */}
-      <div className={`flex-1 flex min-h-0 overflow-hidden relative ${isLightsOff ? 'lights-off-stage' : ''}`}>
-        {/* Theater 预览区域 */}
-        <div className="relative flex min-w-0 flex-1 flex-col items-center justify-center gap-3 p-3 md:p-5 xl:p-6">
+        <div className={`flex-1 flex min-h-0 overflow-hidden relative ${isLightsOff ? 'lights-off-stage' : ''}`}>
+        {/* L0 舞台：隔离内部 z，避免电视框压过样式面板 */}
+        <div className="relative z-[var(--z-theater-stage)] isolate flex min-w-0 flex-1 flex-col items-center justify-center gap-3 p-3 md:p-5 xl:p-6">
           <div className="flex-1 w-full min-h-0 flex items-center justify-center">
             <SimulatorBoundary>
               <SimulatorWithClock
@@ -221,8 +221,8 @@ export const TheaterStep: React.FC = () => {
             </SimulatorBoundary>
           </div>
 
-          {/* 播放条：L0 Stage；几何避让由抽屉 bottom 让出，禁止临时抬 z。 */}
-          <div className="theater-stage-chrome relative z-[var(--z-theater-stage)] flex w-full max-w-[1080px] shrink-0 px-1">
+          {/* 播放条：几何避让由抽屉 bottom 让出，禁止临时抬 z。 */}
+          <div className="theater-stage-chrome relative flex w-full max-w-[1080px] shrink-0 px-1">
             <TimelineControls
               variant="theater"
               theaterChrome={{
@@ -234,7 +234,7 @@ export const TheaterStep: React.FC = () => {
           </div>
         </div>
 
-        {/* 样式侧边栏：L1 Style；absolute 浮层不挤预览。遮罩仅限主区，不盖顶栏导出。 */}
+        {/* L1 样式：浮在舞台之上；导出菜单走 Portal + --z-dropdown，再压在样式之上。 */}
         <AnimatePresence>
           {isSettingsOpen && (
             <>
