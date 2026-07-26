@@ -1005,13 +1005,23 @@ const getAuxiliaryCategory = (row: PreprocessedRow): AuxiliaryCueCategory | unde
   return category && category !== 'unknown' ? category : undefined;
 };
 
+const isLyricsTranslationPair = (primaryKind: CueKind, secondaryKind: CueKind): boolean => (
+  (primaryKind === 'lyrics' && secondaryKind === 'dialogue')
+  || (primaryKind === 'dialogue' && secondaryKind === 'lyrics')
+  || (primaryKind === 'lyrics' && secondaryKind === 'lyrics')
+);
+
 const getCueMergeCompatibility = (primary: PreprocessedRow, secondary: PreprocessedRow): CueMergeCompatibility => {
   const primaryKind = primary.cueKind || 'dialogue';
   const secondaryKind = secondary.cueKind || 'dialogue';
   if (!isStructuralCueKind(primaryKind) && !isStructuralCueKind(secondaryKind)) {
     return { canMerge: true, scoreAdjustment: 0 };
   }
-  // 辅助信息不混对白
+  // 歌词原文（♪）与无音符译词：允许合并，并提高对齐分。
+  if (isLyricsTranslationPair(primaryKind, secondaryKind)) {
+    return { canMerge: true, scoreAdjustment: primaryKind === secondaryKind ? 10 : 8 };
+  }
+  // 其余辅助信息不混对白
   if (primaryKind !== secondaryKind) return { canMerge: false, scoreAdjustment: -40 };
 
   const primaryCategory = getAuxiliaryCategory(primary);
@@ -1022,7 +1032,7 @@ const getCueMergeCompatibility = (primary: PreprocessedRow, secondary: Preproces
   if (primaryKind === 'screen_text') return { canMerge: true, scoreAdjustment: 2 };
   if (primaryCategory === 'semantic_sdh' || primaryCategory === 'speech_context') return { canMerge: true, scoreAdjustment: 1 };
   if (primaryCategory === 'ambient_sdh' || primaryCategory === 'music') return { canMerge: true, scoreAdjustment: -4 };
-  if (primaryKind === 'lyrics') return { canMerge: true, scoreAdjustment: -2 };
+  if (primaryKind === 'lyrics') return { canMerge: true, scoreAdjustment: 10 };
   return { canMerge: true, scoreAdjustment: -1 };
 };
 
@@ -1099,6 +1109,17 @@ function canExpandPackedDialogue(
   firstCounterpart: PreprocessedRow,
   secondCounterpart: PreprocessedRow,
 ): boolean {
+  // 歌词/译词行含 "A - B" 唱句，不得当密排双人对话展开。
+  if (
+    packed.cueKind === 'lyrics'
+    || firstCounterpart.cueKind === 'lyrics'
+    || secondCounterpart.cueKind === 'lyrics'
+    || isLyricText(packed.text)
+    || isLyricText(firstCounterpart.text)
+    || isLyricText(secondCounterpart.text)
+  ) {
+    return false;
+  }
   // 时间包络校验
   if (!shouldAttemptCueMerge(packed, firstCounterpart) || !shouldAttemptCueMerge(packed, secondCounterpart)) return false;
   const turns = splitPackedDialogueTurns(packed.sourceText);
@@ -1151,11 +1172,15 @@ const createMergedRow = (
   diagnosis?: GlobalOffsetDiagnosis,
 ) => {
   const shifted = Boolean(diagnosis?.shouldApply);
+  const cueKind = combineCueKind(primary.cueKind, secondary.cueKind);
+  const isLyricsRow = cueKind === 'lyrics'
+    || isLyricText(primary.text)
+    || isLyricText(secondary.text);
   return {
     ts: `${msToTime(Math.min(primaryTiming.start, secondaryTiming.start))} --> ${msToTime(Math.max(primaryTiming.end, secondaryTiming.end))}`,
     text: `${primary.text}\n${secondary.text}`,
-    type: 'merged',
-    cueKind: combineCueKind(primary.cueKind, secondary.cueKind),
+    type: isLyricsRow ? 'lyrics' : 'merged',
+    cueKind: isLyricsRow ? 'lyrics' as CueKind : cueKind,
     auxiliary: combineAuxiliaryCue(primary.auxiliary, secondary.auxiliary),
     alignment: shifted ? 'shifted-match' as const : undefined,
     provenance: {
@@ -1572,10 +1597,13 @@ export function mergeSubtitles(
     .sort((a, b) => timeToMs(a.ts.split(" --> ")[0]) - timeToMs(b.ts.split(" --> ")[0]))
     .map((item, idx) => {
       let type = item.type;
-      if (isLyricText(item.text)) {
-        type = "lyrics";
+      const cueKind = item.cueKind === 'lyrics' || isLyricText(item.text)
+        ? 'lyrics' as CueKind
+        : (item.cueKind || resolveCueKind(item.text));
+      if (cueKind === 'lyrics' || isLyricText(item.text)) {
+        type = 'lyrics';
       }
-      return { ...item, type, cueKind: item.cueKind || resolveCueKind(item.text), index: idx + 1 };
+      return { ...item, type, cueKind, index: idx + 1 };
     });
   
   addLog(`[合并] 处理完成，生成 ${result.length} 条对齐块`, "success");
@@ -1727,10 +1755,13 @@ export function alignSubtitlesIndustrial(
     .sort((a, b) => timeToMs(a.ts.split(" --> ")[0]) - timeToMs(b.ts.split(" --> ")[0]))
     .map((item, idx) => {
       let type = item.type;
-      if (isLyricText(item.text)) {
-        type = "lyrics";
+      const cueKind = item.cueKind === 'lyrics' || isLyricText(item.text)
+        ? 'lyrics' as CueKind
+        : (item.cueKind || resolveCueKind(item.text));
+      if (cueKind === 'lyrics' || isLyricText(item.text)) {
+        type = 'lyrics';
       }
-      return { ...item, type, cueKind: item.cueKind || resolveCueKind(item.text), index: idx + 1 };
+      return { ...item, type, cueKind, index: idx + 1 };
     });
   addLog(`[工业级合并] 处理完成，生成 ${result.length} 条对齐块`, "success");
   return result;
@@ -1838,6 +1869,8 @@ export function appendCreatorCredit(
 
 const shouldKeepSubtitleForAuxiliaryMode = (sub: SubRow, mode: AuxiliarySubtitleMode): boolean => {
   if (mode === 'keep') return true;
+  // 歌词正文（含译词合并行）不因 music 辅助类被 smart/clean 剥掉。
+  if (sub.type === 'lyrics' || sub.cueKind === 'lyrics' || isLyricText(sub.text)) return true;
   const category = sub.auxiliary?.category;
   if (!category) return true;
   if (mode === 'clean') {

@@ -7,6 +7,7 @@ import { isLyricText } from '@/utils/subtitleCore';
 import type { SubRow } from '@/utils/subtitleCore';
 import { Check, Captions, ChevronDown, ChevronUp, Music2, Pencil, Redo2, Undo2, Volume2, X } from 'lucide-react';
 import { TimelineControls } from '@/components/Workbench/TimelineControls';
+import { MARK_COLOR, MARK_LABEL, InspectionMarkGlyph } from '@/components/Workbench/inspectionMarks';
 
 interface SequenceListProps {
   timelineDurationMs?: number;
@@ -27,6 +28,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
     redoSubtitleEdit,
     canUndo,
     canRedo,
+    lyricPosition,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     previewIndex: state.previewIndex,
@@ -39,6 +41,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
     redoSubtitleEdit: state.redoSubtitleEdit,
     canUndo: state.editHistory.length > 0,
     canRedo: state.editFuture.length > 0,
+    lyricPosition: state.customStyle.lyricPosition ?? 'top',
   })));
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [draftZh, setDraftZh] = useState('');
@@ -268,12 +271,15 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               const parts = normalizedText.split('\n');
               const zhText = parts[0] || '';
               const enText = parts[1] || '';
-              const isLyric = isLyricText(sub.text);
+              const isLyric = sub.type === 'lyrics' || sub.cueKind === 'lyrics' || isLyricText(sub.text);
               const isExpandedDialogue = sub.alignment === 'expanded-dialogue';
-              const isSoundCaption = sub.cueKind === 'sound_caption';
-              const isAuxiliarySemantic = sub.cueKind === 'narration'
+              const isSoundCaption = !isLyric && sub.cueKind === 'sound_caption';
+              const isAuxiliarySemantic = !isLyric && (
+                sub.cueKind === 'narration'
                 || sub.auxiliary?.category === 'semantic_sdh'
-                || sub.auxiliary?.category === 'speech_context';
+                || sub.auxiliary?.category === 'speech_context'
+              );
+              const lyricPosLabel = lyricPosition === 'bottom' ? '底部' : '顶部';
 
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
               const endTime = sub.ts.split(' --> ')[1]?.replace(',', '.').trim() || '';
@@ -339,8 +345,8 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                       <span className="mt-1 flex-1 w-px bg-[var(--v4-line)]" />
                     </div>
                     {isLyric && (
-                      <span className="inline-flex shrink-0 select-none text-[var(--v4-accent-strong)]">
-                        <Music2 className="h-4 w-4" />
+                      <span className="inline-flex shrink-0 select-none" title={`${MARK_LABEL.lyrics} · ${lyricPosLabel}`} style={{ color: MARK_COLOR.lyrics }}>
+                        <InspectionMarkGlyph kind="lyrics" size={12} />
                       </span>
                     )}
                     <div className={`flex min-w-0 flex-col whitespace-nowrap font-mono text-[13px] leading-tight tabular-nums tracking-tight ${isActive ? 'font-semibold text-[var(--v4-accent-strong)]' : 'font-medium text-[var(--v4-text-muted)]'}`}>
@@ -397,7 +403,14 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                             对话组
                           </span>
                         )}
-                        {sub.cueKind === 'screen_text' && (
+                        {isLyric && (
+                          <span className="ui-meta mb-0.5" style={{ color: MARK_COLOR.lyrics }}>
+                            <Music2 className="h-3 w-3" />
+                            {MARK_LABEL.lyrics}
+                            <span className="text-[var(--v4-text-faint)]">· {lyricPosLabel}</span>
+                          </span>
+                        )}
+                        {sub.cueKind === 'screen_text' && !isLyric && (
                           <span className="ui-meta mb-0.5">
                             <Captions className="h-3 w-3" />
                             画面文字

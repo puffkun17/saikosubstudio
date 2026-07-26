@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { Captions, FileSearch2, LocateFixed, MoveHorizontal, Rows3, SplitSquareVertical, Volume2 } from 'lucide-react';
-import { describeAuxiliaryReason, type SubRow } from '@/utils/subtitleCore';
+import { Captions, FileSearch2, LocateFixed, MoveHorizontal, Music2, Rows3, SplitSquareVertical, Volume2 } from 'lucide-react';
+import { describeAuxiliaryReason, isLyricText, type SubRow } from '@/utils/subtitleCore';
 import { analyzeAlignmentDiff, type AlignmentDiffEntry, type AlignmentDiffKind } from '@/utils/timeline/alignmentDiff';
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 import { useStudioStore } from '@/store/useStudioStore';
-import { MARK_COLOR } from '@/components/Workbench/inspectionMarks';
+import { MARK_COLOR, MARK_LABEL } from '@/components/Workbench/inspectionMarks';
 
-type UnifiedKind = AlignmentDiffKind | 'screen-text' | 'sound-caption';
+type UnifiedKind = AlignmentDiffKind | 'screen-text' | 'sound-caption' | 'lyrics';
 
 interface UnifiedReviewItem {
   id: string;
@@ -25,10 +25,19 @@ const isScreenTextRow = (row: SubRow) => (
   row.cueKind === 'screen_text' || row.auxiliary?.category === 'screen_text'
 );
 
+const isLyricsRow = (row: SubRow) => (
+  row.type === 'lyrics'
+  || row.cueKind === 'lyrics'
+  || isLyricText(row.text)
+);
+
 const isSoundCaptionRow = (row: SubRow) => (
-  row.cueKind === 'sound_caption'
-  || row.auxiliary?.category === 'ambient_sdh'
-  || row.auxiliary?.category === 'music'
+  !isLyricsRow(row)
+  && (
+    row.cueKind === 'sound_caption'
+    || row.auxiliary?.category === 'ambient_sdh'
+    || row.auxiliary?.category === 'music'
+  )
 );
 
 const reasonFromRow = (row: SubRow) => {
@@ -39,19 +48,27 @@ const reasonFromRow = (row: SubRow) => {
 const badgeTone = (kind: UnifiedKind) => {
   if (kind === 'shifted-match') return 'bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]';
   if (kind === 'expanded-dialogue') return 'bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]';
-  if (kind === 'screen-text') {
-    return undefined; // inline style via MARK_COLOR.screen — 禁止散落蓝
+  if (kind === 'screen-text' || kind === 'lyrics') {
+    return undefined; // inline style via MARK_COLOR
   }
   if (kind === 'sound-caption') return 'bg-[var(--v4-warning)]/12 text-[var(--v4-warning)]';
   return 'bg-[var(--v4-danger)]/10 text-[var(--v4-danger)]';
 };
 
 const badgeToneStyle = (kind: UnifiedKind): React.CSSProperties | undefined => {
-  if (kind !== 'screen-text') return undefined;
-  return {
-    background: `color-mix(in srgb, ${MARK_COLOR.screen} 16%, transparent)`,
-    color: MARK_COLOR.screen,
-  };
+  if (kind === 'screen-text') {
+    return {
+      background: `color-mix(in srgb, ${MARK_COLOR.screen} 16%, transparent)`,
+      color: MARK_COLOR.screen,
+    };
+  }
+  if (kind === 'lyrics') {
+    return {
+      background: `color-mix(in srgb, ${MARK_COLOR.lyrics} 16%, transparent)`,
+      color: MARK_COLOR.lyrics,
+    };
+  }
+  return undefined;
 };
 
 const BadgeIcon = ({ kind }: { kind: UnifiedKind }) => {
@@ -59,6 +76,7 @@ const BadgeIcon = ({ kind }: { kind: UnifiedKind }) => {
   if (kind === 'expanded-dialogue') return <SplitSquareVertical className="h-2.5 w-2.5" />;
   if (kind === 'screen-text') return <Captions className="h-2.5 w-2.5" />;
   if (kind === 'sound-caption') return <Volume2 className="h-2.5 w-2.5" />;
+  if (kind === 'lyrics') return <Music2 className="h-2.5 w-2.5" />;
   return <Rows3 className="h-2.5 w-2.5" />;
 };
 
@@ -69,6 +87,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
   const setJumpLineVal = useStudioStore((state) => state.setJumpLineVal);
   const showAllSubs = useStudioStore((state) => state.showAllSubs);
   const setShowAllSubs = useStudioStore((state) => state.setShowAllSubs);
+  const lyricPosition = useStudioStore((state) => state.customStyle.lyricPosition ?? 'top');
 
   const summary = useMemo(() => analyzeAlignmentDiff(rows), [rows]);
 
@@ -104,9 +123,20 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
       reason: reasonFromRow(row),
     }));
 
-    return [...structureItems, ...screenItems, ...soundItems]
+    const lyricPosLabel = lyricPosition === 'bottom' ? '底部' : '顶部';
+    const lyricItems: UnifiedReviewItem[] = rows.filter(isLyricsRow).map(row => ({
+      id: `lyrics-${row.index}`,
+      kind: 'lyrics' as const,
+      startMs: parseSubtitleRange(row.ts).startMs,
+      locateIndex: row.index,
+      badge: MARK_LABEL.lyrics,
+      text: row.text.replace(/\\N/gi, ' / ').replace(/\s+/g, ' ').trim(),
+      reason: `歌词显示平面 · ${lyricPosLabel}`,
+    }));
+
+    return [...structureItems, ...screenItems, ...soundItems, ...lyricItems]
       .sort((a, b) => a.startMs - b.startMs || a.locateIndex - b.locateIndex);
-  }, [summary.entries, rows]);
+  }, [summary.entries, rows, lyricPosition]);
 
   const handleLocate = (rowIndex: number) => {
     const arrayIndex = Math.max(0, rowIndex - 1);
@@ -127,7 +157,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
     <section className="overflow-hidden rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel)]">
       <div className="flex items-center justify-between gap-3 border-b border-[var(--v4-line)] px-4 py-2 md:px-5">
         <p className="text-xs text-[var(--v4-text-faint)]">
-          完整列出结构差异、画面文字与声音描述（{items.length}）
+          完整列出结构差异、画面文字、声音描述与歌词（{items.length}）
         </p>
       </div>
 

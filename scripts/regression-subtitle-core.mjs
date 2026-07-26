@@ -132,7 +132,26 @@ const assertIncludes = (items, expected, message) => {
   const parsed = parseMediaFilename(sample);
   assert.equal(parsed.title, 'Alien Earth');
   assert.equal(parsed.episodeKey, 'S01E02');
+  assert.equal(parsed.year, undefined, 'Episode filenames without a release year should not invent one.');
   assert.deepEqual(buildTmdbSearchQueries(sample, 8), ['Alien Earth']);
+}
+
+{
+  const sample = 'Lucky.2026.S01E01.1080p.WEB.h264-ETHEL.简体中文.ass';
+  const parsed = parseMediaFilename(sample);
+  assert.equal(parsed.title, 'Lucky', 'Scene TV titles should keep the series name.');
+  assert.equal(parsed.year, '2026', 'Title.Year.SxxExx must retain the release/premiere year for TV.');
+  assert.equal(parsed.episodeKey, 'S01E01');
+  assert.equal(parsed.mediaHint, 'tv');
+  assert.equal(cleanFilename(sample), 'Lucky', 'TV cleanFilename stays title-only; year is carried via parsed.year.');
+}
+
+{
+  const sample = 'Blade.Runner.2049.S01E01.1080p.WEB.ass';
+  const parsed = parseMediaFilename(sample);
+  assert.equal(parsed.title, 'Blade Runner 2049', 'Numeric title suffixes must not be mistaken for release years on TV.');
+  assert.equal(parsed.year, undefined);
+  assert.equal(parsed.episodeKey, 'S01E01');
 }
 
 {
@@ -396,23 +415,45 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
 {
   const aligned = alignSubtitlesIndustrial(
     [
-      { ts: '01:03:43,988 --> 01:03:47,574', text: '-这是你所期望走的路吗?-正是' },
+      { ts: '00:00:58,060 --> 00:01:01,900', text: '讓我準時上教堂' },
+      { ts: '00:01:01,980 --> 00:01:04,610', text: '準時上教堂 - 讓我害怕' },
     ],
     [
-      { ts: '01:03:44,533 --> 01:03:47,077', text: 'Alors Mathieu, ça se passe\ncomme vous voulez ?' },
-      { ts: '01:03:47,411 --> 01:03:48,329', text: "Je l'espère." },
+      { ts: '00:00:58,060 --> 00:01:01,900', text: '♪ Gets me to the church on time ♪' },
+      { ts: '00:01:01,980 --> 00:01:04,610', text: '♪ Church on time ♪ - ♪ Terrifies me ♪' },
     ],
     [],
     noopLog,
   );
-  assert.equal(aligned.length, 2, 'A packed two-speaker cue should expand only when two counterpart cues fit its timing envelope.');
-  assert.deepEqual(aligned.map(row => [row.ts, row.text, row.alignment]), [
-    ['01:03:44,533 --> 01:03:47,077', '这是你所期望走的路吗?\nAlors Mathieu, ça se passe comme vous voulez ?', 'expanded-dialogue'],
-    ['01:03:47,411 --> 01:03:48,329', "正是\nJe l'espère.", 'expanded-dialogue'],
-  ]);
-  assert.equal(aligned[0].provenance?.timingSource, 'secondary', 'Expanded dialogue should preserve which track supplies the derived timestamps.');
-  assert.equal(aligned[0].provenance?.primary?.text, '-这是你所期望走的路吗?-正是', 'Expanded dialogue should keep the original packed cue for review.');
-  assert.equal(aligned[1].provenance?.secondary?.cueIndex, 2, 'Each expanded row should point to its own counterpart cue.');
+  assert.equal(aligned.length, 2, 'Lyric source + translation with matching times must merge into bilingual rows.');
+  assert.equal(aligned[0].type, 'lyrics');
+  assert.equal(aligned[0].cueKind, 'lyrics');
+  assert.equal(
+    aligned[0].text,
+    '讓我準時上教堂\n♪ Gets me to the church on time ♪',
+    'Merged lyric rows keep translation above source.',
+  );
+  assert.equal(aligned[1].type, 'lyrics');
+  assert.equal(
+    aligned[1].text,
+    '準時上教堂 - 讓我害怕\n♪ Church on time ♪ - ♪ Terrifies me ♪',
+    'Hyphenated lyric phrases must not expand as two-speaker dialogue.',
+  );
+  assert.equal(aligned[1].alignment, undefined, 'Lyric hyphen lines must not be marked expanded-dialogue.');
+
+  const fast = mergeSubtitles(
+    [{ ts: '00:00:58,060 --> 00:01:01,900', text: '讓我準時上教堂' }],
+    [{ ts: '00:00:58,060 --> 00:01:01,900', text: '♪ Gets me to the church on time ♪' }],
+    [],
+    noopLog,
+  );
+  assert.equal(fast.length, 1);
+  assert.equal(fast[0].type, 'lyrics');
+  assert.equal(fast[0].cueKind, 'lyrics');
+  assert.equal(fast[0].text, '讓我準時上教堂\n♪ Gets me to the church on time ♪');
+
+  const smartKept = applyAuxiliarySubtitleMode(fast, 'smart');
+  assert.equal(smartKept.length, 1, 'Smart auxiliary mode must keep merged lyric rows even when EN side is music-tagged.');
 }
 
 {
@@ -1426,6 +1467,74 @@ const createTmdbImages = () => ({
   };
   await useStudioStore.getState().searchTmdbManual('Trying', 'tv', '2025');
   assert.equal(useStudioStore.getState().tmdbSuggestions[0]?.id, 302, 'Manual soft year should surface the span-plausible Trying series first.');
+}
+
+{
+  // Scene TV filenames carry Title.Year.SxxExx — year must disambiguate without manual input.
+  const luckyOld = {
+    id: 401,
+    media_type: 'tv',
+    name: 'Lucky',
+    original_name: 'Lucky',
+    first_air_date: '2003-01-01',
+    popularity: 90,
+    vote_average: 9,
+  };
+  const luckyMid = {
+    id: 402,
+    media_type: 'tv',
+    name: 'Lucky',
+    original_name: 'Lucky',
+    first_air_date: '2007-06-01',
+    popularity: 70,
+    vote_average: 8.3,
+  };
+  const luckyTarget = {
+    id: 403,
+    media_type: 'tv',
+    name: '幸运女神',
+    original_name: 'Lucky',
+    first_air_date: '2026-03-01',
+    popularity: 35,
+    vote_average: 8,
+  };
+  const luckyFile = 'Lucky.2026.S01E01.1080p.WEB.h264-ETHEL.简体中文.ass';
+
+  resetStoreForTmdb();
+  global.fetch = async (url) => {
+    const target = String(url);
+    if (target.includes('/api/tmdb/search/tv') || target.includes('/api/tmdb/search/multi')) {
+      return createTmdbSearchResult([luckyOld, luckyMid, luckyTarget]);
+    }
+    if (target.includes('/api/tmdb/tv/403')) {
+      if (target.includes('/images') || target.includes('/season/')) return createTmdbImages();
+      return createTmdbDetails({
+        id: 403,
+        name: '幸运女神',
+        original_name: 'Lucky',
+        first_air_date: '2026-03-01',
+        genres: [{ name: '剧情' }],
+        overview: 'Lucky 2026',
+        vote_average: 8,
+        alternative_titles: { results: [{ iso_3166_1: 'CN', title: '幸运女神' }] },
+      });
+    }
+    throw new Error(`Unexpected fetch during Lucky filename year: ${target}`);
+  };
+  await useStudioStore.getState().searchTmdb(luckyFile, { silent: true });
+  assert.equal(useStudioStore.getState().tmdbData?.title, '幸运女神', 'Filename year 2026 must auto-apply the matching Lucky series without manual year.');
+  assert.equal(useStudioStore.getState().tmdbData?.year, '2026');
+  assert.equal(useStudioStore.getState().tmdbData?.originalTitle, 'Lucky');
+  assert.equal(
+    useStudioStore.getState().tmdbManualOpen,
+    false,
+    'Filename year should prevent the need-year manual disambiguation dialog.',
+  );
+  assert.equal(
+    useStudioStore.getState().tmdbSuggestions[0]?.id,
+    403,
+    'Exact filename year should rank the 2026 Lucky series first.',
+  );
 }
 
 console.log('Core subtitle regression checks passed.');

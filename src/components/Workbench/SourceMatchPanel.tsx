@@ -4,6 +4,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, HardDrive, MonitorPlay, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { SubRow } from '@/utils/subtitleCore';
+import { isLyricText } from '@/utils/subtitleCore';
 import { createSourceMatchReport, type SourceMatchFinding, type SourceMatchReport } from '@/utils/timeline/sourceMatch';
 import { analyzeAlignmentDiff } from '@/utils/timeline/alignmentDiff';
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
@@ -11,7 +12,7 @@ import { InfoHint } from '@/components/ui/InfoHint';
 import { useStudioStore } from '@/store/useStudioStore';
 import {
   InspectionMarkGlyph,
-  MARK_COLOR,
+  MARK_KIND_ORDER,
   MARK_LABEL,
   MARK_LANE_TOP,
   type InspectionMarkFilter,
@@ -91,6 +92,12 @@ const FindingIcon = ({ severity }: { severity: SourceMatchFinding['severity'] })
 
 const formatCount = (value: number) => new Intl.NumberFormat('zh-CN').format(value);
 
+const isLyricsInspectionRow = (row: SubRow) => (
+  row.type === 'lyrics'
+  || row.cueKind === 'lyrics'
+  || isLyricText(row.text)
+);
+
 export function buildInspectionMarks(rows: SubRow[], basisDurationMs: number): InspectionMark[] {
   const marks: InspectionMark[] = [];
   const seen = new Set<string>();
@@ -104,6 +111,10 @@ export function buildInspectionMarks(rows: SubRow[], basisDurationMs: number): I
 
   rows.forEach((row, arrayIndex) => {
     const startMs = parseSubtitleRange(row.ts).startMs;
+    if (isLyricsInspectionRow(row)) {
+      push('lyrics', arrayIndex, row.index, startMs);
+      return;
+    }
     if (row.cueKind === 'sound_caption' || row.auxiliary?.category === 'ambient_sdh' || row.auxiliary?.category === 'music') {
       push('sound', arrayIndex, row.index, startMs);
     } else if (row.cueKind === 'screen_text' || row.auxiliary?.category === 'screen_text') {
@@ -173,7 +184,8 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
     if (markFilter === 'all') return inspectionMarks;
     if (markFilter === 'structure') return inspectionMarks.filter(m => m.kind === 'structure');
     if (markFilter === 'screen-text') return inspectionMarks.filter(m => m.kind === 'screen');
-    return inspectionMarks.filter(m => m.kind === 'sound');
+    if (markFilter === 'sound-caption') return inspectionMarks.filter(m => m.kind === 'sound');
+    return inspectionMarks.filter(m => m.kind === 'lyrics');
   }, [inspectionMarks, markFilter]);
 
   const visibleClusters = useMemo(() => clusterMarks(visibleMarks), [visibleMarks]);
@@ -248,7 +260,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
           <div className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--v4-text)]">
             {isMatchMode ? '片源覆盖分布' : '字幕时间分布'}
             <InfoHint label="字幕分布图说明">
-              上方曲线表示字幕疏密；下方三层标记表示字幕分类，点击可定位位置。
+              上方曲线表示字幕疏密；下方四层标记表示字幕分类（结构差异、画面文字、声音描述、歌词），点击可定位到对应行。
             </InfoHint>
           </div>
           <div className="mt-0.5 text-xs text-[var(--v4-text-faint)]">
@@ -258,7 +270,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
         </div>
         <div className="flex items-center gap-3">
           <div className="hidden items-center gap-3 text-[11px] text-[var(--v4-text-faint)] sm:flex">
-            {(['structure', 'screen', 'sound'] as const).map((kind) => (
+            {MARK_KIND_ORDER.map((kind) => (
               <span key={kind} className="inline-flex items-center gap-1.5">
                 <InspectionMarkGlyph kind={kind} size={8} />
                 {MARK_LABEL[kind]}
@@ -360,11 +372,12 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
             />
           </div>
 
-          {/* Three-lane mark rail — square / circle / triangle */}
-          <div className="relative mx-3 mb-1.5 h-9">
-            <div className="pointer-events-none absolute inset-x-0 top-[7px] h-px bg-[var(--v4-line)]/70" />
-            <div className="pointer-events-none absolute inset-x-0 top-[17px] h-px bg-[var(--v4-line)]/70" />
-            <div className="pointer-events-none absolute inset-x-0 top-[27px] h-px bg-[var(--v4-line)]/70" />
+          {/* Four-lane mark rail — square / circle / triangle / note */}
+          <div className="relative mx-3 mb-1.5 h-10">
+            <div className="pointer-events-none absolute inset-x-0 top-[5px] h-px bg-[var(--v4-line)]/70" />
+            <div className="pointer-events-none absolute inset-x-0 top-[14px] h-px bg-[var(--v4-line)]/70" />
+            <div className="pointer-events-none absolute inset-x-0 top-[23px] h-px bg-[var(--v4-line)]/70" />
+            <div className="pointer-events-none absolute inset-x-0 top-[32px] h-px bg-[var(--v4-line)]/70" />
 
             {dimClusters.map(cluster => (
               <span

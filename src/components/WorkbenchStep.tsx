@@ -57,10 +57,18 @@ export const WorkbenchStep: React.FC = () => {
   );
   const structureCount = alignmentSummary?.entries.length ?? 0;
   const screenCount = processedSubs?.filter(row => row.cueKind === 'screen_text' || row.auxiliary?.category === 'screen_text').length ?? 0;
+  const lyricsCount = processedSubs?.filter(row => (
+    row.type === 'lyrics'
+    || row.cueKind === 'lyrics'
+  )).length ?? 0;
   const soundCount = processedSubs?.filter(row => (
-    row.cueKind === 'sound_caption'
-    || row.auxiliary?.category === 'ambient_sdh'
-    || row.auxiliary?.category === 'music'
+    row.type !== 'lyrics'
+    && row.cueKind !== 'lyrics'
+    && (
+      row.cueKind === 'sound_caption'
+      || row.auxiliary?.category === 'ambient_sdh'
+      || row.auxiliary?.category === 'music'
+    )
   )).length ?? 0;
 
   useEffect(() => {
@@ -169,7 +177,7 @@ export const WorkbenchStep: React.FC = () => {
                             {profileStats.densityPerMinute}
                           </strong>
                         </span>
-                        {(screenCount > 0 || soundCount > 0) && (
+                        {(screenCount > 0 || soundCount > 0 || lyricsCount > 0) && (
                           <>
                             <span className="text-[var(--v4-line-strong)]">·</span>
                             <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[var(--v4-text-faint)]">
@@ -183,6 +191,12 @@ export const WorkbenchStep: React.FC = () => {
                                 <span className="inline-flex items-center gap-1">
                                   <InspectionMarkGlyph kind="sound" size={7} />
                                   {MARK_LABEL.sound} {soundCount}
+                                </span>
+                              )}
+                              {lyricsCount > 0 && (
+                                <span className="inline-flex items-center gap-1">
+                                  <InspectionMarkGlyph kind="lyrics" size={7} />
+                                  {MARK_LABEL.lyrics} {lyricsCount}
                                 </span>
                               )}
                             </span>

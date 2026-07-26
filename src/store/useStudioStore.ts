@@ -691,10 +691,13 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     
     try {
       const yearMatch = isEpisodeQuery ? null : searchStr.match(/\b(19\d\d|20\d\d)\b/);
-      // 剧集：文件名通常无年；优先用手填年份区分同名。电影仍从文件名抽年。
+      // 剧集 / 电影：优先文件名解析年，其次任务文件与手填。手填用于消歧或修正观影/发行印象年。
       const manualYear = parseYearToken(get().tmdbManualInput.year);
+      const fileYear = (activeTask?.files || [])
+        .map((file) => parseYearToken(parseMediaFilename(file.name).year))
+        .find(Boolean) || '';
       const year = isEpisodeQuery
-        ? manualYear
+        ? (parseYearToken(parsed.year) || parseYearToken(fallbackParsed?.year) || fileYear || manualYear || '')
         : (parsed.year || fallbackParsed?.year || yearMatch?.[1] || manualYear || '');
       const seasonHint = parseSeasonNumber(parsed.season)
         || parseSeasonNumber(fallbackParsed?.season)
@@ -819,7 +822,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             reasons.push('year:missing');
           }
         } else if (isEpisodeQuery && !year && itemYear && shouldDemoteBySeasonSpan({ itemYear, season: seasonHint })) {
-          // 无手填年：用「今天」估季跨度，本地降权撑不起 Sxx 的同名剧（不 reject，留给「不是这个？」）
+          // 无年份：用「今天」估季跨度，本地降权撑不起 Sxx 的同名剧（不 reject，留给「不是这个？」）
           score -= 200;
           reasons.push('season-span:demote');
         } else if (year && itemYear === year) {
@@ -1016,7 +1019,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             ...state.tmdbManualInput,
             title: searchTitle || cleanQuery || state.tmdbManualInput.title,
             type: 'tv',
-            year: state.tmdbManualInput.year,
+            year: year || state.tmdbManualInput.year,
             season: epMatch ? String(parseInt(epMatch[1], 10)) : (seasonHint ? String(seasonHint) : state.tmdbManualInput.season),
             episode: epMatch ? String(parseInt(epMatch[2], 10)) : state.tmdbManualInput.episode,
           },
@@ -1028,7 +1031,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           id: 'media-match',
           tone: 'notice',
           title: '请补充年份',
-          message: '文件名缺少年份，且存在多个同名片名。填写首播年可直接命中；若只记得发行/观影年，也会排除跨度不够的错误结果并请你确认。',
+          message: '存在多个同名片名且未能从文件名得到可用年份。填写首播年可直接命中；若只记得发行/观影年，也会排除跨度不够的错误结果并请你确认。',
           meta: episodeKey || searchStr,
           action: 'openTmdbManual',
           actionLabel: '补充年份',
@@ -1529,6 +1532,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     // Export filename is filled via checklist checkboxes, not auto-seeded here.
 
     const cleanName = (cleanedFromFiles || detectedTitle || cleanFilename(parsedTitle?.title || '')).replace(/\.[^/.]+$/, "").trim();
+    const identityParsed = identitySourceName ? parseMediaFilename(identitySourceName) : null;
     // Pre-fill type and season/episode if epKey exists
     let type = 'movie';
     let season = '1';
@@ -1549,6 +1553,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
          ...state.tmdbManualInput, 
          title: cleanName,
          type: type as 'tv' | 'movie',
+         year: identityParsed?.year || state.tmdbManualInput.year,
          season,
          episode
       }
@@ -1556,7 +1561,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
     if (!task.tmdbData && !inheritedMetadata && !get().tmdbData) {
       setTimeout(() => {
-        if (cleanName) {
+        // Prefer the raw identity filename so Title.Year.SxxExx keeps its year in search.
+        if (identitySourceName) {
+          get().searchTmdb(identitySourceName, { fallbackTitle: task.title });
+        } else if (cleanName) {
           get().searchTmdb(`${cleanName} ${task.epKey || ''}`.trim(), { fallbackTitle: task.title });
         } else if (task.epKey) {
           set({ tmdbManualOpen: true });

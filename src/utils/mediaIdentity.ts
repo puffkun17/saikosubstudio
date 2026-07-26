@@ -283,12 +283,36 @@ export function parseMediaFilename(name: string): ParsedMediaFilename {
   const episodeKey = normalizeEpisodeKey(season, episode);
   const isEpisode = Boolean(episodeKey);
   let year = '';
-  const yearAnchor = !isEpisode ? findReleaseYearAnchor(working) : null;
-  if (yearAnchor) {
-    year = yearAnchor.year;
-    working = working.slice(0, yearAnchor.start);
-  } else if (isEpisode) {
-    working = working.replace(/\b(19\d{2}|20\d{2})\b/g, ' ');
+  if (!isEpisode) {
+    const yearAnchor = findReleaseYearAnchor(working);
+    if (yearAnchor) {
+      year = yearAnchor.year;
+      working = working.slice(0, yearAnchor.start);
+    }
+  } else {
+    // Scene/WEB TV: Title.Year.SxxExx — episode cut leaves the year in the prefix.
+    const trailingYear = working.match(/(^|[\s._\-_(【\[])((?:19|20)\d{2})[\s._\-]*$/);
+    if (trailingYear && trailingYear.index != null) {
+      const yearToken = trailingYear[2];
+      const yearStart = trailingYear.index + trailingYear[1].length;
+      const beforeYear = working.slice(0, yearStart);
+      if (!shouldKeepNumericTitleSuffix(beforeYear, yearToken)) {
+        year = yearToken;
+        working = beforeYear;
+      }
+    }
+    if (!year) {
+      const bracketYear = working.match(/[\s._\-(（\[]*((?:19|20)\d{2})[)）\]]\s*$/);
+      if (bracketYear && bracketYear.index != null) {
+        year = bracketYear[1];
+        working = working.slice(0, bracketYear.index);
+      }
+    }
+    // Drop leftover release years from the title; keep numeric title suffixes (2049, etc.).
+    working = working.replace(
+      /(^|[\s._\-])(?!(?:1917|1984|2001|2012|2046|2049)(?=$|[\s._\-]))((?:19|20)\d{2})(?=$|[\s._\-])/g,
+      '$1',
+    );
   }
 
   const colonParts = working.split(/\s*[:：]\s*/).filter(Boolean);
