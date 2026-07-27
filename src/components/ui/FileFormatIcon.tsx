@@ -218,7 +218,7 @@ export const FileFormatIcon: React.FC<FileFormatIconProps> = ({
 
   return (
     <span className={`inline-flex shrink-0 items-center gap-1.5 ${className}`} title={tip}>
-      <span style={{ width: px, height: px }} className="inline-block drop-shadow-[0_1px_1.5px_rgba(31,26,18,0.22)]">
+      <span style={{ width: px, height: px }} className="inline-block drop-shadow-[0_1px_1.5px_color-mix(in_srgb,var(--v5-green)_22%,transparent)]">
         <AdobeFileGlyph format={resolved} />
       </span>
       {showLabel && (
@@ -361,7 +361,7 @@ export const LanguageMark: React.FC<{
     isLg ? 'h-9' : 'h-8'
   } ${className}`;
   const labelClass = `font-mono font-semibold leading-none tracking-normal ${
-    isLg ? 'text-[14px]' : 'text-[13px]'
+    isLg ? 'text-sm' : 'text-xs'
   }`;
 
   if (languagePair) {

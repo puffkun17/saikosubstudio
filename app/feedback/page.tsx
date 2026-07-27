@@ -64,7 +64,7 @@ export default function FeedbackPage() {
   };
 
   return (
-    <main className="flex-1 overflow-y-auto bg-[var(--v4-canvas)] px-5 py-8 md:px-10 md:py-12">
+    <main className="flex-1 overflow-y-auto bg-[var(--v4-canvas)] px-5 py-8 md:px-10 md:py-12 xl:px-16">
       <div className="mx-auto w-full max-w-2xl pb-12 pt-3">
         <header className="mt-3">
           <div className="flex items-center gap-3 text-[var(--v4-accent-strong)]">
@@ -160,7 +160,7 @@ export default function FeedbackPage() {
             <button
               type="submit"
               disabled={state === 'sending' || message.trim().length === 0}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--v4-accent)] px-5 text-base font-semibold text-[var(--v4-accent-ink)] transition-colors hover:bg-[var(--v4-accent-strong)] disabled:cursor-not-allowed disabled:opacity-45"
+              className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-xl)] bg-[var(--v4-accent)] px-5 text-base font-semibold text-[var(--v4-accent-ink)] transition-colors hover:bg-[var(--v4-accent-strong)] disabled:cursor-not-allowed disabled:opacity-45"
             >
               {state === 'sending'
                 ? <LoaderCircle className="h-5 w-5 animate-spin stroke-[2]" aria-hidden="true" />

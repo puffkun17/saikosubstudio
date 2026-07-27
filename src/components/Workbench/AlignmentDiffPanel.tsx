@@ -181,14 +181,14 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
 
   return (
     <section className="v4-panel overflow-hidden">
-      <div className="flex items-center justify-between gap-3 border-b border-[var(--v4-line)] px-4 py-2 md:px-5">
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--v4-line)] px-4 py-2">
         <p className="text-xs text-[var(--v4-text-faint)]">
           完整列出结构差异、画面文字、声音描述、歌词与署名信息（{items.length}）
         </p>
       </div>
 
       <div className="max-h-[min(32vh,280px)] overflow-y-auto">
-        <div className="sticky top-0 z-10 hidden grid-cols-[4.75rem_minmax(0,1.35fr)_minmax(0,1fr)_auto] gap-3 border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-4 py-1.5 text-xs font-medium text-[var(--v4-text-faint)] md:grid md:px-5">
+        <div className="sticky top-0 z-10 hidden grid-cols-[4.75rem_minmax(0,1.35fr)_minmax(0,1fr)_auto] gap-3 border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-4 py-1.5 text-xs font-medium text-[var(--v4-text-faint)] md:grid">
           <span>时间</span>
           <span>内容</span>
           <span>判定</span>
@@ -204,13 +204,13 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
               className="border-b border-[var(--v4-line)] last:border-b-0"
               style={{ contentVisibility: 'auto', containIntrinsicSize: '0 48px' }}
             >
-              <div className="grid grid-cols-1 gap-1.5 px-4 py-2 md:grid-cols-[4.75rem_minmax(0,1.35fr)_minmax(0,1fr)_auto] md:items-center md:gap-3 md:px-5">
+              <div className="grid grid-cols-1 gap-1.5 px-4 py-2 md:grid-cols-[4.75rem_minmax(0,1.35fr)_minmax(0,1fr)_auto] md:items-center md:gap-3">
                 <div className="min-w-0">
                   <div className="font-mono text-xs tabular-nums text-[var(--v4-text-muted)]">
                     {formatMsClock(item.startMs)}
                   </div>
                   <span
-                    className={`mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium ${badgeTone(item.kind) ?? ''}`}
+                    className={`mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-xs font-medium ${badgeTone(item.kind) ?? ''}`}
                     style={badgeToneStyle(item.kind)}
                   >
                     <BadgeIcon kind={item.kind} />
@@ -248,19 +248,19 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
               </div>
 
               {isSourceOpen && item.provenance && (
-                <div className="border-t border-[var(--v4-line)] bg-[var(--v4-panel-muted)]/40 px-4 py-2 md:px-5">
+                <div className="border-t border-[var(--v4-line)] bg-[var(--v4-panel-muted)]/40 px-4 py-2">
                   <div className="grid gap-2 lg:grid-cols-2">
                     {item.provenance.slice(0, 4).map((source, sourceIndex) => (
                       <div key={`${item.id}-src-${sourceIndex}`} className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel)] px-2.5 py-2 text-xs leading-5">
                         {source.primary && (
                           <div>
-                            <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--v4-accent-strong)]/70">主轨 #{source.primary.cueIndex}</div>
+                            <div className="text-xs font-medium uppercase tracking-[var(--tracking-eyebrow-wide)] text-[var(--v4-accent-strong)]/70">主轨 #{source.primary.cueIndex}</div>
                             <div className="mt-0.5 whitespace-pre-wrap text-[var(--v4-text-muted)]">{source.primary.text}</div>
                           </div>
                         )}
                         {source.secondary && (
                           <div className={source.primary ? 'mt-1.5 border-t border-[var(--v4-line)] pt-1.5' : ''}>
-                            <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--v4-text-faint)]">第二语言 #{source.secondary.cueIndex}</div>
+                            <div className="text-xs font-medium uppercase tracking-[var(--tracking-eyebrow-wide)] text-[var(--v4-text-faint)]">第二语言 #{source.secondary.cueIndex}</div>
                             <div className="mt-0.5 whitespace-pre-wrap text-[var(--v4-text-faint)]">{source.secondary.text}</div>
                           </div>
                         )}

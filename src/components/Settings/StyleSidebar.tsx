@@ -107,7 +107,7 @@ const ColorPicker = ({
                   key={c}
                   type="button"
                   onClick={() => onChange(c)}
-                  className={`h-5 w-5 rounded-full border transition-all cursor-pointer ${value === c ? 'border-[var(--v4-accent-strong)] shadow-[0_0_8px_color-mix(in_srgb,var(--v4-accent)_35%,transparent)] scale-105' : 'border-[var(--v4-line)] hover:border-[var(--v4-line-strong)] hover:scale-105'}`}
+                  className={`h-5 w-5 rounded-full border transition-all cursor-pointer ${value === c ? 'border-[var(--v4-accent-strong)] shadow-[var(--glow-accent)] scale-105' : 'border-[var(--v4-line)] hover:border-[var(--v4-line-strong)] hover:scale-105'}`}
                   style={{ backgroundColor: c }}
                 />
               ))}

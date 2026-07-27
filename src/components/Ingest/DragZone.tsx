@@ -1131,29 +1131,19 @@ export const DragZone: React.FC = () => {
               transition={{ duration: shouldReduceMotion ? 0 : 0.24, ease: [0.16, 1, 0.3, 1] }}
               className="flex w-full max-w-6xl flex-col items-center"
             >
-              <header className="ingest-empty-intro px-3 text-center md:px-4">
-                <p className="ingest-empty-intro__eyebrow">LOCAL SUBTITLE STUDIO</p>
+              <header className="ingest-empty-intro density-copy-x text-center">
                 <h2 className="ingest-empty-intro__title">
-                  完全本地运行的轻字幕处理工具
+                  本地字幕工作室
                 </h2>
                 <p className="ingest-empty-intro__sub">
-                  时间戳对齐合并 · 字幕样式修改 · 模拟播放预览 · 所见即所得
+                  对齐合并 · 样式调整 · 预览导出
                 </p>
               </header>
 
-              {/* 整卡即落点：点击任意处开文件选择，拖入高亮吸附 */}
+              {/* 整卡可点开选文件；键盘可达性交给下方 hero CTA，避免 button-in-button */}
               <div
                 className="ingest-start-card"
-                role="button"
-                tabIndex={0}
-                aria-label="选择或拖入字幕文件"
                 onClick={() => fileInputRef.current?.click()}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    fileInputRef.current?.click();
-                  }
-                }}
               >
                 <div className="ingest-start-card__glyphs" aria-hidden="true">
                   {(['srt', 'ass', 'zip', 'rar', '7z'] as const).map((format, index) => (
@@ -1173,10 +1163,10 @@ export const DragZone: React.FC = () => {
                   ))}
                 </div>
                 <h3 className="ingest-start-card__title">
-                  {isDragging ? '松开即可加入' : '欢迎提交字幕'}
+                  {isDragging ? '松开即可加入' : '拖入字幕开始'}
                 </h3>
                 <p className="ingest-start-card__sub">
-                  拖入文件、文件夹或字幕包，全程本地环境处理
+                  文件留在本地，不上传
                 </p>
                 <div
                   className={`ingest-start-card__cta transition-opacity duration-[var(--v4-dur)] ${
@@ -1360,7 +1350,7 @@ export const DragZone: React.FC = () => {
                             <p className="truncate text-[16px] font-semibold leading-snug tracking-tight text-[var(--v4-text)] md:text-[17px] lg:text-[18px]" title={node.folder}>
                               {node.folder}
                             </p>
-                            <p className="mt-1 text-[13px] font-medium text-[var(--v4-text-muted)] md:text-[14px]">
+                            <p className="mt-1 text-xs font-medium text-[var(--v4-text-muted)] md:text-sm">
                               本地文件夹 · {node.items.length} 个文件
                               {folderFormat ? ` · ${folderFormat}` : ''} · {formatBytes(folderBytes)}
                             </p>
@@ -1445,14 +1435,14 @@ export const DragZone: React.FC = () => {
                             {item.name}
                           </p>
                           {isArchive && item.archivePeekStatus === 'loading' && (
-                            <p className="mt-1 text-[13px] font-medium text-[var(--v4-text-muted)] md:text-[14px]">
+                            <p className="mt-1 text-xs font-medium text-[var(--v4-text-muted)] md:text-sm">
                               {item.note && item.note !== '正在查看包内字幕…'
                                 ? item.note
                                 : '正在读取包内字幕…'}
                             </p>
                           )}
                           {isArchive && item.archivePeekStatus === 'ready' && item.archiveEntries && (
-                            <p className="mt-1 text-[13px] font-medium text-[var(--v4-text-muted)] md:text-[14px]">
+                            <p className="mt-1 text-xs font-medium text-[var(--v4-text-muted)] md:text-sm">
                               {[
                                 '压缩包',
                                 (() => {
@@ -1465,7 +1455,7 @@ export const DragZone: React.FC = () => {
                             </p>
                           )}
                           {!item.accepted && (
-                            <p className="mt-1 text-[13px] font-medium text-[var(--v4-danger)] md:text-[14px]">{item.note}</p>
+                            <p className="mt-1 text-xs font-medium text-[var(--v4-danger)] md:text-sm">{item.note}</p>
                           )}
                         </div>
                         <button

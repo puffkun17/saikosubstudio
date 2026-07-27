@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, type TmdbSuggestion } from '@/store/useStudioStore';
 import { Search, Image as ImageIcon, Star, Sparkles, X, CheckCircle2, CircleAlert, FileText, Languages } from 'lucide-react';
@@ -8,6 +8,7 @@ import { FilmMetaBlock, buildFilmRatings } from '@/components/Ingest/FilmMetaBlo
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseSrt } from '@/utils/subtitleCore';
 import { AssStylePreview } from '@/components/Ingest/AssStylePreview';
+import { useUiModalFocus } from '@/hooks/useUiModalFocus';
 
 const countSubtitleCues = (text?: string) => {
   if (!text) return 0;
@@ -95,23 +96,14 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
   };
 
   const handleClose = () => {
+    if (isApplyingSuggestion) return;
     setPendingSuggestion(null);
     setTmdbSuggestions([]);
     setTmdbManualOpen(false);
   };
 
-  useEffect(() => {
-    if (!tmdbManualOpen) return;
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !isApplyingSuggestion) {
-        setPendingSuggestion(null);
-        setTmdbSuggestions([]);
-        setTmdbManualOpen(false);
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isApplyingSuggestion, setTmdbManualOpen, setTmdbSuggestions, tmdbManualOpen]);
+  const searchModalRef = useRef<HTMLDivElement>(null);
+  useUiModalFocus(tmdbManualOpen, searchModalRef, handleClose);
 
   return (
     <>
@@ -165,7 +157,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                   src={tmdbData.posterUrl}
                   alt={tmdbData.title}
-                  className="aspect-[2/3] h-auto w-32 shrink-0 cursor-pointer rounded-md border border-[var(--v4-line-strong)] object-cover shadow-[0_12px_24px_rgba(0,0,0,0.28)] transition-all duration-300 sm:w-36 xl:w-40"
+                  className="aspect-[2/3] h-auto w-32 shrink-0 cursor-pointer rounded-[var(--radius-md)] border border-[var(--v4-line-strong)] object-cover shadow-[var(--elevation-1)] transition-all duration-300 sm:w-36 xl:w-40"
                 />
               ) : (
                 <div className="flex aspect-[2/3] w-32 flex-shrink-0 items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] sm:w-36 xl:w-40" />
@@ -249,7 +241,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
           </motion.div>
         ) : (
           <div className="flex flex-1 flex-col gap-4 text-left">
-            <div className="rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-4">
+            <div className="rounded-[var(--radius-xl)] border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-4">
               <div className="flex min-w-0 items-center gap-2.5">
                 <FileText className="h-5 w-5 shrink-0 text-[var(--v4-text-faint)]" aria-hidden="true" />
                 <span className="truncate text-sm font-medium text-[var(--v4-text-muted)]" title={summaryFile?.name}>
@@ -274,7 +266,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
             </div>
 
             {foundAssStyle && (
-              <div className="overflow-hidden rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]">
+              <div className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]">
                 <AssStylePreview style={foundAssStyle} compact className="rounded-none border-0" />
                 <div className="flex items-center justify-between border-t border-[var(--v4-line)] px-3.5 py-2.5 text-xs text-[var(--v4-text-faint)]">
                   <span>检测到源样式</span>
@@ -308,6 +300,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
             onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
           >
             <motion.div
+              ref={searchModalRef}
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -317,6 +310,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
               aria-modal="true"
               aria-labelledby="tmdb-search-title"
               aria-describedby={needsTitleInput ? 'tmdb-search-description' : undefined}
+              tabIndex={-1}
             >
               {/* Modal Header */}
               <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--v4-line)] px-4 py-3">
@@ -452,7 +446,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-xs font-medium text-[var(--v4-text-muted)]">匹配结果 ({tmdbSuggestions.length})</span>
-                        <span className="text-[11px] text-[var(--v4-text-faint)]">点选后应用</span>
+                        <span className="text-xs text-[var(--v4-text-faint)]">点选后应用</span>
                       </div>
                       <div className="flex flex-col gap-1.5">
                         {tmdbSuggestions.map(s => {
@@ -488,7 +482,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                                 <span className={`truncate text-sm font-semibold ${isChosen ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text)]'}`}>
                                   {s.title || s.name}
                                 </span>
-                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[var(--v4-text-faint)]">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[var(--v4-text-faint)]">
                                   {year && <span className="font-mono tabular-nums">{year}</span>}
                                   <span>{mediaType}</span>
                                   {(s.vote_average ?? 0) > 0 && (

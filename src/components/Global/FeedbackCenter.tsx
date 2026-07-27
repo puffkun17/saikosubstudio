@@ -10,16 +10,16 @@ import { OverlayPortal } from '@/components/Global/OverlayPortal';
 const CONTEXTUAL_NOTICE_IDS = new Set(['media-match', 'media-identity']);
 
 const errorLogStyle = {
-  shell: 'border-[color:rgba(196,91,85,0.28)] bg-[color:rgba(255,252,247,0.96)] text-[var(--v4-danger)]',
+  shell: 'border-[color-mix(in_srgb,var(--v5-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-danger)]',
   icon: <AlertTriangle className="h-4 w-4 text-[var(--v4-danger)]" />,
 };
 
 const noticeStyles = {
-  message: 'border-[var(--v4-line-strong)] bg-[color:rgba(255,252,247,0.96)] text-[var(--v4-text)]',
-  success: 'border-[color:rgba(239,141,95,0.32)] bg-[color:rgba(255,252,247,0.96)] text-[var(--v4-text)]',
-  notice: 'border-[color:rgba(26,61,55,0.16)] bg-[color:rgba(255,252,247,0.96)] text-[var(--v4-text)]',
-  warning: 'border-[color:rgba(196,137,58,0.34)] bg-[color:rgba(255,252,247,0.96)] text-[var(--v4-text)]',
-  alert: 'border-[color:rgba(196,91,85,0.32)] bg-[color:rgba(255,252,247,0.96)] text-[var(--v4-danger)]',
+  message: 'border-[var(--v4-line-strong)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-text)]',
+  success: 'border-[color-mix(in_srgb,var(--v5-orange)_32%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-text)]',
+  notice: 'border-[color-mix(in_srgb,var(--v5-green)_16%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-text)]',
+  warning: 'border-[color-mix(in_srgb,var(--v5-warning)_34%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-text)]',
+  alert: 'border-[color-mix(in_srgb,var(--v5-danger)_32%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-danger)]',
 } as const;
 
 /**

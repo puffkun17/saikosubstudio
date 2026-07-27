@@ -21,7 +21,7 @@ const Section = ({
 
 export default function AboutPage() {
   return (
-    <main className="flex-1 overflow-y-auto bg-[var(--v4-canvas)] px-5 py-8 md:px-10 md:py-12">
+    <main className="flex-1 overflow-y-auto bg-[var(--v4-canvas)] px-5 py-8 md:px-10 md:py-12 xl:px-16">
       <div className="mx-auto w-full max-w-3xl pb-10 pt-3">
         <div className="mt-3 flex items-start gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--v4-accent)]/25 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]">
@@ -40,7 +40,7 @@ export default function AboutPage() {
           </div>
         </div>
 
-        <div className="v4-panel mt-10 rounded-lg px-6 py-7 md:px-8">
+        <div className="v4-panel density-copy mt-10 rounded-lg">
           <Section title="本地文件处理 / Local files" en="Subtitles and reference media stay in the browser; preferences may be stored on-device only.">
             <p>
               字幕、ZIP、7Z、RAR 字幕包与作为参照的本地媒体文件，均由浏览器在当前设备读取和处理，不会上传或保存到本站服务器。

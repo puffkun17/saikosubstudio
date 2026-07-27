@@ -280,6 +280,8 @@
 
 ## EP-0.1｜TOKEN-001 / 002 / 003 命名与废弃
 
+> **状态：** **Done（2026-07-28 Design Director 复验）** — 验收 3/3 Pass。
+
 ### 决策
 
 - 唯一强调色名：`--v5-accent*`（及 orange 别名若保留）。  
@@ -292,9 +294,35 @@
 2. `DESIGN.md` 与注释写明废弃名单。  
 3. 产品面视觉相对 UP-1 **无故意变化**（纯工程收敛）。
 
+### 实现提交（UI Engineer · 2026-07-28）
+
+| ID | 落点 |
+|----|------|
+| TOKEN-001 | 删除 `@theme` mint/emerald/action*；`.action-required-marker` glow → `color-mix(var(--v5-accent) 22%)` |
+| TOKEN-002 | 删除冷灰蓝暗色 `@theme`（bg/surface/text-primary/glass-border 等） |
+| TOKEN-003 | `DESIGN.md` §2：v5-only + v4 别名约定 + Deprecated 表 |
+
+**状态：Done · Design Director 2026-07-28 复验通过。**
+
+### Design Director 复验（2026-07-28）
+
+分支：`cursor/ep0-token-001-003` · 提交：`d4cdd36d`
+
+| # | 验收 | 结果 | 证据 |
+|---|------|------|------|
+| 1 | 无新增 mint/emerald/暗色引用；伪名已删 | **Pass** | `@theme` 删除 mint/emerald/action* + 冷灰蓝；产品 `src/`/`app/` 无残留引用 |
+| 2 | `DESIGN.md` 写明废弃名单 | **Pass** | §2 Deprecated 表 + v5-only / v4 别名约定 |
+| 3 | 产品面无故意视觉变化 | **Pass** | 唯一运行时改动：`.action-required-marker` glow `rgba(…,0.22)` → 等价 `color-mix(--v5-accent 22%)` |
+
+**范围纪律：** 未混 HOME-BRAND / EP-0.2+（elevation / radius / SHELL-006）。
+
+**下一步：** EP-0.2（TOKEN-004 + ASSET-003/004）可开工；单独 PR。
+
 ---
 
 ## EP-0.2｜TOKEN-004 / ASSET-003 / ASSET-004 Elevation 与表面
+
+> **状态：** **Done（2026-07-28 Design Director 复验）** — 验收 3/3 Pass。
 
 ### 决策
 
@@ -316,9 +344,37 @@
 2. Theater tip 与 Modal 同属墨绿 tint 族。  
 3. 三表面切换时文字角色可映射到变量。
 
+### 实现提交（UI Engineer · 2026-07-28）
+
+| ID | 落点 |
+|----|------|
+| TOKEN-004 | `:root` `--elevation-0…3` / `*-dim` / `--glow-accent` / `--glow-cta`；接到 `.v4-panel` / `.ui-menu|toast|modal` / `.ui-action--hero` |
+| ASSET-003 | `--surface-text*|line*`；`[data-surface=cream|forest|theater]` + `.lights-off-stage` |
+| ASSET-004 | Theater tip / chrome / 抽屉 / screen-sim-frame：纯黑 → `elevation-*-dim` |
+
+**状态：Done · Design Director 2026-07-28 复验通过。**
+
+### Design Director 复验（2026-07-28）
+
+分支：`cursor/ep0-elevation-surface` · 提交：`c000d213`
+
+| # | 验收 | 结果 | 证据 |
+|---|------|------|------|
+| 1 | 浮层阴影来自 token；无 20+ 散装新增 | **Pass** | `--elevation-0…3` / `*-dim` / `--glow-*`；接到 panel / menu / toast / modal / hero / InfoHint |
+| 2 | Theater tip 与 Modal 同属墨绿 tint 族 | **Pass** | tip → `elevation-1-dim`；chrome/抽屉/frame → `*-dim`；modal → `elevation-3`；皆 `color-mix(--v5-green …)` |
+| 3 | 三表面字色/边线可映射变量 | **Pass** | `--surface-text*|line*`；`[data-surface=cream|forest|theater]` + `.lights-off-stage`；`--v4-text|line*` 别名 |
+
+**范围纪律：** 未混 EP-0.3+（radius）/ SHELL-006 / HOME-BRAND。
+
+**不挡关闭：** 海报/BrandMark/TaskList 等仍有零星内联阴影；字幕描边纯黑；`.glass-btn-ar` inset 黑——非 ASSET-004 声明面，可日常扫。Modal 收成单层 `elevation-3`（去掉白 hairline）属收敛，可接受。
+
+**下一步：** EP-0.3（TOKEN-005/006/007 半径）可开工；单独 PR。
+
 ---
 
 ## EP-0.3｜TOKEN-005 / 006 / 007 半径阶
+
+> **状态：** **Done（2026-07-28 Design Director 复验）** — 验收 3/3 Pass。
 
 ### 决策
 
@@ -340,9 +396,39 @@
 2. BrandMark 半径为阶内值。  
 3. pill 未出现在内容区信息徽章上。
 
+### 实现提交（UI Engineer · 2026-07-28）
+
+| ID | 落点 |
+|----|------|
+| TOKEN-005 | `:root` `--radius-xs…pill`；`--v5-radius-panel|control` 别名到 xl/lg |
+| TOKEN-006 | `.v4-panel` / `.ui-action` / `.ui-modal|menu` → md；`.ui-choice-group` / `.ui-toast` → lg；`.ui-action--hero` / theater 抽屉 → xl；`.ui-choice` / `.ui-tag` → sm |
+| TOKEN-007 | BrandMark 外框 `rounded-[var(--radius-md)]`；清 `0.45/0.55/0.625rem` 与裸 `2/6/8/999px` |
+
+**状态：Done · Design Director 2026-07-28 复验通过。**
+
+### Design Director 复验（2026-07-28）
+
+分支：`cursor/ep0-radius-tokens` · 提交：`8a439987`
+
+| # | 验收 | 结果 | 证据 |
+|---|------|------|------|
+| 1 | 无新增 `rounded-[Npx]` / 奇怪 rem 中间值 | **Pass** | 六档 `--radius-xs…pill`；清 `0.45/0.55/0.625rem` 与裸 `2/6/8/999px` |
+| 2 | BrandMark 半径为阶内值；未改 SVG 图形 | **Pass** | 外框 `rounded-[var(--radius-md)]`；本提交无 BrandMark SVG 变更 |
+| 3 | pill 未出现在内容区信息徽章 | **Pass** | pill → 托盘胶囊/进度点/滑轨/滚动条；`.ui-tag`/`.ui-choice` → sm |
+
+**角色绑定抽检：** panel/action/modal/menu → md；choice-group/toast → lg；hero + theater 抽屉壳 → xl。
+
+**范围纪律：** 未混 EP-0.4+ / SHELL-006 / HOME-BRAND。
+
+**不挡关闭：** 产品面仍有 Tailwind `rounded-md/lg/full`（几何圆点/色板/spinner）；shadcn `ui/button` 内 `min(radius-md,10px)` 属 SHELL-006。
+
+**下一步：** EP-0.5 **Done**；EP-0.6（SHELL-006）可开工。
+
 ---
 
 ## EP-0.4｜TOKEN-008 / 009 / 010 托盘 ink、字阶、字重
+
+> **状态：** **Done（2026-07-28 Design Director 复验）** — 验收 3/3 Pass。
 
 ### 决策
 
@@ -356,9 +442,37 @@
 2. 抽检无双重视觉层级的 `text-[11px]` vs `text-xs` 混用。  
 3. 字重规则有文档。
 
+### 实现提交（UI Engineer · 2026-07-28）
+
+| ID | 落点 |
+|----|------|
+| TOKEN-008 | `--tray-ink*` / `--tray-line*` / `--tray-fill*`；`.system-tray*` + `SystemTray.tsx` 去手写奶油 rgba |
+| TOKEN-009 | `--type-caption…display` + `--tracking-eyebrow(|-wide)`；产品面 `text-[11/10/12/13px]` → `text-xs` / type token |
+| TOKEN-010 | `DESIGN.md` §3：Body **450** 为设计选择；Meta 500 / Control 600 / Display 700 |
+
+**状态：Done · Design Director 2026-07-28 复验通过。**
+
+### Design Director 复验（2026-07-28）
+
+分支：`cursor/ep0-tray-type` · 提交：`f92c437b`
+
+| # | 验收 | 结果 | 证据 |
+|---|------|------|------|
+| 1 | 托盘半透明引用 token | **Pass** | `--tray-ink*|line*|fill*`；`.system-tray*` + `SystemTray` 去手写 `rgba(245,241,234,*)` |
+| 2 | 无 `text-[11px]` vs `text-xs` 双轨混用 | **Pass** | `--type-caption…display`；产品面 `text-[10/11/12/13px]` 已收敛；抽检 `src/` 无残留 |
+| 3 | 字重规则有文档 | **Pass** | `DESIGN.md` §3：Body **450** / Meta 500 / Control 600 / Display 700 |
+
+**范围纪律：** 未混 EP-0.5+（spacing / 裸色大扫）/ SHELL-006 / HOME-BRAND。
+
+**不挡关闭：** 托盘个别态仍用 `color-mix(--v5-cream N%)`（文档允许）；Theater chrome 奶油 rgba 属表面/TOKEN-012 债。
+
+**下一步：** EP-0.5 **Done**。
+
 ---
 
 ## EP-0.5｜TOKEN-011 / 012 间距与裸色
+
+> **状态：** **Done（2026-07-28 Design Director 复验）** — 验收 3/3 Pass。
 
 ### 决策
 
@@ -372,9 +486,36 @@
 2. CI/评审可拒「新增裸色」。  
 3. 不借清扫名义改品牌色。
 
+### 实现提交（UI Engineer · 2026-07-28）
+
+| ID | 落点 |
+|----|------|
+| TOKEN-011 | `--space-1…7` + `--space-panel/copy`；`.density-*`；Workbench 面板 `px-4`；About / 空态 intro 走 copy 密度 |
+| TOKEN-012 | `:root` 派生色、surface remap、Theater chrome、Feedback/Tray/磁力线等触及处 → `color-mix(var(--v5-*))`；`DESIGN.md` 裸色纪律 |
+
+**状态：Done · Design Director 2026-07-28 复验通过。**
+
+### Design Director 复验（2026-07-28）
+
+分支：`cursor/ep0-spacing-nude` · 提交：`d0cc6e30`
+
+| # | 验收 | 结果 | 证据 |
+|---|------|------|------|
+| 1 | 同级 Workbench 面板 padding 一致 | **Pass** | `--space-1…7` / `--space-panel|copy`；SequenceList / AlignmentDiff / SourceMatch / WorkbenchStep 横垫统一 `px-4`（16） |
+| 2 | 评审可拒「新增裸色」 | **Pass** | `DESIGN.md` 裸色纪律；派生走 `color-mix(var(--v5-*))` |
+| 3 | 不借清扫改品牌色 | **Pass** | triad hex 仍密封于 `:root`（`#1a3d37` / `#f5f1ea` / `#ef8d5f`）；触及处仅改为 token 引用 |
+
+**范围纪律：** 未混 SHELL-006 / HOME-BRAND。
+
+**不挡关闭：** 存量裸色未一次扫尽（lang/fmt 密封源、未触及组件）；About / 空态已走 `density-copy*`。
+
+**下一步：** EP-0.6 已 Submitted · 待复验；通过后 EP-0 Wave 3 可收口。
+
 ---
 
 ## EP-0.6｜SHELL-006 死代码
+
+> **状态：** **Submitted · 待复验（2026-07-28）** — shadcn `button` / `badge` / `card` 已删；文档锁定 `.ui-action`。未复验勿标 Done。
 
 ### 决策
 
@@ -385,6 +526,14 @@
 
 1. 产品 import 图中无上述入口。  
 2. 文档注明「产品按钮 = `.ui-action`」。
+
+### 实现提交（UI Engineer · 2026-07-28）
+
+| ID | 落点 |
+|----|------|
+| SHELL-006 | 删除 `src/components/ui/{button,badge,card}.tsx`；`DESIGN.md` §7 明示产品按钮 = `.ui-action`、禁止回流 |
+
+**状态：Submitted · 待 Design Director 复验。未混 HOME-BRAND / 发布债。**
 
 ---
 
@@ -409,11 +558,17 @@ CLEAN-A（可选清扫）:
        【Done · 2026-07-27 Design Director 复验关闭】
 
 EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
+       【Done · 2026-07-28 Design Director 复验关闭】
        → TOKEN-004 + ASSET-003 + ASSET-004
-       → TOKEN-005 → TOKEN-006 → TOKEN-007 → TOKEN-008
-       → TOKEN-009 → TOKEN-010 → TOKEN-011 → TOKEN-012
+       【Done · 2026-07-28 Design Director 复验关闭】
+       → TOKEN-005 → TOKEN-006 → TOKEN-007
+       【Done · 2026-07-28 Design Director 复验关闭】
+       → TOKEN-008 → TOKEN-009 → TOKEN-010
+       【Done · 2026-07-28 Design Director 复验关闭】
+       → TOKEN-011 → TOKEN-012
+       【Done · 2026-07-28 Design Director 复验关闭】
        → SHELL-006
-       【Authorized · 可开工 · 2026-07-27】
+       【Submitted · 待复验 · 2026-07-28】
 ```
 ---
 
@@ -441,7 +596,16 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 | **UP-1** | 实现验收（十一条） | **Done** | **2026-07-27** | Design Director 复验关闭 Wave 2 |
 | **CLEAN-A** | 可选清扫（UP-0/UP-1 残留） | **Done** | **2026-07-27** | Design Director 复验通过 A1–A5；解锁 EP-0 |
 | **THEATER-LAYER** | 放映厅叠层 / 几何避让 | **Done** | **2026-07-27** | Design Director 复验通过 D1–D4 / 验收 6 条；EP-0 恢复可开工 |
-| **EP-0** | TOKEN / ASSET-003/004 / SHELL-006 | **Authorized** | **2026-07-27** | LAYER Done 后恢复；禁止与图层混 PR |
+| **EP-0.1** | TOKEN-001 → 002 → 003 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`d4cdd36d` |
+| **EP-0.2** | TOKEN-004 + ASSET-003/004 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`c000d213` |
+| **EP-0.3** | TOKEN-005 → 006 → 007 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`8a439987` |
+| **EP-0.4** | TOKEN-008 → 009 → 010 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`f92c437b` |
+| **EP-0.5** | TOKEN-011 → 012 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`d0cc6e30` |
+| **EP-0.6** | SHELL-006 | **Done** | **2026-07-28** | `51be309a`；Wave 3 收口 |
+| **HOME-BRAND** | 品牌名 / 底栏三钮 / 空态排版 | **Done** | **2026-07-28** | 经 INTEGRATE 合入 tip |
+| **INTEGRATE** | HOME-BRAND → EP-0 tip | **Done** | **2026-07-28** | Director 抽检 Pass · `dbaccf81` |
+| **REL-P1** | REL-1/2/3 a11y | **Done** | **2026-07-28** | Director 复验 3/3 Pass · `73c673c6` |
+| **REL-P2** | REL-4/5 超宽 + EP-0 残留 | **Done** | **2026-07-28** | Director 复验 2/2 Pass · `e3c611c4` |
 
 ---
 
@@ -591,21 +755,22 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 
 ---
 
-## EP-0｜工程真相源 · **Authorized（可开工 · 2026-07-27）**
+## EP-0｜工程真相源 · **In Progress（0.6 Submitted · 2026-07-28）**
 
 方案以本文 **EP-0** 各节为准。实施序：
 
 ```
-TOKEN-001 → 002 → 003
-→ TOKEN-004 + ASSET-003 + ASSET-004
-→ TOKEN-005 → 006 → 007 → 008
-→ TOKEN-009 → 010 → 011 → 012
-→ SHELL-006
+TOKEN-001 → 002 → 003          【Done · 2026-07-28】
+→ TOKEN-004 + ASSET-003 + ASSET-004   【Done · 2026-07-28】
+→ TOKEN-005 → 006 → 007               【Done · 2026-07-28】
+→ TOKEN-008 → 009 → 010               【Done · 2026-07-28】
+→ TOKEN-011 → 012                     【Done · 2026-07-28】
+→ SHELL-006                            【Submitted · 待复验】
 ```
 
 **约束：** 纯工程收敛；产品面无故意视觉改版；完成后交 Director 复验标 Done。
 
-> **插队规则：** 若 **THEATER-LAYER** 已 Authorized，EP-0 **暂停新开 PR**，先合图层修复（可与未完成的 EP-0 PR 错峰，禁止同 PR 混做）。
+> **插队规则：** THEATER-LAYER 已 Done。EP-0 切片单独 PR；禁止与 HOME-BRAND / 发布债混做。
 
 ---
 
@@ -705,7 +870,7 @@ TOKEN-001 → 002 → 003
 
 ---
 
-# 剩余工作（2026-07-27 · CLEAN-A 关闭后）
+# 剩余工作（2026-07-28 · EP-0 Wave 3 收口后）
 
 ## 已关闭
 
@@ -715,15 +880,150 @@ TOKEN-001 → 002 → 003
 | **UP-1 / Wave 2** | **Done** |
 | **CLEAN-A** | **Done** |
 | **THEATER-LAYER** | **Done（2026-07-27）** |
+| **EP-0 / Wave 3** | **Done（2026-07-28）** · 0.1–0.6 全集 |
+| **HOME-BRAND** | **Done** · 经 INTEGRATE 合入 tip |
+| **INTEGRATE** | **Done（2026-07-28）** |
+| **REL-P1** | **Done（2026-07-28）** · `73c673c6` |
+| **REL-P2** | **Done（2026-07-28）** · `e3c611c4` |
 
-## 进行中 / 排队
+## 当前布置（Design Director · 2026-07-28）
 
-| 轨 | 状态 |
+> **INTEGRATE / REL-P1 / REL-P2 Done。** 设计布置轨已全部关闭。
+
+### 序 0｜INTEGRATE — 分支合入 · **Done（2026-07-28）**
+
+| 步 | 动作 | 负责 | 验收 |
+|----|------|------|------|
+| 0.1 | 以 `cursor/ep0-shell-006` 为基 | UI Engineer | **Pass** · merge `dbaccf81` |
+| 0.2 | merge `home-brand-72d9`；文案 HOME-BRAND；token EP-0 | UI Engineer | **Pass** · 顶栏 `SaikoSubStudio`；无 `LOCAL SUBTITLE`；底栏存档/隐私/反馈 |
+| 0.3 | Design Director 合入后抽检 | Design Director | **Pass** · 冲突面干净 |
+
+---
+
+### 序 1｜REL-P1 — 产品发布债（可访问性 / 结构）· **Done（2026-07-28）**
+
+> 分支：`cursor/rel-p1-a11y` · 提交：`73c673c6` · 基于 INTEGRATE tip。
+
+| ID | 项 | 验收 | Director |
+|----|-----|------|----------|
+| **REL-1** | 嵌套 `<button>` | 空态卡去 `role=button`；键盘走 hero CTA | **Pass** |
+| **REL-2** | Modal 焦点陷阱 | `useUiModalFocus`：开锁内 / Tab 循环 / Esc / 关回触发源；重置 / 回导入 / 存档 / TMDB 四路 `.ui-modal` | **Pass** |
+| **REL-3** | 窄屏步骤可达 | 顶栏工作流步骤条窄屏常显可点；去掉仅展示的 `STEP_LABEL` | **Pass** |
+
+**状态：Done · Design Director 2026-07-28 复验通过。**
+
+---
+
+### 序 2｜REL-P2 — 气质 / 布局债 · **Done（2026-07-28）**
+
+> 分支：`cursor/rel-p2-layout` · 提交：`e3c611c4` · 基于 REL-P1 tip。
+
+| ID | 项 | 验收 | Director |
+|----|-----|------|----------|
+| **REL-4** | 超宽空洞 | 工作台主列 `1480→1280`；导入壳 / About / Feedback 加 `xl+` 水平 gutter；空态仍 `max-w-6xl`；无卡片墙/新色 | **Pass** |
+| **REL-5** | EP-0 残留扫 | BrandMark/海报/TaskList → elevation/glow；warning/nude → `var(--v5-*)` / color-mix；触及圆角 → `--radius-*` | **Pass** |
+
+**范围纪律：** 未混其它轨、未重开 EP-0、未改 BrandMark SVG。
+
+**不挡关闭：** BrandMark `elevation-1-dim` 可能略重于原细黑影——属同族收敛；存量未触及 nude 仍可日常扫。
+
+### 实现提交（UI Engineer · 2026-07-28）
+
+| ID | 落点 |
 |----|------|
-| **EP-0** Wave 3 | **Authorized** · 可开工（LAYER 已关闭） |
+| REL-4 | 导入壳 `xl/2xl` 水平 gutter；工作台主列 `1480→1280`；About/Feedback `xl:px-16`；空态保持 `max-w-6xl` |
+| REL-5 | BrandMark/海报/TaskList 阴影 → elevation/glow；warning 边线与分布图 stroke → `var(--v5-*)`；触及 `rounded-xl` → `--radius-xl` |
 
-## 产品发布债（Wave 外 · 未授权）
+**状态：Done · Design Director 2026-07-28 复验通过。设计布置轨收口。**
 
-P1：嵌套 button · Modal 焦点陷阱 · 窄屏步骤可达性。  
-P2：品牌命名三轨 · 超宽桌面空洞。  
-**勿混入 EP-0。**
+---
+
+## 工程师执行卡（归档）
+
+```
+【已关闭】INTEGRATE · REL-P1 · REL-P2（2026-07-28）
+【排队】无授权中设计轨
+```
+
+## 产品发布债（状态）
+
+P1 → **REL-P1 Done（2026-07-28）**。  
+P2 → **REL-P2 Done（2026-07-28）** · `e3c611c4`。  
+**勿重开已关闭的 EP-0。**
+
+
+---
+
+# HOME-BRAND｜空态品牌与首页排版（**Approved / Authorized · 2026-07-28**）
+
+> **来源：** 空态拥挤、品牌名三轨、底栏三钮常隐字。  
+> **契约：** `DESIGN.md` Creed + Ridgeline；Desktop-first。  
+> **状态：** **Done（2026-07-28）** — 设计轨复验通过；经 INTEGRATE 合入 tip；冲突面抽检 Pass。
+
+## 1. 品牌名统一为 SaikoSubStudio
+
+| 位置 | 决策 |
+|------|------|
+| 顶栏 | Logo **右侧**字标改为 **`SaikoSubStudio`**（替换 `SubStudio`）；与标同一可点区，间距 10–12px；`≥420px` 显示字标 |
+| 空态 | **删除** `LOCAL SUBTITLE STUDIO` eyebrow（避免第三套英文品牌） |
+| 其它 | `layout` title / About 已用 SaikoSubStudio 则保持；屏上主品牌禁止再写 `SubStudio` |
+| Logo 图形 | **本档不改** BrandMark SVG（图形改版另案） |
+
+## 2. 底栏三钮：常显文案 + 换标
+
+| 钮 | aria / title（全称） | 可见标签 | Lucide（新） |
+|----|----------------------|----------|--------------|
+| 存档 | 历史存档 | **存档** | `Archive`（替 `FolderClock`） |
+| 隐私 | 隐私与版权 | **隐私** | `Scale`（替 `ShieldCheck`） |
+| 反馈 | 反馈 | **反馈** | `PenLine`（替 `MessageSquareText`） |
+
+- 默认桌面宽度下三钮文字**必须可见**（降低或取消 `@[22rem]` 隐藏；极窄才 icon-only）。  
+- `whitespace-nowrap`；icon `h-5` / stroke `2.25`；`gap-2`。  
+- 仍用 Lucide，禁止第二图标库。
+
+## 3. 空态中区：三层结构，去拥挤
+
+```
+[1 主张]  标题一行 + 副句一行
+[2 开始]  五格式标 → 行动句 → 一句说明 → 双 CTA → 格式脚注
+[3 亮点]  四列等宽 rail
+```
+
+### 锁定文案
+
+| 块 | 文案 |
+|----|------|
+| 主张标题 | **本地字幕工作室**（宋体；≥720px `nowrap`） |
+| 主张副句 | **对齐合并 · 样式调整 · 预览导出**（单行 muted） |
+| 开始标题 | **拖入字幕开始** / 拖中 **松开即可加入** |
+| 开始说明 | **文件留在本地，不上传** |
+| 格式脚注 | 保持现有 SRT/ASS/ZIP… 句 |
+| 亮点 | 本地处理 / 多轨整理 / 样式定制 / 效果预览（说明各一行、节奏齐） |
+
+### 排版纪律
+
+- 删英文 eyebrow；主张与开始卡**同轴居中**、相近 `max-width`。  
+- 层间距固定一档；亮点上沿一条细分隔即可。  
+- 双 CTA 等宽；禁止一大一小 padding。  
+- 拖拽只改文案/虚线，**不改**主张与亮点几何。
+
+## 4. 验收
+
+1. 顶栏 Logo 右为 **SaikoSubStudio**；无屏上主品牌 `SubStudio` / `LOCAL SUBTITLE STUDIO`。  
+2. 底栏三钮默认可见「存档 / 隐私 / 反馈」+ 新图标。  
+3. 空态仅三层；≥720px 主张标题与副句不换行。  
+4. 无新色、无玻璃堆、无抖动横跳。  
+5. 设计轨单独 PR 已合入；主线以 INTEGRATE 抽检为准。
+
+### 实现提交（UI Engineer · 2026-07-28）
+
+| 项 | 落点 |
+|----|------|
+| 顶栏字标 | `SystemTray` → `SaikoSubStudio`（≥420px） |
+| 去 eyebrow | `DragZone` 删除 `LOCAL SUBTITLE STUDIO` |
+| 底栏三钮 | 可见「存档/隐私/反馈」；`Archive` / `Scale` / `PenLine`；标签阈值 `@[8rem]` |
+| 空态文案 | 主张「本地字幕工作室」+「对齐合并 · 样式调整 · 预览导出」；开始「拖入字幕开始」+「文件留在本地，不上传」 |
+
+**状态：Submitted · 待 Design Director 复验。未改 BrandMark SVG；未混 EP-0。**
+
+---

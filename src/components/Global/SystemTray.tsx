@@ -1,21 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useSyncExternalStore } from 'react';
+import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ArrowLeft, FolderClock, MessageSquareText, RotateCcw, ShieldCheck } from 'lucide-react';
+import { Archive, ArrowLeft, PenLine, RotateCcw, Scale } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import { BottomStatusDeck } from '@/components/Global/BottomStatusDeck';
 import { BrandMark } from '@/components/Global/BrandMark';
-
-const STEP_LABEL: Record<number, string> = {
-  1: '导入',
-  2: '工作台',
-  3: '预览',
-};
+import { useUiModalFocus } from '@/hooks/useUiModalFocus';
 
 const WORKFLOW_STEPS = [
   { id: 1, label: '导入' },
@@ -32,10 +27,10 @@ const trayCtrl =
 
 /**
  * Labels appear from available deck width (parent @container), not control width —
- * avoids the hide↔narrow feedback loop. Thresholds stay generous.
+ * avoids the hide↔narrow feedback loop. HOME-BRAND：短标签「存档/隐私/反馈」，
+ * 阈值远低于旧 @[22rem]，默认桌面可见；极窄才 icon-only。
  */
-const trayLabelLong = 'hidden whitespace-nowrap @[22rem]/tray:inline';
-const trayLabelShort = 'hidden whitespace-nowrap @[14rem]/tray:inline';
+const trayLabel = 'hidden whitespace-nowrap @[8rem]/tray:inline';
 
 const getDefaultScale = () => {
   if (typeof window === 'undefined') return 1.0;
@@ -84,6 +79,8 @@ export const SystemTray = () => {
   );
   const [scale, setScale] = useState(getDefaultScale);
   const [pendingReset, setPendingReset] = useState(false);
+  const resetModalRef = useRef<HTMLDivElement>(null);
+  useUiModalFocus(pendingReset, resetModalRef, () => setPendingReset(false));
   const pathname = usePathname();
   const {
     workflowStep,
@@ -161,15 +158,6 @@ export const SystemTray = () => {
     return () => clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    if (!pendingReset) return;
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setPendingReset(false);
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [pendingReset]);
-
   return (
     <>
       {/* ── Top: brand + workflow + scale + local clock ───────────────── */}
@@ -184,14 +172,14 @@ export const SystemTray = () => {
             className="v4-focus-ring flex h-11 shrink-0 cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg text-[22px] font-semibold leading-none tracking-tight text-[var(--v5-cream)] transition-colors duration-150 hover:text-white md:text-[24px]"
             aria-label="返回导入页"
           >
-            <BrandMark className="h-10 w-10 shrink-0 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.28)]" />
-            <span className="hidden whitespace-nowrap min-[420px]:inline">SubStudio</span>
+            <BrandMark className="h-10 w-10 shrink-0 rounded-[var(--radius-md)] shadow-[var(--elevation-1-dim)]" />
+            <span className="hidden whitespace-nowrap min-[420px]:inline">SaikoSubStudio</span>
           </button>
 
           {!isInfoPage && (
-            <div className="hidden min-w-0 flex-1 items-center border-l border-[color:rgba(245,241,234,0.12)] pl-3 min-[720px]:flex">
+            <div className="flex min-w-0 flex-1 items-center border-l border-[color:color-mix(in_srgb,var(--v5-cream)_12%,transparent)] pl-2 sm:pl-3">
               <div
-                className="relative h-9 w-full max-w-[22rem] overflow-hidden rounded-lg border border-[color:rgba(245,241,234,0.14)] bg-[color:rgba(245,241,234,0.08)]"
+                className="relative h-9 w-full max-w-[14rem] overflow-hidden rounded-[var(--radius-md)] border border-[var(--tray-line)] bg-[var(--tray-fill-soft)] sm:max-w-[18rem] md:max-w-[22rem]"
                 role="group"
                 aria-label="工作流程进度"
               >
@@ -215,13 +203,13 @@ export const SystemTray = () => {
                         key={step.id}
                         type="button"
                         onClick={() => handleStepClick(step.id)}
-                        className={`v4-focus-ring relative flex cursor-pointer items-center justify-center px-1 text-[14px] font-bold tracking-wide transition-colors
-                          ${index > 0 ? 'border-l border-[color:rgba(26,61,55,0.12)]' : ''}
+                        className={`v4-focus-ring relative flex cursor-pointer items-center justify-center px-1 text-[length:var(--type-control)] font-bold tracking-wide transition-colors
+                          ${index > 0 ? 'border-l border-[color:color-mix(in_srgb,var(--v5-green)_12%,transparent)]' : ''}
                           ${isFilled
                             ? 'text-[var(--v5-green)]'
                             : disabled
-                              ? 'cursor-help text-[color:rgba(245,241,234,0.65)]'
-                              : 'text-[color:rgba(245,241,234,0.78)] hover:text-[var(--v5-cream)]'}
+                              ? 'cursor-help text-[color:color-mix(in_srgb,var(--v5-cream)_65%,transparent)]'
+                              : 'text-[color:color-mix(in_srgb,var(--v5-cream)_78%,transparent)] hover:text-[var(--tray-ink)]'}
                           ${isActive ? 'underline decoration-2 underline-offset-4' : ''}`}
                         aria-current={isActive ? 'step' : undefined}
                         aria-disabled={disabled}
@@ -246,12 +234,6 @@ export const SystemTray = () => {
               <span className="hidden whitespace-nowrap min-[480px]:inline">返回首页</span>
             </Link>
           )}
-
-          {!isInfoPage && (
-            <span className="truncate text-[15px] font-medium text-[color:rgba(245,241,234,0.72)] min-[720px]:hidden">
-              {STEP_LABEL[workflowStep]}
-            </span>
-          )}
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
@@ -262,27 +244,27 @@ export const SystemTray = () => {
             title="调节网页整体缩放"
             aria-label={`网页缩放 ${Math.round(scale * 100)}%`}
           >
-            <span className="system-tray__accent text-[14px] font-bold tracking-wide">A±</span>
-            <span className="text-[15px] font-bold text-[var(--v5-cream)]" suppressHydrationWarning>
+            <span className="system-tray__accent text-[length:var(--type-control)] font-bold tracking-wide">A±</span>
+            <span className="text-[length:var(--type-control)] font-bold text-[var(--tray-ink)]" suppressHydrationWarning>
               {Math.round(scale * 100)}%
             </span>
           </button>
 
           <div
-            className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[color:rgba(245,241,234,0.14)] bg-[color:rgba(245,241,234,0.1)] px-3"
+            className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-[var(--radius-pill)] border border-[var(--tray-line)] bg-[var(--tray-fill)] px-3"
             aria-label={`本地时间 ${zoneShort} ${time}`}
           >
-            <span className="rounded-full bg-[var(--v4-accent-soft)] px-1.5 py-0.5 font-mono text-[12px] font-bold tracking-[0.1em] text-[var(--v5-orange)]">
+            <span className="rounded-[var(--radius-pill)] bg-[var(--v4-accent-soft)] px-1.5 py-0.5 font-mono text-xs font-bold tracking-[var(--tracking-eyebrow-wide)] text-[var(--v5-orange)]">
               LOCAL
             </span>
-            <span className="text-[16px] font-semibold tabular-nums text-[var(--v5-cream)]" suppressHydrationWarning>
+            <span className="text-[length:var(--type-body)] font-semibold tabular-nums text-[var(--tray-ink)]" suppressHydrationWarning>
               {time || '--:--:--'}
             </span>
-            <span className="hidden font-mono text-[13px] text-[color:rgba(245,241,234,0.72)] min-[900px]:inline" suppressHydrationWarning>
+            <span className="hidden font-mono text-xs text-[var(--tray-ink-muted)] min-[900px]:inline" suppressHydrationWarning>
               {zoneShort}
             </span>
             {zoneCity ? (
-              <span className="hidden text-[13px] text-[color:rgba(245,241,234,0.62)] min-[1100px]:inline" suppressHydrationWarning>
+              <span className="hidden text-xs text-[var(--tray-ink-faint)] min-[1100px]:inline" suppressHydrationWarning>
                 {zoneCity}
               </span>
             ) : null}
@@ -308,25 +290,25 @@ export const SystemTray = () => {
                 type="button"
                 onClick={() => setLibraryOpen(true)}
                 className={`${trayCtrl} cursor-pointer`}
-                title="历史存档字幕"
+                title="历史存档"
                 aria-label="历史存档"
               >
-                <FolderClock className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
-                <span className={trayLabelLong}>历史存档</span>
+                <Archive className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
+                <span className={trayLabel}>存档</span>
                 {libraryCount > 0 && (
-                  <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-[color:rgba(239,141,95,0.22)] px-1.5 py-0.5 text-xs font-semibold text-[var(--v5-orange)]">
+                  <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-[color-mix(in_srgb,var(--v5-orange)_22%,transparent)] px-1.5 py-0.5 text-xs font-semibold text-[var(--v5-orange)]">
                     {libraryCount}
                   </span>
                 )}
               </button>
             )}
             <Link href="/about" className={trayCtrl} title="隐私与版权" aria-label="隐私与版权">
-              <ShieldCheck className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
-              <span className={trayLabelLong}>隐私与版权</span>
+              <Scale className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
+              <span className={trayLabel}>隐私</span>
             </Link>
-            <Link href="/feedback" className={trayCtrl} title="提交反馈" aria-label="反馈">
-              <MessageSquareText className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
-              <span className={trayLabelShort}>反馈</span>
+            <Link href="/feedback" className={trayCtrl} title="反馈" aria-label="反馈">
+              <PenLine className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
+              <span className={trayLabel}>反馈</span>
             </Link>
           </div>
         </div>
@@ -341,11 +323,13 @@ export const SystemTray = () => {
             }}
           >
             <div
+              ref={resetModalRef}
               role="alertdialog"
               aria-modal="true"
               aria-labelledby="restart-title"
               aria-describedby="restart-description"
               className="ui-modal"
+              tabIndex={-1}
             >
               <div className="flex items-start gap-3">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]">

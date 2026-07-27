@@ -87,30 +87,30 @@
 | **CLEAN-A4** | 片源/TMDB 去冗余 `rounded-lg` | **Done** |
 | **CLEAN-A5** | StyleSidebar 零星 toggle 能收则收 | **Done** |
 
-> **Design Director：** CLEAN-A **Closed**。**THEATER-LAYER Done**；EP-0 **Authorized**（可开工）。未授权发布债。
+> **Design Director：** CLEAN-A / THEATER-LAYER / EP-0 / HOME-BRAND / INTEGRATE / REL-P1 / **REL-P2 Done**。设计布置轨收口。
 
-### Wave 3 — 工程真相源（EP-0）· **Authorized（可开工 · 2026-07-27）**
+### Wave 3 — 工程真相源（EP-0）· **Done · 收口（2026-07-28）**
 
 | ID | Business | Visual | Risk | 一句话 | Status |
 |----|----------|--------|------|--------|--------|
-| **TOKEN-001** | Low | ⭐ | Med | 冻 mint/emerald/action 伪名 | Authorized |
-| **TOKEN-002** | Low | ⭐ | Med | 冻 @theme 冷灰蓝暗色 | Authorized |
-| **TOKEN-003** | Low | ⭐ | Low | 新代码只写 `--v5-*` | Authorized |
-| **TOKEN-004** | Low | ⭐⭐ | High | elevation / glow 体系统一 | Authorized |
-| **TOKEN-005** | Low | ⭐ | High | 六档 radius token + 扫中间值 | Authorized |
-| **TOKEN-006** | Low | ⭐ | Low | 面板角色绑 radius-md vs xl | Authorized |
-| **TOKEN-007** | Low | ⭐ | Low | BrandMark 归入半径阶 | Authorized |
-| **TOKEN-008** | Low | ⭐ | Low | `--tray-ink-soft` | Authorized |
-| **TOKEN-009** | Low | ⭐⭐ | Med | 字号 / tracking 收敛到字阶 | Authorized |
-| **TOKEN-010** | Low | ⭐ | Low | 文档化 font-weight 450 | Authorized |
-| **TOKEN-011** | Low | ⭐ | High | spacing 主阶 + 面板密度 | Authorized |
-| **TOKEN-012** | Low | ⭐ | High | 裸 hex/rgba 逐步清扫 | Authorized |
-| **ASSET-003** | Low | ⭐⭐ | Med | 三表面契约锁进 CSS | Authorized |
-| **ASSET-004** | Low | ⭐⭐ | Med | Theater 阴影并入 elevation（勿纯黑另起） | Authorized |
-| **SHELL-006** | Low | ⭐ | Low | 删除/隔离闲置 shadcn | Authorized |
+| **TOKEN-001** | Low | ⭐ | Med | 冻 mint/emerald/action 伪名 | **Done** |
+| **TOKEN-002** | Low | ⭐ | Med | 冻 @theme 冷灰蓝暗色 | **Done** |
+| **TOKEN-003** | Low | ⭐ | Low | 新代码只写 `--v5-*` | **Done** |
+| **TOKEN-004** | Low | ⭐⭐ | High | elevation / glow 体系统一 | **Done** |
+| **TOKEN-005** | Low | ⭐ | High | 六档 radius token + 扫中间值 | **Done** |
+| **TOKEN-006** | Low | ⭐ | Low | 面板角色绑 radius-md vs xl | **Done** |
+| **TOKEN-007** | Low | ⭐ | Low | BrandMark 归入半径阶 | **Done** |
+| **TOKEN-008** | Low | ⭐ | Low | `--tray-ink-soft` | **Done** |
+| **TOKEN-009** | Low | ⭐⭐ | Med | 字号 / tracking 收敛到字阶 | **Done** |
+| **TOKEN-010** | Low | ⭐ | Low | 文档化 font-weight 450 | **Done** |
+| **TOKEN-011** | Low | ⭐ | High | spacing 主阶 + 面板密度 | **Done** |
+| **TOKEN-012** | Low | ⭐ | High | 裸 hex/rgba 逐步清扫 | **Done** |
+| **ASSET-003** | Low | ⭐⭐ | Med | 三表面契约锁进 CSS | **Done** |
+| **ASSET-004** | Low | ⭐⭐ | Med | Theater 阴影并入 elevation（勿纯黑另起） | **Done** |
+| **SHELL-006** | Low | ⭐ | Low | 删除/隔离闲置 shadcn | **Done** |
 | **DOC-001** | — | — | — | `DESIGN.md` + 本 Backlog（**Done**） | Done |
 
-> **剩余工作摘要：** Wave 1+2 + CLEAN-A + **THEATER-LAYER Done**。EP-0 **Authorized** 可开工。产品发布债仍未授权。
+> **剩余工作摘要：** 设计布置轨 **全部 Done**（含 REL-P2）。无授权中实现轨。
 
 ### THEATER-LAYER — 放映厅叠层 · **Done（2026-07-27）**
 
@@ -122,6 +122,35 @@
 | **TL-D4** | 小屏遮罩不盖顶栏 | **Done** |
 
 > 契约与验收见 `DESIGN_PLAN.md`「THEATER-LAYER」。Design Director 复验 6/6 Pass。
+
+### HOME-BRAND — 空态品牌与首页排版 · **Done（2026-07-28）**
+
+| ID | 一句话 | Status |
+|----|--------|--------|
+| **HB-1** | 顶栏字标 SaikoSubStudio；删空态英文 eyebrow | **Done** |
+| **HB-2** | 底栏「存档/隐私/反馈」+ Archive/Scale/PenLine；降 `@[22rem]` | **Done** |
+| **HB-3** | 空态三层锁定文案 | **Done** |
+
+> 经 INTEGRATE 合入 tip；Director 抽检 Pass。
+
+### REL-P1 — 发布债 a11y · **Done（2026-07-28）**
+
+| ID | 一句话 | Status |
+|----|--------|--------|
+| **REL-1** | 空态卡去 button-in-button | **Done** |
+| **REL-2** | `.ui-modal` 焦点陷阱 `useUiModalFocus` | **Done** |
+| **REL-3** | 窄屏工作流步骤常显可点 | **Done** |
+
+> `73c673c6` · Director 复验 3/3 Pass。
+
+### REL-P2 — 气质 / 布局债 · **Done（2026-07-28）**
+
+| ID | 一句话 | Status |
+|----|--------|--------|
+| **REL-4** | 超宽桌面空洞（max-w / 水平 padding） | **Done** |
+| **REL-5** | EP-0 残留：阴影 / nude / 圆角触及清扫 | **Done** |
+
+> `e3c611c4` · Director 复验 Pass · 设计布置轨收口。
 ---
 
 ## 全量条目
@@ -132,8 +161,8 @@
 |----|----------|--------|------|------|----------|------|--------|
 | **ASSET-001** | Low | ⭐⭐⭐⭐⭐ | Low | TMDB 蓝 drop-shadow 侵入 chrome | Logo 可保留蓝；去掉产品侧蓝 glow | TmdbPanel、SourceIdentityStrip | Done |
 | **ASSET-002** | Medium | ⭐⭐⭐ | Low | faint / 托盘半透明对比度未抽检 | 奶油面与墨绿托盘各修一轮可读点 | 托盘、meta、placeholder | **Done** |
-| **ASSET-003** | Low | ⭐⭐ | Med | cream / forest / theater 表面契约未锁死 | 三套字色/边线 alpha 成 CSS 变量 | 审计 §12 | Authorized |
-| **ASSET-004** | Low | ⭐⭐ | Med | Theater 纯黑阴影与奶油面 elevation 分裂 | 并入同一 elevation，仅调 alpha | Theater tip | Authorized |
+| **ASSET-003** | Low | ⭐⭐ | Med | cream / forest / theater 表面契约未锁死 | 三套字色/边线 alpha 成 CSS 变量 | 审计 §12 | **Done** |
+| **ASSET-004** | Low | ⭐⭐ | Med | Theater 纯黑阴影与奶油面 elevation 分裂 | 并入同一 elevation，仅调 alpha | Theater tip | **Done** |
 
 ### ICON
 
@@ -171,24 +200,24 @@
 | **SHELL-003** | Low | ⭐⭐ | Low | Toast 未产品化 | `.ui-toast` | FeedbackCenter | **Done** |
 | **SHELL-004** | Low | ⭐⭐ | Low | choice 与 StyleSidebar 双轨 | 侧栏走 `.ui-choice-group` | StyleSidebar | **Done** |
 | **SHELL-005** | Low | ⭐ | Low | 面板双重圆角/边线 | 单一 `.v4-panel` | Workbench | **Done** |
-| **SHELL-006** | Low | ⭐ | Low | shadcn Button/Badge/Card 死代码 | 删除或隔离；禁止新入口 | `ui/button|badge|card.tsx` | Authorized |
+| **SHELL-006** | Low | ⭐ | Low | shadcn Button/Badge/Card 死代码 | 删除或隔离；禁止新入口 | `ui/button|badge|card.tsx` | **Done** |
 
-### TOKEN（EP-0 · Authorized：可开工）
+### TOKEN（EP-0 · Wave 3 Done）
 
 | ID | Business | Visual | Risk | 问题 | 验收标准 | 落点 | Status |
 |----|----------|--------|------|------|----------|------|--------|
-| **TOKEN-001** | Low | ⭐ | Med | Accent 多名 mint/emerald/action… | 冻结伪名；只用 `--v5-accent*` | `globals.css` `@theme` | Authorized |
-| **TOKEN-002** | Low | ⭐ | Med | @theme 冷灰蓝暗色残留 | 冻结/移除；禁新引用 | 同上 | Authorized |
-| **TOKEN-003** | Low | ⭐ | Low | 新代码仍写 `--v4-*` | 约定只写 `--v5-*` | `DESIGN.md` §2 | Authorized |
-| **TOKEN-004** | Low | ⭐⭐ | High | 阴影 20+ 一次性值 | elevation-0…3 + glow-accent/cta | 审计 §3 | Authorized |
-| **TOKEN-005** | Low | ⭐ | High | 圆角 8–10 档实战 | xs…pill 六档；禁中间值 | 审计 §2 | Authorized |
-| **TOKEN-006** | Low | ⭐ | Low | `radius-panel` 名存实亡 | 角色映射进注释与类 | `.v4-panel`、CTA | Authorized |
-| **TOKEN-007** | Low | ⭐ | Low | BrandMark `rounded-[11px]` | 归入半径阶 | `BrandMark.tsx` | Authorized |
-| **TOKEN-008** | Low | ⭐ | Low | 托盘奶油半透明手写 rgba | `--tray-ink-soft` | tray CSS | Authorized |
-| **TOKEN-009** | Low | ⭐⭐ | Med | `text-[Npx]` / tracking 打穿 | Caption→Display 字阶 | 全站 type | Authorized |
-| **TOKEN-010** | Low | ⭐ | Low | weight 450 vs medium/semibold | 文档化；同层不跳 | body CSS | Authorized |
-| **TOKEN-011** | Low | ⭐ | High | 无 space token；面板 padding 乱 | 4…48 主阶；密度 16 vs 24 | 全站 | Authorized |
-| **TOKEN-012** | Low | ⭐ | High | 百余处裸 hex/rgba | 逐步 color-mix；禁新增 | `src`+`app` | Authorized |
+| **TOKEN-001** | Low | ⭐ | Med | Accent 多名 mint/emerald/action… | 冻结伪名；只用 `--v5-accent*` | `globals.css` `@theme` | **Done** |
+| **TOKEN-002** | Low | ⭐ | Med | @theme 冷灰蓝暗色残留 | 冻结/移除；禁新引用 | 同上 | **Done** |
+| **TOKEN-003** | Low | ⭐ | Low | 新代码仍写 `--v4-*` | 约定只写 `--v5-*` | `DESIGN.md` §2 | **Done** |
+| **TOKEN-004** | Low | ⭐⭐ | High | 阴影 20+ 一次性值 | elevation-0…3 + glow-accent/cta | 审计 §3 | **Done** |
+| **TOKEN-005** | Low | ⭐ | High | 圆角 8–10 档实战 | xs…pill 六档；禁中间值 | 审计 §2 | **Done** |
+| **TOKEN-006** | Low | ⭐ | Low | `radius-panel` 名存实亡 | 角色映射进注释与类 | `.v4-panel`、CTA | **Done** |
+| **TOKEN-007** | Low | ⭐ | Low | BrandMark `rounded-[11px]` | 归入半径阶 | `BrandMark.tsx` | **Done** |
+| **TOKEN-008** | Low | ⭐ | Low | 托盘奶油半透明手写 rgba | `--tray-ink-soft` | tray CSS | **Done** |
+| **TOKEN-009** | Low | ⭐⭐ | Med | `text-[Npx]` / tracking 打穿 | Caption→Display 字阶 | 全站 type | **Done** |
+| **TOKEN-010** | Low | ⭐ | Low | weight 450 vs medium/semibold | 文档化；同层不跳 | body CSS | **Done** |
+| **TOKEN-011** | Low | ⭐ | High | 无 space token；面板 padding 乱 | 4…48 主阶；密度 16 vs 24 | 全站 | **Done** |
+| **TOKEN-012** | Low | ⭐ | High | 百余处裸 hex/rgba | 逐步 color-mix；禁新增 | `src`+`app` | **Done** |
 
 ### DOC
 
@@ -278,4 +307,4 @@
 | 文件 + 语言标 | `src/components/ui/FileFormatIcon.tsx` |
 | 检查标记 | `src/components/Workbench/inspectionMarks.tsx` |
 | 空态 CTA | `src/components/Ingest/DragZone.tsx` |
-| 闲置 shadcn | `src/components/ui/button.tsx`、`badge.tsx`、`card.tsx` |
+| 闲置 shadcn（已删） | ~~`ui/button|badge|card.tsx`~~ · SHELL-006 **Done** |

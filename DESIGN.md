@@ -23,7 +23,9 @@ before introducing visual novelty.
 
 ## 1. 品牌定位
 
-**SubStudio 是 Editorial Desktop Application —— 字幕剪辑用的桌面编辑工作台。**
+**SaikoSubStudio 是 Editorial Desktop Application —— 字幕剪辑用的桌面编辑工作台。**
+
+屏上品牌短名统一为 **SaikoSubStudio**（与政策全称一致）。禁止再并列 `SubStudio` / `LOCAL SUBTITLE STUDIO` 作为主品牌。
 
 它不是：
 
@@ -40,7 +42,7 @@ before introducing visual novelty.
 
 一句话检验：
 
-> **去掉 Logo 之后，这还像 SubStudio，还是像随便一个 AI 工具？**
+> **去掉 Logo 之后，这还像 SaikoSubStudio，还是像随便一个 AI 工具？**
 
 ---
 
@@ -63,19 +65,85 @@ before introducing visual novelty.
 
 ### 规则
 
-1. 新代码只写 `--v5-*`（或已有的 `--v4-*` 别名）。禁止再发明 `mint` / `emerald` / 暗色 `@theme` 伪名。
-2. 禁止组件内散落裸 hex / 随意 `rgba(239,141,95,*)`；用 `color-mix(in srgb, var(--v5-*) …)`。
-3. 阴影优先 **墨绿 tint**，奶油面上避免冷黑 elevation。
-4. 第三方品牌色（如 TMDB 蓝）只允许出现在对方 Logo 本体，不得污染 chrome / glow / 控件。
-5. 数据辅色（文件格式、语言标、检查标记）是**有限封闭色板**，不得临时加第 13 种语言色或 Tailwind 默认蓝。
+1. **新代码只写 `--v5-*`。** `--v4-*` 仅为兼容别名（映射到 `--v5-*`），禁止在其上叠加新语义或新角色。  
+2. 禁止再发明 `mint` / `emerald` / `action` / 冷灰蓝暗色 `@theme` 伪名（见下方 Deprecated）。  
+3. 禁止组件内散落裸 hex / 随意 `rgba(239,141,95,*)`；用 `color-mix(in srgb, var(--v5-*) …)`。  
+4. 阴影优先 **墨绿 tint**，奶油面上避免冷黑 elevation。  
+5. 第三方品牌色（如 TMDB 蓝）只允许出现在对方 Logo 本体，不得污染 chrome / glow / 控件。  
+6. 数据辅色（文件格式、语言标、检查标记）是**有限封闭色板**，不得临时加第 13 种语言色或 Tailwind 默认蓝。
+
+### Deprecated `@theme`（EP-0.1 · 已删除，禁止回流）
+
+| 类别 | 已删除伪名 |
+|------|------------|
+| Accent 多名 | `--color-mint*`、`--color-accent-emerald*`、`--color-action*`、`--color-accent-neon\|glow\|muted` |
+| 冷灰蓝暗色 | `--color-bg-dark\|base`、`--color-surface-*`、`--color-text-primary\|secondary`、`--color-glass-border` |
+
+唯一强调色：`--v5-accent*`（及 `--v5-orange*` 别名）。产品面引用须走 `--v5-*` 或既有 `--v4-*` 别名。
 
 ### 三套表面契约
 
-| 表面 | 背景气质 | 文字/控件 |
-|------|----------|-----------|
-| Cream desk | 工作区 | 墨绿字 + 柑橘强调 |
-| Forest chrome | 顶/底托盘 | 奶油半透明 ink，勿当第二套亮色主题 |
-| Theater dim | 预览关灯 | 允许更深，但仍用 triad 派生，禁止霓虹 |
+| 表面 | `data-surface` / 选择器 | 字色 / 边线 token |
+|------|-------------------------|-------------------|
+| Cream desk | 默认 / `[data-surface="cream"]` | `--surface-text*` / `--surface-line*` → 墨绿 |
+| Forest chrome | `[data-surface="forest"]` | 同上 → 奶油半透明 ink |
+| Theater dim | `[data-surface="theater"]` / `.lights-off-stage` | 更深奶油 ink + 柑橘强线 |
+
+切换表面时文字角色映射到 `--surface-*`；`--v4-text|line*` 为兼容别名。
+
+### Elevation / Glow（EP-0.2）
+
+| Token | 用途 |
+|-------|------|
+| `--elevation-0` | 面板默认 / hairline |
+| `--elevation-1` | 轻浮层 |
+| `--elevation-2` | Menu、Toast、InfoHint |
+| `--elevation-3` | Modal |
+| `--elevation-*-dim` | Theater 同族更高 alpha（tip / chrome / 抽屉） |
+| `--glow-accent` | 选中 / 焦点（一种） |
+| `--glow-cta` | 仅 hero 主按钮 |
+
+阴影色一律 `color-mix(forest …)`；禁止 Theater 另起纯黑 elevation 体系。
+
+### Radius（EP-0.3）
+
+| Token | 值 | 用途 |
+|-------|-----|------|
+| `--radius-xs` | 2px | 刻度、小标记 |
+| `--radius-sm` | 6px | chip、语言牌、小 icon 钮 |
+| `--radius-md` | 8px | 输入、标准面板、BrandMark 外框、`.ui-action` |
+| `--radius-lg` | 12px | choice 容器、toast |
+| `--radius-xl` | 20px | hero CTA、大抽屉 |
+| `--radius-pill` | 999px | **仅**托盘胶囊、进度点 |
+
+兼容：`--v5-radius-panel` → xl；`--v5-radius-control` → lg。禁止新增 `rounded-[Npx]` / 奇怪 rem 中间值；内容区信息徽章禁止 pill。
+
+### Spacing（EP-0.5 TOKEN-011）
+
+| Token | 值 | 用途 |
+|-------|-----|------|
+| `--space-1`…`--space-7` | 4 / 8 / 12 / 16 / 24 / 32 / 48 | 主阶；半档仅光学对齐 |
+| `--space-panel` | 16（=`--space-4`） | 工作台面板内边距 |
+| `--space-copy` | 24（=`--space-5`） | 关于 / 空态文案区 |
+
+工具类：`.density-panel` / `.density-panel-x` · `.density-copy` / `.density-copy-x`。同级 Workbench 面板横向 padding 统一 16，禁止再 `px-5`/`md:px-6` 乱跳。
+
+### 裸色纪律（EP-0.5 TOKEN-012）
+
+1. **禁止**在组件内新增裸 triad hex / `rgba(26,61,55|239,141,95|245,241,234,*)`；派生色用 `color-mix(in srgb, var(--v5-*) …)`。  
+2. 三原色、`--lang-*`、`--fmt-*`、BrandMark SVG **仅**在真相源定义，业务组件禁止覆盖。  
+3. 存量随触及清扫；评审可拒「新增裸色」。不借清扫改品牌色相。
+
+### Tray ink（EP-0.4 TOKEN-008）
+
+| Token | 用途 |
+|-------|------|
+| `--tray-ink` | 托盘主字（奶油实色） |
+| `--tray-ink-soft` | 控件默认字 |
+| `--tray-ink-muted` / `--tray-ink-faint` | 次要 / 更弱 |
+| `--tray-line*` / `--tray-fill*` | 托盘边线与半透明底 |
+
+托盘禁止再手写 `rgba(245,241,234,*)`；用上表或 `color-mix(var(--v5-cream) …)`。
 
 ---
 
@@ -87,22 +155,34 @@ before introducing visual novelty.
 | Display Serif | Noto Serif SC（自托管） | **仅**片源名、空态主句 |
 | Mono | Geist Mono | 时间码、缩放、语言标、评分、键值 |
 
-### 字阶（产品 UI）
+### 字阶（产品 UI · EP-0.4 TOKEN-009）
 
-| 角色 | 约略尺寸 | 备注 |
-|------|----------|------|
-| Caption / meta | 12–13px | 旁注、托盘 meta |
-| Control / label | 14–15px | 按钮、chip |
-| Body | 16px | 默认阅读 |
-| Section title | 18px | 区块标题 |
-| Display | 22–26px + serif | 空态/片名，极少用 |
+| 角色 | Token | 约略尺寸 | 备注 |
+|------|-------|----------|------|
+| Caption / meta | `--type-caption` | 13px（`text-xs`） | 旁注、托盘 meta；**禁止**再写 `text-[11px]` |
+| Control / label | `--type-control` | 15px | 按钮、chip |
+| Body | `--type-body` | 16px | 默认阅读 |
+| Title | `--type-title` | 18px | 区块标题 |
+| Display | `--type-display` | 24px + serif | 空态/片名，极少用 |
+
+Eyebrow tracking **仅两档**：`--tracking-eyebrow`（0.06em）· `--tracking-eyebrow-wide`（0.08em）。
+
+### 字重（EP-0.4 TOKEN-010）
+
+| 角色 | 字重 | 说明 |
+|------|------|------|
+| Body 默认 | **450** | 产品阅读默认（`body { font-weight: 450 }`）；设计选择，非遗漏 |
+| Meta / caption | 500 | 副文案、旁注 |
+| Control | 600 | 按钮、chip、选择项 |
+| Display / 强调 | 700 | 空态主句、托盘关键数字；少用喊话 |
+
+同层级禁止 medium/semibold 随机跳（同一角色用同一档）。
 
 ### 规则
 
 - 宋体不是「高级装饰」，是**片名与空态的编辑声口**；工具栏、按钮、表单禁止衬线。
-- 禁止同屏用一堆 `text-[11px]` / `text-[14px]` / `text-[17px]` 打穿字阶。
-- Tracking：eyebrow / 大写品牌标可用略宽字距；正文保持克制，禁止 0.04～0.12em 随意混用。
-- 字重以 medium / semibold 为主；少用 bold 喊话。
+- 禁止同屏用一堆 `text-[11px]` / `text-[14px]` / `text-[17px]` 打穿字阶；新代码走 `--type-*` 或 Tailwind 阶（`text-xs` = Caption）。
+- Tracking：eyebrow / 大写品牌标只用上述两档；正文保持克制。
 
 ---
 
@@ -155,7 +235,7 @@ before introducing visual novelty.
 ### 规则
 
 1. **片源元数据优先排印，不要堆 chip**（见 WorkflowChrome 的「去 chip」决策）。
-2. 禁止把 shadcn `Badge`（`rounded-4xl` 胶囊）接入产品面。
+2. 禁止把 shadcn `Badge`（`rounded-4xl` 胶囊）接入产品面（文件已删，勿回流）。
 3. 工作区默认方角；全圆胶囊只属于 chrome，不属于内容区。
 4. 同一信息只选一种徽章角色，禁止「标签套标签」。
 
@@ -205,11 +285,13 @@ Adobe CC 式文件徽章，经 Ridgeline **降饱和、偏暖** 调和：
 
 | 需求 | 使用 |
 |------|------|
-| 按钮 | `.ui-action`（含 `--secondary` / `--quiet` / `--danger` / `--lg` / `--icon`） |
+| 按钮 | **`.ui-action`**（含 `--secondary` / `--quiet` / `--danger` / `--lg` / `--icon`） |
 | 分段选择 | `.ui-choice-group` / `.ui-choice` |
 | 面板 | `.v4-panel`（或等价 v5 面板类） |
 | 类型标签 | `.ui-tag` |
 | 评分 | `.ui-rating` |
+
+**产品按钮 = `.ui-action`。** 勿再引入 shadcn / Base UI `Button`·`Badge`·`Card`（EP-0.6 SHELL-006 已从 `src/components/ui/` 删除 `button.tsx` / `badge.tsx` / `card.tsx`）。
 
 空态主 CTA 可以更高更圆（hero），但应视为 `ui-action` 的 **hero 变体**，不是另一套按钮系统。
 
@@ -218,9 +300,9 @@ Adobe CC 式文件徽章，经 Ridgeline **降饱和、偏暖** 调和：
 1. **一个组合、一个焦点**：桌面工作台不是卡片墙；能去边框/阴影/底就去。
 2. **卡片是例外**：只有承载交互时才需要容器感。
 3. **圆角有限档**：xs 2 · sm 6 · md 8 · lg 12 · xl 20 · pill 999。禁止 `rounded-[11px]` 等一次性值。
-4. **密度分区**：工作台紧（约 16px padding），关于/空态文案区可松（24px+）。
+4. **密度分区**：工作台紧（`--space-panel` = 16），关于/空态文案区松（`--space-copy` = 24）。
 5. **动效克制**：用现有 `--v5-ease` 与时长阶；动效服务层级与状态，不服务炫耀。
-6. **禁止双轨**：不要一边用 `.ui-action`，一边手写第三套按钮；闲置 shadcn Button/Badge/Card 不得作为新 UI 入口。
+6. **禁止双轨**：不要一边用 `.ui-action`，一边手写第三套按钮；**禁止**把已删除的 shadcn Button/Badge/Card 加回产品路径。
 7. **先身份，后便利**：技术上「用现成紫色组件更快」不构成设计理由。
 
 ### 改 UI 前的自问

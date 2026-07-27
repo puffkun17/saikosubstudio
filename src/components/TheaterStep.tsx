@@ -255,7 +255,7 @@ export const TheaterStep: React.FC = () => {
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 // 始终 absolute 浮层：不进 flex 文档流，避免预览屏随开合左右挪动。
                 // bottom 让出 --theater-deck-h（播放条 + 底 padding 写死档）。
-                className="theater-style-shell absolute top-4 right-4 bottom-[var(--theater-deck-h)] z-[var(--z-theater-style)] flex w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg xl:w-[380px]"
+                className="theater-style-shell absolute top-4 right-4 bottom-[var(--theater-deck-h)] z-[var(--z-theater-style)] flex w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[var(--radius-xl)] xl:w-[380px]"
               >
                 <StyleSidebar tone="theater" />
               </motion.aside>

@@ -534,9 +534,9 @@ export const TaskList: React.FC = () => {
             return (
               <button
                 key={t.id}
-                className={`max-w-[220px] cursor-pointer truncate rounded-xl border px-4 py-2 font-sans text-sm transition-all
+                className={`max-w-[220px] cursor-pointer truncate rounded-[var(--radius-xl)] border px-4 py-2 font-sans text-sm transition-all
                   ${isActive
-                    ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] font-semibold text-[var(--v4-accent-strong)] shadow-[0_0_12px_color-mix(in_srgb,var(--v4-accent)_12%,transparent)]'
+                    ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] font-semibold text-[var(--v4-accent-strong)] shadow-[var(--glow-accent)]'
                     : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]'}`}
                 onClick={() => selectTask(t.id)}
               >
@@ -725,7 +725,7 @@ export const TaskList: React.FC = () => {
                             initial={{ opacity: 0.85, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1.03 }}
                             transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
-                            className="flex items-center gap-2 rounded-xl border border-[var(--v4-accent)]/40 bg-[var(--v4-panel-raised)] px-3 py-2.5 shadow-[0_18px_40px_rgba(26,61,55,0.12)] backdrop-blur-md"
+                            className="flex items-center gap-2 rounded-[var(--radius-xl)] border border-[var(--v4-accent)]/40 bg-[var(--v4-panel-raised)] px-3 py-2.5 shadow-[var(--elevation-2)] backdrop-blur-md"
                             style={{ height: dragCardSize.h }}
                           >
                             <FileFormatIcon name={dragFile.name} size="md" />
@@ -780,7 +780,7 @@ export const TaskList: React.FC = () => {
                   <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
                     按时间轴就近配对主副轨，速度快、占用低。适合对白节奏接近、断句差异不大的常规双语。
                   </p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-[var(--v4-text-faint)]">
+                  <p className="mt-1 text-xs leading-relaxed text-[var(--v4-text-faint)]">
                     一侧多句/少句或翻译节奏差较大时，可能漏配或错位。
                   </p>
                 </button>
@@ -803,7 +803,7 @@ export const TaskList: React.FC = () => {
                   <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
                     用更完整的对齐搜索处理插入、删减与断句不一致，准确度更高。适合翻译节奏不同、一侧多句或少句的片子。
                   </p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-[var(--v4-text-faint)]">
+                  <p className="mt-1 text-xs leading-relaxed text-[var(--v4-text-faint)]">
                     耗时与内存更高；字幕体量很大时会自动降级或收窄搜索带。
                   </p>
                 </button>
@@ -845,7 +845,7 @@ export const TaskList: React.FC = () => {
                       placeholder="输入导出文件名"
                       aria-label="导出文件名"
                     />
-                    <span className="shrink-0 font-mono text-[11px] font-semibold tracking-wide text-[var(--v4-text-faint)]">
+                    <span className="shrink-0 font-mono text-xs font-semibold tracking-wide text-[var(--v4-text-faint)]">
                       .ass / .srt
                     </span>
                   </div>
@@ -888,7 +888,7 @@ export const TaskList: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="overflow-hidden rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]"
+              className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]"
             >
               <div className="grid gap-0 md:grid-cols-[minmax(220px,0.72fr)_minmax(0,1fr)]">
                 <AssStylePreview style={foundAssStyle} className="min-h-36 rounded-none border-0 border-b border-[var(--v4-line)] md:border-b-0 md:border-r" />

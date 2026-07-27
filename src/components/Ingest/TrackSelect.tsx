@@ -98,7 +98,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
         </span>
         <span className="flex shrink-0 items-center gap-2 border-l border-[var(--v4-line)] pl-2.5">
           {countLabel != null && (
-            <span className="ui-meta font-mono text-[11px] tabular-nums">
+            <span className="ui-meta font-mono text-xs tabular-nums">
               {countLabel}行
             </span>
           )}
@@ -147,7 +147,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
                 <LanguageMark lang={opt.lang} languagePair={opt.languagePair} />
                 <FileNameText name={truncateMiddle(opt.name, 120)} className="min-w-0 flex-1 font-mono text-[14px] font-medium text-[var(--v4-text)]" />
                 {opt.count != null && (
-                  <span className="shrink-0 font-mono text-[11px] tabular-nums text-[var(--v4-text-faint)]">{opt.count}行</span>
+                  <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--v4-text-faint)]">{opt.count}行</span>
                 )}
               </button>
             );

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { SequenceList } from '@/components/Workbench/SequenceList';
@@ -17,6 +17,7 @@ import { createSourceMatchReport } from '@/utils/timeline/sourceMatch';
 import { formatMsClock } from '@/utils/timeline/timecode';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
+import { useUiModalFocus } from '@/hooks/useUiModalFocus';
 
 const formatCount = (value: number) => new Intl.NumberFormat('zh-CN').format(value);
 
@@ -43,6 +44,8 @@ export const WorkbenchStep: React.FC = () => {
   const { setInfoBar, setEdgeNext } = useWorkflowChrome();
 
   const [showBackConfirm, setShowBackConfirm] = useState(false);
+  const backModalRef = useRef<HTMLDivElement>(null);
+  useUiModalFocus(showBackConfirm, backModalRef, () => setShowBackConfirm(false));
   const [sourceDurationMs, setSourceDurationMs] = useState<number | undefined>(undefined);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [markFilter, setMarkFilter] = useState<InspectionMarkFilter>('all');
@@ -84,8 +87,8 @@ export const WorkbenchStep: React.FC = () => {
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      if (showBackConfirm) setShowBackConfirm(false);
-      else if (isSettingsOpen) setIsSettingsOpen(false);
+      if (showBackConfirm) return; // REL-2：确认框由 useUiModalFocus 处理
+      if (isSettingsOpen) setIsSettingsOpen(false);
       else if (isDetailOpen) setIsDetailOpen(false);
     };
     document.addEventListener('keydown', handleEscape);
@@ -141,11 +144,11 @@ export const WorkbenchStep: React.FC = () => {
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[var(--v4-canvas)]">
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
-        <div className="flex-1 p-4 md:p-6 min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
-          <div className="max-w-[1480px] w-full flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
+        <div className="flex-1 p-4 min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
+          <div className="max-w-[1280px] w-full flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
             {processedSubs && processedSubs.length > 0 && (
               <section className="v4-panel flex-shrink-0 overflow-hidden">
-                <div className="flex flex-col gap-2.5 px-4 py-3 md:flex-row md:items-center md:justify-between md:gap-4 md:px-5">
+                <div className="flex flex-col gap-2.5 px-4 py-3 md:flex-row md:items-center md:justify-between md:gap-4">
                   <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                     <div className="flex items-center gap-2">
                       <GitCompareArrows className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
@@ -306,6 +309,7 @@ export const WorkbenchStep: React.FC = () => {
               }}
             >
               <motion.div
+                ref={backModalRef}
                 role="alertdialog"
                 aria-modal="true"
                 aria-labelledby="workbench-back-title"
@@ -314,6 +318,7 @@ export const WorkbenchStep: React.FC = () => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.98 }}
                 className="ui-modal"
+                tabIndex={-1}
               >
                 <h3 id="workbench-back-title" className="text-lg font-semibold text-[var(--v4-text)]">
                   是否重新导入

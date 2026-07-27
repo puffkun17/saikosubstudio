@@ -268,7 +268,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
 
       {/* Outer wrapper constrained to the TV Mask's Aspect Ratio */}
       <div 
-        className="screen-sim-frame fade-in-up relative z-0 flex items-center justify-center overflow-hidden rounded-sm border border-[var(--v4-line-strong)] shadow-[0_18px_46px_rgba(0,0,0,0.42)]"
+        className="screen-sim-frame fade-in-up relative z-0 flex items-center justify-center overflow-hidden rounded-sm border border-[var(--v4-line-strong)] shadow-[var(--elevation-3-dim)]"
         style={{
           aspectRatio: maskAspect,
           maxWidth: '100%',
@@ -372,12 +372,14 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
             style={{
               bottom: `${paddingBottomCqh}cqh`,
               opacity: (guides.show || guides.temp) ? 1 : 0,
-              borderColor: isMagnetic ? 'var(--v5-orange)' : 'rgba(239, 141, 95, 0.55)',
+              borderColor: isMagnetic ? 'var(--v5-orange)' : 'color-mix(in srgb, var(--v5-orange) 55%, transparent)',
               borderStyle: isMagnetic ? 'solid' : 'dashed',
-              boxShadow: isMagnetic ? '0 0 14px rgba(239, 141, 95, 0.55)' : '0 0 10px rgba(239, 141, 95, 0.22)',
+              boxShadow: isMagnetic
+                ? '0 0 14px color-mix(in srgb, var(--v5-orange) 55%, transparent)'
+                : '0 0 10px color-mix(in srgb, var(--v5-orange) 22%, transparent)',
             }}
           >
-            <span className="absolute left-3 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-xs font-semibold tracking-[0.08em] text-[var(--v5-orange-strong)]">
+            <span className="absolute left-3 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-xs font-semibold tracking-[var(--tracking-eyebrow-wide)] text-[var(--v5-orange-strong)]">
               字幕基线
             </span>
             <span className="absolute -left-px -top-1 h-2 w-px bg-[var(--v5-orange-strong)]" />

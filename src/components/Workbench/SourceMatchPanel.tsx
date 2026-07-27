@@ -288,7 +288,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
 
   return (
     <section className="v4-panel w-full overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3 md:px-5">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3">
         <div className="min-w-0">
           <div className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--v4-text)]">
             {isMatchMode ? '片源覆盖分布' : '字幕时间分布'}
@@ -302,7 +302,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-3 text-[11px] text-[var(--v4-text-faint)] sm:flex">
+          <div className="hidden items-center gap-3 text-xs text-[var(--v4-text-faint)] sm:flex">
             {MARK_KIND_ORDER.map((kind) => (
               <span key={kind} className="inline-flex items-center gap-1.5">
                 <InspectionMarkGlyph kind={kind} size={8} />
@@ -328,7 +328,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
         </div>
       </div>
 
-      <div className="px-4 pb-3 pt-2 md:px-5 md:pb-4">
+      <div className="px-4 pb-4 pt-2">
         <div className="relative overflow-hidden rounded-lg bg-[color-mix(in_srgb,var(--v4-panel-muted)_70%,transparent)] ring-1 ring-[var(--v4-line)]">
           {/* Density curve — marks live in HTML lane below to avoid SVG stretch */}
           <div
@@ -346,8 +346,8 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
             >
               <defs>
                 <linearGradient id="densityFill" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#c4893a" stopOpacity="0.22" />
-                  <stop offset="100%" stopColor="#c4893a" stopOpacity="0.02" />
+                  <stop offset="0%" stopColor="var(--v5-warning)" stopOpacity="0.22" />
+                  <stop offset="100%" stopColor="var(--v5-warning)" stopOpacity="0.02" />
                 </linearGradient>
               </defs>
               {[0.25, 0.5, 0.75].map(tick => (
@@ -373,7 +373,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
               <motion.path
                 d={subtitlePath}
                 fill="none"
-                stroke="#c4893a"
+                stroke="var(--v5-warning)"
                 strokeOpacity="0.55"
                 strokeWidth="1.75"
                 strokeLinecap="round"
@@ -483,7 +483,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
             </motion.div>
           </div>
 
-          <div className="flex items-center justify-between px-3 pb-2 font-mono text-[10px] tabular-nums text-[var(--v4-text-faint)]">
+          <div className="flex items-center justify-between px-3 pb-2 font-mono text-xs tabular-nums text-[var(--v4-text-faint)]">
             <span>00:00</span>
             <span>{formatMsClock(timelineDurationMs / 2)}</span>
             <span>{formatMsClock(timelineDurationMs)}</span>

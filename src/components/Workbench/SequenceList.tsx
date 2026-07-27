@@ -209,7 +209,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
   return (
     <div className="v4-panel flex flex-1 flex-col overflow-hidden">
       {total > 0 && (
-        <div className="flex flex-col gap-3 px-5 md:px-6 py-3.5 border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] flex-shrink-0">
+        <div className="flex flex-col gap-3 px-4 py-3.5 border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] flex-shrink-0">
             <div className="flex items-center justify-between gap-4">
             <div className="min-w-0 flex items-center gap-3">
               <span className="text-sm tracking-normal text-[var(--v4-text)] font-semibold whitespace-nowrap">
@@ -257,7 +257,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
       <div ref={listRef} className="flex-1 overflow-y-auto">
         {visibleSubs.length > 0 ? (
           <div className="flex flex-col relative">
-            <div className="sticky top-0 z-20 grid grid-cols-[3.75rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] items-center gap-2 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-3 py-2 text-xs font-semibold tracking-wide text-[var(--v4-text-muted)] select-none md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] md:gap-3 md:px-5">
+            <div className="sticky top-0 z-20 grid grid-cols-[3.75rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] items-center gap-2 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-4 py-2 text-xs font-semibold tracking-wide text-[var(--v4-text-muted)] select-none md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] md:gap-3">
               <div className="pl-0.5">行号</div>
               <div>时间轴</div>
               <div>字幕内容</div>
@@ -310,7 +310,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
               const endTime = sub.ts.split(' --> ')[1]?.replace(',', '.').trim() || '';
 
-              const rowClass = `group relative grid grid-cols-[3.75rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] items-center gap-2 md:gap-3 py-2.5 px-3 md:px-5 border-b border-[var(--v4-line)] cursor-pointer select-none text-left overflow-hidden transition-colors duration-150
+              const rowClass = `group relative grid grid-cols-[3.75rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] items-center gap-2 md:gap-3 py-2.5 px-4 border-b border-[var(--v4-line)] cursor-pointer select-none text-left overflow-hidden transition-colors duration-150
                 ${isActive ? 'glass-lens-active' : isSelected ? 'bg-[var(--v4-accent-soft)]/55' : 'bg-transparent hover:bg-[var(--v4-panel-muted)]'}
                 ${(isLyric || isCredit) && !isActive && !isSelected ? 'bg-[var(--v4-panel-muted)]/50' : ''}
                 ${sub.index > 30 ? 'timeline-row-deferred' : ''}`;
@@ -361,7 +361,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                   aria-label={`第 ${sub.index} 行字幕，按 F2 编辑；Shift 连选，⌥/⌘/Ctrl 跳选`}
                   className={rowClass}
                 >
-                  <div className={`flex min-w-0 items-center gap-1 self-center pl-0.5 font-mono text-[13px] font-semibold tabular-nums whitespace-nowrap ${isActive ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-muted)]'}`}>
+                  <div className={`flex min-w-0 items-center gap-1 self-center pl-0.5 font-mono text-xs font-semibold tabular-nums whitespace-nowrap ${isActive ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-muted)]'}`}>
                     <span>#{sub.index}</span>
                     {/* 检查标记放在行号后的固定槽，不挤占时间轴列对齐 */}
                     <span
@@ -373,7 +373,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                       {rowMarkKind ? (
                         <InspectionMarkGlyph kind={rowMarkKind} size={10} />
                       ) : (isAuxiliarySemantic || isExpandedDialogue) ? (
-                        <span className="inline-flex h-3 min-w-3 items-center justify-center rounded-[2px] border border-[var(--v4-line-strong)] px-0.5 font-mono text-[8px] font-semibold leading-none text-[var(--v4-text-faint)]">
+                        <span className="inline-flex h-3 min-w-3 items-center justify-center rounded-[var(--radius-xs)] border border-[var(--v4-line-strong)] px-0.5 font-mono text-[8px] font-semibold leading-none text-[var(--v4-text-faint)]">
                           {isExpandedDialogue ? '组' : '辅'}
                         </span>
                       ) : null}
@@ -382,10 +382,10 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
 
                   <div className="flex min-w-0 items-center gap-2 self-center select-none">
                     <div className="relative flex flex-col items-center self-stretch py-0.5">
-                      <span className={`mt-0.5 h-2 w-2 rounded-full border ${isActive ? 'bg-[var(--v4-accent-strong)] border-[var(--v4-accent-strong)] shadow-[0_0_10px_color-mix(in_srgb,var(--v4-accent)_40%,transparent)]' : 'bg-[var(--v4-accent-soft)] border-[var(--v4-line-strong)]'}`} />
+                      <span className={`mt-0.5 h-2 w-2 rounded-full border ${isActive ? 'bg-[var(--v4-accent-strong)] border-[var(--v4-accent-strong)] shadow-[var(--glow-accent)]' : 'bg-[var(--v4-accent-soft)] border-[var(--v4-line-strong)]'}`} />
                       <span className="mt-1 flex-1 w-px bg-[var(--v4-line)]" />
                     </div>
-                    <div className={`flex min-w-0 flex-col whitespace-nowrap font-mono text-[13px] leading-tight tabular-nums tracking-tight ${isActive ? 'font-semibold text-[var(--v4-accent-strong)]' : 'font-medium text-[var(--v4-text-muted)]'}`}>
+                    <div className={`flex min-w-0 flex-col whitespace-nowrap font-mono text-xs leading-tight tabular-nums tracking-tight ${isActive ? 'font-semibold text-[var(--v4-accent-strong)]' : 'font-medium text-[var(--v4-text-muted)]'}`}>
                       <span>{startTime}</span>
                       <span className="mt-0.5 opacity-80">{endTime}</span>
                     </div>
@@ -439,7 +439,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                         </div>
                         {enText && (
                           <div
-                            className="mt-0.5 break-words text-[13px] font-medium leading-snug tracking-[0.01em] text-[var(--v4-text-muted)]"
+                            className="mt-0.5 break-words text-xs font-medium leading-snug tracking-[0.01em] text-[var(--v4-text-muted)]"
                             style={{ fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }}
                           >
                             {enText}
