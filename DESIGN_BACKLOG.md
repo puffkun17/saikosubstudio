@@ -87,16 +87,16 @@
 | **CLEAN-A4** | 片源/TMDB 去冗余 `rounded-lg` | **Done** |
 | **CLEAN-A5** | StyleSidebar 零星 toggle 能收则收 | **Done** |
 
-> **Design Director：** CLEAN-A / THEATER-LAYER **Done**。**EP-0.1 Submitted · 待复验**；EP-0.2+ 仍 Authorized。未授权发布债。
+> **Design Director：** CLEAN-A / THEATER-LAYER / **EP-0.1 Done**。**EP-0.2 Submitted · 待复验**；0.3+ Authorized。未授权发布债。
 
-### Wave 3 — 工程真相源（EP-0）· **0.1 Submitted · 待复验（2026-07-28）**
+### Wave 3 — 工程真相源（EP-0）· **0.2 Submitted · 待复验（2026-07-28）**
 
 | ID | Business | Visual | Risk | 一句话 | Status |
 |----|----------|--------|------|--------|--------|
-| **TOKEN-001** | Low | ⭐ | Med | 冻 mint/emerald/action 伪名 | **Submitted** |
-| **TOKEN-002** | Low | ⭐ | Med | 冻 @theme 冷灰蓝暗色 | **Submitted** |
-| **TOKEN-003** | Low | ⭐ | Low | 新代码只写 `--v5-*` | **Submitted** |
-| **TOKEN-004** | Low | ⭐⭐ | High | elevation / glow 体系统一 | Authorized |
+| **TOKEN-001** | Low | ⭐ | Med | 冻 mint/emerald/action 伪名 | **Done** |
+| **TOKEN-002** | Low | ⭐ | Med | 冻 @theme 冷灰蓝暗色 | **Done** |
+| **TOKEN-003** | Low | ⭐ | Low | 新代码只写 `--v5-*` | **Done** |
+| **TOKEN-004** | Low | ⭐⭐ | High | elevation / glow 体系统一 | **Submitted** |
 | **TOKEN-005** | Low | ⭐ | High | 六档 radius token + 扫中间值 | Authorized |
 | **TOKEN-006** | Low | ⭐ | Low | 面板角色绑 radius-md vs xl | Authorized |
 | **TOKEN-007** | Low | ⭐ | Low | BrandMark 归入半径阶 | Authorized |
@@ -105,12 +105,12 @@
 | **TOKEN-010** | Low | ⭐ | Low | 文档化 font-weight 450 | Authorized |
 | **TOKEN-011** | Low | ⭐ | High | spacing 主阶 + 面板密度 | Authorized |
 | **TOKEN-012** | Low | ⭐ | High | 裸 hex/rgba 逐步清扫 | Authorized |
-| **ASSET-003** | Low | ⭐⭐ | Med | 三表面契约锁进 CSS | Authorized |
-| **ASSET-004** | Low | ⭐⭐ | Med | Theater 阴影并入 elevation（勿纯黑另起） | Authorized |
+| **ASSET-003** | Low | ⭐⭐ | Med | 三表面契约锁进 CSS | **Submitted** |
+| **ASSET-004** | Low | ⭐⭐ | Med | Theater 阴影并入 elevation（勿纯黑另起） | **Submitted** |
 | **SHELL-006** | Low | ⭐ | Low | 删除/隔离闲置 shadcn | Authorized |
 | **DOC-001** | — | — | — | `DESIGN.md` + 本 Backlog（**Done**） | Done |
 
-> **剩余工作摘要：** Wave 1+2 + CLEAN-A + THEATER-LAYER **Done**。**EP-0.1 Submitted · 待复验**；EP-0.2+ Authorized。产品发布债仍未授权。
+> **剩余工作摘要：** Wave 1+2 + CLEAN-A + THEATER-LAYER + **EP-0.1 Done**。**EP-0.2 Submitted · 待复验**；0.3+ Authorized。产品发布债仍未授权。
 
 ### THEATER-LAYER — 放映厅叠层 · **Done（2026-07-27）**
 
@@ -132,8 +132,8 @@
 |----|----------|--------|------|------|----------|------|--------|
 | **ASSET-001** | Low | ⭐⭐⭐⭐⭐ | Low | TMDB 蓝 drop-shadow 侵入 chrome | Logo 可保留蓝；去掉产品侧蓝 glow | TmdbPanel、SourceIdentityStrip | Done |
 | **ASSET-002** | Medium | ⭐⭐⭐ | Low | faint / 托盘半透明对比度未抽检 | 奶油面与墨绿托盘各修一轮可读点 | 托盘、meta、placeholder | **Done** |
-| **ASSET-003** | Low | ⭐⭐ | Med | cream / forest / theater 表面契约未锁死 | 三套字色/边线 alpha 成 CSS 变量 | 审计 §12 | Authorized |
-| **ASSET-004** | Low | ⭐⭐ | Med | Theater 纯黑阴影与奶油面 elevation 分裂 | 并入同一 elevation，仅调 alpha | Theater tip | Authorized |
+| **ASSET-003** | Low | ⭐⭐ | Med | cream / forest / theater 表面契约未锁死 | 三套字色/边线 alpha 成 CSS 变量 | 审计 §12 | **Submitted** |
+| **ASSET-004** | Low | ⭐⭐ | Med | Theater 纯黑阴影与奶油面 elevation 分裂 | 并入同一 elevation，仅调 alpha | Theater tip | **Submitted** |
 
 ### ICON
 
@@ -173,14 +173,14 @@
 | **SHELL-005** | Low | ⭐ | Low | 面板双重圆角/边线 | 单一 `.v4-panel` | Workbench | **Done** |
 | **SHELL-006** | Low | ⭐ | Low | shadcn Button/Badge/Card 死代码 | 删除或隔离；禁止新入口 | `ui/button|badge|card.tsx` | Authorized |
 
-### TOKEN（EP-0 · 0.1 Submitted；0.2+ Authorized）
+### TOKEN（EP-0 · 0.2 Submitted；0.3+ Authorized）
 
 | ID | Business | Visual | Risk | 问题 | 验收标准 | 落点 | Status |
 |----|----------|--------|------|------|----------|------|--------|
-| **TOKEN-001** | Low | ⭐ | Med | Accent 多名 mint/emerald/action… | 冻结伪名；只用 `--v5-accent*` | `globals.css` `@theme` | **Submitted** |
-| **TOKEN-002** | Low | ⭐ | Med | @theme 冷灰蓝暗色残留 | 冻结/移除；禁新引用 | 同上 | **Submitted** |
-| **TOKEN-003** | Low | ⭐ | Low | 新代码仍写 `--v4-*` | 约定只写 `--v5-*` | `DESIGN.md` §2 | **Submitted** |
-| **TOKEN-004** | Low | ⭐⭐ | High | 阴影 20+ 一次性值 | elevation-0…3 + glow-accent/cta | 审计 §3 | Authorized |
+| **TOKEN-001** | Low | ⭐ | Med | Accent 多名 mint/emerald/action… | 冻结伪名；只用 `--v5-accent*` | `globals.css` `@theme` | **Done** |
+| **TOKEN-002** | Low | ⭐ | Med | @theme 冷灰蓝暗色残留 | 冻结/移除；禁新引用 | 同上 | **Done** |
+| **TOKEN-003** | Low | ⭐ | Low | 新代码仍写 `--v4-*` | 约定只写 `--v5-*` | `DESIGN.md` §2 | **Done** |
+| **TOKEN-004** | Low | ⭐⭐ | High | 阴影 20+ 一次性值 | elevation-0…3 + glow-accent/cta | 审计 §3 | **Submitted** |
 | **TOKEN-005** | Low | ⭐ | High | 圆角 8–10 档实战 | xs…pill 六档；禁中间值 | 审计 §2 | Authorized |
 | **TOKEN-006** | Low | ⭐ | Low | `radius-panel` 名存实亡 | 角色映射进注释与类 | `.v4-panel`、CTA | Authorized |
 | **TOKEN-007** | Low | ⭐ | Low | BrandMark `rounded-[11px]` | 归入半径阶 | `BrandMark.tsx` | Authorized |

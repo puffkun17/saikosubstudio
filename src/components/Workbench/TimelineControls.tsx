@@ -371,7 +371,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
           />
           {showSliderTip && (
             <div
-              className="pointer-events-none fixed z-[var(--z-dropdown)] -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-md border border-[var(--v4-line-strong)] bg-[color-mix(in_srgb,#0a0e0d_88%,transparent)] px-2 py-1 font-mono text-[11px] font-semibold tabular-nums text-[var(--v4-accent-strong)] shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md"
+              className="pointer-events-none fixed z-[var(--z-dropdown)] -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-md border border-[var(--v4-line-strong)] bg-[color-mix(in_srgb,#0a0e0d_88%,transparent)] px-2 py-1 font-mono text-[11px] font-semibold tabular-nums text-[var(--v4-accent-strong)] shadow-[var(--elevation-1-dim)] backdrop-blur-md"
               style={{ left: sliderTip.x, top: sliderTip.y }}
               role="status"
             >

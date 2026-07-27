@@ -382,7 +382,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
 
                   <div className="flex min-w-0 items-center gap-2 self-center select-none">
                     <div className="relative flex flex-col items-center self-stretch py-0.5">
-                      <span className={`mt-0.5 h-2 w-2 rounded-full border ${isActive ? 'bg-[var(--v4-accent-strong)] border-[var(--v4-accent-strong)] shadow-[0_0_10px_color-mix(in_srgb,var(--v4-accent)_40%,transparent)]' : 'bg-[var(--v4-accent-soft)] border-[var(--v4-line-strong)]'}`} />
+                      <span className={`mt-0.5 h-2 w-2 rounded-full border ${isActive ? 'bg-[var(--v4-accent-strong)] border-[var(--v4-accent-strong)] shadow-[var(--glow-accent)]' : 'bg-[var(--v4-accent-soft)] border-[var(--v4-line-strong)]'}`} />
                       <span className="mt-1 flex-1 w-px bg-[var(--v4-line)]" />
                     </div>
                     <div className={`flex min-w-0 flex-col whitespace-nowrap font-mono text-[13px] leading-tight tabular-nums tracking-tight ${isActive ? 'font-semibold text-[var(--v4-accent-strong)]' : 'font-medium text-[var(--v4-text-muted)]'}`}>

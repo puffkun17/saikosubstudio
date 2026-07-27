@@ -113,17 +113,41 @@
   --v5-dur: 240ms;
   --v5-dur-slow: 420ms;
 
+  /*
+   * Elevation / glow（EP-0.2 TOKEN-004）
+   * 墨绿 tint 一族；theater-dim 用 *-dim（更高 alpha），禁止另起纯黑阴影体系。
+   */
+  --elevation-0: 0 1px 0 color-mix(in srgb, var(--v5-green) 4%, transparent);
+  --elevation-1: 0 8px 24px color-mix(in srgb, var(--v5-green) 10%, transparent);
+  --elevation-2: 0 16px 40px color-mix(in srgb, var(--v5-green) 14%, transparent);
+  --elevation-3: 0 24px 64px color-mix(in srgb, var(--v5-green) 18%, transparent);
+  --elevation-1-dim: 0 8px 24px color-mix(in srgb, var(--v5-green) 32%, transparent);
+  --elevation-2-dim: 0 16px 40px color-mix(in srgb, var(--v5-green) 36%, transparent);
+  --elevation-3-dim: 0 24px 64px color-mix(in srgb, var(--v5-green) 42%, transparent);
+  --glow-accent: 0 0 12px color-mix(in srgb, var(--v5-accent) 22%, transparent);
+  --glow-cta: 0 8px 20px color-mix(in srgb, var(--v5-accent) 25%, transparent);
+
+  /*
+   * 三表面字色 / 边线角色（EP-0.2 ASSET-003）
+   * cream 默认；forest / theater 在 [data-surface] 覆盖。组件优先 --surface-*，--v4-* 仍为别名。
+   */
+  --surface-text: var(--v5-text);
+  --surface-text-muted: var(--v5-text-muted);
+  --surface-text-faint: var(--v5-text-faint);
+  --surface-line: var(--v5-line);
+  --surface-line-strong: var(--v5-line-strong);
+
   /* Compat aliases — prefer --v5-* in new code. */
   --v4-canvas: var(--v5-canvas);
   --v4-canvas-raised: var(--v5-canvas-raised);
   --v4-panel: var(--v5-panel);
   --v4-panel-raised: var(--v5-panel-raised);
   --v4-panel-muted: var(--v5-panel-muted);
-  --v4-line: var(--v5-line);
-  --v4-line-strong: var(--v5-line-strong);
-  --v4-text: var(--v5-text);
-  --v4-text-muted: var(--v5-text-muted);
-  --v4-text-faint: var(--v5-text-faint);
+  --v4-line: var(--surface-line);
+  --v4-line-strong: var(--surface-line-strong);
+  --v4-text: var(--surface-text);
+  --v4-text-muted: var(--surface-text-muted);
+  --v4-text-faint: var(--surface-text-faint);
   --v4-accent: var(--v5-accent);
   --v4-accent-strong: var(--v5-accent-strong);
   --v4-accent-soft: var(--v5-accent-soft);
@@ -232,7 +256,7 @@ body {
   border: 1px solid var(--v4-line);
   border-radius: 0.5rem; /* radius-md — 单一面板壳，勿外再套 rounded-lg border */
   background: var(--v4-panel);
-  box-shadow: 0 1px 0 rgba(26, 61, 55, 0.04);
+  box-shadow: var(--elevation-0);
 }
 
 /* Parsing / progress card (not the empty→queue handoff). */
@@ -282,16 +306,21 @@ body {
 
 /* Forest panels (theater chrome only): remap cream tokens to on-green. */
 [data-surface="forest"] {
+  --surface-text: #f5f1ea;
+  --surface-text-muted: rgba(245, 241, 234, 0.82);
+  --surface-text-faint: rgba(245, 241, 234, 0.6);
+  --surface-line: rgba(245, 241, 234, 0.12);
+  --surface-line-strong: rgba(245, 241, 234, 0.22);
   --v4-canvas: #1a3d37;
   --v4-canvas-raised: #214942;
   --v4-panel: rgba(245, 241, 234, 0.06);
   --v4-panel-raised: rgba(245, 241, 234, 0.1);
   --v4-panel-muted: rgba(245, 241, 234, 0.05);
-  --v4-line: rgba(245, 241, 234, 0.12);
-  --v4-line-strong: rgba(245, 241, 234, 0.22);
-  --v4-text: #f5f1ea;
-  --v4-text-muted: rgba(245, 241, 234, 0.82);
-  --v4-text-faint: rgba(245, 241, 234, 0.6);
+  --v4-line: var(--surface-line);
+  --v4-line-strong: var(--surface-line-strong);
+  --v4-text: var(--surface-text);
+  --v4-text-muted: var(--surface-text-muted);
+  --v4-text-faint: var(--surface-text-faint);
   --v4-accent: #ef8d5f;
   --v4-accent-strong: #f0a07a;
   --v4-accent-soft: rgba(239, 141, 95, 0.18);
@@ -304,16 +333,21 @@ body {
 
 /* Style drawer & light panels: force cream even when nested in forest theater. */
 [data-surface="cream"] {
+  --surface-text: #1a3d37;
+  --surface-text-muted: rgba(26, 61, 55, 0.8);
+  --surface-text-faint: rgba(26, 61, 55, 0.58);
+  --surface-line: rgba(26, 61, 55, 0.12);
+  --surface-line-strong: rgba(26, 61, 55, 0.22);
   --v4-canvas: #f5f1ea;
   --v4-canvas-raised: #fffcf7;
   --v4-panel: #fffcf7;
   --v4-panel-raised: #ffffff;
   --v4-panel-muted: #efebe3;
-  --v4-line: rgba(26, 61, 55, 0.12);
-  --v4-line-strong: rgba(26, 61, 55, 0.22);
-  --v4-text: #1a3d37;
-  --v4-text-muted: rgba(26, 61, 55, 0.8);
-  --v4-text-faint: rgba(26, 61, 55, 0.58);
+  --v4-line: var(--surface-line);
+  --v4-line-strong: var(--surface-line-strong);
+  --v4-text: var(--surface-text);
+  --v4-text-muted: var(--surface-text-muted);
+  --v4-text-faint: var(--surface-text-faint);
   --v4-accent: #ef8d5f;
   --v4-accent-strong: #e07845;
   --v4-accent-soft: rgba(239, 141, 95, 0.16);
@@ -322,6 +356,21 @@ body {
   background: var(--v5-cream);
   -webkit-font-smoothing: auto;
   -moz-osx-font-smoothing: auto;
+}
+
+/* Theater dim：关灯舞台字色/边线角色；阴影走 elevation-*-dim */
+[data-surface="theater"],
+.lights-off-stage {
+  --surface-text: rgba(245, 241, 234, 0.92);
+  --surface-text-muted: rgba(245, 241, 234, 0.72);
+  --surface-text-faint: rgba(245, 241, 234, 0.48);
+  --surface-line: rgba(245, 241, 234, 0.1);
+  --surface-line-strong: rgba(239, 141, 95, 0.16);
+  --v4-text: var(--surface-text);
+  --v4-text-muted: var(--surface-text-muted);
+  --v4-text-faint: var(--surface-text-faint);
+  --v4-line: var(--surface-line);
+  --v4-line-strong: var(--surface-line-strong);
 }
 
 /* Shared handoff stage: empty + queue share one field — no panel hard-cut. */
@@ -1461,7 +1510,7 @@ body {
   border-color: transparent;
   background: var(--v4-accent);
   color: var(--v4-accent-ink);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--v4-accent) 25%, transparent);
+  box-shadow: var(--glow-cta);
 }
 
 .ui-action--hero:not(.ui-action--secondary):hover {
@@ -1482,7 +1531,7 @@ body {
   color: var(--v4-text);
 }
 
-/* —— Shell triad（UP-1）：统一角色与墨绿 tint；数值可于 EP-0 升 token —— */
+/* —— Shell triad：elevation token（EP-0.2）—— */
 .ui-modal {
   width: 100%;
   max-width: 24rem;
@@ -1491,9 +1540,7 @@ body {
   background: var(--v4-panel-raised);
   padding: 1.25rem;
   text-align: left;
-  box-shadow:
-    0 18px 48px color-mix(in srgb, var(--v5-green) 18%, transparent),
-    0 2px 0 color-mix(in srgb, #fff 40%, transparent);
+  box-shadow: var(--elevation-3);
 }
 
 .ui-modal--wide {
@@ -1506,14 +1553,14 @@ body {
   border-radius: 0.5rem; /* md */
   border: 1px solid var(--v4-line-strong);
   background: var(--v4-panel-raised);
-  box-shadow: 0 12px 36px color-mix(in srgb, var(--v5-green) 14%, transparent);
+  box-shadow: var(--elevation-2);
 }
 
 .ui-toast {
   border-radius: 0.75rem; /* lg */
   border: 1px solid var(--v4-line-strong);
   background: var(--v4-panel-raised);
-  box-shadow: 0 12px 32px color-mix(in srgb, var(--v5-green) 12%, transparent);
+  box-shadow: var(--elevation-2);
 }
 
 .app-main-pad {
@@ -1735,7 +1782,7 @@ button {
   box-shadow:
     0 0 90px 14px rgba(239, 141, 95, 0.07),
     0 0 32px 4px rgba(239, 141, 95, 0.05),
-    0 18px 46px rgba(0, 0, 0, 0.65);
+    var(--elevation-3-dim);
 }
 
 /* 播放条毛玻璃；图标钮仅半透明底，避免嵌套 backdrop 发糊 */
@@ -1743,7 +1790,7 @@ button {
   background: color-mix(in srgb, #142e29 72%, transparent);
   backdrop-filter: blur(16px) saturate(1.15);
   -webkit-backdrop-filter: blur(16px) saturate(1.15);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--elevation-2-dim);
 }
 
 .theater-chrome-chip {
@@ -1782,7 +1829,7 @@ button {
   background: color-mix(in srgb, #142e29 78%, transparent);
   backdrop-filter: blur(18px) saturate(1.2);
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
+  box-shadow: var(--elevation-3-dim);
 }
 
 .theater-style-drawer {
@@ -1801,7 +1848,7 @@ button {
   background: color-mix(in srgb, #0a0e0d 82%, transparent);
   box-shadow:
     0 0 36px 2px rgba(239, 141, 95, 0.06),
-    0 18px 48px rgba(0, 0, 0, 0.55);
+    var(--elevation-3-dim);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2031,7 +2078,7 @@ button {
 .glass-panel-ar {
   background: var(--v4-panel-raised);
   border: 1px solid var(--v4-line-strong);
-  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.32);
+  box-shadow: var(--elevation-2);
 }
 
 .glass-btn-ar {

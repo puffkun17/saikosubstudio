@@ -81,11 +81,27 @@ before introducing visual novelty.
 
 ### 三套表面契约
 
-| 表面 | 背景气质 | 文字/控件 |
-|------|----------|-----------|
-| Cream desk | 工作区 | 墨绿字 + 柑橘强调 |
-| Forest chrome | 顶/底托盘 | 奶油半透明 ink，勿当第二套亮色主题 |
-| Theater dim | 预览关灯 | 允许更深，但仍用 triad 派生，禁止霓虹 |
+| 表面 | `data-surface` / 选择器 | 字色 / 边线 token |
+|------|-------------------------|-------------------|
+| Cream desk | 默认 / `[data-surface="cream"]` | `--surface-text*` / `--surface-line*` → 墨绿 |
+| Forest chrome | `[data-surface="forest"]` | 同上 → 奶油半透明 ink |
+| Theater dim | `[data-surface="theater"]` / `.lights-off-stage` | 更深奶油 ink + 柑橘强线 |
+
+切换表面时文字角色映射到 `--surface-*`；`--v4-text|line*` 为兼容别名。
+
+### Elevation / Glow（EP-0.2）
+
+| Token | 用途 |
+|-------|------|
+| `--elevation-0` | 面板默认 / hairline |
+| `--elevation-1` | 轻浮层 |
+| `--elevation-2` | Menu、Toast、InfoHint |
+| `--elevation-3` | Modal |
+| `--elevation-*-dim` | Theater 同族更高 alpha（tip / chrome / 抽屉） |
+| `--glow-accent` | 选中 / 焦点（一种） |
+| `--glow-cta` | 仅 hero 主按钮 |
+
+阴影色一律 `color-mix(forest …)`；禁止 Theater 另起纯黑 elevation 体系。
 
 ---
 

@@ -268,7 +268,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
 
       {/* Outer wrapper constrained to the TV Mask's Aspect Ratio */}
       <div 
-        className="screen-sim-frame fade-in-up relative z-0 flex items-center justify-center overflow-hidden rounded-sm border border-[var(--v4-line-strong)] shadow-[0_18px_46px_rgba(0,0,0,0.42)]"
+        className="screen-sim-frame fade-in-up relative z-0 flex items-center justify-center overflow-hidden rounded-sm border border-[var(--v4-line-strong)] shadow-[var(--elevation-3-dim)]"
         style={{
           aspectRatio: maskAspect,
           maxWidth: '100%',

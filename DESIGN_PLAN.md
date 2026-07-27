@@ -280,7 +280,7 @@
 
 ## EP-0.1｜TOKEN-001 / 002 / 003 命名与废弃
 
-> **状态：** **Submitted · 待复验（2026-07-28）** — `@theme` 伪名已删；`DESIGN.md` 废弃名单已写。未复验勿标 Done。
+> **状态：** **Done（2026-07-28 Design Director 复验）** — 验收 3/3 Pass。
 
 ### 决策
 
@@ -302,11 +302,27 @@
 | TOKEN-002 | 删除冷灰蓝暗色 `@theme`（bg/surface/text-primary/glass-border 等） |
 | TOKEN-003 | `DESIGN.md` §2：v5-only + v4 别名约定 + Deprecated 表 |
 
-**状态：Submitted · 待 Design Director 复验。未混 HOME-BRAND / EP-0.2+。**
+**状态：Done · Design Director 2026-07-28 复验通过。**
+
+### Design Director 复验（2026-07-28）
+
+分支：`cursor/ep0-token-001-003` · 提交：`d4cdd36d`
+
+| # | 验收 | 结果 | 证据 |
+|---|------|------|------|
+| 1 | 无新增 mint/emerald/暗色引用；伪名已删 | **Pass** | `@theme` 删除 mint/emerald/action* + 冷灰蓝；产品 `src/`/`app/` 无残留引用 |
+| 2 | `DESIGN.md` 写明废弃名单 | **Pass** | §2 Deprecated 表 + v5-only / v4 别名约定 |
+| 3 | 产品面无故意视觉变化 | **Pass** | 唯一运行时改动：`.action-required-marker` glow `rgba(…,0.22)` → 等价 `color-mix(--v5-accent 22%)` |
+
+**范围纪律：** 未混 HOME-BRAND / EP-0.2+（elevation / radius / SHELL-006）。
+
+**下一步：** EP-0.2（TOKEN-004 + ASSET-003/004）可开工；单独 PR。
 
 ---
 
 ## EP-0.2｜TOKEN-004 / ASSET-003 / ASSET-004 Elevation 与表面
+
+> **状态：** **Submitted · 待复验（2026-07-28）** — elevation / glow / 三表面 / Theater 同族阴影已落地。未复验勿标 Done。
 
 ### 决策
 
@@ -327,6 +343,16 @@
 1. 浮层阴影来自 token，无 20+ 散装值新增。  
 2. Theater tip 与 Modal 同属墨绿 tint 族。  
 3. 三表面切换时文字角色可映射到变量。
+
+### 实现提交（UI Engineer · 2026-07-28）
+
+| ID | 落点 |
+|----|------|
+| TOKEN-004 | `:root` `--elevation-0…3` / `*-dim` / `--glow-accent` / `--glow-cta`；接到 `.v4-panel` / `.ui-menu|toast|modal` / `.ui-action--hero` |
+| ASSET-003 | `--surface-text*|line*`；`[data-surface=cream|forest|theater]` + `.lights-off-stage` |
+| ASSET-004 | Theater tip / chrome / 抽屉 / screen-sim-frame：纯黑 → `elevation-*-dim` |
+
+**状态：Submitted · 待 Design Director 复验。未混 EP-0.3+ / SHELL-006 / HOME-BRAND。**
 
 ---
 
@@ -421,12 +447,13 @@ CLEAN-A（可选清扫）:
        【Done · 2026-07-27 Design Director 复验关闭】
 
 EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
-       【Submitted · 待复验 · 2026-07-28】
+       【Done · 2026-07-28 Design Director 复验关闭】
        → TOKEN-004 + ASSET-003 + ASSET-004
+       【Submitted · 待复验 · 2026-07-28】
        → TOKEN-005 → TOKEN-006 → TOKEN-007 → TOKEN-008
        → TOKEN-009 → TOKEN-010 → TOKEN-011 → TOKEN-012
        → SHELL-006
-       【0.2+ Authorized · 待续】
+       【0.3+ Authorized · 待续】
 ```
 ---
 
@@ -454,8 +481,9 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 | **UP-1** | 实现验收（十一条） | **Done** | **2026-07-27** | Design Director 复验关闭 Wave 2 |
 | **CLEAN-A** | 可选清扫（UP-0/UP-1 残留） | **Done** | **2026-07-27** | Design Director 复验通过 A1–A5；解锁 EP-0 |
 | **THEATER-LAYER** | 放映厅叠层 / 几何避让 | **Done** | **2026-07-27** | Design Director 复验通过 D1–D4 / 验收 6 条；EP-0 恢复可开工 |
-| **EP-0.1** | TOKEN-001 → 002 → 003 | **Submitted · 待复验** | **2026-07-28** | 单独 PR；EP-0.2+ 仍 Authorized |
-| **EP-0** | TOKEN-004…012 / ASSET-003/004 / SHELL-006 | **Authorized** | **2026-07-27** | 待 0.1 复验后继续；禁止与图层/HOME-BRAND 混 PR |
+| **EP-0.1** | TOKEN-001 → 002 → 003 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`d4cdd36d` |
+| **EP-0.2** | TOKEN-004 + ASSET-003/004 | **Submitted · 待复验** | **2026-07-28** | 单独 PR；elevation / 三表面 / Theater 同族 |
+| **EP-0** | TOKEN-005…012 / SHELL-006 | **Authorized** | **2026-07-27** | 待 0.2 复验后继续；禁混 PR |
 
 ---
 
@@ -605,13 +633,13 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 
 ---
 
-## EP-0｜工程真相源 · **In Progress（0.1 Submitted · 2026-07-28）**
+## EP-0｜工程真相源 · **In Progress（0.2 Submitted · 2026-07-28）**
 
 方案以本文 **EP-0** 各节为准。实施序：
 
 ```
-TOKEN-001 → 002 → 003          【Submitted · 待复验 · 2026-07-28】
-→ TOKEN-004 + ASSET-003 + ASSET-004
+TOKEN-001 → 002 → 003          【Done · 2026-07-28】
+→ TOKEN-004 + ASSET-003 + ASSET-004   【Submitted · 待复验】
 → TOKEN-005 → 006 → 007 → 008
 → TOKEN-009 → 010 → 011 → 012
 → SHELL-006
@@ -734,8 +762,9 @@ TOKEN-001 → 002 → 003          【Submitted · 待复验 · 2026-07-28】
 
 | 轨 | 状态 |
 |----|------|
-| **EP-0.1** TOKEN-001→003 | **Submitted · 待复验（2026-07-28）** |
-| **EP-0** Wave 3 余下 | **Authorized** · 待 0.1 复验后继续；禁混 PR |
+| **EP-0.1** TOKEN-001→003 | **Done（2026-07-28）** |
+| **EP-0.2** TOKEN-004 + ASSET-003/004 | **Submitted · 待复验（2026-07-28）** |
+| **EP-0.3+** Wave 3 余下 | **Authorized** · 待续；禁混 PR |
 
 ## 产品发布债（Wave 外 · 未授权）
 
