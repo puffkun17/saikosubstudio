@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, type TmdbSuggestion } from '@/store/useStudioStore';
 import { Search, Image as ImageIcon, Star, Sparkles, X, CheckCircle2, CircleAlert, FileText, Languages } from 'lucide-react';
@@ -8,6 +8,7 @@ import { FilmMetaBlock, buildFilmRatings } from '@/components/Ingest/FilmMetaBlo
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseSrt } from '@/utils/subtitleCore';
 import { AssStylePreview } from '@/components/Ingest/AssStylePreview';
+import { useUiModalFocus } from '@/hooks/useUiModalFocus';
 
 const countSubtitleCues = (text?: string) => {
   if (!text) return 0;
@@ -95,23 +96,14 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
   };
 
   const handleClose = () => {
+    if (isApplyingSuggestion) return;
     setPendingSuggestion(null);
     setTmdbSuggestions([]);
     setTmdbManualOpen(false);
   };
 
-  useEffect(() => {
-    if (!tmdbManualOpen) return;
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !isApplyingSuggestion) {
-        setPendingSuggestion(null);
-        setTmdbSuggestions([]);
-        setTmdbManualOpen(false);
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isApplyingSuggestion, setTmdbManualOpen, setTmdbSuggestions, tmdbManualOpen]);
+  const searchModalRef = useRef<HTMLDivElement>(null);
+  useUiModalFocus(tmdbManualOpen, searchModalRef, handleClose);
 
   return (
     <>
@@ -308,6 +300,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
             onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
           >
             <motion.div
+              ref={searchModalRef}
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -317,6 +310,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
               aria-modal="true"
               aria-labelledby="tmdb-search-title"
               aria-describedby={needsTitleInput ? 'tmdb-search-description' : undefined}
+              tabIndex={-1}
             >
               {/* Modal Header */}
               <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--v4-line)] px-4 py-3">

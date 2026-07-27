@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { SequenceList } from '@/components/Workbench/SequenceList';
@@ -17,6 +17,7 @@ import { createSourceMatchReport } from '@/utils/timeline/sourceMatch';
 import { formatMsClock } from '@/utils/timeline/timecode';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
+import { useUiModalFocus } from '@/hooks/useUiModalFocus';
 
 const formatCount = (value: number) => new Intl.NumberFormat('zh-CN').format(value);
 
@@ -43,6 +44,8 @@ export const WorkbenchStep: React.FC = () => {
   const { setInfoBar, setEdgeNext } = useWorkflowChrome();
 
   const [showBackConfirm, setShowBackConfirm] = useState(false);
+  const backModalRef = useRef<HTMLDivElement>(null);
+  useUiModalFocus(showBackConfirm, backModalRef, () => setShowBackConfirm(false));
   const [sourceDurationMs, setSourceDurationMs] = useState<number | undefined>(undefined);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [markFilter, setMarkFilter] = useState<InspectionMarkFilter>('all');
@@ -84,8 +87,8 @@ export const WorkbenchStep: React.FC = () => {
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      if (showBackConfirm) setShowBackConfirm(false);
-      else if (isSettingsOpen) setIsSettingsOpen(false);
+      if (showBackConfirm) return; // REL-2：确认框由 useUiModalFocus 处理
+      if (isSettingsOpen) setIsSettingsOpen(false);
       else if (isDetailOpen) setIsDetailOpen(false);
     };
     document.addEventListener('keydown', handleEscape);
@@ -306,6 +309,7 @@ export const WorkbenchStep: React.FC = () => {
               }}
             >
               <motion.div
+                ref={backModalRef}
                 role="alertdialog"
                 aria-modal="true"
                 aria-labelledby="workbench-back-title"
@@ -314,6 +318,7 @@ export const WorkbenchStep: React.FC = () => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.98 }}
                 className="ui-modal"
+                tabIndex={-1}
               >
                 <h3 id="workbench-back-title" className="text-lg font-semibold text-[var(--v4-text)]">
                   是否重新导入

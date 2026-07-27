@@ -1140,19 +1140,10 @@ export const DragZone: React.FC = () => {
                 </p>
               </header>
 
-              {/* 整卡即落点：点击任意处开文件选择，拖入高亮吸附 */}
+              {/* 整卡可点开选文件；键盘可达性交给下方 hero CTA，避免 button-in-button */}
               <div
                 className="ingest-start-card"
-                role="button"
-                tabIndex={0}
-                aria-label="选择或拖入字幕文件"
                 onClick={() => fileInputRef.current?.click()}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    fileInputRef.current?.click();
-                  }
-                }}
               >
                 <div className="ingest-start-card__glyphs" aria-hidden="true">
                   {(['srt', 'ass', 'zip', 'rar', '7z'] as const).map((format, index) => (

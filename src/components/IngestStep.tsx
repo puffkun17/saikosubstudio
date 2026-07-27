@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { DragZone } from '@/components/Ingest/DragZone';
@@ -9,6 +9,7 @@ import { TmdbPanel } from '@/components/Ingest/TmdbPanel';
 import { SourceIdentityStrip } from '@/components/Ingest/SourceIdentityStrip';
 import { Database, Trash2, Calendar, FolderClock, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useUiModalFocus } from '@/hooks/useUiModalFocus';
 
 export const IngestStep: React.FC = () => {
   const { 
@@ -29,6 +30,9 @@ export const IngestStep: React.FC = () => {
     isIngestClearing: state.isIngestClearing,
   })));
 
+  const libraryModalRef = useRef<HTMLDivElement>(null);
+  useUiModalFocus(isLibraryOpen, libraryModalRef, () => setLibraryOpen(false));
+
   const shellState: 'empty' | 'clearing' | 'ready' = isIngestClearing
     ? 'clearing'
     : tasks.length === 0
@@ -36,15 +40,6 @@ export const IngestStep: React.FC = () => {
       : 'ready';
 
   // Ready-state info bar is owned by TaskList (show name / episode + file actions).
-
-  useEffect(() => {
-    if (!isLibraryOpen) return;
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setLibraryOpen(false);
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isLibraryOpen, setLibraryOpen]);
 
   return (
     <div className="ingest-shell relative z-0 flex h-full w-full flex-1 flex-col overflow-y-auto p-5 md:p-8 lg:p-10 2xl:p-12">
@@ -88,6 +83,7 @@ export const IngestStep: React.FC = () => {
             onClick={(e) => { if (e.target === e.currentTarget) setLibraryOpen(false); }}
           >
             <motion.div 
+              ref={libraryModalRef}
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -96,6 +92,7 @@ export const IngestStep: React.FC = () => {
               role="dialog"
               aria-modal="true"
               aria-labelledby="library-title"
+              tabIndex={-1}
             >
               <div className="flex justify-between items-center px-6 py-5 border-b border-[var(--v4-line)] flex-shrink-0">
                 <div className="flex items-center gap-3">

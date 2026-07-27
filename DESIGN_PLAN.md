@@ -897,9 +897,9 @@ TOKEN-001 → 002 → 003          【Done · 2026-07-28】
 
 ---
 
-### 序 1｜REL-P1 — 产品发布债（可访问性 / 结构）· **Authorized（2026-07-28）**
+### 序 1｜REL-P1 — 产品发布债（可访问性 / 结构）· **Submitted · 待复验（2026-07-28）**
 
-> **单独 PR**；优先在 INTEGRATE tip 上开。交 Director 复验后标 Done。
+> 基于 INTEGRATE tip 单独 PR。交 Director 复验后标 Done。未混 REL-P2 / 视觉改版。
 
 | ID | 项 | 验收 |
 |----|-----|------|
@@ -908,6 +908,16 @@ TOKEN-001 → 002 → 003          【Done · 2026-07-28】
 | **REL-3** | 窄屏步骤可达 | 底栏步骤在窄宽下可点可读；不依赖仅桌面可见标签 |
 
 **不做：** 视觉改版、新色、新字阶、重做空态构图、重开 EP-0、混入 REL-P2。
+
+### 实现提交（UI Engineer · 2026-07-28）
+
+| ID | 落点 |
+|----|------|
+| REL-1 | `DragZone` 空态卡去 `role=button`；键盘交给 hero CTA |
+| REL-2 | `useUiModalFocus`：开锁内 / Tab 循环 / Esc / 关回触发源；接入重置 / 回导入 / 存档 / TMDB 检索 |
+| REL-3 | 顶栏步骤条窄屏常显可点；移除仅展示的 STEP_LABEL |
+
+**状态：Submitted · 待 Design Director 复验。**
 
 ---
 

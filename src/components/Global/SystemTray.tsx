@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useSyncExternalStore } from 'react';
+import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Archive, ArrowLeft, PenLine, RotateCcw, Scale } from 'lucide-react';
@@ -10,12 +10,7 @@ import { useStudioStore } from '@/store/useStudioStore';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import { BottomStatusDeck } from '@/components/Global/BottomStatusDeck';
 import { BrandMark } from '@/components/Global/BrandMark';
-
-const STEP_LABEL: Record<number, string> = {
-  1: '导入',
-  2: '工作台',
-  3: '预览',
-};
+import { useUiModalFocus } from '@/hooks/useUiModalFocus';
 
 const WORKFLOW_STEPS = [
   { id: 1, label: '导入' },
@@ -84,6 +79,8 @@ export const SystemTray = () => {
   );
   const [scale, setScale] = useState(getDefaultScale);
   const [pendingReset, setPendingReset] = useState(false);
+  const resetModalRef = useRef<HTMLDivElement>(null);
+  useUiModalFocus(pendingReset, resetModalRef, () => setPendingReset(false));
   const pathname = usePathname();
   const {
     workflowStep,
@@ -161,15 +158,6 @@ export const SystemTray = () => {
     return () => clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    if (!pendingReset) return;
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setPendingReset(false);
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [pendingReset]);
-
   return (
     <>
       {/* ── Top: brand + workflow + scale + local clock ───────────────── */}
@@ -189,9 +177,9 @@ export const SystemTray = () => {
           </button>
 
           {!isInfoPage && (
-            <div className="hidden min-w-0 flex-1 items-center border-l border-[color:color-mix(in_srgb,var(--v5-cream)_12%,transparent)] pl-3 min-[720px]:flex">
+            <div className="flex min-w-0 flex-1 items-center border-l border-[color:color-mix(in_srgb,var(--v5-cream)_12%,transparent)] pl-2 sm:pl-3">
               <div
-                className="relative h-9 w-full max-w-[22rem] overflow-hidden rounded-[var(--radius-md)] border border-[var(--tray-line)] bg-[var(--tray-fill-soft)]"
+                className="relative h-9 w-full max-w-[14rem] overflow-hidden rounded-[var(--radius-md)] border border-[var(--tray-line)] bg-[var(--tray-fill-soft)] sm:max-w-[18rem] md:max-w-[22rem]"
                 role="group"
                 aria-label="工作流程进度"
               >
@@ -245,12 +233,6 @@ export const SystemTray = () => {
               <ArrowLeft className="h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
               <span className="hidden whitespace-nowrap min-[480px]:inline">返回首页</span>
             </Link>
-          )}
-
-          {!isInfoPage && (
-            <span className="truncate text-[length:var(--type-control)] font-medium text-[var(--tray-ink-muted)] min-[720px]:hidden">
-              {STEP_LABEL[workflowStep]}
-            </span>
           )}
         </div>
 
@@ -341,11 +323,13 @@ export const SystemTray = () => {
             }}
           >
             <div
+              ref={resetModalRef}
               role="alertdialog"
               aria-modal="true"
               aria-labelledby="restart-title"
               aria-describedby="restart-description"
               className="ui-modal"
+              tabIndex={-1}
             >
               <div className="flex items-start gap-3">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]">
