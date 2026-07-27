@@ -926,7 +926,7 @@ body {
 /* 桌面隐喻：默认无底无框，内容直接坐在奶油底上；
    虚线框只在拖拽悬停时浮现，作为「落点」提示。 */
 .ingest-start-card {
-  width: min(34rem, 100%);
+  width: min(36rem, 100%);
   margin-inline: auto;
   padding: 2.75rem 2rem 2.25rem;
   text-align: center;
@@ -1012,23 +1012,13 @@ body {
 
 /* 空态：价值主张 → 开始卡 → 亮点轨（顶/底/信息栏不动） */
 .ingest-empty-intro {
-  width: min(44rem, 100%);
+  width: min(36rem, 100%);
   margin: 0 auto 0.75rem;
   text-align: center;
 }
 
-.ingest-empty-intro__eyebrow {
-  margin: 0;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  /* 可读次要句：纯柑橘在奶油上仅 ~2.2:1；混入墨绿达到 ≥4.5:1 且保留柑橘色相 */
-  color: color-mix(in srgb, var(--v5-accent) 40%, var(--v5-text));
-}
-
 .ingest-empty-intro__title {
-  margin: 0.55rem 0 0;
+  margin: 0;
   font-family: var(--font-serif);
   font-size: clamp(1.45rem, 2.8vw, 1.9rem);
   font-weight: 700;
@@ -1037,26 +1027,16 @@ body {
   color: var(--v4-text);
 }
 
-/* 宽屏单行；窄屏按语义断在「浏览器的 / 字幕处理工具」 */
-.ingest-empty-intro__break {
-  display: none;
-}
-
-@media (max-width: 719px) {
-  .ingest-empty-intro__break {
-    display: block;
-  }
-}
-
 @media (min-width: 720px) {
-  .ingest-empty-intro__title {
+  .ingest-empty-intro__title,
+  .ingest-empty-intro__sub {
     white-space: nowrap;
   }
 }
 
 .ingest-empty-intro__sub {
   margin: 0.65rem auto 0;
-  max-width: 40rem;
+  max-width: 36rem;
   font-size: 0.9375rem;
   font-weight: 500;
   line-height: 1.65;

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ArrowLeft, FolderClock, MessageSquareText, RotateCcw, ShieldCheck } from 'lucide-react';
+import { Archive, ArrowLeft, PenLine, RotateCcw, Scale } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
@@ -32,10 +32,10 @@ const trayCtrl =
 
 /**
  * Labels appear from available deck width (parent @container), not control width —
- * avoids the hide↔narrow feedback loop. Thresholds stay generous.
+ * avoids the hide↔narrow feedback loop. HOME-BRAND：短标签「存档/隐私/反馈」，
+ * 阈值远低于旧 @[22rem]，默认桌面可见；极窄才 icon-only。
  */
-const trayLabelLong = 'hidden whitespace-nowrap @[22rem]/tray:inline';
-const trayLabelShort = 'hidden whitespace-nowrap @[14rem]/tray:inline';
+const trayLabel = 'hidden whitespace-nowrap @[8rem]/tray:inline';
 
 const getDefaultScale = () => {
   if (typeof window === 'undefined') return 1.0;
@@ -185,7 +185,7 @@ export const SystemTray = () => {
             aria-label="返回导入页"
           >
             <BrandMark className="h-10 w-10 shrink-0 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.28)]" />
-            <span className="hidden whitespace-nowrap min-[420px]:inline">SubStudio</span>
+            <span className="hidden whitespace-nowrap min-[420px]:inline">SaikoSubStudio</span>
           </button>
 
           {!isInfoPage && (
@@ -308,11 +308,11 @@ export const SystemTray = () => {
                 type="button"
                 onClick={() => setLibraryOpen(true)}
                 className={`${trayCtrl} cursor-pointer`}
-                title="历史存档字幕"
+                title="历史存档"
                 aria-label="历史存档"
               >
-                <FolderClock className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
-                <span className={trayLabelLong}>历史存档</span>
+                <Archive className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
+                <span className={trayLabel}>存档</span>
                 {libraryCount > 0 && (
                   <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-[color:rgba(239,141,95,0.22)] px-1.5 py-0.5 text-xs font-semibold text-[var(--v5-orange)]">
                     {libraryCount}
@@ -321,12 +321,12 @@ export const SystemTray = () => {
               </button>
             )}
             <Link href="/about" className={trayCtrl} title="隐私与版权" aria-label="隐私与版权">
-              <ShieldCheck className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
-              <span className={trayLabelLong}>隐私与版权</span>
+              <Scale className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
+              <span className={trayLabel}>隐私</span>
             </Link>
-            <Link href="/feedback" className={trayCtrl} title="提交反馈" aria-label="反馈">
-              <MessageSquareText className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
-              <span className={trayLabelShort}>反馈</span>
+            <Link href="/feedback" className={trayCtrl} title="反馈" aria-label="反馈">
+              <PenLine className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
+              <span className={trayLabel}>反馈</span>
             </Link>
           </div>
         </div>
