@@ -11,31 +11,8 @@
   --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", var(--font-geist-sans), system-ui, sans-serif;
   --font-serif: "Noto Serif SC", "Source Han Serif SC", "思源宋体", serif;
   --font-mono: var(--font-geist-mono), "SFMono-Regular", "Cascadia Mono", ui-monospace, monospace, "PingFang SC", "Microsoft YaHei";
-  --color-accent-neon: #f5d0bc;
-  --color-accent-glow: rgba(239, 141, 95, 0.14);
-  --color-accent-muted: #d4a08a;
-  --color-accent-emerald: #ef8d5f;
-  --color-accent-emerald-glow: rgba(239, 141, 95, 0.18);
-  --color-mint: #ef8d5f;
-  --color-mint-strong: #f0a07a;
-  --color-mint-soft: rgba(239, 141, 95, 0.16);
-  --color-action: #ef8d5f;
-  --color-action-strong: #e07845;
-  --color-action-ink: #ffffff;
-  --color-action-soft: rgba(239, 141, 95, 0.16);
-  --color-action-glow: rgba(239, 141, 95, 0.22);
-  --color-bg-dark: #090b10;
-  --color-bg-base: #0d1016;
-  --color-surface-base: rgba(255, 255, 255, 0.025);
-  --color-surface-elevated: rgba(255, 255, 255, 0.055);
-  --color-text-primary: #eef1f6;
-  --color-text-secondary: #959dab;
-  --color-glass-border: rgba(190, 201, 224, 0.09);
-  --color-surface-0: #090b10;
-  --color-surface-1: #0d1016;
-  --color-surface-2: #121722;
-  --color-surface-3: #181e2a;
-  
+  /* Accent / dark @theme 伪名已删（EP-0.1 TOKEN-001/002）；只用 :root --v5-*。见 DESIGN.md §2 Deprecated。 */
+
   /* One readable scale: annotation 13, control 15, body 16, headings 18-24. */
   --text-xs: 0.8125rem;
   --text-sm: 0.9375rem;
@@ -1884,7 +1861,7 @@ button {
 
 .action-required-marker {
   background: var(--v4-accent);
-  box-shadow: 0 0 0 5px var(--v4-accent-soft), 0 0 16px var(--color-action-glow);
+  box-shadow: 0 0 0 5px var(--v4-accent-soft), 0 0 16px color-mix(in srgb, var(--v5-accent) 22%, transparent);
   animation: actionBeacon 2.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
 

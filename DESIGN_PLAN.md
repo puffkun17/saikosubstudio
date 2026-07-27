@@ -280,6 +280,8 @@
 
 ## EP-0.1｜TOKEN-001 / 002 / 003 命名与废弃
 
+> **状态：** **Submitted · 待复验（2026-07-28）** — `@theme` 伪名已删；`DESIGN.md` 废弃名单已写。未复验勿标 Done。
+
 ### 决策
 
 - 唯一强调色名：`--v5-accent*`（及 orange 别名若保留）。  
@@ -291,6 +293,16 @@
 1. 新 PR 不含新增 mint/emerald/暗色引用。  
 2. `DESIGN.md` 与注释写明废弃名单。  
 3. 产品面视觉相对 UP-1 **无故意变化**（纯工程收敛）。
+
+### 实现提交（UI Engineer · 2026-07-28）
+
+| ID | 落点 |
+|----|------|
+| TOKEN-001 | 删除 `@theme` mint/emerald/action*；`.action-required-marker` glow → `color-mix(var(--v5-accent) 22%)` |
+| TOKEN-002 | 删除冷灰蓝暗色 `@theme`（bg/surface/text-primary/glass-border 等） |
+| TOKEN-003 | `DESIGN.md` §2：v5-only + v4 别名约定 + Deprecated 表 |
+
+**状态：Submitted · 待 Design Director 复验。未混 HOME-BRAND / EP-0.2+。**
 
 ---
 
@@ -409,11 +421,12 @@ CLEAN-A（可选清扫）:
        【Done · 2026-07-27 Design Director 复验关闭】
 
 EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
+       【Submitted · 待复验 · 2026-07-28】
        → TOKEN-004 + ASSET-003 + ASSET-004
        → TOKEN-005 → TOKEN-006 → TOKEN-007 → TOKEN-008
        → TOKEN-009 → TOKEN-010 → TOKEN-011 → TOKEN-012
        → SHELL-006
-       【Authorized · 可开工 · 2026-07-27】
+       【0.2+ Authorized · 待续】
 ```
 ---
 
@@ -441,7 +454,8 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 | **UP-1** | 实现验收（十一条） | **Done** | **2026-07-27** | Design Director 复验关闭 Wave 2 |
 | **CLEAN-A** | 可选清扫（UP-0/UP-1 残留） | **Done** | **2026-07-27** | Design Director 复验通过 A1–A5；解锁 EP-0 |
 | **THEATER-LAYER** | 放映厅叠层 / 几何避让 | **Done** | **2026-07-27** | Design Director 复验通过 D1–D4 / 验收 6 条；EP-0 恢复可开工 |
-| **EP-0** | TOKEN / ASSET-003/004 / SHELL-006 | **Authorized** | **2026-07-27** | LAYER Done 后恢复；禁止与图层混 PR |
+| **EP-0.1** | TOKEN-001 → 002 → 003 | **Submitted · 待复验** | **2026-07-28** | 单独 PR；EP-0.2+ 仍 Authorized |
+| **EP-0** | TOKEN-004…012 / ASSET-003/004 / SHELL-006 | **Authorized** | **2026-07-27** | 待 0.1 复验后继续；禁止与图层/HOME-BRAND 混 PR |
 
 ---
 
@@ -591,12 +605,12 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 
 ---
 
-## EP-0｜工程真相源 · **Authorized（可开工 · 2026-07-27）**
+## EP-0｜工程真相源 · **In Progress（0.1 Submitted · 2026-07-28）**
 
 方案以本文 **EP-0** 各节为准。实施序：
 
 ```
-TOKEN-001 → 002 → 003
+TOKEN-001 → 002 → 003          【Submitted · 待复验 · 2026-07-28】
 → TOKEN-004 + ASSET-003 + ASSET-004
 → TOKEN-005 → 006 → 007 → 008
 → TOKEN-009 → 010 → 011 → 012
@@ -605,7 +619,7 @@ TOKEN-001 → 002 → 003
 
 **约束：** 纯工程收敛；产品面无故意视觉改版；完成后交 Director 复验标 Done。
 
-> **插队规则：** 若 **THEATER-LAYER** 已 Authorized，EP-0 **暂停新开 PR**，先合图层修复（可与未完成的 EP-0 PR 错峰，禁止同 PR 混做）。
+> **插队规则：** THEATER-LAYER 已 Done。EP-0 切片单独 PR；禁止与 HOME-BRAND / 发布债混做。
 
 ---
 
@@ -720,7 +734,8 @@ TOKEN-001 → 002 → 003
 
 | 轨 | 状态 |
 |----|------|
-| **EP-0** Wave 3 | **Authorized** · 可开工（LAYER 已关闭） |
+| **EP-0.1** TOKEN-001→003 | **Submitted · 待复验（2026-07-28）** |
+| **EP-0** Wave 3 余下 | **Authorized** · 待 0.1 复验后继续；禁混 PR |
 
 ## 产品发布债（Wave 外 · 未授权）
 

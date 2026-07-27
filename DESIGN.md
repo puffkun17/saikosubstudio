@@ -63,11 +63,21 @@ before introducing visual novelty.
 
 ### 规则
 
-1. 新代码只写 `--v5-*`（或已有的 `--v4-*` 别名）。禁止再发明 `mint` / `emerald` / 暗色 `@theme` 伪名。
-2. 禁止组件内散落裸 hex / 随意 `rgba(239,141,95,*)`；用 `color-mix(in srgb, var(--v5-*) …)`。
-3. 阴影优先 **墨绿 tint**，奶油面上避免冷黑 elevation。
-4. 第三方品牌色（如 TMDB 蓝）只允许出现在对方 Logo 本体，不得污染 chrome / glow / 控件。
-5. 数据辅色（文件格式、语言标、检查标记）是**有限封闭色板**，不得临时加第 13 种语言色或 Tailwind 默认蓝。
+1. **新代码只写 `--v5-*`。** `--v4-*` 仅为兼容别名（映射到 `--v5-*`），禁止在其上叠加新语义或新角色。  
+2. 禁止再发明 `mint` / `emerald` / `action` / 冷灰蓝暗色 `@theme` 伪名（见下方 Deprecated）。  
+3. 禁止组件内散落裸 hex / 随意 `rgba(239,141,95,*)`；用 `color-mix(in srgb, var(--v5-*) …)`。  
+4. 阴影优先 **墨绿 tint**，奶油面上避免冷黑 elevation。  
+5. 第三方品牌色（如 TMDB 蓝）只允许出现在对方 Logo 本体，不得污染 chrome / glow / 控件。  
+6. 数据辅色（文件格式、语言标、检查标记）是**有限封闭色板**，不得临时加第 13 种语言色或 Tailwind 默认蓝。
+
+### Deprecated `@theme`（EP-0.1 · 已删除，禁止回流）
+
+| 类别 | 已删除伪名 |
+|------|------------|
+| Accent 多名 | `--color-mint*`、`--color-accent-emerald*`、`--color-action*`、`--color-accent-neon\|glow\|muted` |
+| 冷灰蓝暗色 | `--color-bg-dark\|base`、`--color-surface-*`、`--color-text-primary\|secondary`、`--color-glass-border` |
+
+唯一强调色：`--v5-accent*`（及 `--v5-orange*` 别名）。产品面引用须走 `--v5-*` 或既有 `--v4-*` 别名。
 
 ### 三套表面契约
 
