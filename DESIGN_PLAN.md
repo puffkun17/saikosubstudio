@@ -605,6 +605,7 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 | **HOME-BRAND** | 品牌名 / 底栏三钮 / 空态排版 | **Done** | **2026-07-28** | 经 INTEGRATE 合入 tip |
 | **INTEGRATE** | HOME-BRAND → EP-0 tip | **Done** | **2026-07-28** | Director 抽检 Pass · `dbaccf81` |
 | **REL-P1** | REL-1/2/3 a11y | **Done** | **2026-07-28** | Director 复验 3/3 Pass · `73c673c6` |
+| **REL-P2** | REL-4/5 超宽 + EP-0 残留 | **Done** | **2026-07-28** | Director 复验 2/2 Pass · `e3c611c4` |
 
 ---
 
@@ -883,10 +884,11 @@ TOKEN-001 → 002 → 003          【Done · 2026-07-28】
 | **HOME-BRAND** | **Done** · 经 INTEGRATE 合入 tip |
 | **INTEGRATE** | **Done（2026-07-28）** |
 | **REL-P1** | **Done（2026-07-28）** · `73c673c6` |
+| **REL-P2** | **Done（2026-07-28）** · `e3c611c4` |
 
 ## 当前布置（Design Director · 2026-07-28）
 
-> **INTEGRATE / REL-P1 Done。** REL-P2 已于 **2026-07-28** 明示 **Authorized**。
+> **INTEGRATE / REL-P1 / REL-P2 Done。** 设计布置轨已全部关闭。
 
 ### 序 0｜INTEGRATE — 分支合入 · **Done（2026-07-28）**
 
@@ -912,16 +914,18 @@ TOKEN-001 → 002 → 003          【Done · 2026-07-28】
 
 ---
 
-### 序 2｜REL-P2 — 体验 / 布局债 · **Submitted · 待复验（2026-07-28）**
+### 序 2｜REL-P2 — 气质 / 布局债 · **Done（2026-07-28）**
 
-> 基于 `cursor/rel-p1-a11y` tip 单独 PR（REL-4 + REL-5）。交 Director 复验后标 Done。未混其它轨、未重开 EP-0。
+> 分支：`cursor/rel-p2-layout` · 提交：`e3c611c4` · 基于 REL-P1 tip。
 
-| ID | 项 | 决策 / 验收 |
-|----|-----|-------------|
-| **REL-4** | 超宽桌面空洞 | 空态与工作台主列在 ≥1440/1920 仍有可读节奏：沿用既有 `max-w-*` 体系收紧或加水平 padding；**禁止**加卡片墙 / 装饰条 / 新色。验收：超宽下首屏不「字贴中间、两侧真空失控」；窄屏无回退 |
-| **REL-5** | EP-0 复验残留扫 | 触及清扫：海报 / BrandMark / TaskList 等零星内联阴影 → `--elevation-*` / `--glow-*`；组件内 triad 半透明 → `color-mix(var(--v5-*))`；能改的 `rounded-[Npx]` → `--radius-*`。验收：无新增裸色；无故意视觉改版 |
+| ID | 项 | 验收 | Director |
+|----|-----|------|----------|
+| **REL-4** | 超宽空洞 | 工作台主列 `1480→1280`；导入壳 / About / Feedback 加 `xl+` 水平 gutter；空态仍 `max-w-6xl`；无卡片墙/新色 | **Pass** |
+| **REL-5** | EP-0 残留扫 | BrandMark/海报/TaskList → elevation/glow；warning/nude → `var(--v5-*)` / color-mix；触及圆角 → `--radius-*` | **Pass** |
 
-**不做：** 新品牌叙事、重做空态三层、重开 EP-0 token 阶、REL-P1 回退、发布债扩面。
+**范围纪律：** 未混其它轨、未重开 EP-0、未改 BrandMark SVG。
+
+**不挡关闭：** BrandMark `elevation-1-dim` 可能略重于原细黑影——属同族收敛；存量未触及 nude 仍可日常扫。
 
 ### 实现提交（UI Engineer · 2026-07-28）
 
@@ -930,28 +934,21 @@ TOKEN-001 → 002 → 003          【Done · 2026-07-28】
 | REL-4 | 导入壳 `xl/2xl` 水平 gutter；工作台主列 `1480→1280`；About/Feedback `xl:px-16`；空态保持 `max-w-6xl` |
 | REL-5 | BrandMark/海报/TaskList 阴影 → elevation/glow；warning 边线与分布图 stroke → `var(--v5-*)`；触及 `rounded-xl` → `--radius-xl` |
 
-**状态：Submitted · 待 Design Director 复验。**
-
-
+**状态：Done · Design Director 2026-07-28 复验通过。设计布置轨收口。**
 
 ---
 
-## 工程师执行卡（可粘贴）
+## 工程师执行卡（归档）
 
 ```
-【当前】REL-P2 Submitted · 待复验
-基：cursor/rel-p1-a11y tip
-REL-4 超宽空洞：收 max-w / 水平 padding；禁卡片墙/新色
-REL-5 残留扫：阴影→elevation/glow；nude→color-mix；圆角→radius token
-单独 PR；交 Director 复验
-【禁止】视觉改版、重开 EP-0、混其它轨
-【已关闭】INTEGRATE · REL-P1
+【已关闭】INTEGRATE · REL-P1 · REL-P2（2026-07-28）
+【排队】无授权中设计轨
 ```
 
 ## 产品发布债（状态）
 
 P1 → **REL-P1 Done（2026-07-28）**。  
-P2 → **REL-P2 Submitted · 待复验（2026-07-28）**。  
+P2 → **REL-P2 Done（2026-07-28）** · `e3c611c4`。  
 **勿重开已关闭的 EP-0。**
 
 

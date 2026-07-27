@@ -87,7 +87,7 @@
 | **CLEAN-A4** | 片源/TMDB 去冗余 `rounded-lg` | **Done** |
 | **CLEAN-A5** | StyleSidebar 零星 toggle 能收则收 | **Done** |
 
-> **Design Director：** CLEAN-A / THEATER-LAYER / EP-0 / HOME-BRAND / INTEGRATE / REL-P1 **Done**。**REL-P2 Authorized（2026-07-28）**。
+> **Design Director：** CLEAN-A / THEATER-LAYER / EP-0 / HOME-BRAND / INTEGRATE / REL-P1 / **REL-P2 Done**。设计布置轨收口。
 
 ### Wave 3 — 工程真相源（EP-0）· **Done · 收口（2026-07-28）**
 
@@ -110,7 +110,7 @@
 | **SHELL-006** | Low | ⭐ | Low | 删除/隔离闲置 shadcn | **Done** |
 | **DOC-001** | — | — | — | `DESIGN.md` + 本 Backlog（**Done**） | Done |
 
-> **剩余工作摘要：** **REL-P2 Authorized**：REL-4 超宽空洞 + REL-5 EP-0 残留扫；基 `rel-p1-a11y` tip；单独 PR。其余设计轨 Done。
+> **剩余工作摘要：** 设计布置轨 **全部 Done**（含 REL-P2）。无授权中实现轨。
 
 ### THEATER-LAYER — 放映厅叠层 · **Done（2026-07-27）**
 
@@ -143,14 +143,14 @@
 
 > `73c673c6` · Director 复验 3/3 Pass。
 
-### REL-P2 — 体验 / 布局债 · **Authorized（2026-07-28）**
+### REL-P2 — 气质 / 布局债 · **Done（2026-07-28）**
 
 | ID | 一句话 | Status |
 |----|--------|--------|
-| **REL-4** | 超宽桌面空洞（max-w / 水平 padding） | **Authorized** |
-| **REL-5** | EP-0 残留：阴影 / nude / 圆角触及清扫 | **Authorized** |
+| **REL-4** | 超宽桌面空洞（max-w / 水平 padding） | **Done** |
+| **REL-5** | EP-0 残留：阴影 / nude / 圆角触及清扫 | **Done** |
 
-> 基 `rel-p1-a11y` tip；可同 PR；禁视觉改版。契约见 `DESIGN_PLAN.md` 序 2。
+> `e3c611c4` · Director 复验 Pass · 设计布置轨收口。
 ---
 
 ## 全量条目
