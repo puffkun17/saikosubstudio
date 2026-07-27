@@ -422,7 +422,7 @@
 
 **不挡关闭：** 产品面仍有 Tailwind `rounded-md/lg/full`（几何圆点/色板/spinner）；shadcn `ui/button` 内 `min(radius-md,10px)` 属 SHELL-006。
 
-**下一步：** EP-0.5 已 Submitted · 待复验；通过后 EP-0.6（SHELL-006）。
+**下一步：** EP-0.5 **Done**；EP-0.6（SHELL-006）可开工。
 
 ---
 
@@ -466,13 +466,13 @@
 
 **不挡关闭：** 托盘个别态仍用 `color-mix(--v5-cream N%)`（文档允许）；Theater chrome 奶油 rgba 属表面/TOKEN-012 债。
 
-**下一步：** EP-0.5 已 Submitted · 待复验。
+**下一步：** EP-0.5 **Done**。
 
 ---
 
 ## EP-0.5｜TOKEN-011 / 012 间距与裸色
 
-> **状态：** **Submitted · 待复验（2026-07-28）** — spacing 主阶 + 密度分区 + nude color-mix 清扫已落地。未复验勿标 Done。
+> **状态：** **Done（2026-07-28 Design Director 复验）** — 验收 3/3 Pass。
 
 ### 决策
 
@@ -493,11 +493,29 @@
 | TOKEN-011 | `--space-1…7` + `--space-panel/copy`；`.density-*`；Workbench 面板 `px-4`；About / 空态 intro 走 copy 密度 |
 | TOKEN-012 | `:root` 派生色、surface remap、Theater chrome、Feedback/Tray/磁力线等触及处 → `color-mix(var(--v5-*))`；`DESIGN.md` 裸色纪律 |
 
-**状态：Submitted · 待 Design Director 复验。未混 SHELL-006 / HOME-BRAND。**
+**状态：Done · Design Director 2026-07-28 复验通过。**
+
+### Design Director 复验（2026-07-28）
+
+分支：`cursor/ep0-spacing-nude` · 提交：`d0cc6e30`
+
+| # | 验收 | 结果 | 证据 |
+|---|------|------|------|
+| 1 | 同级 Workbench 面板 padding 一致 | **Pass** | `--space-1…7` / `--space-panel|copy`；SequenceList / AlignmentDiff / SourceMatch / WorkbenchStep 横垫统一 `px-4`（16） |
+| 2 | 评审可拒「新增裸色」 | **Pass** | `DESIGN.md` 裸色纪律；派生走 `color-mix(var(--v5-*))` |
+| 3 | 不借清扫改品牌色 | **Pass** | triad hex 仍密封于 `:root`（`#1a3d37` / `#f5f1ea` / `#ef8d5f`）；触及处仅改为 token 引用 |
+
+**范围纪律：** 未混 SHELL-006 / HOME-BRAND。
+
+**不挡关闭：** 存量裸色未一次扫尽（lang/fmt 密封源、未触及组件）；About / 空态已走 `density-copy*`。
+
+**下一步：** EP-0.6 已 Submitted · 待复验；通过后 EP-0 Wave 3 可收口。
 
 ---
 
 ## EP-0.6｜SHELL-006 死代码
+
+> **状态：** **Submitted · 待复验（2026-07-28）** — shadcn `button` / `badge` / `card` 已删；文档锁定 `.ui-action`。未复验勿标 Done。
 
 ### 决策
 
@@ -508,6 +526,14 @@
 
 1. 产品 import 图中无上述入口。  
 2. 文档注明「产品按钮 = `.ui-action`」。
+
+### 实现提交（UI Engineer · 2026-07-28）
+
+| ID | 落点 |
+|----|------|
+| SHELL-006 | 删除 `src/components/ui/{button,badge,card}.tsx`；`DESIGN.md` §7 明示产品按钮 = `.ui-action`、禁止回流 |
+
+**状态：Submitted · 待 Design Director 复验。未混 HOME-BRAND / 发布债。**
 
 ---
 
@@ -540,9 +566,9 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
        → TOKEN-008 → TOKEN-009 → TOKEN-010
        【Done · 2026-07-28 Design Director 复验关闭】
        → TOKEN-011 → TOKEN-012
-       【Submitted · 待复验 · 2026-07-28】
+       【Done · 2026-07-28 Design Director 复验关闭】
        → SHELL-006
-       【0.6 Authorized · 可续】
+       【Submitted · 待复验 · 2026-07-28】
 ```
 ---
 
@@ -574,8 +600,8 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 | **EP-0.2** | TOKEN-004 + ASSET-003/004 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`c000d213` |
 | **EP-0.3** | TOKEN-005 → 006 → 007 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`8a439987` |
 | **EP-0.4** | TOKEN-008 → 009 → 010 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`f92c437b` |
-| **EP-0.5** | TOKEN-011 → 012 | **Submitted · 待复验** | **2026-07-28** | 单独 PR；spacing / 裸色 |
-| **EP-0** | SHELL-006 | **Authorized** | **2026-07-27** | 待 0.5 复验后；禁混 PR |
+| **EP-0.5** | TOKEN-011 → 012 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`d0cc6e30` |
+| **EP-0.6** | SHELL-006 | **Submitted · 待复验** | **2026-07-28** | 单独 PR；删 button/badge/card |
 
 ---
 
@@ -725,7 +751,7 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 
 ---
 
-## EP-0｜工程真相源 · **In Progress（0.5 Submitted · 2026-07-28）**
+## EP-0｜工程真相源 · **In Progress（0.6 Submitted · 2026-07-28）**
 
 方案以本文 **EP-0** 各节为准。实施序：
 
@@ -734,8 +760,8 @@ TOKEN-001 → 002 → 003          【Done · 2026-07-28】
 → TOKEN-004 + ASSET-003 + ASSET-004   【Done · 2026-07-28】
 → TOKEN-005 → 006 → 007               【Done · 2026-07-28】
 → TOKEN-008 → 009 → 010               【Done · 2026-07-28】
-→ TOKEN-011 → 012                     【Submitted · 待复验】
-→ SHELL-006
+→ TOKEN-011 → 012                     【Done · 2026-07-28】
+→ SHELL-006                            【Submitted · 待复验】
 ```
 
 **约束：** 纯工程收敛；产品面无故意视觉改版；完成后交 Director 复验标 Done。
@@ -859,8 +885,8 @@ TOKEN-001 → 002 → 003          【Done · 2026-07-28】
 | **EP-0.2** TOKEN-004 + ASSET-003/004 | **Done（2026-07-28）** |
 | **EP-0.3** TOKEN-005→007 | **Done（2026-07-28）** |
 | **EP-0.4** TOKEN-008→010 | **Done（2026-07-28）** |
-| **EP-0.5** TOKEN-011→012 | **Submitted · 待复验（2026-07-28）** |
-| **EP-0.6** SHELL-006 | **Authorized** · 可续；禁混 PR |
+| **EP-0.5** TOKEN-011→012 | **Done（2026-07-28）** |
+| **EP-0.6** SHELL-006 | **Submitted · 待复验（2026-07-28）** |
 
 ## 产品发布债（Wave 外 · 未授权）
 

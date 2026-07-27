@@ -443,7 +443,7 @@
 | 文件与语言标 | `src/components/ui/FileFormatIcon.tsx` |
 | 检查标记色 | `src/components/Workbench/inspectionMarks.tsx` |
 | 按钮主系统 | `app/globals.css` → `.ui-action*` |
-| 闲置 shadcn | `src/components/ui/button.tsx`、`badge.tsx`、`card.tsx` |
+| 闲置 shadcn（已删） | ~~`ui/button|badge|card.tsx`~~ · SHELL-006 Submitted |
 | 空态 CTA | `src/components/Ingest/DragZone.tsx` |
 | 类型标签 | `src/components/Ingest/FilmMetaBlock.tsx` + `.ui-tag` |
 

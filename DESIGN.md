@@ -233,7 +233,7 @@ Eyebrow tracking **仅两档**：`--tracking-eyebrow`（0.06em）· `--tracking-
 ### 规则
 
 1. **片源元数据优先排印，不要堆 chip**（见 WorkflowChrome 的「去 chip」决策）。
-2. 禁止把 shadcn `Badge`（`rounded-4xl` 胶囊）接入产品面。
+2. 禁止把 shadcn `Badge`（`rounded-4xl` 胶囊）接入产品面（文件已删，勿回流）。
 3. 工作区默认方角；全圆胶囊只属于 chrome，不属于内容区。
 4. 同一信息只选一种徽章角色，禁止「标签套标签」。
 
@@ -283,11 +283,13 @@ Adobe CC 式文件徽章，经 Ridgeline **降饱和、偏暖** 调和：
 
 | 需求 | 使用 |
 |------|------|
-| 按钮 | `.ui-action`（含 `--secondary` / `--quiet` / `--danger` / `--lg` / `--icon`） |
+| 按钮 | **`.ui-action`**（含 `--secondary` / `--quiet` / `--danger` / `--lg` / `--icon`） |
 | 分段选择 | `.ui-choice-group` / `.ui-choice` |
 | 面板 | `.v4-panel`（或等价 v5 面板类） |
 | 类型标签 | `.ui-tag` |
 | 评分 | `.ui-rating` |
+
+**产品按钮 = `.ui-action`。** 勿再引入 shadcn / Base UI `Button`·`Badge`·`Card`（EP-0.6 SHELL-006 已从 `src/components/ui/` 删除 `button.tsx` / `badge.tsx` / `card.tsx`）。
 
 空态主 CTA 可以更高更圆（hero），但应视为 `ui-action` 的 **hero 变体**，不是另一套按钮系统。
 
@@ -298,7 +300,7 @@ Adobe CC 式文件徽章，经 Ridgeline **降饱和、偏暖** 调和：
 3. **圆角有限档**：xs 2 · sm 6 · md 8 · lg 12 · xl 20 · pill 999。禁止 `rounded-[11px]` 等一次性值。
 4. **密度分区**：工作台紧（`--space-panel` = 16），关于/空态文案区松（`--space-copy` = 24）。
 5. **动效克制**：用现有 `--v5-ease` 与时长阶；动效服务层级与状态，不服务炫耀。
-6. **禁止双轨**：不要一边用 `.ui-action`，一边手写第三套按钮；闲置 shadcn Button/Badge/Card 不得作为新 UI 入口。
+6. **禁止双轨**：不要一边用 `.ui-action`，一边手写第三套按钮；**禁止**把已删除的 shadcn Button/Badge/Card 加回产品路径。
 7. **先身份，后便利**：技术上「用现成紫色组件更快」不构成设计理由。
 
 ### 改 UI 前的自问

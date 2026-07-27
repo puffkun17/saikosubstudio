@@ -87,9 +87,9 @@
 | **CLEAN-A4** | 片源/TMDB 去冗余 `rounded-lg` | **Done** |
 | **CLEAN-A5** | StyleSidebar 零星 toggle 能收则收 | **Done** |
 
-> **Design Director：** CLEAN-A / THEATER-LAYER / EP-0.1–0.4 **Done**。**EP-0.5 Submitted · 待复验**；0.6 Authorized。未授权发布债。
+> **Design Director：** CLEAN-A / THEATER-LAYER / EP-0.1–0.5 **Done**。**EP-0.6 Submitted · 待复验**。未授权发布债。
 
-### Wave 3 — 工程真相源（EP-0）· **0.5 Submitted · 待复验（2026-07-28）**
+### Wave 3 — 工程真相源（EP-0）· **0.6 Submitted · 待复验（2026-07-28）**
 
 | ID | Business | Visual | Risk | 一句话 | Status |
 |----|----------|--------|------|--------|--------|
@@ -103,14 +103,14 @@
 | **TOKEN-008** | Low | ⭐ | Low | `--tray-ink-soft` | **Done** |
 | **TOKEN-009** | Low | ⭐⭐ | Med | 字号 / tracking 收敛到字阶 | **Done** |
 | **TOKEN-010** | Low | ⭐ | Low | 文档化 font-weight 450 | **Done** |
-| **TOKEN-011** | Low | ⭐ | High | spacing 主阶 + 面板密度 | **Submitted** |
-| **TOKEN-012** | Low | ⭐ | High | 裸 hex/rgba 逐步清扫 | **Submitted** |
+| **TOKEN-011** | Low | ⭐ | High | spacing 主阶 + 面板密度 | **Done** |
+| **TOKEN-012** | Low | ⭐ | High | 裸 hex/rgba 逐步清扫 | **Done** |
 | **ASSET-003** | Low | ⭐⭐ | Med | 三表面契约锁进 CSS | **Done** |
 | **ASSET-004** | Low | ⭐⭐ | Med | Theater 阴影并入 elevation（勿纯黑另起） | **Done** |
-| **SHELL-006** | Low | ⭐ | Low | 删除/隔离闲置 shadcn | Authorized |
+| **SHELL-006** | Low | ⭐ | Low | 删除/隔离闲置 shadcn | **Submitted** |
 | **DOC-001** | — | — | — | `DESIGN.md` + 本 Backlog（**Done**） | Done |
 
-> **剩余工作摘要：** Wave 1+2 + CLEAN-A + THEATER-LAYER + EP-0.1–0.4 **Done**。**EP-0.5 Submitted · 待复验**；SHELL-006 Authorized。产品发布债仍未授权。
+> **剩余工作摘要：** Wave 1+2 + CLEAN-A + THEATER-LAYER + EP-0.1–0.5 **Done**。**EP-0.6 Submitted · 待复验**。产品发布债仍未授权。
 
 ### THEATER-LAYER — 放映厅叠层 · **Done（2026-07-27）**
 
@@ -171,9 +171,9 @@
 | **SHELL-003** | Low | ⭐⭐ | Low | Toast 未产品化 | `.ui-toast` | FeedbackCenter | **Done** |
 | **SHELL-004** | Low | ⭐⭐ | Low | choice 与 StyleSidebar 双轨 | 侧栏走 `.ui-choice-group` | StyleSidebar | **Done** |
 | **SHELL-005** | Low | ⭐ | Low | 面板双重圆角/边线 | 单一 `.v4-panel` | Workbench | **Done** |
-| **SHELL-006** | Low | ⭐ | Low | shadcn Button/Badge/Card 死代码 | 删除或隔离；禁止新入口 | `ui/button|badge|card.tsx` | Authorized |
+| **SHELL-006** | Low | ⭐ | Low | shadcn Button/Badge/Card 死代码 | 删除或隔离；禁止新入口 | `ui/button|badge|card.tsx` | **Submitted** |
 
-### TOKEN（EP-0 · 0.5 Submitted；SHELL-006 Authorized）
+### TOKEN（EP-0 · 0.5 Done；SHELL-006 Submitted）
 
 | ID | Business | Visual | Risk | 问题 | 验收标准 | 落点 | Status |
 |----|----------|--------|------|------|----------|------|--------|
@@ -187,8 +187,8 @@
 | **TOKEN-008** | Low | ⭐ | Low | 托盘奶油半透明手写 rgba | `--tray-ink-soft` | tray CSS | **Done** |
 | **TOKEN-009** | Low | ⭐⭐ | Med | `text-[Npx]` / tracking 打穿 | Caption→Display 字阶 | 全站 type | **Done** |
 | **TOKEN-010** | Low | ⭐ | Low | weight 450 vs medium/semibold | 文档化；同层不跳 | body CSS | **Done** |
-| **TOKEN-011** | Low | ⭐ | High | 无 space token；面板 padding 乱 | 4…48 主阶；密度 16 vs 24 | 全站 | **Submitted** |
-| **TOKEN-012** | Low | ⭐ | High | 百余处裸 hex/rgba | 逐步 color-mix；禁新增 | `src`+`app` | **Submitted** |
+| **TOKEN-011** | Low | ⭐ | High | 无 space token；面板 padding 乱 | 4…48 主阶；密度 16 vs 24 | 全站 | **Done** |
+| **TOKEN-012** | Low | ⭐ | High | 百余处裸 hex/rgba | 逐步 color-mix；禁新增 | `src`+`app` | **Done** |
 
 ### DOC
 
@@ -278,4 +278,4 @@
 | 文件 + 语言标 | `src/components/ui/FileFormatIcon.tsx` |
 | 检查标记 | `src/components/Workbench/inspectionMarks.tsx` |
 | 空态 CTA | `src/components/Ingest/DragZone.tsx` |
-| 闲置 shadcn | `src/components/ui/button.tsx`、`badge.tsx`、`card.tsx` |
+| 闲置 shadcn（已删） | ~~`ui/button|badge|card.tsx`~~ · SHELL-006 Submitted |
