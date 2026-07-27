@@ -116,6 +116,22 @@ before introducing visual novelty.
 
 兼容：`--v5-radius-panel` → xl；`--v5-radius-control` → lg。禁止新增 `rounded-[Npx]` / 奇怪 rem 中间值；内容区信息徽章禁止 pill。
 
+### Spacing（EP-0.5 TOKEN-011）
+
+| Token | 值 | 用途 |
+|-------|-----|------|
+| `--space-1`…`--space-7` | 4 / 8 / 12 / 16 / 24 / 32 / 48 | 主阶；半档仅光学对齐 |
+| `--space-panel` | 16（=`--space-4`） | 工作台面板内边距 |
+| `--space-copy` | 24（=`--space-5`） | 关于 / 空态文案区 |
+
+工具类：`.density-panel` / `.density-panel-x` · `.density-copy` / `.density-copy-x`。同级 Workbench 面板横向 padding 统一 16，禁止再 `px-5`/`md:px-6` 乱跳。
+
+### 裸色纪律（EP-0.5 TOKEN-012）
+
+1. **禁止**在组件内新增裸 triad hex / `rgba(26,61,55|239,141,95|245,241,234,*)`；派生色用 `color-mix(in srgb, var(--v5-*) …)`。  
+2. 三原色、`--lang-*`、`--fmt-*`、BrandMark SVG **仅**在真相源定义，业务组件禁止覆盖。  
+3. 存量随触及清扫；评审可拒「新增裸色」。不借清扫改品牌色相。
+
 ### Tray ink（EP-0.4 TOKEN-008）
 
 | Token | 用途 |
@@ -280,7 +296,7 @@ Adobe CC 式文件徽章，经 Ridgeline **降饱和、偏暖** 调和：
 1. **一个组合、一个焦点**：桌面工作台不是卡片墙；能去边框/阴影/底就去。
 2. **卡片是例外**：只有承载交互时才需要容器感。
 3. **圆角有限档**：xs 2 · sm 6 · md 8 · lg 12 · xl 20 · pill 999。禁止 `rounded-[11px]` 等一次性值。
-4. **密度分区**：工作台紧（约 16px padding），关于/空态文案区可松（24px+）。
+4. **密度分区**：工作台紧（`--space-panel` = 16），关于/空态文案区松（`--space-copy` = 24）。
 5. **动效克制**：用现有 `--v5-ease` 与时长阶；动效服务层级与状态，不服务炫耀。
 6. **禁止双轨**：不要一边用 `.ui-action`，一边手写第三套按钮；闲置 shadcn Button/Badge/Card 不得作为新 UI 入口。
 7. **先身份，后便利**：技术上「用现成紫色组件更快」不构成设计理由。

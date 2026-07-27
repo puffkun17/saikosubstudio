@@ -725,7 +725,7 @@ export const TaskList: React.FC = () => {
                             initial={{ opacity: 0.85, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1.03 }}
                             transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
-                            className="flex items-center gap-2 rounded-xl border border-[var(--v4-accent)]/40 bg-[var(--v4-panel-raised)] px-3 py-2.5 shadow-[0_18px_40px_rgba(26,61,55,0.12)] backdrop-blur-md"
+                            className="flex items-center gap-2 rounded-xl border border-[var(--v4-accent)]/40 bg-[var(--v4-panel-raised)] px-3 py-2.5 shadow-[0_18px_40px_color-mix(in_srgb,var(--v5-green)_12%,transparent)] backdrop-blur-md"
                             style={{ height: dragCardSize.h }}
                           >
                             <FileFormatIcon name={dragFile.name} size="md" />

@@ -141,11 +141,11 @@ export const WorkbenchStep: React.FC = () => {
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[var(--v4-canvas)]">
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
-        <div className="flex-1 p-4 md:p-6 min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
+        <div className="flex-1 p-4 min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
           <div className="max-w-[1480px] w-full flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
             {processedSubs && processedSubs.length > 0 && (
               <section className="v4-panel flex-shrink-0 overflow-hidden">
-                <div className="flex flex-col gap-2.5 px-4 py-3 md:flex-row md:items-center md:justify-between md:gap-4 md:px-5">
+                <div className="flex flex-col gap-2.5 px-4 py-3 md:flex-row md:items-center md:justify-between md:gap-4">
                   <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                     <div className="flex items-center gap-2">
                       <GitCompareArrows className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />

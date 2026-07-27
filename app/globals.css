@@ -43,15 +43,16 @@
   --v5-panel: #fffcf7;
   --v5-panel-raised: #ffffff;
   --v5-panel-muted: #efebe3;
-  --v5-line: rgba(26, 61, 55, 0.12);
-  --v5-line-strong: rgba(26, 61, 55, 0.22);
-  --v5-text: #1a3d37;
+  /* 派生半透明走 color-mix（EP-0.5 TOKEN-012）；三原色 hex 仅此处密封。 */
+  --v5-line: color-mix(in srgb, var(--v5-green) 12%, transparent);
+  --v5-line-strong: color-mix(in srgb, var(--v5-green) 22%, transparent);
+  --v5-text: var(--v5-green);
   /* 奶油底上的可读阶：muted 给副文案，faint 只留给装饰/占位，不再当正文色。 */
-  --v5-text-muted: rgba(26, 61, 55, 0.8);
-  --v5-text-faint: rgba(26, 61, 55, 0.58);
-  --v5-accent: #ef8d5f;
-  --v5-accent-strong: #e07845;
-  --v5-accent-soft: rgba(239, 141, 95, 0.16);
+  --v5-text-muted: color-mix(in srgb, var(--v5-green) 80%, transparent);
+  --v5-text-faint: color-mix(in srgb, var(--v5-green) 58%, transparent);
+  --v5-accent: var(--v5-orange);
+  --v5-accent-strong: var(--v5-orange-deep);
+  --v5-accent-soft: color-mix(in srgb, var(--v5-orange) 16%, transparent);
   --v5-accent-ink: #ffffff;
   --v5-danger: #c45b55;
   --v5-warning: #c4893a;
@@ -98,12 +99,12 @@
   --fmt-unknown-face: #857D72;
   --fmt-unknown-fold: #6B655B;
   --fmt-ink: #FFFFFF;
-  --v5-desk-glow: rgba(26, 61, 55, 0.06);
+  --v5-desk-glow: color-mix(in srgb, var(--v5-green) 6%, transparent);
   --v5-desk-veil: linear-gradient(
     165deg,
-    rgba(255, 252, 247, 0.96) 0%,
-    rgba(245, 241, 234, 0.98) 48%,
-    #f5f1ea 100%
+    color-mix(in srgb, var(--v5-canvas-raised) 96%, transparent) 0%,
+    color-mix(in srgb, var(--v5-cream) 98%, transparent) 48%,
+    var(--v5-cream) 100%
   );
 
   /*
@@ -204,6 +205,21 @@
   --type-display: 1.5rem;    /* 24 — 空态 / 片名 display */
   --tracking-eyebrow: 0.06em;
   --tracking-eyebrow-wide: 0.08em;
+
+  /*
+   * Spacing ladder（EP-0.5 TOKEN-011）
+   * 主阶 4 / 8 / 12 / 16 / 24 / 32 / 48；半档仅光学对齐。
+   * 密度：工作台面板 --space-panel(16)；关于/空态文案 --space-copy(24)。
+   */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-panel: var(--space-4);
+  --space-copy: var(--space-5);
 
   /* Stacking: nav < dim scrim < dropdown < feedback < overlay/modal. Never mount modals inside nav. */
   --z-raised: 10;
@@ -310,6 +326,23 @@ body {
   box-shadow: var(--elevation-0);
 }
 
+/* 密度工具类（EP-0.5 TOKEN-011）— 工作台紧 / 文案区松 */
+.density-panel {
+  padding: var(--space-panel);
+}
+
+.density-panel-x {
+  padding-inline: var(--space-panel);
+}
+
+.density-copy {
+  padding: var(--space-copy);
+}
+
+.density-copy-x {
+  padding-inline: var(--space-copy);
+}
+
 /* Parsing / progress card (not the empty→queue handoff). */
 .ingest-receive-surface {
   position: relative;
@@ -317,9 +350,9 @@ body {
   border: 1px solid var(--v4-line);
   background:
     radial-gradient(780px 300px at 50% -8%, var(--v4-desk-glow), transparent 68%),
-    linear-gradient(180deg, rgba(26, 61, 55, 0.03), transparent 38%),
+    linear-gradient(180deg, color-mix(in srgb, var(--v5-green) 3%, transparent), transparent 38%),
     var(--v4-panel);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 55%, transparent);
 }
 
 /* Ridgeline twin trays: forest green chrome both ends. */
@@ -357,24 +390,24 @@ body {
 
 /* Forest panels (theater chrome only): remap cream tokens to on-green. */
 [data-surface="forest"] {
-  --surface-text: #f5f1ea;
-  --surface-text-muted: rgba(245, 241, 234, 0.82);
-  --surface-text-faint: rgba(245, 241, 234, 0.6);
-  --surface-line: rgba(245, 241, 234, 0.12);
-  --surface-line-strong: rgba(245, 241, 234, 0.22);
-  --v4-canvas: #1a3d37;
+  --surface-text: var(--v5-cream);
+  --surface-text-muted: color-mix(in srgb, var(--v5-cream) 82%, transparent);
+  --surface-text-faint: color-mix(in srgb, var(--v5-cream) 60%, transparent);
+  --surface-line: color-mix(in srgb, var(--v5-cream) 12%, transparent);
+  --surface-line-strong: color-mix(in srgb, var(--v5-cream) 22%, transparent);
+  --v4-canvas: var(--v5-green);
   --v4-canvas-raised: #214942;
-  --v4-panel: rgba(245, 241, 234, 0.06);
-  --v4-panel-raised: rgba(245, 241, 234, 0.1);
-  --v4-panel-muted: rgba(245, 241, 234, 0.05);
+  --v4-panel: color-mix(in srgb, var(--v5-cream) 6%, transparent);
+  --v4-panel-raised: color-mix(in srgb, var(--v5-cream) 10%, transparent);
+  --v4-panel-muted: color-mix(in srgb, var(--v5-cream) 5%, transparent);
   --v4-line: var(--surface-line);
   --v4-line-strong: var(--surface-line-strong);
   --v4-text: var(--surface-text);
   --v4-text-muted: var(--surface-text-muted);
   --v4-text-faint: var(--surface-text-faint);
-  --v4-accent: #ef8d5f;
-  --v4-accent-strong: #f0a07a;
-  --v4-accent-soft: rgba(239, 141, 95, 0.18);
+  --v4-accent: var(--v5-orange);
+  --v4-accent-strong: var(--v5-orange-strong);
+  --v4-accent-soft: color-mix(in srgb, var(--v5-orange) 18%, transparent);
   --v4-accent-ink: #ffffff;
   color: var(--v4-text);
   background: var(--v5-green);
@@ -384,24 +417,24 @@ body {
 
 /* Style drawer & light panels: force cream even when nested in forest theater. */
 [data-surface="cream"] {
-  --surface-text: #1a3d37;
-  --surface-text-muted: rgba(26, 61, 55, 0.8);
-  --surface-text-faint: rgba(26, 61, 55, 0.58);
-  --surface-line: rgba(26, 61, 55, 0.12);
-  --surface-line-strong: rgba(26, 61, 55, 0.22);
-  --v4-canvas: #f5f1ea;
-  --v4-canvas-raised: #fffcf7;
-  --v4-panel: #fffcf7;
-  --v4-panel-raised: #ffffff;
-  --v4-panel-muted: #efebe3;
+  --surface-text: var(--v5-green);
+  --surface-text-muted: color-mix(in srgb, var(--v5-green) 80%, transparent);
+  --surface-text-faint: color-mix(in srgb, var(--v5-green) 58%, transparent);
+  --surface-line: color-mix(in srgb, var(--v5-green) 12%, transparent);
+  --surface-line-strong: color-mix(in srgb, var(--v5-green) 22%, transparent);
+  --v4-canvas: var(--v5-cream);
+  --v4-canvas-raised: var(--v5-canvas-raised);
+  --v4-panel: var(--v5-panel);
+  --v4-panel-raised: var(--v5-panel-raised);
+  --v4-panel-muted: var(--v5-panel-muted);
   --v4-line: var(--surface-line);
   --v4-line-strong: var(--surface-line-strong);
   --v4-text: var(--surface-text);
   --v4-text-muted: var(--surface-text-muted);
   --v4-text-faint: var(--surface-text-faint);
-  --v4-accent: #ef8d5f;
-  --v4-accent-strong: #e07845;
-  --v4-accent-soft: rgba(239, 141, 95, 0.16);
+  --v4-accent: var(--v5-orange);
+  --v4-accent-strong: var(--v5-orange-deep);
+  --v4-accent-soft: color-mix(in srgb, var(--v5-orange) 16%, transparent);
   --v4-accent-ink: #ffffff;
   color: var(--v4-text);
   background: var(--v5-cream);
@@ -412,11 +445,11 @@ body {
 /* Theater dim：关灯舞台字色/边线角色；阴影走 elevation-*-dim */
 [data-surface="theater"],
 .lights-off-stage {
-  --surface-text: rgba(245, 241, 234, 0.92);
-  --surface-text-muted: rgba(245, 241, 234, 0.72);
-  --surface-text-faint: rgba(245, 241, 234, 0.48);
-  --surface-line: rgba(245, 241, 234, 0.1);
-  --surface-line-strong: rgba(239, 141, 95, 0.16);
+  --surface-text: color-mix(in srgb, var(--v5-cream) 92%, transparent);
+  --surface-text-muted: color-mix(in srgb, var(--v5-cream) 72%, transparent);
+  --surface-text-faint: color-mix(in srgb, var(--v5-cream) 48%, transparent);
+  --surface-line: color-mix(in srgb, var(--v5-cream) 10%, transparent);
+  --surface-line-strong: color-mix(in srgb, var(--v5-orange) 16%, transparent);
   --v4-text: var(--surface-text);
   --v4-text-muted: var(--surface-text-muted);
   --v4-text-faint: var(--surface-text-faint);
@@ -496,11 +529,11 @@ body {
 @keyframes ingestAbsorb {
   0% {
     transform: scale(1.015);
-    box-shadow: 0 0 0 0 rgba(239, 141, 95, 0.35);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--v5-orange) 35%, transparent);
   }
   100% {
     transform: scale(0.99);
-    box-shadow: 0 0 0 22px rgba(239, 141, 95, 0);
+    box-shadow: 0 0 0 22px color-mix(in srgb, var(--v5-orange) 0%, transparent);
   }
 }
 
@@ -776,7 +809,7 @@ body {
   width: max(var(--edge-next-w), 10.5rem);
   background: color-mix(in srgb, var(--v4-accent-soft) 80%, var(--v4-canvas-raised));
   border-left-color: color-mix(in srgb, var(--v4-accent) 40%, var(--v4-line));
-  box-shadow: -20px 0 44px rgba(26, 61, 55, 0.14);
+  box-shadow: -20px 0 44px color-mix(in srgb, var(--v5-green) 14%, transparent);
 }
 
 .workflow-edge-next.is-disabled {
@@ -1781,7 +1814,7 @@ body {
 /* Previously referenced but undefined — Firefox thin scrollbars (WebKit handled globally). */
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: rgba(26, 61, 55, 0.24) transparent;
+  scrollbar-color: color-mix(in srgb, var(--v5-green) 24%, transparent) transparent;
 }
 
 /* Unified press feedback for every interactive control (framer whileTap wins if present). */
@@ -1829,10 +1862,10 @@ button {
 }
 
 .lights-off-stage .screen-sim-frame {
-  border-color: rgba(239, 141, 95, 0.14);
+  border-color: color-mix(in srgb, var(--v5-orange) 14%, transparent);
   box-shadow:
-    0 0 90px 14px rgba(239, 141, 95, 0.07),
-    0 0 32px 4px rgba(239, 141, 95, 0.05),
+    0 0 90px 14px color-mix(in srgb, var(--v5-orange) 7%, transparent),
+    0 0 32px 4px color-mix(in srgb, var(--v5-orange) 5%, transparent),
     var(--elevation-3-dim);
 }
 
@@ -1863,7 +1896,7 @@ button {
 
 .theater-chrome-bar--lights-off {
   background: color-mix(in srgb, #0a0e0d 70%, transparent);
-  border-color: rgba(245, 241, 234, 0.1);
+  border-color: color-mix(in srgb, var(--v5-cream) 10%, transparent);
   box-shadow: none;
   padding-inline: 0.65rem;
 }
@@ -1871,12 +1904,12 @@ button {
 .lights-off-stage .theater-chrome-bar,
 .lights-off-stage .theater-chrome-chip {
   background: color-mix(in srgb, #0a0e0d 78%, transparent);
-  border-color: rgba(239, 141, 95, 0.16);
+  border-color: color-mix(in srgb, var(--v5-orange) 16%, transparent);
 }
 
 /* 放映厅样式抽屉：深绿毛玻璃；关灯时更深、更透，夜光 LCD 感 */
 .theater-style-shell {
-  border: 1px solid rgba(245, 241, 234, 0.14);
+  border: 1px solid color-mix(in srgb, var(--v5-cream) 14%, transparent);
   background: color-mix(in srgb, #142e29 78%, transparent);
   backdrop-filter: blur(18px) saturate(1.2);
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
@@ -1891,14 +1924,14 @@ button {
 .theater-style-drawer .glass-slider-input,
 .theater-style-drawer .glass-slider-input::-webkit-slider-runnable-track,
 .theater-style-drawer .glass-slider-input::-moz-range-track {
-  background: rgba(245, 241, 234, 0.16);
+  background: color-mix(in srgb, var(--v5-cream) 16%, transparent);
 }
 
 .lights-off-stage .theater-style-shell {
-  border-color: rgba(239, 141, 95, 0.2);
+  border-color: color-mix(in srgb, var(--v5-orange) 20%, transparent);
   background: color-mix(in srgb, #0a0e0d 82%, transparent);
   box-shadow:
-    0 0 36px 2px rgba(239, 141, 95, 0.06),
+    0 0 36px 2px color-mix(in srgb, var(--v5-orange) 6%, transparent),
     var(--elevation-3-dim);
 }
 
@@ -1954,7 +1987,7 @@ button {
     var(--v4-panel-muted);
   box-shadow:
     inset 3px 0 0 var(--v4-accent),
-    0 14px 30px rgba(26, 61, 55, 0.08);
+    0 14px 30px color-mix(in srgb, var(--v5-green) 8%, transparent);
 }
 
 .action-required-marker {
@@ -1995,10 +2028,10 @@ button {
 
 @keyframes actionBeacon {
   0%, 100% {
-    box-shadow: 0 0 0 5px var(--v4-accent-soft), 0 0 15px rgba(239, 141, 95, 0.14);
+    box-shadow: 0 0 0 5px var(--v4-accent-soft), 0 0 15px color-mix(in srgb, var(--v5-orange) 14%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 8px color-mix(in srgb, var(--v4-accent-soft) 40%, transparent), 0 0 22px rgba(239, 141, 95, 0.22);
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--v4-accent-soft) 40%, transparent), 0 0 22px color-mix(in srgb, var(--v5-orange) 22%, transparent);
   }
 }
 
@@ -2184,7 +2217,7 @@ button {
   border-radius: 50%;
   background: #ffffff;
   border: 2.5px solid var(--v5-orange);
-  box-shadow: 0 0 10px rgba(239, 141, 95, 0.28);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--v5-orange) 28%, transparent);
   margin-top: -5.5px;
   transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
@@ -2210,7 +2243,7 @@ button {
   border-radius: 50%;
   background: #ffffff;
   border: 2.5px solid var(--v5-orange);
-  box-shadow: 0 0 10px rgba(239, 141, 95, 0.28);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--v5-orange) 28%, transparent);
 }
 
 /* Glass recessed slot */
@@ -2221,7 +2254,7 @@ button {
 }
 
 .glass-lens-active {
-  background: rgba(239, 141, 95, 0.08) !important;
+  background: color-mix(in srgb, var(--v5-orange) 8%, transparent) !important;
   box-shadow: inset 4px 0 0 var(--v5-orange);
   transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -2235,12 +2268,12 @@ button {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(26, 61, 55, 0.18);
+  background: color-mix(in srgb, var(--v5-green) 18%, transparent);
   border-radius: var(--radius-pill);
   transition: all 0.3s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(239, 141, 95, 0.55) !important;
+  background: color-mix(in srgb, var(--v5-orange) 55%, transparent) !important;
 }
 
 /* ==========================================================================

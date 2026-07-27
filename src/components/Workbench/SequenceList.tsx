@@ -209,7 +209,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
   return (
     <div className="v4-panel flex flex-1 flex-col overflow-hidden">
       {total > 0 && (
-        <div className="flex flex-col gap-3 px-5 md:px-6 py-3.5 border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] flex-shrink-0">
+        <div className="flex flex-col gap-3 px-4 py-3.5 border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] flex-shrink-0">
             <div className="flex items-center justify-between gap-4">
             <div className="min-w-0 flex items-center gap-3">
               <span className="text-sm tracking-normal text-[var(--v4-text)] font-semibold whitespace-nowrap">
@@ -257,7 +257,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
       <div ref={listRef} className="flex-1 overflow-y-auto">
         {visibleSubs.length > 0 ? (
           <div className="flex flex-col relative">
-            <div className="sticky top-0 z-20 grid grid-cols-[3.75rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] items-center gap-2 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-3 py-2 text-xs font-semibold tracking-wide text-[var(--v4-text-muted)] select-none md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] md:gap-3 md:px-5">
+            <div className="sticky top-0 z-20 grid grid-cols-[3.75rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] items-center gap-2 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-4 py-2 text-xs font-semibold tracking-wide text-[var(--v4-text-muted)] select-none md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] md:gap-3">
               <div className="pl-0.5">行号</div>
               <div>时间轴</div>
               <div>字幕内容</div>
@@ -310,7 +310,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
               const endTime = sub.ts.split(' --> ')[1]?.replace(',', '.').trim() || '';
 
-              const rowClass = `group relative grid grid-cols-[3.75rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] items-center gap-2 md:gap-3 py-2.5 px-3 md:px-5 border-b border-[var(--v4-line)] cursor-pointer select-none text-left overflow-hidden transition-colors duration-150
+              const rowClass = `group relative grid grid-cols-[3.75rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] items-center gap-2 md:gap-3 py-2.5 px-4 border-b border-[var(--v4-line)] cursor-pointer select-none text-left overflow-hidden transition-colors duration-150
                 ${isActive ? 'glass-lens-active' : isSelected ? 'bg-[var(--v4-accent-soft)]/55' : 'bg-transparent hover:bg-[var(--v4-panel-muted)]'}
                 ${(isLyric || isCredit) && !isActive && !isSelected ? 'bg-[var(--v4-panel-muted)]/50' : ''}
                 ${sub.index > 30 ? 'timeline-row-deferred' : ''}`;

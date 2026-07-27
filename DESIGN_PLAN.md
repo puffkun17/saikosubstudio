@@ -422,13 +422,13 @@
 
 **不挡关闭：** 产品面仍有 Tailwind `rounded-md/lg/full`（几何圆点/色板/spinner）；shadcn `ui/button` 内 `min(radius-md,10px)` 属 SHELL-006。
 
-**下一步：** EP-0.4 已 Submitted · 待复验；通过后 EP-0.5。
+**下一步：** EP-0.5 已 Submitted · 待复验；通过后 EP-0.6（SHELL-006）。
 
 ---
 
 ## EP-0.4｜TOKEN-008 / 009 / 010 托盘 ink、字阶、字重
 
-> **状态：** **Submitted · 待复验（2026-07-28）** — tray-ink / type 阶 / 字重 450 文档已落地。未复验勿标 Done。
+> **状态：** **Done（2026-07-28 Design Director 复验）** — 验收 3/3 Pass。
 
 ### 决策
 
@@ -450,11 +450,29 @@
 | TOKEN-009 | `--type-caption…display` + `--tracking-eyebrow(|-wide)`；产品面 `text-[11/10/12/13px]` → `text-xs` / type token |
 | TOKEN-010 | `DESIGN.md` §3：Body **450** 为设计选择；Meta 500 / Control 600 / Display 700 |
 
-**状态：Submitted · 待 Design Director 复验。未混 EP-0.5+ / SHELL-006 / HOME-BRAND。**
+**状态：Done · Design Director 2026-07-28 复验通过。**
+
+### Design Director 复验（2026-07-28）
+
+分支：`cursor/ep0-tray-type` · 提交：`f92c437b`
+
+| # | 验收 | 结果 | 证据 |
+|---|------|------|------|
+| 1 | 托盘半透明引用 token | **Pass** | `--tray-ink*|line*|fill*`；`.system-tray*` + `SystemTray` 去手写 `rgba(245,241,234,*)` |
+| 2 | 无 `text-[11px]` vs `text-xs` 双轨混用 | **Pass** | `--type-caption…display`；产品面 `text-[10/11/12/13px]` 已收敛；抽检 `src/` 无残留 |
+| 3 | 字重规则有文档 | **Pass** | `DESIGN.md` §3：Body **450** / Meta 500 / Control 600 / Display 700 |
+
+**范围纪律：** 未混 EP-0.5+（spacing / 裸色大扫）/ SHELL-006 / HOME-BRAND。
+
+**不挡关闭：** 托盘个别态仍用 `color-mix(--v5-cream N%)`（文档允许）；Theater chrome 奶油 rgba 属表面/TOKEN-012 债。
+
+**下一步：** EP-0.5 已 Submitted · 待复验。
 
 ---
 
 ## EP-0.5｜TOKEN-011 / 012 间距与裸色
+
+> **状态：** **Submitted · 待复验（2026-07-28）** — spacing 主阶 + 密度分区 + nude color-mix 清扫已落地。未复验勿标 Done。
 
 ### 决策
 
@@ -467,6 +485,15 @@
 1. 同级 Workbench 面板 padding 一致。  
 2. CI/评审可拒「新增裸色」。  
 3. 不借清扫名义改品牌色。
+
+### 实现提交（UI Engineer · 2026-07-28）
+
+| ID | 落点 |
+|----|------|
+| TOKEN-011 | `--space-1…7` + `--space-panel/copy`；`.density-*`；Workbench 面板 `px-4`；About / 空态 intro 走 copy 密度 |
+| TOKEN-012 | `:root` 派生色、surface remap、Theater chrome、Feedback/Tray/磁力线等触及处 → `color-mix(var(--v5-*))`；`DESIGN.md` 裸色纪律 |
+
+**状态：Submitted · 待 Design Director 复验。未混 SHELL-006 / HOME-BRAND。**
 
 ---
 
@@ -511,11 +538,11 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
        → TOKEN-005 → TOKEN-006 → TOKEN-007
        【Done · 2026-07-28 Design Director 复验关闭】
        → TOKEN-008 → TOKEN-009 → TOKEN-010
-       【Submitted · 待复验 · 2026-07-28】
+       【Done · 2026-07-28 Design Director 复验关闭】
        → TOKEN-011 → TOKEN-012
+       【Submitted · 待复验 · 2026-07-28】
        → SHELL-006
-       【0.5+ Authorized · 待续】
-       【0.4+ Authorized · 可续】
+       【0.6 Authorized · 可续】
 ```
 ---
 
@@ -546,8 +573,9 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 | **EP-0.1** | TOKEN-001 → 002 → 003 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`d4cdd36d` |
 | **EP-0.2** | TOKEN-004 + ASSET-003/004 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`c000d213` |
 | **EP-0.3** | TOKEN-005 → 006 → 007 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`8a439987` |
-| **EP-0.4** | TOKEN-008 → 009 → 010 | **Submitted · 待复验** | **2026-07-28** | 单独 PR；tray-ink / 字阶 / 字重 |
-| **EP-0** | TOKEN-011…012 / SHELL-006 | **Authorized** | **2026-07-27** | 待 0.4 复验后继续；禁混 PR |
+| **EP-0.4** | TOKEN-008 → 009 → 010 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`f92c437b` |
+| **EP-0.5** | TOKEN-011 → 012 | **Submitted · 待复验** | **2026-07-28** | 单独 PR；spacing / 裸色 |
+| **EP-0** | SHELL-006 | **Authorized** | **2026-07-27** | 待 0.5 复验后；禁混 PR |
 
 ---
 
@@ -697,7 +725,7 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 
 ---
 
-## EP-0｜工程真相源 · **In Progress（0.4 Submitted · 2026-07-28）**
+## EP-0｜工程真相源 · **In Progress（0.5 Submitted · 2026-07-28）**
 
 方案以本文 **EP-0** 各节为准。实施序：
 
@@ -705,8 +733,8 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 TOKEN-001 → 002 → 003          【Done · 2026-07-28】
 → TOKEN-004 + ASSET-003 + ASSET-004   【Done · 2026-07-28】
 → TOKEN-005 → 006 → 007               【Done · 2026-07-28】
-→ TOKEN-008 → 009 → 010               【Submitted · 待复验】
-→ TOKEN-011 → 012
+→ TOKEN-008 → 009 → 010               【Done · 2026-07-28】
+→ TOKEN-011 → 012                     【Submitted · 待复验】
 → SHELL-006
 ```
 
@@ -830,9 +858,9 @@ TOKEN-001 → 002 → 003          【Done · 2026-07-28】
 | **EP-0.1** TOKEN-001→003 | **Done（2026-07-28）** |
 | **EP-0.2** TOKEN-004 + ASSET-003/004 | **Done（2026-07-28）** |
 | **EP-0.3** TOKEN-005→007 | **Done（2026-07-28）** |
-| **EP-0.4** TOKEN-008→010 | **Submitted · 待复验（2026-07-28）** |
-| **EP-0.5+** Wave 3 余下 | **Authorized** · 待续；禁混 PR |
-| **EP-0.4+** Wave 3 余下 | **Authorized** · 可续；禁混 PR |
+| **EP-0.4** TOKEN-008→010 | **Done（2026-07-28）** |
+| **EP-0.5** TOKEN-011→012 | **Submitted · 待复验（2026-07-28）** |
+| **EP-0.6** SHELL-006 | **Authorized** · 可续；禁混 PR |
 
 ## 产品发布债（Wave 外 · 未授权）
 

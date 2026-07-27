@@ -40,7 +40,7 @@ export default function AboutPage() {
           </div>
         </div>
 
-        <div className="v4-panel mt-10 rounded-lg px-6 py-7 md:px-8">
+        <div className="v4-panel density-copy mt-10 rounded-lg">
           <Section title="本地文件处理 / Local files" en="Subtitles and reference media stay in the browser; preferences may be stored on-device only.">
             <p>
               字幕、ZIP、7Z、RAR 字幕包与作为参照的本地媒体文件，均由浏览器在当前设备读取和处理，不会上传或保存到本站服务器。

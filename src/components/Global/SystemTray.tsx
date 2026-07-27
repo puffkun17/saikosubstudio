@@ -314,7 +314,7 @@ export const SystemTray = () => {
                 <FolderClock className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
                 <span className={trayLabelLong}>历史存档</span>
                 {libraryCount > 0 && (
-                  <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-[color:rgba(239,141,95,0.22)] px-1.5 py-0.5 text-xs font-semibold text-[var(--v5-orange)]">
+                  <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-[color-mix(in_srgb,var(--v5-orange)_22%,transparent)] px-1.5 py-0.5 text-xs font-semibold text-[var(--v5-orange)]">
                     {libraryCount}
                   </span>
                 )}

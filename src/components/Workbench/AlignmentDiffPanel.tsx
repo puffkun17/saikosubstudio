@@ -181,14 +181,14 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
 
   return (
     <section className="v4-panel overflow-hidden">
-      <div className="flex items-center justify-between gap-3 border-b border-[var(--v4-line)] px-4 py-2 md:px-5">
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--v4-line)] px-4 py-2">
         <p className="text-xs text-[var(--v4-text-faint)]">
           完整列出结构差异、画面文字、声音描述、歌词与署名信息（{items.length}）
         </p>
       </div>
 
       <div className="max-h-[min(32vh,280px)] overflow-y-auto">
-        <div className="sticky top-0 z-10 hidden grid-cols-[4.75rem_minmax(0,1.35fr)_minmax(0,1fr)_auto] gap-3 border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-4 py-1.5 text-xs font-medium text-[var(--v4-text-faint)] md:grid md:px-5">
+        <div className="sticky top-0 z-10 hidden grid-cols-[4.75rem_minmax(0,1.35fr)_minmax(0,1fr)_auto] gap-3 border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-4 py-1.5 text-xs font-medium text-[var(--v4-text-faint)] md:grid">
           <span>时间</span>
           <span>内容</span>
           <span>判定</span>
@@ -204,7 +204,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
               className="border-b border-[var(--v4-line)] last:border-b-0"
               style={{ contentVisibility: 'auto', containIntrinsicSize: '0 48px' }}
             >
-              <div className="grid grid-cols-1 gap-1.5 px-4 py-2 md:grid-cols-[4.75rem_minmax(0,1.35fr)_minmax(0,1fr)_auto] md:items-center md:gap-3 md:px-5">
+              <div className="grid grid-cols-1 gap-1.5 px-4 py-2 md:grid-cols-[4.75rem_minmax(0,1.35fr)_minmax(0,1fr)_auto] md:items-center md:gap-3">
                 <div className="min-w-0">
                   <div className="font-mono text-xs tabular-nums text-[var(--v4-text-muted)]">
                     {formatMsClock(item.startMs)}
@@ -248,7 +248,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
               </div>
 
               {isSourceOpen && item.provenance && (
-                <div className="border-t border-[var(--v4-line)] bg-[var(--v4-panel-muted)]/40 px-4 py-2 md:px-5">
+                <div className="border-t border-[var(--v4-line)] bg-[var(--v4-panel-muted)]/40 px-4 py-2">
                   <div className="grid gap-2 lg:grid-cols-2">
                     {item.provenance.slice(0, 4).map((source, sourceIndex) => (
                       <div key={`${item.id}-src-${sourceIndex}`} className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel)] px-2.5 py-2 text-xs leading-5">

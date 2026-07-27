@@ -1131,7 +1131,7 @@ export const DragZone: React.FC = () => {
               transition={{ duration: shouldReduceMotion ? 0 : 0.24, ease: [0.16, 1, 0.3, 1] }}
               className="flex w-full max-w-6xl flex-col items-center"
             >
-              <header className="ingest-empty-intro px-3 text-center md:px-4">
+              <header className="ingest-empty-intro density-copy-x text-center">
                 <p className="ingest-empty-intro__eyebrow">LOCAL SUBTITLE STUDIO</p>
                 <h2 className="ingest-empty-intro__title">
                   完全本地运行的轻字幕处理工具

@@ -372,9 +372,11 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
             style={{
               bottom: `${paddingBottomCqh}cqh`,
               opacity: (guides.show || guides.temp) ? 1 : 0,
-              borderColor: isMagnetic ? 'var(--v5-orange)' : 'rgba(239, 141, 95, 0.55)',
+              borderColor: isMagnetic ? 'var(--v5-orange)' : 'color-mix(in srgb, var(--v5-orange) 55%, transparent)',
               borderStyle: isMagnetic ? 'solid' : 'dashed',
-              boxShadow: isMagnetic ? '0 0 14px rgba(239, 141, 95, 0.55)' : '0 0 10px rgba(239, 141, 95, 0.22)',
+              boxShadow: isMagnetic
+                ? '0 0 14px color-mix(in srgb, var(--v5-orange) 55%, transparent)'
+                : '0 0 10px color-mix(in srgb, var(--v5-orange) 22%, transparent)',
             }}
           >
             <span className="absolute left-3 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-xs font-semibold tracking-[var(--tracking-eyebrow-wide)] text-[var(--v5-orange-strong)]">
