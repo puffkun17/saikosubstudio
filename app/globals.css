@@ -179,6 +179,32 @@
   --info-bar-h: 0px;
   --edge-next-w: 0px;
 
+  /*
+   * Tray ink（EP-0.4 TOKEN-008）— 奶油半透明，禁止托盘再手写 rgba(245,241,234,*)
+   */
+  --tray-ink: var(--v5-cream);
+  --tray-ink-soft: color-mix(in srgb, var(--v5-cream) 88%, transparent);
+  --tray-ink-muted: color-mix(in srgb, var(--v5-cream) 72%, transparent);
+  --tray-ink-faint: color-mix(in srgb, var(--v5-cream) 62%, transparent);
+  --tray-line: color-mix(in srgb, var(--v5-cream) 14%, transparent);
+  --tray-line-soft: color-mix(in srgb, var(--v5-cream) 10%, transparent);
+  --tray-line-strong: color-mix(in srgb, var(--v5-cream) 22%, transparent);
+  --tray-fill: color-mix(in srgb, var(--v5-cream) 10%, transparent);
+  --tray-fill-soft: color-mix(in srgb, var(--v5-cream) 8%, transparent);
+  --tray-fill-hover: color-mix(in srgb, var(--v5-cream) 14%, transparent);
+
+  /*
+   * Type scale（EP-0.4 TOKEN-009）
+   * Caption · Control · Body · Title · Display；eyebrow tracking 仅两档。
+   */
+  --type-caption: 0.8125rem; /* 13 — 旁注 / meta；对齐 @theme text-xs */
+  --type-control: 0.9375rem; /* 15 — 按钮 / chip */
+  --type-body: 1rem;         /* 16 — 默认阅读 */
+  --type-title: 1.125rem;    /* 18 — 区块标题 */
+  --type-display: 1.5rem;    /* 24 — 空态 / 片名 display */
+  --tracking-eyebrow: 0.06em;
+  --tracking-eyebrow-wide: 0.08em;
+
   /* Stacking: nav < dim scrim < dropdown < feedback < overlay/modal. Never mount modals inside nav. */
   --z-raised: 10;
   --z-sticky: 40;
@@ -239,15 +265,28 @@ body {
 
 /* 副文案 / 元信息：统一中等字重，避免「浅色 + 400」叠出的发虚感。 */
 .text-meta {
+  font-size: var(--type-caption);
   font-weight: 500;
   letter-spacing: 0.01em;
   color: var(--v4-text-muted);
 }
 
 .text-caption {
+  font-size: var(--type-caption);
   font-weight: 500;
   letter-spacing: 0.015em;
   color: var(--v4-text-faint);
+}
+
+.text-eyebrow {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+.text-eyebrow--wide {
+  letter-spacing: var(--tracking-eyebrow-wide);
 }
 
 /* 思源宋体 display：片源名、空态主句、剧情简介。 */
@@ -287,8 +326,8 @@ body {
 .system-tray--top,
 .system-tray--bottom {
   background: var(--v5-green);
-  border-color: rgba(245, 241, 234, 0.1);
-  color: rgba(245, 241, 234, 0.92);
+  border-color: var(--tray-line-soft);
+  color: color-mix(in srgb, var(--v5-cream) 92%, transparent);
   backdrop-filter: none;
   /* 墨绿托盘上 antialiased 更稳，奶油工作区保持亚像素。 */
   -webkit-font-smoothing: antialiased;
@@ -297,19 +336,19 @@ body {
 
 .system-tray--top .soft-log-marquee__text,
 .system-tray--bottom .soft-log-marquee__text {
-  color: rgba(245, 241, 234, 0.78);
+  color: color-mix(in srgb, var(--v5-cream) 78%, transparent);
 }
 
 .system-tray__ctrl {
-  border: 1px solid rgba(245, 241, 234, 0.16);
-  background: rgba(245, 241, 234, 0.1);
-  color: rgba(245, 241, 234, 0.88);
+  border: 1px solid color-mix(in srgb, var(--v5-cream) 16%, transparent);
+  background: var(--tray-fill);
+  color: var(--tray-ink-soft);
 }
 
 .system-tray__ctrl:hover {
-  border-color: rgba(245, 241, 234, 0.22);
-  background: rgba(245, 241, 234, 0.14);
-  color: var(--v5-cream);
+  border-color: var(--tray-line-strong);
+  background: var(--tray-fill-hover);
+  color: var(--tray-ink);
 }
 
 .system-tray__accent {
@@ -628,7 +667,7 @@ body {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1, "zero" 1;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking-eyebrow);
   line-height: 1;
   color: var(--v4-text-muted);
 }
@@ -841,18 +880,18 @@ body {
 
 .bottom-status-deck__title {
   margin: 0;
-  font-size: 0.9375rem;
+  font-size: var(--type-control);
   font-weight: 600;
   line-height: 1.15;
   letter-spacing: 0.005em;
-  color: rgba(245, 241, 234, 0.96);
+  color: color-mix(in srgb, var(--v5-cream) 96%, transparent);
 }
 
 .bottom-status-deck__meta {
-  font-size: 0.8125rem;
+  font-size: var(--type-caption);
   line-height: 1.15;
   font-weight: 500;
-  color: rgba(245, 241, 234, 0.78);
+  color: color-mix(in srgb, var(--v5-cream) 78%, transparent);
 }
 
 .bottom-status-deck__steps {
@@ -878,7 +917,7 @@ body {
 }
 
 .bottom-status-deck__step.is-done {
-  color: rgba(245, 241, 234, 0.88);
+  color: var(--tray-ink-soft);
 }
 
 .bottom-status-deck__step.is-done .bottom-status-deck__dot {
@@ -912,12 +951,12 @@ body {
 }
 
 .bottom-status-deck__step.is-pending {
-  color: rgba(245, 241, 234, 0.62);
+  color: var(--tray-ink-faint);
 }
 
 .bottom-status-deck__subtitle {
   margin: 0;
-  color: rgba(245, 241, 234, 0.78);
+  color: color-mix(in srgb, var(--v5-cream) 78%, transparent);
 }
 
 @keyframes bottomStatusSpin {
@@ -1295,7 +1334,7 @@ body {
 .ui-rating__brand {
   font-size: 0.625rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-eyebrow-wide);
   line-height: 1;
   color: var(--v4-text-faint);
   text-transform: uppercase;
@@ -1638,7 +1677,7 @@ body {
   font-family: "SFMono-Regular", "Cascadia Mono", "Roboto Mono", "IBM Plex Mono", ui-monospace, monospace;
   font-variant-numeric: tabular-nums slashed-zero;
   font-feature-settings: "tnum" 1, "zero" 1;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-eyebrow-wide);
   text-shadow: 0 0 12px rgba(154, 170, 211, 0.12);
 }
 

@@ -137,7 +137,7 @@ export const SourceIdentityStrip: React.FC = () => {
               </p>
             ) : null}
             {!tmdbData && !scriptTitle && !latinTitle ? (
-              <p className="mt-1.5 text-[13px] font-medium leading-relaxed text-[var(--v4-text-muted)]">
+              <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
                 用于命名与预览背景，可稍后补充。
               </p>
             ) : null}
@@ -170,7 +170,7 @@ export const SourceIdentityStrip: React.FC = () => {
               >
                 <div className="rounded-lg border border-[color:rgba(196,137,58,0.28)] bg-[var(--v4-panel-muted)] px-3 py-2.5">
                   <div className="flex items-start gap-2">
-                    <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-[var(--v4-text)]">
+                    <p className="min-w-0 flex-1 text-xs leading-relaxed text-[var(--v4-text)]">
                       <span className="font-semibold">{filmNotice.title}</span>
                       {filmNotice.message && (
                         <span className="text-[var(--v4-text-muted)]"> · {filmNotice.message}</span>
@@ -239,7 +239,7 @@ export const SourceIdentityStrip: React.FC = () => {
               href="https://www.themoviedb.org/"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 flex w-full items-center justify-center gap-2 text-[12px] font-medium text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)]"
+              className="mt-3 flex w-full items-center justify-center gap-2 text-xs font-medium text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)]"
               title="This product uses the TMDB API but is not endorsed or certified by TMDB."
             >
               <span>Powered by</span>

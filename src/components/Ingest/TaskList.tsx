@@ -780,7 +780,7 @@ export const TaskList: React.FC = () => {
                   <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
                     按时间轴就近配对主副轨，速度快、占用低。适合对白节奏接近、断句差异不大的常规双语。
                   </p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-[var(--v4-text-faint)]">
+                  <p className="mt-1 text-xs leading-relaxed text-[var(--v4-text-faint)]">
                     一侧多句/少句或翻译节奏差较大时，可能漏配或错位。
                   </p>
                 </button>
@@ -803,7 +803,7 @@ export const TaskList: React.FC = () => {
                   <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
                     用更完整的对齐搜索处理插入、删减与断句不一致，准确度更高。适合翻译节奏不同、一侧多句或少句的片子。
                   </p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-[var(--v4-text-faint)]">
+                  <p className="mt-1 text-xs leading-relaxed text-[var(--v4-text-faint)]">
                     耗时与内存更高；字幕体量很大时会自动降级或收窄搜索带。
                   </p>
                 </button>
@@ -845,7 +845,7 @@ export const TaskList: React.FC = () => {
                       placeholder="输入导出文件名"
                       aria-label="导出文件名"
                     />
-                    <span className="shrink-0 font-mono text-[11px] font-semibold tracking-wide text-[var(--v4-text-faint)]">
+                    <span className="shrink-0 font-mono text-xs font-semibold tracking-wide text-[var(--v4-text-faint)]">
                       .ass / .srt
                     </span>
                   </div>

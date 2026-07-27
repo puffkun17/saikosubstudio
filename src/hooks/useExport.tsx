@@ -244,7 +244,7 @@ export const ExportDropdown: React.FC<{
           >
             <div className="border-b border-[var(--v4-line)] px-3.5 py-2.5">
               <p className="text-xs font-semibold tracking-wide text-[var(--v4-text)]">选择格式</p>
-              <p className="mt-0.5 text-[11px] leading-4 text-[var(--v4-text-faint)]">下载到本地，如视频文件所在目录等</p>
+              <p className="mt-0.5 text-xs leading-4 text-[var(--v4-text-faint)]">下载到本地，如视频文件所在目录等</p>
             </div>
             <div className="p-1.5">
               {EXPORT_OPTIONS.map((option) => (
@@ -259,7 +259,7 @@ export const ExportDropdown: React.FC<{
                   }}
                 >
                   <span
-                    className={`mt-0.5 inline-flex min-w-[2.75rem] shrink-0 items-center justify-center rounded-md px-1.5 py-1 font-mono text-[11px] font-bold tracking-wide
+                    className={`mt-0.5 inline-flex min-w-[2.75rem] shrink-0 items-center justify-center rounded-md px-1.5 py-1 font-mono text-xs font-bold tracking-wide
                       ${option.emphasized
                         ? 'border border-[var(--v4-accent)]/25 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
                         : 'border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]'}`}
@@ -268,7 +268,7 @@ export const ExportDropdown: React.FC<{
                   </span>
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold text-[var(--v4-text)]">{option.title}</span>
-                    <span className="mt-0.5 block text-[11px] leading-4 text-[var(--v4-text-muted)]">{option.description}</span>
+                    <span className="mt-0.5 block text-xs leading-4 text-[var(--v4-text-muted)]">{option.description}</span>
                   </span>
                 </button>
               ))}

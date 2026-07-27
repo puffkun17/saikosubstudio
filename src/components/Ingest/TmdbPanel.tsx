@@ -452,7 +452,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-xs font-medium text-[var(--v4-text-muted)]">匹配结果 ({tmdbSuggestions.length})</span>
-                        <span className="text-[11px] text-[var(--v4-text-faint)]">点选后应用</span>
+                        <span className="text-xs text-[var(--v4-text-faint)]">点选后应用</span>
                       </div>
                       <div className="flex flex-col gap-1.5">
                         {tmdbSuggestions.map(s => {
@@ -488,7 +488,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                                 <span className={`truncate text-sm font-semibold ${isChosen ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text)]'}`}>
                                   {s.title || s.name}
                                 </span>
-                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[var(--v4-text-faint)]">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[var(--v4-text-faint)]">
                                   {year && <span className="font-mono tabular-nums">{year}</span>}
                                   <span>{mediaType}</span>
                                   {(s.vote_average ?? 0) > 0 && (

@@ -377,7 +377,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
               boxShadow: isMagnetic ? '0 0 14px rgba(239, 141, 95, 0.55)' : '0 0 10px rgba(239, 141, 95, 0.22)',
             }}
           >
-            <span className="absolute left-3 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-xs font-semibold tracking-[0.08em] text-[var(--v5-orange-strong)]">
+            <span className="absolute left-3 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-xs font-semibold tracking-[var(--tracking-eyebrow-wide)] text-[var(--v5-orange-strong)]">
               字幕基线
             </span>
             <span className="absolute -left-px -top-1 h-2 w-px bg-[var(--v5-orange-strong)]" />

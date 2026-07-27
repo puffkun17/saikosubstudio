@@ -91,7 +91,7 @@ export const CreditTool: React.FC = () => {
                 );
               })}
             </div>
-            <p className="mt-1.5 text-[11px] font-medium leading-relaxed text-[var(--v4-text-faint)]">
+            <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-faint)]">
               {isOfficialSubtitle ? '已标记官方字幕 · ' : ''}
               导出 ASS 时写入 Script Info（Original Script / Comment）
             </p>

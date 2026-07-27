@@ -210,7 +210,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                     {formatMsClock(item.startMs)}
                   </div>
                   <span
-                    className={`mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium ${badgeTone(item.kind) ?? ''}`}
+                    className={`mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-xs font-medium ${badgeTone(item.kind) ?? ''}`}
                     style={badgeToneStyle(item.kind)}
                   >
                     <BadgeIcon kind={item.kind} />
@@ -254,13 +254,13 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                       <div key={`${item.id}-src-${sourceIndex}`} className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel)] px-2.5 py-2 text-xs leading-5">
                         {source.primary && (
                           <div>
-                            <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--v4-accent-strong)]/70">主轨 #{source.primary.cueIndex}</div>
+                            <div className="text-xs font-medium uppercase tracking-[var(--tracking-eyebrow-wide)] text-[var(--v4-accent-strong)]/70">主轨 #{source.primary.cueIndex}</div>
                             <div className="mt-0.5 whitespace-pre-wrap text-[var(--v4-text-muted)]">{source.primary.text}</div>
                           </div>
                         )}
                         {source.secondary && (
                           <div className={source.primary ? 'mt-1.5 border-t border-[var(--v4-line)] pt-1.5' : ''}>
-                            <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--v4-text-faint)]">第二语言 #{source.secondary.cueIndex}</div>
+                            <div className="text-xs font-medium uppercase tracking-[var(--tracking-eyebrow-wide)] text-[var(--v4-text-faint)]">第二语言 #{source.secondary.cueIndex}</div>
                             <div className="mt-0.5 whitespace-pre-wrap text-[var(--v4-text-faint)]">{source.secondary.text}</div>
                           </div>
                         )}

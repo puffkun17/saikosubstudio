@@ -371,7 +371,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
           />
           {showSliderTip && (
             <div
-              className="pointer-events-none fixed z-[var(--z-dropdown)] -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-md border border-[var(--v4-line-strong)] bg-[color-mix(in_srgb,#0a0e0d_88%,transparent)] px-2 py-1 font-mono text-[11px] font-semibold tabular-nums text-[var(--v4-accent-strong)] shadow-[var(--elevation-1-dim)] backdrop-blur-md"
+              className="pointer-events-none fixed z-[var(--z-dropdown)] -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-md border border-[var(--v4-line-strong)] bg-[color-mix(in_srgb,#0a0e0d_88%,transparent)] px-2 py-1 font-mono text-xs font-semibold tabular-nums text-[var(--v4-accent-strong)] shadow-[var(--elevation-1-dim)] backdrop-blur-md"
               style={{ left: sliderTip.x, top: sliderTip.y }}
               role="status"
             >
@@ -415,7 +415,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
           className="v9-timeline-dial-slider w-full"
           aria-label="字幕时间轴位置"
         />
-        <span className="hidden min-w-[8.5rem] text-right font-mono text-[13px] font-semibold tabular-nums text-[var(--v4-text-muted)] md:block">
+        <span className="hidden min-w-[8.5rem] text-right font-mono text-xs font-semibold tabular-nums text-[var(--v4-text-muted)] md:block">
           {timeReadout}
         </span>
       </div>

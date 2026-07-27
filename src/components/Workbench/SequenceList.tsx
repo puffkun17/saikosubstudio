@@ -361,7 +361,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                   aria-label={`第 ${sub.index} 行字幕，按 F2 编辑；Shift 连选，⌥/⌘/Ctrl 跳选`}
                   className={rowClass}
                 >
-                  <div className={`flex min-w-0 items-center gap-1 self-center pl-0.5 font-mono text-[13px] font-semibold tabular-nums whitespace-nowrap ${isActive ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-muted)]'}`}>
+                  <div className={`flex min-w-0 items-center gap-1 self-center pl-0.5 font-mono text-xs font-semibold tabular-nums whitespace-nowrap ${isActive ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-muted)]'}`}>
                     <span>#{sub.index}</span>
                     {/* 检查标记放在行号后的固定槽，不挤占时间轴列对齐 */}
                     <span
@@ -385,7 +385,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                       <span className={`mt-0.5 h-2 w-2 rounded-full border ${isActive ? 'bg-[var(--v4-accent-strong)] border-[var(--v4-accent-strong)] shadow-[var(--glow-accent)]' : 'bg-[var(--v4-accent-soft)] border-[var(--v4-line-strong)]'}`} />
                       <span className="mt-1 flex-1 w-px bg-[var(--v4-line)]" />
                     </div>
-                    <div className={`flex min-w-0 flex-col whitespace-nowrap font-mono text-[13px] leading-tight tabular-nums tracking-tight ${isActive ? 'font-semibold text-[var(--v4-accent-strong)]' : 'font-medium text-[var(--v4-text-muted)]'}`}>
+                    <div className={`flex min-w-0 flex-col whitespace-nowrap font-mono text-xs leading-tight tabular-nums tracking-tight ${isActive ? 'font-semibold text-[var(--v4-accent-strong)]' : 'font-medium text-[var(--v4-text-muted)]'}`}>
                       <span>{startTime}</span>
                       <span className="mt-0.5 opacity-80">{endTime}</span>
                     </div>
@@ -439,7 +439,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                         </div>
                         {enText && (
                           <div
-                            className="mt-0.5 break-words text-[13px] font-medium leading-snug tracking-[0.01em] text-[var(--v4-text-muted)]"
+                            className="mt-0.5 break-words text-xs font-medium leading-snug tracking-[0.01em] text-[var(--v4-text-muted)]"
                             style={{ fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }}
                           >
                             {enText}

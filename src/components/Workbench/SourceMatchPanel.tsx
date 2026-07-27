@@ -302,7 +302,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-3 text-[11px] text-[var(--v4-text-faint)] sm:flex">
+          <div className="hidden items-center gap-3 text-xs text-[var(--v4-text-faint)] sm:flex">
             {MARK_KIND_ORDER.map((kind) => (
               <span key={kind} className="inline-flex items-center gap-1.5">
                 <InspectionMarkGlyph kind={kind} size={8} />
@@ -483,7 +483,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
             </motion.div>
           </div>
 
-          <div className="flex items-center justify-between px-3 pb-2 font-mono text-[10px] tabular-nums text-[var(--v4-text-faint)]">
+          <div className="flex items-center justify-between px-3 pb-2 font-mono text-xs tabular-nums text-[var(--v4-text-faint)]">
             <span>00:00</span>
             <span>{formatMsClock(timelineDurationMs / 2)}</span>
             <span>{formatMsClock(timelineDurationMs)}</span>

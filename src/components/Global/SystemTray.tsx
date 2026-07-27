@@ -189,9 +189,9 @@ export const SystemTray = () => {
           </button>
 
           {!isInfoPage && (
-            <div className="hidden min-w-0 flex-1 items-center border-l border-[color:rgba(245,241,234,0.12)] pl-3 min-[720px]:flex">
+            <div className="hidden min-w-0 flex-1 items-center border-l border-[color:color-mix(in_srgb,var(--v5-cream)_12%,transparent)] pl-3 min-[720px]:flex">
               <div
-                className="relative h-9 w-full max-w-[22rem] overflow-hidden rounded-lg border border-[color:rgba(245,241,234,0.14)] bg-[color:rgba(245,241,234,0.08)]"
+                className="relative h-9 w-full max-w-[22rem] overflow-hidden rounded-[var(--radius-md)] border border-[var(--tray-line)] bg-[var(--tray-fill-soft)]"
                 role="group"
                 aria-label="工作流程进度"
               >
@@ -215,13 +215,13 @@ export const SystemTray = () => {
                         key={step.id}
                         type="button"
                         onClick={() => handleStepClick(step.id)}
-                        className={`v4-focus-ring relative flex cursor-pointer items-center justify-center px-1 text-[14px] font-bold tracking-wide transition-colors
-                          ${index > 0 ? 'border-l border-[color:rgba(26,61,55,0.12)]' : ''}
+                        className={`v4-focus-ring relative flex cursor-pointer items-center justify-center px-1 text-[length:var(--type-control)] font-bold tracking-wide transition-colors
+                          ${index > 0 ? 'border-l border-[color:color-mix(in_srgb,var(--v5-green)_12%,transparent)]' : ''}
                           ${isFilled
                             ? 'text-[var(--v5-green)]'
                             : disabled
-                              ? 'cursor-help text-[color:rgba(245,241,234,0.65)]'
-                              : 'text-[color:rgba(245,241,234,0.78)] hover:text-[var(--v5-cream)]'}
+                              ? 'cursor-help text-[color:color-mix(in_srgb,var(--v5-cream)_65%,transparent)]'
+                              : 'text-[color:color-mix(in_srgb,var(--v5-cream)_78%,transparent)] hover:text-[var(--tray-ink)]'}
                           ${isActive ? 'underline decoration-2 underline-offset-4' : ''}`}
                         aria-current={isActive ? 'step' : undefined}
                         aria-disabled={disabled}
@@ -248,7 +248,7 @@ export const SystemTray = () => {
           )}
 
           {!isInfoPage && (
-            <span className="truncate text-[15px] font-medium text-[color:rgba(245,241,234,0.72)] min-[720px]:hidden">
+            <span className="truncate text-[length:var(--type-control)] font-medium text-[var(--tray-ink-muted)] min-[720px]:hidden">
               {STEP_LABEL[workflowStep]}
             </span>
           )}
@@ -262,27 +262,27 @@ export const SystemTray = () => {
             title="调节网页整体缩放"
             aria-label={`网页缩放 ${Math.round(scale * 100)}%`}
           >
-            <span className="system-tray__accent text-[14px] font-bold tracking-wide">A±</span>
-            <span className="text-[15px] font-bold text-[var(--v5-cream)]" suppressHydrationWarning>
+            <span className="system-tray__accent text-[length:var(--type-control)] font-bold tracking-wide">A±</span>
+            <span className="text-[length:var(--type-control)] font-bold text-[var(--tray-ink)]" suppressHydrationWarning>
               {Math.round(scale * 100)}%
             </span>
           </button>
 
           <div
-            className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[color:rgba(245,241,234,0.14)] bg-[color:rgba(245,241,234,0.1)] px-3"
+            className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-[var(--radius-pill)] border border-[var(--tray-line)] bg-[var(--tray-fill)] px-3"
             aria-label={`本地时间 ${zoneShort} ${time}`}
           >
-            <span className="rounded-full bg-[var(--v4-accent-soft)] px-1.5 py-0.5 font-mono text-[12px] font-bold tracking-[0.1em] text-[var(--v5-orange)]">
+            <span className="rounded-[var(--radius-pill)] bg-[var(--v4-accent-soft)] px-1.5 py-0.5 font-mono text-xs font-bold tracking-[var(--tracking-eyebrow-wide)] text-[var(--v5-orange)]">
               LOCAL
             </span>
-            <span className="text-[16px] font-semibold tabular-nums text-[var(--v5-cream)]" suppressHydrationWarning>
+            <span className="text-[length:var(--type-body)] font-semibold tabular-nums text-[var(--tray-ink)]" suppressHydrationWarning>
               {time || '--:--:--'}
             </span>
-            <span className="hidden font-mono text-[13px] text-[color:rgba(245,241,234,0.72)] min-[900px]:inline" suppressHydrationWarning>
+            <span className="hidden font-mono text-xs text-[var(--tray-ink-muted)] min-[900px]:inline" suppressHydrationWarning>
               {zoneShort}
             </span>
             {zoneCity ? (
-              <span className="hidden text-[13px] text-[color:rgba(245,241,234,0.62)] min-[1100px]:inline" suppressHydrationWarning>
+              <span className="hidden text-xs text-[var(--tray-ink-faint)] min-[1100px]:inline" suppressHydrationWarning>
                 {zoneCity}
               </span>
             ) : null}

@@ -1360,7 +1360,7 @@ export const DragZone: React.FC = () => {
                             <p className="truncate text-[16px] font-semibold leading-snug tracking-tight text-[var(--v4-text)] md:text-[17px] lg:text-[18px]" title={node.folder}>
                               {node.folder}
                             </p>
-                            <p className="mt-1 text-[13px] font-medium text-[var(--v4-text-muted)] md:text-[14px]">
+                            <p className="mt-1 text-xs font-medium text-[var(--v4-text-muted)] md:text-sm">
                               本地文件夹 · {node.items.length} 个文件
                               {folderFormat ? ` · ${folderFormat}` : ''} · {formatBytes(folderBytes)}
                             </p>
@@ -1445,14 +1445,14 @@ export const DragZone: React.FC = () => {
                             {item.name}
                           </p>
                           {isArchive && item.archivePeekStatus === 'loading' && (
-                            <p className="mt-1 text-[13px] font-medium text-[var(--v4-text-muted)] md:text-[14px]">
+                            <p className="mt-1 text-xs font-medium text-[var(--v4-text-muted)] md:text-sm">
                               {item.note && item.note !== '正在查看包内字幕…'
                                 ? item.note
                                 : '正在读取包内字幕…'}
                             </p>
                           )}
                           {isArchive && item.archivePeekStatus === 'ready' && item.archiveEntries && (
-                            <p className="mt-1 text-[13px] font-medium text-[var(--v4-text-muted)] md:text-[14px]">
+                            <p className="mt-1 text-xs font-medium text-[var(--v4-text-muted)] md:text-sm">
                               {[
                                 '压缩包',
                                 (() => {
@@ -1465,7 +1465,7 @@ export const DragZone: React.FC = () => {
                             </p>
                           )}
                           {!item.accepted && (
-                            <p className="mt-1 text-[13px] font-medium text-[var(--v4-danger)] md:text-[14px]">{item.note}</p>
+                            <p className="mt-1 text-xs font-medium text-[var(--v4-danger)] md:text-sm">{item.note}</p>
                           )}
                         </div>
                         <button

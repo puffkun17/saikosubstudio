@@ -361,7 +361,7 @@ export const LanguageMark: React.FC<{
     isLg ? 'h-9' : 'h-8'
   } ${className}`;
   const labelClass = `font-mono font-semibold leading-none tracking-normal ${
-    isLg ? 'text-[14px]' : 'text-[13px]'
+    isLg ? 'text-sm' : 'text-xs'
   }`;
 
   if (languagePair) {

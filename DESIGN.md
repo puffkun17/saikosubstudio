@@ -116,6 +116,17 @@ before introducing visual novelty.
 
 兼容：`--v5-radius-panel` → xl；`--v5-radius-control` → lg。禁止新增 `rounded-[Npx]` / 奇怪 rem 中间值；内容区信息徽章禁止 pill。
 
+### Tray ink（EP-0.4 TOKEN-008）
+
+| Token | 用途 |
+|-------|------|
+| `--tray-ink` | 托盘主字（奶油实色） |
+| `--tray-ink-soft` | 控件默认字 |
+| `--tray-ink-muted` / `--tray-ink-faint` | 次要 / 更弱 |
+| `--tray-line*` / `--tray-fill*` | 托盘边线与半透明底 |
+
+托盘禁止再手写 `rgba(245,241,234,*)`；用上表或 `color-mix(var(--v5-cream) …)`。
+
 ---
 
 ## 3. 字体原则
@@ -126,22 +137,34 @@ before introducing visual novelty.
 | Display Serif | Noto Serif SC（自托管） | **仅**片源名、空态主句 |
 | Mono | Geist Mono | 时间码、缩放、语言标、评分、键值 |
 
-### 字阶（产品 UI）
+### 字阶（产品 UI · EP-0.4 TOKEN-009）
 
-| 角色 | 约略尺寸 | 备注 |
-|------|----------|------|
-| Caption / meta | 12–13px | 旁注、托盘 meta |
-| Control / label | 14–15px | 按钮、chip |
-| Body | 16px | 默认阅读 |
-| Section title | 18px | 区块标题 |
-| Display | 22–26px + serif | 空态/片名，极少用 |
+| 角色 | Token | 约略尺寸 | 备注 |
+|------|-------|----------|------|
+| Caption / meta | `--type-caption` | 13px（`text-xs`） | 旁注、托盘 meta；**禁止**再写 `text-[11px]` |
+| Control / label | `--type-control` | 15px | 按钮、chip |
+| Body | `--type-body` | 16px | 默认阅读 |
+| Title | `--type-title` | 18px | 区块标题 |
+| Display | `--type-display` | 24px + serif | 空态/片名，极少用 |
+
+Eyebrow tracking **仅两档**：`--tracking-eyebrow`（0.06em）· `--tracking-eyebrow-wide`（0.08em）。
+
+### 字重（EP-0.4 TOKEN-010）
+
+| 角色 | 字重 | 说明 |
+|------|------|------|
+| Body 默认 | **450** | 产品阅读默认（`body { font-weight: 450 }`）；设计选择，非遗漏 |
+| Meta / caption | 500 | 副文案、旁注 |
+| Control | 600 | 按钮、chip、选择项 |
+| Display / 强调 | 700 | 空态主句、托盘关键数字；少用喊话 |
+
+同层级禁止 medium/semibold 随机跳（同一角色用同一档）。
 
 ### 规则
 
 - 宋体不是「高级装饰」，是**片名与空态的编辑声口**；工具栏、按钮、表单禁止衬线。
-- 禁止同屏用一堆 `text-[11px]` / `text-[14px]` / `text-[17px]` 打穿字阶。
-- Tracking：eyebrow / 大写品牌标可用略宽字距；正文保持克制，禁止 0.04～0.12em 随意混用。
-- 字重以 medium / semibold 为主；少用 bold 喊话。
+- 禁止同屏用一堆 `text-[11px]` / `text-[14px]` / `text-[17px]` 打穿字阶；新代码走 `--type-*` 或 Tailwind 阶（`text-xs` = Caption）。
+- Tracking：eyebrow / 大写品牌标只用上述两档；正文保持克制。
 
 ---
 
