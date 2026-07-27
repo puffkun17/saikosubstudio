@@ -256,7 +256,7 @@ export const TaskList: React.FC = () => {
     const bottom = Math.max(zh.bottom, en.bottom);
     if (clientX < left || clientX > right || clientY < top || clientY > bottom) return null;
 
-    // 上下槽位等高衔接：中线以上归主字幕槽，以下归第二语言槽
+    // 上下槽位等高衔接：中线以上归主字幕槽，以下归原文槽
     const midY = (zh.bottom + en.top) / 2;
     return clientY < midY ? 'zh' : 'en';
   };
@@ -575,7 +575,7 @@ export const TaskList: React.FC = () => {
                 字幕序列
               </h4>
               <InfoHint label="字幕序列说明">
-                选择要处理的字幕文件。双语单文件会自动识别；分开的中文与第二语言轨将按时间轴合并。
+                选择要处理的字幕文件。双语单文件会自动识别；分开的中文主字幕与原文轨将按时间轴合并。
               </InfoHint>
               {activeTask.isBilingualSingle && (
                 <span className="rd-chip rd-chip--tight text-[var(--v4-text-muted)]">
@@ -625,7 +625,7 @@ export const TaskList: React.FC = () => {
                         isDropTarget ? 'bg-[var(--v4-accent-soft)] ring-1 ring-[var(--v4-accent)]/40' : ''
                       }`}
                     >
-                      <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-[var(--v4-text-muted)]">
+                      <span className="flex min-w-0 flex-col justify-center gap-0.5">
                         {label}
                       </span>
                       <TrackSelect
@@ -649,7 +649,7 @@ export const TaskList: React.FC = () => {
                             swapPrimaryTracks(activeTask.id);
                           }
                         }}
-                        aria-label={canReorderTracks ? `拖动以对调${trackKey === 'zh' ? '主字幕' : '第二语言'}顺序` : undefined}
+                        aria-label={canReorderTracks ? `拖动以对调${trackKey === 'zh' ? '主字幕' : '原文'}顺序` : undefined}
                         title={canReorderTracks ? '按住拖动，对调主副轨' : undefined}
                         className={`grid h-11 w-8 shrink-0 place-items-center rounded-md text-[var(--v4-text-muted)] transition-colors touch-none ${
                           canReorderTracks
@@ -670,10 +670,15 @@ export const TaskList: React.FC = () => {
                     {renderPrimaryRow(
                       'zh',
                       <>
-                        主字幕
-                        <InfoHint label="主字幕说明" side="right">
-                          主字幕优先使用中文或双语内容。
-                        </InfoHint>
+                        <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-[var(--v4-text-muted)]">
+                          主字幕
+                          <InfoHint label="主字幕说明" side="right">
+                            主字幕默认使用简体或繁体中文（或中英双语单文件）。后续可选指定简中 / 繁中。
+                          </InfoHint>
+                        </span>
+                        <span className="truncate text-[10px] font-normal leading-tight text-[var(--v4-text-faint)]">
+                          默认：中文
+                        </span>
                       </>,
                       '选择中文或双语字幕',
                       zhRowRef,
@@ -683,13 +688,13 @@ export const TaskList: React.FC = () => {
                       <>
                         {renderPrimaryRow(
                           'en',
-                          <>
-                            第二语言
-                            <InfoHint label="第二语言说明" side="right">
-                              英语或其他语言轨，将与主字幕按时间轴合并。
+                          <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-[var(--v4-text-muted)]">
+                            原文
+                            <InfoHint label="原文说明" side="right">
+                              原文轨通常为英语对白，将与主字幕按时间轴合并。主路径仅自动绑定英语；其他语种需你手动指定。
                             </InfoHint>
-                          </>,
-                          '选择英语或其他语言（可选）',
+                          </span>,
+                          '选择英语原文（可选）',
                           enRowRef,
                         )}
 
@@ -753,7 +758,7 @@ export const TaskList: React.FC = () => {
               <div className="flex items-center gap-1.5">
                 <h4 className="text-base font-semibold text-[var(--v4-text)]">对齐方式</h4>
                 <InfoHint label="对齐方式说明">
-                  仅在主字幕与第二语言分轨时生效。双语单文件无需选择。
+                  仅在主字幕与原文分轨时生效。双语单文件无需选择。
                 </InfoHint>
               </div>
               <div
@@ -910,7 +915,7 @@ export const TaskList: React.FC = () => {
                     <p className="ui-meta-row mt-3">
                       中文 {foundAssStyle.zhFontSize || '--'} px
                       <span aria-hidden="true"> · </span>
-                      第二语言 {foundAssStyle.enFontSize || '--'} px
+                      原文 {foundAssStyle.enFontSize || '--'} px
                     </p>
                   </div>
 

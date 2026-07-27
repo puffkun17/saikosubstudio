@@ -57,7 +57,7 @@ export const ColorSampler: React.FC = () => {
       const result = await eyeDropper.open();
       const color = result.sRGBHex;
 
-      const label = pickColorTarget === 'zhColor' ? '中文字色' : pickColorTarget === 'zhOutline' ? '中文描边色' : '第二语言字色';
+      const label = pickColorTarget === 'zhColor' ? '中文字色' : pickColorTarget === 'zhOutline' ? '中文描边色' : '原文字色';
       addLog(`[吸色] 已提取颜色: ${color} 并应用到 ${label}`, "success");
       
       setCustomStyle({
@@ -117,7 +117,7 @@ export const ColorSampler: React.FC = () => {
               <span className="text-xs text-[var(--v4-text-muted)] font-medium">吸色应用到</span>
               <div className="grid grid-cols-3 gap-1">
                 {(['zhColor', 'zhOutline', 'enColor'] as const).map(target => {
-                  const label = target === 'zhColor' ? '中文' : target === 'zhOutline' ? '描边' : '第二语言';
+                  const label = target === 'zhColor' ? '中文' : target === 'zhOutline' ? '描边' : '原文';
                   const active = pickColorTarget === target;
                   return (
                     <button

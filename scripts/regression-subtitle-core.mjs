@@ -1645,4 +1645,65 @@ const createTmdbImages = () => ({
   );
 }
 
+{
+  // Elite Force / Lab Rats: 查询⊂片名 的危险 contains 不得自动应用（有年+热度也不行）
+  resetStoreForTmdb();
+  const labRatsContains = {
+    id: 70101,
+    media_type: 'tv',
+    name: 'Lab Rats: Elite Force',
+    original_name: 'Lab Rats: Elite Force',
+    first_air_date: '2016-03-02',
+    popularity: 95,
+    vote_average: 7.8,
+  };
+  const otherContains = {
+    id: 70102,
+    media_type: 'tv',
+    name: 'S.W.A.T.: Elite Force',
+    original_name: 'S.W.A.T.: Elite Force',
+    first_air_date: '2018-01-01',
+    popularity: 40,
+    vote_average: 6.5,
+  };
+  const eliteFile = 'Elite.Force.S01E01.720p.HEVC.x265-MeGusta-Chs.srt';
+
+  global.fetch = async (url) => {
+    const target = String(url);
+    if (target.includes('/api/tmdb/search/tv') || target.includes('/api/tmdb/search/multi')) {
+      return createTmdbSearchResult([labRatsContains, otherContains]);
+    }
+    throw new Error(`Unexpected fetch in Elite Force case: ${target}`);
+  };
+
+  await useStudioStore.getState().searchTmdb(eliteFile, { silent: true });
+  assert.equal(
+    useStudioStore.getState().tmdbData,
+    null,
+    'Contains-only TV title must not auto-apply even when popular (Lab Rats: Elite Force).',
+  );
+  assert.equal(
+    useStudioStore.getState().tmdbSuggestions[0]?.id,
+    70101,
+    'Popular contains candidate may still rank first for manual confirmation.',
+  );
+  assert.ok(
+    useStudioStore.getState().statusNotices.some((n) => n.id === 'media-match'),
+    'Contains-only match should surface a confirmation notice.',
+  );
+}
+
+{
+  // 英文对白偶发法语停用词，不得压过英语信号
+  assert.equal(
+    detectLanguageByContent('What are you doing with that? I have not seen this before.'),
+    'en',
+  );
+  assert.equal(
+    detectLanguageByContent('I am not sure what you said about the pas de deux and the queue.'),
+    'en',
+    'Sparse French lexicon hits must not beat stronger English signals.',
+  );
+}
+
 console.log('Core subtitle regression checks passed.');

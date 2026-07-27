@@ -838,6 +838,22 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const normOrigTitle = normalize(item.original_title || item.original_name || '');
         const looseTitle = normalizeLoose(item.title || item.name || '');
         const looseOrigTitle = normalizeLoose(item.original_title || item.original_name || '');
+        // contains 方向：query⊂title 为系列名误吸（Elite Force→Lab Rats）；title⊂query 为后缀恢复（…XXX→正片名）。
+        let queryContainedInTitle = false;
+        let titleContainedInQuery = false;
+        const noteContainsDirection = (titleHasQuery: boolean, queryHasTitle: boolean) => {
+          if (titleHasQuery) queryContainedInTitle = true;
+          if (queryHasTitle) titleContainedInQuery = true;
+        };
+        const directedContains = (title: string, orig: string, q: string) => {
+          if (!q) return null;
+          const titleHasQuery = (Boolean(title) && title.includes(q) && title !== q)
+            || (Boolean(orig) && orig.includes(q) && orig !== q);
+          const queryHasTitle = (Boolean(title) && q.includes(title) && q !== title)
+            || (Boolean(orig) && q.includes(orig) && q !== orig);
+          if (!titleHasQuery && !queryHasTitle) return null;
+          return { titleHasQuery, queryHasTitle };
+        };
         const queryScores = scoringQueries.map((query) => {
           const normQ = normalize(query);
           const looseQ = normalizeLoose(query);
@@ -851,13 +867,17 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             titleMatchStrength = 2;
             return isEpisodeQuery ? 170 : 55;
           }
-          if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) {
+          const strictContains = directedContains(normTitle, normOrigTitle, normQ);
+          if (strictContains) {
             reasons.push('title:contains');
+            noteContainsDirection(strictContains.titleHasQuery, strictContains.queryHasTitle);
             if (titleMatchStrength === 0) titleMatchStrength = 1;
             return 20;
           }
-          if (looseQ && (looseTitle.includes(looseQ) || looseOrigTitle.includes(looseQ) || looseQ.includes(looseTitle) || looseQ.includes(looseOrigTitle))) {
+          const looseContains = directedContains(looseTitle, looseOrigTitle, looseQ);
+          if (looseContains) {
             reasons.push('title:loose-contains');
+            noteContainsDirection(looseContains.titleHasQuery, looseContains.queryHasTitle);
             if (titleMatchStrength === 0) titleMatchStrength = 1;
             return 24;
           }
@@ -880,7 +900,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         if (!isEpisodeQuery && isAncillaryMovieCandidate(item)) {
           vetoes.push('veto:ancillary');
         }
-        if (year && titleMatchStrength === 1) {
+        // 仅「查询被片名包含」的 contains 禁止自动（系列/副标题误吸）。
+        // 「片名被查询包含」保留自动（垃圾后缀恢复，如 Down Cemetery Road XXX）。
+        if (titleMatchStrength === 1 && queryContainedInTitle && !titleContainedInQuery) {
           vetoes.push('veto:title-contains-only');
         }
         if (vetoes.includes('veto:type')) {
@@ -914,8 +936,13 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         }
         if (reasons.includes('veto:year')) return '结果年份与文件名年份不一致，请确认后应用。';
         if (reasons.includes('veto:ancillary')) return '结果可能是纪录片、花絮或特别篇，请确认是否为正片。';
-        if (reasons.includes('veto:title-contains-only')) return '结果标题仅部分包含片名，请确认后应用。';
+        if (reasons.includes('veto:title-contains-only')) {
+          return isEpisodeQuery
+            ? '结果标题仅部分包含片名（非精确同名）。请确认，或补充首播年后再匹配。'
+            : '结果标题仅部分包含片名，请确认后应用。';
+        }
         if (reasons.includes('need-year')) return '存在多个同名片名，补充年份可排除错误结果。';
+        if (reasons.includes('close-score')) return '前列候选分数接近，请确认正确片源；补充年份可减少歧义。';
         return '已找到相近结果，但片名或年份不够吻合，请确认后应用。';
       };
 
@@ -958,6 +985,23 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       });
 
       scored.sort((a, b) => b.score - a.score || (b.item.popularity || 0) - (a.item.popularity || 0));
+
+      // 前列分数接近时，禁止仅靠 popularity 自动采纳（本轮结果内分差，而非全局热度）。
+      if (scored.length >= 2) {
+        const top = scored[0];
+        const runnerUp = scored[1];
+        if (
+          top.decision.action === 'auto_apply'
+          && runnerUp.decision.action !== 'reject'
+          && top.score - runnerUp.score < 30
+        ) {
+          top.decision = {
+            action: 'require_confirmation',
+            score: top.score,
+            reasons: [...top.decision.reasons, 'close-score'],
+          };
+        }
+      }
 
       // 剧集无年 + 多个精确同名：若季跨度已能分出胜负 → 上屏高分项并缓存另一候选；否则再请补年份
       const exactTitleTv = scored.filter((entry) =>
@@ -1651,7 +1695,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       });
       return { tasks: nextTasks };
     });
-    get().addLog('已对调主字幕与第二语言字幕', 'info');
+    get().addLog('已对调主字幕与原文字幕', 'info');
   },
 
   removeFileFromTask: (taskId, fileName) => {

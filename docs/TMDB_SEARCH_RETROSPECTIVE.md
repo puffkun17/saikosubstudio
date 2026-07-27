@@ -139,7 +139,9 @@ TMDB 搜索会返回：
 - 文件名明确提供电影年份时，候选年份不符不得自动应用。
 - 电影文件名不得自动应用 TV 候选。
 - making-of、behind-the-scenes、documentary、featurette、interview、special、中文纪录片/幕后/花絮/访谈词或纪录片 genre 候选不得自动应用。
-- 文件名有年份时，标题只是 contains / loose contains 的候选不得自动应用。
+- **危险 contains**（查询 ⊂ 候选片名，如 Elite Force → Lab Rats: Elite Force）不得自动应用；有无年份一律。
+- **恢复 contains**（候选片名 ⊂ 查询，如 Down Cemetery Road ⊂ …XXX）仍可在过门槛后自动（后缀/垃圾 token 恢复）。
+- 本轮候选 top1/top2 分差过近时不得仅靠 popularity 自动应用。
 - 分数低于场景门槛时不得自动应用。
 
 弱候选处理方式：

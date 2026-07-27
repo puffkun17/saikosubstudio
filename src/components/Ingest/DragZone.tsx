@@ -266,7 +266,8 @@ const describeTrack = (file: Subfile) => {
     return pair ? `${labels[pair.primary]} / ${labels[pair.secondary]} 双语轨` : '双语轨';
   }
   if (file.lang === 'zh-CN' || file.lang === 'zh-TW') return '主字幕轨';
-  if (['en', 'ja', 'ko', 'fr', 'es', 'latin'].includes(file.lang)) return '第二语言轨';
+  if (file.lang === 'en') return '原文轨';
+  if (['ja', 'ko', 'fr', 'es', 'latin'].includes(file.lang)) return '其他语种轨';
   return '待确认轨';
 };
 

@@ -476,7 +476,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             onChange={value => handleStyleChange('zhFontSize', value)}
           />
           <SliderControl
-            label="第二语言字幕"
+            label="原文字幕"
             value={customStyle.enFontSize}
             min={8}
             max={24}
@@ -504,7 +504,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             onChange={(v) => handleStyleChange('zhFontFamily', v)}
           />
           <FontFamilySelect
-            label="第二语言"
+            label="原文"
             value={customStyle.enFontFamily || FONT_FAMILIES_EN[0].value}
             options={FONT_FAMILIES_EN}
             onChange={(v) => handleStyleChange('enFontFamily', v)}
@@ -527,14 +527,14 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             onChange={(c) => handleStyleChange('zhOutline', c)}
           />
           <ColorPicker
-            label="第二语言文字"
+            label="原文文字"
             value={customStyle.enColor}
             isOpen={openPicker === 'enColor'}
             onToggle={() => setOpenPicker(openPicker === 'enColor' ? null : 'enColor')}
             onChange={(c) => handleStyleChange('enColor', c)}
           />
           <ColorPicker
-            label="第二语言描边"
+            label="原文描边"
             value={customStyle.enOutline || '#000000'}
             isOpen={openPicker === 'enOutline'}
             onToggle={() => setOpenPicker(openPicker === 'enOutline' ? null : 'enOutline')}

@@ -260,7 +260,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                         )}
                         {source.secondary && (
                           <div className={source.primary ? 'mt-1.5 border-t border-[var(--v4-line)] pt-1.5' : ''}>
-                            <div className="text-xs font-medium uppercase tracking-[var(--tracking-eyebrow-wide)] text-[var(--v4-text-faint)]">第二语言 #{source.secondary.cueIndex}</div>
+                            <div className="text-xs font-medium uppercase tracking-[var(--tracking-eyebrow-wide)] text-[var(--v4-text-faint)]">原文 #{source.secondary.cueIndex}</div>
                             <div className="mt-0.5 whitespace-pre-wrap text-[var(--v4-text-faint)]">{source.secondary.text}</div>
                           </div>
                         )}
