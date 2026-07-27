@@ -23,7 +23,9 @@ before introducing visual novelty.
 
 ## 1. 品牌定位
 
-**SubStudio 是 Editorial Desktop Application —— 字幕剪辑用的桌面编辑工作台。**
+**SaikoSubStudio 是 Editorial Desktop Application —— 字幕剪辑用的桌面编辑工作台。**
+
+屏上品牌短名统一为 **SaikoSubStudio**（与政策全称一致）。禁止再并列 `SubStudio` / `LOCAL SUBTITLE STUDIO` 作为主品牌。
 
 它不是：
 
@@ -40,7 +42,7 @@ before introducing visual novelty.
 
 一句话检验：
 
-> **去掉 Logo 之后，这还像 SubStudio，还是像随便一个 AI 工具？**
+> **去掉 Logo 之后，这还像 SaikoSubStudio，还是像随便一个 AI 工具？**
 
 ---
 

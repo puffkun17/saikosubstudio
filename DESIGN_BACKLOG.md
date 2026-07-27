@@ -87,7 +87,7 @@
 | **CLEAN-A4** | 片源/TMDB 去冗余 `rounded-lg` | **Done** |
 | **CLEAN-A5** | StyleSidebar 零星 toggle 能收则收 | **Done** |
 
-> **Design Director：** CLEAN-A / THEATER-LAYER / EP-0.1–0.5 **Done**。**EP-0.6 Submitted · 待复验**。未授权发布债。
+> **Design Director：** CLEAN-A / THEATER-LAYER / EP-0.1–0.5 **Done**。**EP-0.6 Submitted · 待复验**。**HOME-BRAND Done** · **INTEGRATE Submitted · 待抽检**。REL-P1 Authorized（单独 PR）。
 
 ### Wave 3 — 工程真相源（EP-0）· **0.6 Submitted · 待复验（2026-07-28）**
 
@@ -110,7 +110,7 @@
 | **SHELL-006** | Low | ⭐ | Low | 删除/隔离闲置 shadcn | **Submitted** |
 | **DOC-001** | — | — | — | `DESIGN.md` + 本 Backlog（**Done**） | Done |
 
-> **剩余工作摘要：** Wave 1+2 + CLEAN-A + THEATER-LAYER + EP-0.1–0.5 **Done**。**EP-0.6 Submitted · 待复验**。产品发布债仍未授权。
+> **剩余工作摘要：** Wave 1+2 + CLEAN-A + THEATER-LAYER + EP-0.1–0.5 **Done**。**EP-0.6 Submitted**。**HOME-BRAND** 经 **INTEGRATE Submitted** 合入 tip。**REL-P1 Authorized**（单独 PR）。REL-P2 未授权。
 
 ### THEATER-LAYER — 放映厅叠层 · **Done（2026-07-27）**
 
@@ -122,6 +122,16 @@
 | **TL-D4** | 小屏遮罩不盖顶栏 | **Done** |
 
 > 契约与验收见 `DESIGN_PLAN.md`「THEATER-LAYER」。Design Director 复验 6/6 Pass。
+
+### HOME-BRAND — 空态品牌与首页排版 · **Submitted · 待复验（2026-07-28）**
+
+| ID | 一句话 | Status |
+|----|--------|--------|
+| **HB-1** | 顶栏字标 SaikoSubStudio；删空态英文 eyebrow | Submitted |
+| **HB-2** | 底栏「存档/隐私/反馈」+ Archive/Scale/PenLine；降 `@[22rem]` | Submitted |
+| **HB-3** | 空态三层锁定文案 | Submitted |
+
+> 契约见 `DESIGN_PLAN.md`「HOME-BRAND」。单独 PR；**交 Design Director 复验**，未复验勿标 Done。
 ---
 
 ## 全量条目

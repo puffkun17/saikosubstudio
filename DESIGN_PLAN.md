@@ -602,6 +602,8 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 | **EP-0.4** | TOKEN-008 → 009 → 010 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`f92c437b` |
 | **EP-0.5** | TOKEN-011 → 012 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`d0cc6e30` |
 | **EP-0.6** | SHELL-006 | **Submitted · 待复验** | **2026-07-28** | 单独 PR；删 button/badge/card |
+| **HOME-BRAND** | 品牌名 / 底栏三钮 / 空态排版 | **Done** | **2026-07-28** | 设计轨 Done；经 INTEGRATE 合入 EP-0 tip |
+| **INTEGRATE** | HOME-BRAND → EP-0 tip | **Submitted · 待抽检** | **2026-07-28** | 文案 HOME-BRAND；token EP-0 |
 
 ---
 
@@ -866,7 +868,7 @@ TOKEN-001 → 002 → 003          【Done · 2026-07-28】
 
 ---
 
-# 剩余工作（2026-07-27 · CLEAN-A 关闭后）
+# 剩余工作（2026-07-28 · EP-0 Wave 3 收口后）
 
 ## 已关闭
 
@@ -876,20 +878,142 @@ TOKEN-001 → 002 → 003          【Done · 2026-07-28】
 | **UP-1 / Wave 2** | **Done** |
 | **CLEAN-A** | **Done** |
 | **THEATER-LAYER** | **Done（2026-07-27）** |
+| **EP-0 / Wave 3** | **Done（2026-07-28）** · 0.1–0.6 全集（0.6 若仍 Submitted 以复验为准） |
+| **HOME-BRAND**（设计轨） | **Done（2026-07-28）** · `572a32c9`；经 **INTEGRATE** 合入 EP-0 tip |
 
-## 进行中 / 排队
+## 当前布置（Design Director · 2026-07-28）
 
-| 轨 | 状态 |
+> **INTEGRATE Submitted · 待抽检。** REL-P1 **Authorized**（单独 PR，优先在 INTEGRATE tip 上开）。禁止同 PR 混两轨。
+
+### 序 0｜INTEGRATE — 分支合入 · **Submitted · 待抽检（2026-07-28）**
+
+| 步 | 动作 | 负责 | 验收 |
+|----|------|------|------|
+| 0.1 | 以 `cursor/ep0-shell-006` 为基开 `cursor/integrate-home-brand` | UI Engineer | 构建绿；无回退 Theater / UP-1 |
+| 0.2 | merge `cursor/home-brand-72d9`；文案/字标 HOME-BRAND；token/CSS EP-0 | UI Engineer | 顶栏 `SaikoSubStudio`；无 `LOCAL SUBTITLE STUDIO`；底栏「存档/隐私/反馈」 |
+| 0.3 | Design Director 合入后抽检冲突面 | Design Director | Pass → 主线品牌轨落地 |
+
+**禁止：** 同一 PR 混 REL-P1；禁止借冲突改 triad / elevation / radius。
+
+---
+
+### 序 1｜REL-P1 — 产品发布债（可访问性 / 结构）· **Authorized（2026-07-28）**
+
+> **单独 PR**；优先在 INTEGRATE tip 上开。交 Director 复验后标 Done。
+
+| ID | 项 | 验收 |
+|----|-----|------|
+| **REL-1** | 嵌套 `<button>` | 产品主路径无 button-in-button；a11y 树干净 |
+| **REL-2** | Modal 焦点陷阱 | `.ui-modal` 开：焦点锁内；关：焦点回触发源；Esc 关闭 |
+| **REL-3** | 窄屏步骤可达 | 底栏步骤在窄宽下可点可读；不依赖仅桌面可见标签 |
+
+**不做：** 视觉改版、新色、新字阶、重做空态构图、重开 EP-0、混入 REL-P2。
+
+---
+
+### 序 2｜REL-P2 — 体验 / 布局债 · **未授权（排队）**
+
+| ID | 项 | 备注 |
+|----|-----|------|
+| **REL-4** | 超宽桌面空洞 | 空态/工作台 max-width 与边距；需单独提案 |
+| **REL-5** | EP-0 复验残留扫 | 海报/BrandMark/TaskList 零星阴影；未触及裸色；`rounded-md` Tailwind 混用 — **日常触及清扫，不开 Wave** |
+
+---
+
+## 工程师执行卡（可粘贴）
+
+```
+【当前授权】INTEGRATE（序 0）Submitted · REL-P1（序 1）Authorized · 各自单独 PR
+—— INTEGRATE ——
+1) 基：EP-0 tip（shell-006）
+2) 合入：home-brand-72d9（品牌文案优先，token 以 EP-0）
+3) 构建绿后交 Director 抽检冲突面
+—— REL-P1 ——
+1) 优先在 INTEGRATE tip 上开支（避免双份冲突）
+2) REL-1 嵌套 button · REL-2 Modal 焦点 · REL-3 窄屏步骤
+3) 不做视觉改版；交 Director 复验
+【禁止】同 PR 混两轨；REL-P2；重开 EP-0
+```
+
+## 产品发布债（状态）
+
+P1 → **REL-P1 Authorized（2026-07-28）**。  
+P2 → **REL-P2 未授权**。  
+**勿重开已关闭的 EP-0。**
+
+
+---
+
+# HOME-BRAND｜空态品牌与首页排版（**Approved / Authorized · 2026-07-28**）
+
+> **来源：** 空态拥挤、品牌名三轨、底栏三钮常隐字。  
+> **契约：** `DESIGN.md` Creed + Ridgeline；Desktop-first。  
+> **状态：** **Done（2026-07-28）** — 设计轨复验通过；经 INTEGRATE 合入 EP-0 tip（冲突面待 Director 抽检）。
+
+## 1. 品牌名统一为 SaikoSubStudio
+
+| 位置 | 决策 |
+|------|------|
+| 顶栏 | Logo **右侧**字标改为 **`SaikoSubStudio`**（替换 `SubStudio`）；与标同一可点区，间距 10–12px；`≥420px` 显示字标 |
+| 空态 | **删除** `LOCAL SUBTITLE STUDIO` eyebrow（避免第三套英文品牌） |
+| 其它 | `layout` title / About 已用 SaikoSubStudio 则保持；屏上主品牌禁止再写 `SubStudio` |
+| Logo 图形 | **本档不改** BrandMark SVG（图形改版另案） |
+
+## 2. 底栏三钮：常显文案 + 换标
+
+| 钮 | aria / title（全称） | 可见标签 | Lucide（新） |
+|----|----------------------|----------|--------------|
+| 存档 | 历史存档 | **存档** | `Archive`（替 `FolderClock`） |
+| 隐私 | 隐私与版权 | **隐私** | `Scale`（替 `ShieldCheck`） |
+| 反馈 | 反馈 | **反馈** | `PenLine`（替 `MessageSquareText`） |
+
+- 默认桌面宽度下三钮文字**必须可见**（降低或取消 `@[22rem]` 隐藏；极窄才 icon-only）。  
+- `whitespace-nowrap`；icon `h-5` / stroke `2.25`；`gap-2`。  
+- 仍用 Lucide，禁止第二图标库。
+
+## 3. 空态中区：三层结构，去拥挤
+
+```
+[1 主张]  标题一行 + 副句一行
+[2 开始]  五格式标 → 行动句 → 一句说明 → 双 CTA → 格式脚注
+[3 亮点]  四列等宽 rail
+```
+
+### 锁定文案
+
+| 块 | 文案 |
 |----|------|
-| **EP-0.1** TOKEN-001→003 | **Done（2026-07-28）** |
-| **EP-0.2** TOKEN-004 + ASSET-003/004 | **Done（2026-07-28）** |
-| **EP-0.3** TOKEN-005→007 | **Done（2026-07-28）** |
-| **EP-0.4** TOKEN-008→010 | **Done（2026-07-28）** |
-| **EP-0.5** TOKEN-011→012 | **Done（2026-07-28）** |
-| **EP-0.6** SHELL-006 | **Submitted · 待复验（2026-07-28）** |
+| 主张标题 | **本地字幕工作室**（宋体；≥720px `nowrap`） |
+| 主张副句 | **对齐合并 · 样式调整 · 预览导出**（单行 muted） |
+| 开始标题 | **拖入字幕开始** / 拖中 **松开即可加入** |
+| 开始说明 | **文件留在本地，不上传** |
+| 格式脚注 | 保持现有 SRT/ASS/ZIP… 句 |
+| 亮点 | 本地处理 / 多轨整理 / 样式定制 / 效果预览（说明各一行、节奏齐） |
 
-## 产品发布债（Wave 外 · 未授权）
+### 排版纪律
 
-P1：嵌套 button · Modal 焦点陷阱 · 窄屏步骤可达性。  
-P2：品牌命名三轨 · 超宽桌面空洞。  
-**勿混入 EP-0。**
+- 删英文 eyebrow；主张与开始卡**同轴居中**、相近 `max-width`。  
+- 层间距固定一档；亮点上沿一条细分隔即可。  
+- 双 CTA 等宽；禁止一大一小 padding。  
+- 拖拽只改文案/虚线，**不改**主张与亮点几何。
+
+## 4. 验收
+
+1. 顶栏 Logo 右为 **SaikoSubStudio**；无屏上主品牌 `SubStudio` / `LOCAL SUBTITLE STUDIO`。  
+2. 底栏三钮默认可见「存档 / 隐私 / 反馈」+ 新图标。  
+3. 空态仅三层；≥720px 主张标题与副句不换行。  
+4. 无新色、无玻璃堆、无抖动横跳。  
+5. 设计轨单独 PR 已合入；主线以 INTEGRATE 抽检为准。
+
+### 实现提交（UI Engineer · 2026-07-28）
+
+| 项 | 落点 |
+|----|------|
+| 顶栏字标 | `SystemTray` → `SaikoSubStudio`（≥420px） |
+| 去 eyebrow | `DragZone` 删除 `LOCAL SUBTITLE STUDIO` |
+| 底栏三钮 | 可见「存档/隐私/反馈」；`Archive` / `Scale` / `PenLine`；标签阈值 `@[8rem]` |
+| 空态文案 | 主张「本地字幕工作室」+「对齐合并 · 样式调整 · 预览导出」；开始「拖入字幕开始」+「文件留在本地，不上传」 |
+
+**状态：Submitted · 待 Design Director 复验。未改 BrandMark SVG；未混 EP-0。**
+
+---

@@ -1132,12 +1132,11 @@ export const DragZone: React.FC = () => {
               className="flex w-full max-w-6xl flex-col items-center"
             >
               <header className="ingest-empty-intro density-copy-x text-center">
-                <p className="ingest-empty-intro__eyebrow">LOCAL SUBTITLE STUDIO</p>
                 <h2 className="ingest-empty-intro__title">
-                  完全本地运行的轻字幕处理工具
+                  本地字幕工作室
                 </h2>
                 <p className="ingest-empty-intro__sub">
-                  时间戳对齐合并 · 字幕样式修改 · 模拟播放预览 · 所见即所得
+                  对齐合并 · 样式调整 · 预览导出
                 </p>
               </header>
 
@@ -1173,10 +1172,10 @@ export const DragZone: React.FC = () => {
                   ))}
                 </div>
                 <h3 className="ingest-start-card__title">
-                  {isDragging ? '松开即可加入' : '欢迎提交字幕'}
+                  {isDragging ? '松开即可加入' : '拖入字幕开始'}
                 </h3>
                 <p className="ingest-start-card__sub">
-                  拖入文件、文件夹或字幕包，全程本地环境处理
+                  文件留在本地，不上传
                 </p>
                 <div
                   className={`ingest-start-card__cta transition-opacity duration-[var(--v4-dur)] ${
