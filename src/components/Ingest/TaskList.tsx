@@ -534,9 +534,9 @@ export const TaskList: React.FC = () => {
             return (
               <button
                 key={t.id}
-                className={`max-w-[220px] cursor-pointer truncate rounded-xl border px-4 py-2 font-sans text-sm transition-all
+                className={`max-w-[220px] cursor-pointer truncate rounded-[var(--radius-xl)] border px-4 py-2 font-sans text-sm transition-all
                   ${isActive
-                    ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] font-semibold text-[var(--v4-accent-strong)] shadow-[0_0_12px_color-mix(in_srgb,var(--v4-accent)_12%,transparent)]'
+                    ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] font-semibold text-[var(--v4-accent-strong)] shadow-[var(--glow-accent)]'
                     : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]'}`}
                 onClick={() => selectTask(t.id)}
               >
@@ -725,7 +725,7 @@ export const TaskList: React.FC = () => {
                             initial={{ opacity: 0.85, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1.03 }}
                             transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
-                            className="flex items-center gap-2 rounded-xl border border-[var(--v4-accent)]/40 bg-[var(--v4-panel-raised)] px-3 py-2.5 shadow-[0_18px_40px_color-mix(in_srgb,var(--v5-green)_12%,transparent)] backdrop-blur-md"
+                            className="flex items-center gap-2 rounded-[var(--radius-xl)] border border-[var(--v4-accent)]/40 bg-[var(--v4-panel-raised)] px-3 py-2.5 shadow-[var(--elevation-2)] backdrop-blur-md"
                             style={{ height: dragCardSize.h }}
                           >
                             <FileFormatIcon name={dragFile.name} size="md" />
@@ -888,7 +888,7 @@ export const TaskList: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="overflow-hidden rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]"
+              className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]"
             >
               <div className="grid gap-0 md:grid-cols-[minmax(220px,0.72fr)_minmax(0,1fr)]">
                 <AssStylePreview style={foundAssStyle} className="min-h-36 rounded-none border-0 border-b border-[var(--v4-line)] md:border-b-0 md:border-r" />

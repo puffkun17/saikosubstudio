@@ -87,9 +87,9 @@
 | **CLEAN-A4** | 片源/TMDB 去冗余 `rounded-lg` | **Done** |
 | **CLEAN-A5** | StyleSidebar 零星 toggle 能收则收 | **Done** |
 
-> **Design Director：** CLEAN-A / THEATER-LAYER / EP-0.1–0.5 **Done**。**EP-0.6 Submitted · 待复验**。**HOME-BRAND Done** · **INTEGRATE Submitted · 待抽检**。REL-P1 Authorized（单独 PR）。
+> **Design Director：** CLEAN-A / THEATER-LAYER / EP-0 / HOME-BRAND / INTEGRATE / REL-P1 **Done**。**REL-P2 Authorized（2026-07-28）**。
 
-### Wave 3 — 工程真相源（EP-0）· **0.6 Submitted · 待复验（2026-07-28）**
+### Wave 3 — 工程真相源（EP-0）· **Done · 收口（2026-07-28）**
 
 | ID | Business | Visual | Risk | 一句话 | Status |
 |----|----------|--------|------|--------|--------|
@@ -107,10 +107,10 @@
 | **TOKEN-012** | Low | ⭐ | High | 裸 hex/rgba 逐步清扫 | **Done** |
 | **ASSET-003** | Low | ⭐⭐ | Med | 三表面契约锁进 CSS | **Done** |
 | **ASSET-004** | Low | ⭐⭐ | Med | Theater 阴影并入 elevation（勿纯黑另起） | **Done** |
-| **SHELL-006** | Low | ⭐ | Low | 删除/隔离闲置 shadcn | **Submitted** |
+| **SHELL-006** | Low | ⭐ | Low | 删除/隔离闲置 shadcn | **Done** |
 | **DOC-001** | — | — | — | `DESIGN.md` + 本 Backlog（**Done**） | Done |
 
-> **剩余工作摘要：** Wave 1+2 + CLEAN-A + THEATER-LAYER + EP-0.1–0.5 **Done**。**EP-0.6 Submitted**。**HOME-BRAND** 经 **INTEGRATE Submitted** 合入 tip。**REL-P1 Authorized**（单独 PR）。REL-P2 未授权。
+> **剩余工作摘要：** **REL-P2 Authorized**：REL-4 超宽空洞 + REL-5 EP-0 残留扫；基 `rel-p1-a11y` tip；单独 PR。其余设计轨 Done。
 
 ### THEATER-LAYER — 放映厅叠层 · **Done（2026-07-27）**
 
@@ -123,15 +123,34 @@
 
 > 契约与验收见 `DESIGN_PLAN.md`「THEATER-LAYER」。Design Director 复验 6/6 Pass。
 
-### HOME-BRAND — 空态品牌与首页排版 · **Submitted · 待复验（2026-07-28）**
+### HOME-BRAND — 空态品牌与首页排版 · **Done（2026-07-28）**
 
 | ID | 一句话 | Status |
 |----|--------|--------|
-| **HB-1** | 顶栏字标 SaikoSubStudio；删空态英文 eyebrow | Submitted |
-| **HB-2** | 底栏「存档/隐私/反馈」+ Archive/Scale/PenLine；降 `@[22rem]` | Submitted |
-| **HB-3** | 空态三层锁定文案 | Submitted |
+| **HB-1** | 顶栏字标 SaikoSubStudio；删空态英文 eyebrow | **Done** |
+| **HB-2** | 底栏「存档/隐私/反馈」+ Archive/Scale/PenLine；降 `@[22rem]` | **Done** |
+| **HB-3** | 空态三层锁定文案 | **Done** |
 
-> 契约见 `DESIGN_PLAN.md`「HOME-BRAND」。单独 PR；**交 Design Director 复验**，未复验勿标 Done。
+> 经 INTEGRATE 合入 tip；Director 抽检 Pass。
+
+### REL-P1 — 发布债 a11y · **Done（2026-07-28）**
+
+| ID | 一句话 | Status |
+|----|--------|--------|
+| **REL-1** | 空态卡去 button-in-button | **Done** |
+| **REL-2** | `.ui-modal` 焦点陷阱 `useUiModalFocus` | **Done** |
+| **REL-3** | 窄屏工作流步骤常显可点 | **Done** |
+
+> `73c673c6` · Director 复验 3/3 Pass。
+
+### REL-P2 — 体验 / 布局债 · **Authorized（2026-07-28）**
+
+| ID | 一句话 | Status |
+|----|--------|--------|
+| **REL-4** | 超宽桌面空洞（max-w / 水平 padding） | **Authorized** |
+| **REL-5** | EP-0 残留：阴影 / nude / 圆角触及清扫 | **Authorized** |
+
+> 基 `rel-p1-a11y` tip；可同 PR；禁视觉改版。契约见 `DESIGN_PLAN.md` 序 2。
 ---
 
 ## 全量条目
@@ -181,9 +200,9 @@
 | **SHELL-003** | Low | ⭐⭐ | Low | Toast 未产品化 | `.ui-toast` | FeedbackCenter | **Done** |
 | **SHELL-004** | Low | ⭐⭐ | Low | choice 与 StyleSidebar 双轨 | 侧栏走 `.ui-choice-group` | StyleSidebar | **Done** |
 | **SHELL-005** | Low | ⭐ | Low | 面板双重圆角/边线 | 单一 `.v4-panel` | Workbench | **Done** |
-| **SHELL-006** | Low | ⭐ | Low | shadcn Button/Badge/Card 死代码 | 删除或隔离；禁止新入口 | `ui/button|badge|card.tsx` | **Submitted** |
+| **SHELL-006** | Low | ⭐ | Low | shadcn Button/Badge/Card 死代码 | 删除或隔离；禁止新入口 | `ui/button|badge|card.tsx` | **Done** |
 
-### TOKEN（EP-0 · 0.5 Done；SHELL-006 Submitted）
+### TOKEN（EP-0 · Wave 3 Done）
 
 | ID | Business | Visual | Risk | 问题 | 验收标准 | 落点 | Status |
 |----|----------|--------|------|------|----------|------|--------|
@@ -288,4 +307,4 @@
 | 文件 + 语言标 | `src/components/ui/FileFormatIcon.tsx` |
 | 检查标记 | `src/components/Workbench/inspectionMarks.tsx` |
 | 空态 CTA | `src/components/Ingest/DragZone.tsx` |
-| 闲置 shadcn（已删） | ~~`ui/button|badge|card.tsx`~~ · SHELL-006 Submitted |
+| 闲置 shadcn（已删） | ~~`ui/button|badge|card.tsx`~~ · SHELL-006 **Done** |

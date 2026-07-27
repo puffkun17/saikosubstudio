@@ -346,8 +346,8 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
             >
               <defs>
                 <linearGradient id="densityFill" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#c4893a" stopOpacity="0.22" />
-                  <stop offset="100%" stopColor="#c4893a" stopOpacity="0.02" />
+                  <stop offset="0%" stopColor="var(--v5-warning)" stopOpacity="0.22" />
+                  <stop offset="100%" stopColor="var(--v5-warning)" stopOpacity="0.02" />
                 </linearGradient>
               </defs>
               {[0.25, 0.5, 0.75].map(tick => (
@@ -373,7 +373,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
               <motion.path
                 d={subtitlePath}
                 fill="none"
-                stroke="#c4893a"
+                stroke="var(--v5-warning)"
                 strokeOpacity="0.55"
                 strokeWidth="1.75"
                 strokeLinecap="round"

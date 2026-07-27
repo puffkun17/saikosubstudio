@@ -157,7 +157,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                   src={tmdbData.posterUrl}
                   alt={tmdbData.title}
-                  className="aspect-[2/3] h-auto w-32 shrink-0 cursor-pointer rounded-md border border-[var(--v4-line-strong)] object-cover shadow-[0_12px_24px_rgba(0,0,0,0.28)] transition-all duration-300 sm:w-36 xl:w-40"
+                  className="aspect-[2/3] h-auto w-32 shrink-0 cursor-pointer rounded-[var(--radius-md)] border border-[var(--v4-line-strong)] object-cover shadow-[var(--elevation-1)] transition-all duration-300 sm:w-36 xl:w-40"
                 />
               ) : (
                 <div className="flex aspect-[2/3] w-32 flex-shrink-0 items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] sm:w-36 xl:w-40" />
@@ -241,7 +241,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
           </motion.div>
         ) : (
           <div className="flex flex-1 flex-col gap-4 text-left">
-            <div className="rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-4">
+            <div className="rounded-[var(--radius-xl)] border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-4">
               <div className="flex min-w-0 items-center gap-2.5">
                 <FileText className="h-5 w-5 shrink-0 text-[var(--v4-text-faint)]" aria-hidden="true" />
                 <span className="truncate text-sm font-medium text-[var(--v4-text-muted)]" title={summaryFile?.name}>
@@ -266,7 +266,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
             </div>
 
             {foundAssStyle && (
-              <div className="overflow-hidden rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]">
+              <div className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]">
                 <AssStylePreview style={foundAssStyle} compact className="rounded-none border-0" />
                 <div className="flex items-center justify-between border-t border-[var(--v4-line)] px-3.5 py-2.5 text-xs text-[var(--v4-text-faint)]">
                   <span>检测到源样式</span>

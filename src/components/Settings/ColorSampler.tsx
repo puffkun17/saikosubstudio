@@ -70,7 +70,7 @@ export const ColorSampler: React.FC = () => {
   };
 
   return (
-    <div className="rounded-xl border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-4 flex flex-col gap-4 text-left w-full">
+    <div className="rounded-[var(--radius-xl)] border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-4 flex flex-col gap-4 text-left w-full">
       <div className="pb-2.5 border-b border-[var(--v4-line)] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ImageIcon className="w-4 h-4 text-[var(--v4-text-muted)]" />

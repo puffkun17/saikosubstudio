@@ -42,7 +42,7 @@ export const IngestStep: React.FC = () => {
   // Ready-state info bar is owned by TaskList (show name / episode + file actions).
 
   return (
-    <div className="ingest-shell relative z-0 flex h-full w-full flex-1 flex-col overflow-y-auto p-5 md:p-8 lg:p-10 2xl:p-12">
+    <div className="ingest-shell relative z-0 flex h-full w-full flex-1 flex-col overflow-y-auto px-5 py-5 md:px-8 md:py-8 lg:px-10 xl:px-14 2xl:px-16">
       <AnimatePresence mode="wait">
         {shellState === 'ready' ? (
           <motion.div 

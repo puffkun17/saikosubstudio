@@ -168,7 +168,7 @@ export const SourceIdentityStrip: React.FC = () => {
                 transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                 className="overflow-hidden"
               >
-                <div className="rounded-lg border border-[color:rgba(196,137,58,0.28)] bg-[var(--v4-panel-muted)] px-3 py-2.5">
+                <div className="rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--v5-warning)_28%,transparent)] bg-[var(--v4-panel-muted)] px-3 py-2.5">
                   <div className="flex items-start gap-2">
                     <p className="min-w-0 flex-1 text-xs leading-relaxed text-[var(--v4-text)]">
                       <span className="font-semibold">{filmNotice.title}</span>

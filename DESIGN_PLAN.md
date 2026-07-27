@@ -601,9 +601,10 @@ EP-0:  TOKEN-001 → TOKEN-002 → TOKEN-003
 | **EP-0.3** | TOKEN-005 → 006 → 007 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`8a439987` |
 | **EP-0.4** | TOKEN-008 → 009 → 010 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`f92c437b` |
 | **EP-0.5** | TOKEN-011 → 012 | **Done** | **2026-07-28** | Design Director 复验 3/3 Pass；`d0cc6e30` |
-| **EP-0.6** | SHELL-006 | **Submitted · 待复验** | **2026-07-28** | 单独 PR；删 button/badge/card |
-| **HOME-BRAND** | 品牌名 / 底栏三钮 / 空态排版 | **Done** | **2026-07-28** | 设计轨 Done；经 INTEGRATE 合入 EP-0 tip |
-| **INTEGRATE** | HOME-BRAND → EP-0 tip | **Submitted · 待抽检** | **2026-07-28** | 文案 HOME-BRAND；token EP-0 |
+| **EP-0.6** | SHELL-006 | **Done** | **2026-07-28** | `51be309a`；Wave 3 收口 |
+| **HOME-BRAND** | 品牌名 / 底栏三钮 / 空态排版 | **Done** | **2026-07-28** | 经 INTEGRATE 合入 tip |
+| **INTEGRATE** | HOME-BRAND → EP-0 tip | **Done** | **2026-07-28** | Director 抽检 Pass · `dbaccf81` |
+| **REL-P1** | REL-1/2/3 a11y | **Done** | **2026-07-28** | Director 复验 3/3 Pass · `73c673c6` |
 
 ---
 
@@ -878,77 +879,79 @@ TOKEN-001 → 002 → 003          【Done · 2026-07-28】
 | **UP-1 / Wave 2** | **Done** |
 | **CLEAN-A** | **Done** |
 | **THEATER-LAYER** | **Done（2026-07-27）** |
-| **EP-0 / Wave 3** | **Done（2026-07-28）** · 0.1–0.6 全集（0.6 若仍 Submitted 以复验为准） |
-| **HOME-BRAND**（设计轨） | **Done（2026-07-28）** · `572a32c9`；经 **INTEGRATE** 合入 EP-0 tip |
+| **EP-0 / Wave 3** | **Done（2026-07-28）** · 0.1–0.6 全集 |
+| **HOME-BRAND** | **Done** · 经 INTEGRATE 合入 tip |
+| **INTEGRATE** | **Done（2026-07-28）** |
+| **REL-P1** | **Done（2026-07-28）** · `73c673c6` |
 
 ## 当前布置（Design Director · 2026-07-28）
 
-> **INTEGRATE Submitted · 待抽检。** REL-P1 **Authorized**（单独 PR，优先在 INTEGRATE tip 上开）。禁止同 PR 混两轨。
+> **INTEGRATE / REL-P1 Done。** REL-P2 已于 **2026-07-28** 明示 **Authorized**。
 
-### 序 0｜INTEGRATE — 分支合入 · **Submitted · 待抽检（2026-07-28）**
+### 序 0｜INTEGRATE — 分支合入 · **Done（2026-07-28）**
 
 | 步 | 动作 | 负责 | 验收 |
 |----|------|------|------|
-| 0.1 | 以 `cursor/ep0-shell-006` 为基开 `cursor/integrate-home-brand` | UI Engineer | 构建绿；无回退 Theater / UP-1 |
-| 0.2 | merge `cursor/home-brand-72d9`；文案/字标 HOME-BRAND；token/CSS EP-0 | UI Engineer | 顶栏 `SaikoSubStudio`；无 `LOCAL SUBTITLE STUDIO`；底栏「存档/隐私/反馈」 |
-| 0.3 | Design Director 合入后抽检冲突面 | Design Director | Pass → 主线品牌轨落地 |
-
-**禁止：** 同一 PR 混 REL-P1；禁止借冲突改 triad / elevation / radius。
+| 0.1 | 以 `cursor/ep0-shell-006` 为基 | UI Engineer | **Pass** · merge `dbaccf81` |
+| 0.2 | merge `home-brand-72d9`；文案 HOME-BRAND；token EP-0 | UI Engineer | **Pass** · 顶栏 `SaikoSubStudio`；无 `LOCAL SUBTITLE`；底栏存档/隐私/反馈 |
+| 0.3 | Design Director 合入后抽检 | Design Director | **Pass** · 冲突面干净 |
 
 ---
 
-### 序 1｜REL-P1 — 产品发布债（可访问性 / 结构）· **Submitted · 待复验（2026-07-28）**
+### 序 1｜REL-P1 — 产品发布债（可访问性 / 结构）· **Done（2026-07-28）**
 
-> 基于 INTEGRATE tip 单独 PR。交 Director 复验后标 Done。未混 REL-P2 / 视觉改版。
+> 分支：`cursor/rel-p1-a11y` · 提交：`73c673c6` · 基于 INTEGRATE tip。
 
-| ID | 项 | 验收 |
-|----|-----|------|
-| **REL-1** | 嵌套 `<button>` | 产品主路径无 button-in-button；a11y 树干净 |
-| **REL-2** | Modal 焦点陷阱 | `.ui-modal` 开：焦点锁内；关：焦点回触发源；Esc 关闭 |
-| **REL-3** | 窄屏步骤可达 | 底栏步骤在窄宽下可点可读；不依赖仅桌面可见标签 |
+| ID | 项 | 验收 | Director |
+|----|-----|------|----------|
+| **REL-1** | 嵌套 `<button>` | 空态卡去 `role=button`；键盘走 hero CTA | **Pass** |
+| **REL-2** | Modal 焦点陷阱 | `useUiModalFocus`：开锁内 / Tab 循环 / Esc / 关回触发源；重置 / 回导入 / 存档 / TMDB 四路 `.ui-modal` | **Pass** |
+| **REL-3** | 窄屏步骤可达 | 顶栏工作流步骤条窄屏常显可点；去掉仅展示的 `STEP_LABEL` | **Pass** |
 
-**不做：** 视觉改版、新色、新字阶、重做空态构图、重开 EP-0、混入 REL-P2。
+**状态：Done · Design Director 2026-07-28 复验通过。**
+
+---
+
+### 序 2｜REL-P2 — 体验 / 布局债 · **Submitted · 待复验（2026-07-28）**
+
+> 基于 `cursor/rel-p1-a11y` tip 单独 PR（REL-4 + REL-5）。交 Director 复验后标 Done。未混其它轨、未重开 EP-0。
+
+| ID | 项 | 决策 / 验收 |
+|----|-----|-------------|
+| **REL-4** | 超宽桌面空洞 | 空态与工作台主列在 ≥1440/1920 仍有可读节奏：沿用既有 `max-w-*` 体系收紧或加水平 padding；**禁止**加卡片墙 / 装饰条 / 新色。验收：超宽下首屏不「字贴中间、两侧真空失控」；窄屏无回退 |
+| **REL-5** | EP-0 复验残留扫 | 触及清扫：海报 / BrandMark / TaskList 等零星内联阴影 → `--elevation-*` / `--glow-*`；组件内 triad 半透明 → `color-mix(var(--v5-*))`；能改的 `rounded-[Npx]` → `--radius-*`。验收：无新增裸色；无故意视觉改版 |
+
+**不做：** 新品牌叙事、重做空态三层、重开 EP-0 token 阶、REL-P1 回退、发布债扩面。
 
 ### 实现提交（UI Engineer · 2026-07-28）
 
 | ID | 落点 |
 |----|------|
-| REL-1 | `DragZone` 空态卡去 `role=button`；键盘交给 hero CTA |
-| REL-2 | `useUiModalFocus`：开锁内 / Tab 循环 / Esc / 关回触发源；接入重置 / 回导入 / 存档 / TMDB 检索 |
-| REL-3 | 顶栏步骤条窄屏常显可点；移除仅展示的 STEP_LABEL |
+| REL-4 | 导入壳 `xl/2xl` 水平 gutter；工作台主列 `1480→1280`；About/Feedback `xl:px-16`；空态保持 `max-w-6xl` |
+| REL-5 | BrandMark/海报/TaskList 阴影 → elevation/glow；warning 边线与分布图 stroke → `var(--v5-*)`；触及 `rounded-xl` → `--radius-xl` |
 
 **状态：Submitted · 待 Design Director 复验。**
 
----
 
-### 序 2｜REL-P2 — 体验 / 布局债 · **未授权（排队）**
-
-| ID | 项 | 备注 |
-|----|-----|------|
-| **REL-4** | 超宽桌面空洞 | 空态/工作台 max-width 与边距；需单独提案 |
-| **REL-5** | EP-0 复验残留扫 | 海报/BrandMark/TaskList 零星阴影；未触及裸色；`rounded-md` Tailwind 混用 — **日常触及清扫，不开 Wave** |
 
 ---
 
 ## 工程师执行卡（可粘贴）
 
 ```
-【当前授权】INTEGRATE（序 0）Submitted · REL-P1（序 1）Authorized · 各自单独 PR
-—— INTEGRATE ——
-1) 基：EP-0 tip（shell-006）
-2) 合入：home-brand-72d9（品牌文案优先，token 以 EP-0）
-3) 构建绿后交 Director 抽检冲突面
-—— REL-P1 ——
-1) 优先在 INTEGRATE tip 上开支（避免双份冲突）
-2) REL-1 嵌套 button · REL-2 Modal 焦点 · REL-3 窄屏步骤
-3) 不做视觉改版；交 Director 复验
-【禁止】同 PR 混两轨；REL-P2；重开 EP-0
+【当前】REL-P2 Submitted · 待复验
+基：cursor/rel-p1-a11y tip
+REL-4 超宽空洞：收 max-w / 水平 padding；禁卡片墙/新色
+REL-5 残留扫：阴影→elevation/glow；nude→color-mix；圆角→radius token
+单独 PR；交 Director 复验
+【禁止】视觉改版、重开 EP-0、混其它轨
+【已关闭】INTEGRATE · REL-P1
 ```
 
 ## 产品发布债（状态）
 
-P1 → **REL-P1 Authorized（2026-07-28）**。  
-P2 → **REL-P2 未授权**。  
+P1 → **REL-P1 Done（2026-07-28）**。  
+P2 → **REL-P2 Submitted · 待复验（2026-07-28）**。  
 **勿重开已关闭的 EP-0。**
 
 
@@ -958,7 +961,7 @@ P2 → **REL-P2 未授权**。
 
 > **来源：** 空态拥挤、品牌名三轨、底栏三钮常隐字。  
 > **契约：** `DESIGN.md` Creed + Ridgeline；Desktop-first。  
-> **状态：** **Done（2026-07-28）** — 设计轨复验通过；经 INTEGRATE 合入 EP-0 tip（冲突面待 Director 抽检）。
+> **状态：** **Done（2026-07-28）** — 设计轨复验通过；经 INTEGRATE 合入 tip；冲突面抽检 Pass。
 
 ## 1. 品牌名统一为 SaikoSubStudio
 
