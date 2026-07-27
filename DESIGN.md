@@ -103,6 +103,19 @@ before introducing visual novelty.
 
 阴影色一律 `color-mix(forest …)`；禁止 Theater 另起纯黑 elevation 体系。
 
+### Radius（EP-0.3）
+
+| Token | 值 | 用途 |
+|-------|-----|------|
+| `--radius-xs` | 2px | 刻度、小标记 |
+| `--radius-sm` | 6px | chip、语言牌、小 icon 钮 |
+| `--radius-md` | 8px | 输入、标准面板、BrandMark 外框、`.ui-action` |
+| `--radius-lg` | 12px | choice 容器、toast |
+| `--radius-xl` | 20px | hero CTA、大抽屉 |
+| `--radius-pill` | 999px | **仅**托盘胶囊、进度点 |
+
+兼容：`--v5-radius-panel` → xl；`--v5-radius-control` → lg。禁止新增 `rounded-[Npx]` / 奇怪 rem 中间值；内容区信息徽章禁止 pill。
+
 ---
 
 ## 3. 字体原则

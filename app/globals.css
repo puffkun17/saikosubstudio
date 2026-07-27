@@ -105,8 +105,20 @@
     rgba(245, 241, 234, 0.98) 48%,
     #f5f1ea 100%
   );
-  --v5-radius-panel: 1.25rem;
-  --v5-radius-control: 0.75rem;
+
+  /*
+   * Radius ladder（EP-0.3 TOKEN-005/006/007）
+   * xs 刻度 · sm chip/语言牌/小 icon · md 输入/面板 · lg choice/toast · xl hero/大抽屉 · pill 仅托盘胶囊/进度点
+   */
+  --radius-xs: 2px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+  /* Compat aliases */
+  --v5-radius-panel: var(--radius-xl);
+  --v5-radius-control: var(--radius-lg);
 
   --v5-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --v5-dur-fast: 160ms;
@@ -254,7 +266,7 @@ body {
 
 .v4-panel {
   border: 1px solid var(--v4-line);
-  border-radius: 0.5rem; /* radius-md — 单一面板壳，勿外再套 rounded-lg border */
+  border-radius: var(--radius-md);
   background: var(--v4-panel);
   box-shadow: var(--elevation-0);
 }
@@ -479,7 +491,7 @@ body {
   top: 0.15rem;
   bottom: 0.85rem;
   width: 2px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--v4-accent) 58%, transparent),
@@ -514,7 +526,7 @@ body {
   top: 50%;
   width: 0.85rem;
   height: 2px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   transform: translateY(-50%);
   background: color-mix(in srgb, var(--v4-accent) 40%, var(--v4-line-strong));
   box-shadow: 0 0 8px color-mix(in srgb, var(--v4-accent) 22%, transparent);
@@ -556,7 +568,7 @@ body {
   width: 3.25rem;
   height: 3.25rem;
   transform: translateY(-50%);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: radial-gradient(
     circle,
     color-mix(in srgb, var(--v4-accent) 28%, transparent),
@@ -742,7 +754,7 @@ body {
   position: absolute;
   inset: 12% auto 12% 0;
   width: 2px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: linear-gradient(
     180deg,
     transparent,
@@ -859,7 +871,7 @@ body {
   position: relative;
   width: 0.5rem;
   height: 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1.5px solid currentColor;
   background: transparent;
   flex-shrink: 0;
@@ -892,7 +904,7 @@ body {
   content: '';
   position: absolute;
   inset: -5px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 2px solid color-mix(in srgb, var(--v5-orange) 28%, transparent);
   border-top-color: var(--v5-orange);
   border-right-color: color-mix(in srgb, var(--v5-orange) 70%, transparent);
@@ -925,7 +937,7 @@ body {
 .ingest-local-spinner {
   width: 3.5rem;
   height: 3.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 3.5px solid color-mix(in srgb, var(--v4-line-strong) 55%, transparent);
   border-top-color: var(--v4-accent);
   border-right-color: color-mix(in srgb, var(--v4-accent) 55%, transparent);
@@ -1136,7 +1148,7 @@ body {
   width: 2rem;
   height: 2rem;
   flex-shrink: 0;
-  border-radius: 0.55rem;
+  border-radius: var(--radius-sm);
   color: var(--v4-accent-strong);
   background: color-mix(in srgb, var(--v4-accent-soft) 70%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v4-accent) 16%, transparent);
@@ -1252,7 +1264,7 @@ body {
   align-items: center;
   max-width: 100%;
   border: 1px solid color-mix(in srgb, var(--v5-green, #1a3d37) 18%, transparent);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--v5-green, #1a3d37) 9%, transparent);
   padding: 0.15rem 0.5rem;
   font-size: 0.6875rem;
@@ -1329,7 +1341,7 @@ body {
   align-items: stretch;
   gap: 0.25rem;
   padding: 0.2rem;
-  border-radius: 0.625rem;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--v4-line);
   background: var(--v4-panel-muted);
 }
@@ -1347,7 +1359,7 @@ body {
   justify-content: center;
   gap: 0.375rem;
   border: 1px solid transparent;
-  border-radius: 0.45rem;
+  border-radius: var(--radius-sm);
   background: transparent;
   padding: 0.35rem 0.75rem;
   font-size: 0.75rem;
@@ -1387,7 +1399,7 @@ body {
   justify-content: center;
   gap: 0.375rem;
   border: 1px solid color-mix(in srgb, var(--v4-accent) 42%, transparent);
-  border-radius: 0.5rem; /* control ≈ 8px */
+  border-radius: var(--radius-md);
   background: var(--v4-accent-soft);
   padding: 0.4rem 0.85rem;
   font-size: 0.8125rem;
@@ -1501,7 +1513,7 @@ body {
   min-height: 3rem;
   min-width: 8.5rem;
   padding: 0.65rem 1.75rem;
-  border-radius: 1.25rem; /* xl ≈ 20px */
+  border-radius: var(--radius-xl);
   font-size: 0.875rem;
   font-weight: 700;
 }
@@ -1535,7 +1547,7 @@ body {
 .ui-modal {
   width: 100%;
   max-width: 24rem;
-  border-radius: 0.5rem; /* md */
+  border-radius: var(--radius-md);
   border: 1px solid var(--v4-line-strong);
   background: var(--v4-panel-raised);
   padding: 1.25rem;
@@ -1550,14 +1562,14 @@ body {
 .ui-menu {
   min-width: 12rem;
   overflow: hidden;
-  border-radius: 0.5rem; /* md */
+  border-radius: var(--radius-md);
   border: 1px solid var(--v4-line-strong);
   background: var(--v4-panel-raised);
   box-shadow: var(--elevation-2);
 }
 
 .ui-toast {
-  border-radius: 0.75rem; /* lg */
+  border-radius: var(--radius-lg);
   border: 1px solid var(--v4-line-strong);
   background: var(--v4-panel-raised);
   box-shadow: var(--elevation-2);
@@ -1977,7 +1989,7 @@ button {
   gap: 8px;
   background: var(--v4-panel);
   border: 1px solid var(--v4-line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 5px 12px;
 }
 
@@ -2013,7 +2025,7 @@ button {
   appearance: none;
   width: 100%;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--v4-line);
   outline: none;
   cursor: pointer;
@@ -2022,7 +2034,7 @@ button {
 .v9-timeline-dial-slider::-webkit-slider-runnable-track {
   width: 100%;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: linear-gradient(
     90deg,
     color-mix(in srgb, var(--v4-accent) 78%, transparent) 0 var(--timeline-progress, 0%),
@@ -2049,13 +2061,13 @@ button {
 
 .v9-timeline-dial-slider::-moz-range-track {
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--v4-line);
 }
 
 .v9-timeline-dial-slider::-moz-range-progress {
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--v4-accent) 78%, transparent);
 }
 
@@ -2085,7 +2097,7 @@ button {
   background: var(--v4-panel-muted);
   border: 1px solid var(--v4-line);
   color: var(--v4-text-muted);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
@@ -2113,7 +2125,7 @@ button {
   width: 100%;
   height: 5px;
   background: color-mix(in srgb, var(--v5-green) 14%, transparent);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   outline: none;
   cursor: pointer;
 }
@@ -2122,7 +2134,7 @@ button {
   width: 100%;
   height: 5px;
   background: color-mix(in srgb, var(--v5-green) 14%, transparent);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 
 .glass-slider-input::-webkit-slider-thumb {
@@ -2150,7 +2162,7 @@ button {
 .glass-slider-input::-moz-range-track {
   height: 5px;
   background: color-mix(in srgb, var(--v5-green) 14%, transparent);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 
 .glass-slider-input::-moz-range-thumb {
@@ -2185,7 +2197,7 @@ button {
 }
 ::-webkit-scrollbar-thumb {
   background: rgba(26, 61, 55, 0.18);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   transition: all 0.3s ease;
 }
 ::-webkit-scrollbar-thumb:hover {

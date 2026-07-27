@@ -373,7 +373,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                       {rowMarkKind ? (
                         <InspectionMarkGlyph kind={rowMarkKind} size={10} />
                       ) : (isAuxiliarySemantic || isExpandedDialogue) ? (
-                        <span className="inline-flex h-3 min-w-3 items-center justify-center rounded-[2px] border border-[var(--v4-line-strong)] px-0.5 font-mono text-[8px] font-semibold leading-none text-[var(--v4-text-faint)]">
+                        <span className="inline-flex h-3 min-w-3 items-center justify-center rounded-[var(--radius-xs)] border border-[var(--v4-line-strong)] px-0.5 font-mono text-[8px] font-semibold leading-none text-[var(--v4-text-faint)]">
                           {isExpandedDialogue ? '组' : '辅'}
                         </span>
                       ) : null}
