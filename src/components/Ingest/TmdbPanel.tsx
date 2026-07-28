@@ -98,7 +98,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
   const handleClose = () => {
     if (isApplyingSuggestion) return;
     setPendingSuggestion(null);
-    setTmdbSuggestions([]);
+    // 保留 tmdbSuggestions：用户未选定就关掉时，「查看结果」应复用缓存，不浪费 API。
     setTmdbManualOpen(false);
   };
 
@@ -504,7 +504,11 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                     </div>
                   ) : (
                     <p className="py-6 text-center text-xs text-[var(--v4-text-faint)]">
-                      {isSearchingTmdb ? '正在检索…' : '输入片名后开始检索'}
+                      {isSearchingTmdb
+                        ? '正在检索…'
+                        : tmdbManualInput.title.trim()
+                          ? '点「开始检索」获取匹配结果'
+                          : '输入片名后开始检索'}
                     </p>
                   )}
                 </div>
