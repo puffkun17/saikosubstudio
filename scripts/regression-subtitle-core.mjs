@@ -1694,7 +1694,7 @@ const createTmdbImages = () => ({
 }
 
 {
-  // 英文对白偶发法语停用词，不得压过英语信号
+  // 英文对白偶发法语停用词 / 单个外来词重音，不得压过英语信号
   assert.equal(
     detectLanguageByContent('What are you doing with that? I have not seen this before.'),
     'en',
@@ -1703,6 +1703,16 @@ const createTmdbImages = () => ({
     detectLanguageByContent('I am not sure what you said about the pas de deux and the queue.'),
     'en',
     'Sparse French lexicon hits must not beat stronger English signals.',
+  );
+  assert.equal(
+    detectLanguageByContent('What are you doing with that? I have not seen this before. Café later.'),
+    'en',
+    'A single French loanword accent must not override English dialogue.',
+  );
+  assert.equal(
+    detectLanguageByContent('What are you doing with that? I have not seen this before. Señor, please.'),
+    'en',
+    'A single Spanish mark must not override English dialogue.',
   );
 }
 

@@ -223,9 +223,11 @@ export function detectLanguageByContent(text: string): SubtitleLanguage {
   const spanishMarks = (clean.match(/[áíóñ¿¡]/g) || []).length;
   const latinCount = (clean.match(/[a-z\u00c0-\u024f]/g) || []).length;
 
-  // 西欧语需明显强于英语信号，避免英文对白里偶发 le/que/pas 被判成法语/西语。
-  if (spanishMarks > 0 || (spanishSignals >= 2 && spanishSignals > englishSignals)) return 'es';
-  if (frenchAccents > 0 || (frenchSignals >= 2 && frenchSignals > englishSignals)) return 'fr';
+  // 西欧语：停用词 + 重音合计须明显强于英语。禁止「一个 café/señor」压过整段英文对白。
+  const frenchScore = frenchSignals + frenchAccents;
+  const spanishScore = spanishSignals + spanishMarks;
+  if (spanishScore >= 2 && spanishScore > englishSignals) return 'es';
+  if (frenchScore >= 2 && frenchScore > englishSignals) return 'fr';
   if (englishSignals >= 1) return 'en';
   if (latinCount >= 2) return 'latin';
   return 'unknown';
