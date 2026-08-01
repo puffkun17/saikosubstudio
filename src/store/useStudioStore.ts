@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity, isMainPathSecondaryLanguage, mainPathPrimaryRank } from '../utils/subtitleCore';
+import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity, isMainPathSecondaryLanguage, mainPathPrimaryRank, mainPathSecondaryRank } from '../utils/subtitleCore';
 import { assessTvYearFit, parseSeasonNumber, parseYearToken, shouldDemoteBySeasonSpan } from '../utils/tmdbCandidateFit';
 import { estimateJsonBytes, readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
 import { tmdbFetch } from '../services/tmdb';
@@ -1944,8 +1944,21 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           })[0];
         };
 
+        // 原文轨：普通 en 优先于 SDH/CC（后者常更大，旧逻辑会误绑）。
+        const getBestSecondary = (list: Subfile[]): Subfile | null => {
+          if (list.length === 0) return null;
+          return [...list].sort((a, b) => {
+            const rankDiff = mainPathSecondaryRank(b.name) - mainPathSecondaryRank(a.name);
+            if (rankDiff !== 0) return rankDiff;
+            const aAss = a.name.toLowerCase().endsWith('.ass') ? 1 : 0;
+            const bAss = b.name.toLowerCase().endsWith('.ass') ? 1 : 0;
+            if (aAss !== bAss) return bAss - aAss;
+            return b.size - a.size;
+          })[0];
+        };
+
         const bestZh = getBestPrimary(zhFiles);
-        const bestEn = getBestFile(enFiles);
+        const bestEn = getBestSecondary(enFiles);
         const bestBilingual = getBestFile(bilingualFiles);
         const bestCommentary = getBestFile(commentaryFiles);
 

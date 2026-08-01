@@ -246,11 +246,30 @@ export function isMainPathSecondaryLanguage(language: string): language is 'en' 
   return language === 'en';
 }
 
+/**
+ * SDH / CC（听障字幕、封闭字幕）文件名标记。
+ * 仍可作为 English 候选，但在有普通 en 轨时应降权，避免因体积更大被默认绑成原文轨。
+ */
+export function isSdhOrCcSubtitleFilename(name: string): boolean {
+  if (!name) return false;
+  const normalized = name
+    .toLowerCase()
+    .replace(/\.[a-z0-9]{2,5}$/i, '')
+    .replace(/[._()[\]{}+]+/g, ' ');
+  if (hasFilenameToken(normalized, ['sdh', 'cc'])) return true;
+  return /\b(closed\s*captions?|subtitles?\s+for\s+the\s+deaf)\b/i.test(normalized);
+}
+
 /** Prefer Simplified Chinese over Traditional when both are candidates. */
 export function mainPathPrimaryRank(language: string): number {
   if (language === 'zh-CN' || language === 'zh') return 2;
   if (language === 'zh-TW') return 1;
   return 0;
+}
+
+/** Prefer plain English dialogue tracks over SDH/CC when ranking secondary candidates. */
+export function mainPathSecondaryRank(name: string): number {
+  return isSdhOrCcSubtitleFilename(name) ? 0 : 1;
 }
 
 export function detectLanguageByFilename(name: string): SubtitleLanguage {

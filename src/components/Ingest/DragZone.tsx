@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
-import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
+import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity, isSdhOrCcSubtitleFilename } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
 import {
   ChevronDown,
@@ -266,7 +266,9 @@ const describeTrack = (file: Subfile) => {
     return pair ? `${labels[pair.primary]} / ${labels[pair.secondary]} 双语轨` : '双语轨';
   }
   if (file.lang === 'zh-CN' || file.lang === 'zh-TW') return '主字幕轨';
-  if (file.lang === 'en') return '原文轨';
+  if (file.lang === 'en') {
+    return isSdhOrCcSubtitleFilename(file.name) ? 'SDH/CC 原文轨' : '原文轨';
+  }
   if (['ja', 'ko', 'fr', 'es', 'latin'].includes(file.lang)) return '其他语种轨';
   return '待确认轨';
 };

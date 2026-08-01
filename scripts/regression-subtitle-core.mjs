@@ -52,6 +52,8 @@ const {
   detectSubtitleLanguagePair,
   isMainPathSecondaryLanguage,
   mainPathPrimaryRank,
+  isSdhOrCcSubtitleFilename,
+  mainPathSecondaryRank,
   appendCreatorCredit,
   extractStylesFromAss,
   extractSubtitleAttributions,
@@ -1093,6 +1095,68 @@ const resetStoreForTmdb = () => {
 
   useStudioStore.getState().bindTrack(task.id, 'en', 'f-ja');
   assert.equal(useStudioStore.getState().tasks[0]?.en, null, 'Post-bind filter must demote non-English secondary selections.');
+}
+
+{
+  // Stuart Fails sample: en.SDH.srt 体积大于 en.srt，不得默认绑成原文轨
+  resetStoreForTmdb();
+  assert.equal(isSdhOrCcSubtitleFilename('Show.S01E01.en.SDH.srt'), true);
+  assert.equal(isSdhOrCcSubtitleFilename('Show.S01E01.en.CC.srt'), true);
+  assert.equal(isSdhOrCcSubtitleFilename('Show.S01E01.en.srt'), false);
+  assert.ok(mainPathSecondaryRank('Show.S01E01.en.srt') > mainPathSecondaryRank('Show.S01E01.en.SDH.srt'));
+
+  const chs = {
+    id: 'stuart-chs',
+    name: 'Stuart.Fails.to.Save.the.Universe.S01E01.chs.srt',
+    text: '1\n00:00:01,000 --> 00:00:02,000\n你好',
+    lang: 'zh-CN',
+    isBilingual: false,
+    isCommentary: false,
+    size: 32168,
+  };
+  const enPlain = {
+    id: 'stuart-en',
+    name: 'Stuart.Fails.to.Save.the.Universe.S01E01.en.srt',
+    text: '1\n00:00:01,000 --> 00:00:02,000\nHello',
+    lang: 'en',
+    isBilingual: false,
+    isCommentary: false,
+    size: 27307,
+  };
+  const enSdh = {
+    id: 'stuart-en-sdh',
+    name: 'Stuart.Fails.to.Save.the.Universe.S01E01.en.SDH.srt',
+    text: '1\n00:00:01,000 --> 00:00:02,000\n[door opens]\nHello',
+    lang: 'en',
+    isBilingual: false,
+    isCommentary: false,
+    size: 41392,
+  };
+  const cht = {
+    id: 'stuart-cht',
+    name: 'Stuart.Fails.to.Save.the.Universe.S01E01.cht.srt',
+    text: '1\n00:00:01,000 --> 00:00:02,000\n你好',
+    lang: 'zh-TW',
+    isBilingual: false,
+    isCommentary: false,
+    size: 31212,
+  };
+  useStudioStore.getState().processFiles([chs, cht, enSdh, enPlain]);
+  const stuart = useStudioStore.getState().tasks[0];
+  assert.equal(stuart?.zh?.id, 'stuart-chs', 'Stuart pack must prefer chs over cht.');
+  assert.equal(
+    stuart?.en?.id,
+    'stuart-en',
+    'Stuart pack must prefer plain en.srt over larger en.SDH.srt for secondary.',
+  );
+
+  resetStoreForTmdb();
+  useStudioStore.getState().processFiles([chs, enSdh]);
+  assert.equal(
+    useStudioStore.getState().tasks[0]?.en?.id,
+    'stuart-en-sdh',
+    'SDH remains usable when it is the only English track.',
+  );
 }
 
 {
