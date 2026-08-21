@@ -290,3 +290,46 @@ const WorkflowEdgeNext: React.FC<{ config: EdgeNextConfig }> = ({ config }) => {
     </button>
   );
 };
+
+/**
+ * 内容栏内的主前进按钮：与右缘 rail 共用同一套 edgeNext 配置，
+ * 避免「唯一前进路径」只藏在视口边缘。
+ */
+export const WorkflowContinueInFlow: React.FC<{
+  className?: string;
+  /** 默认 lg；空态大步可用 hero */
+  size?: 'lg' | 'hero';
+}> = ({ className = '', size = 'lg' }) => {
+  const { edgeNext } = useWorkflowChrome();
+  const setStatusNotice = useStudioStore((state) => state.setStatusNotice);
+  if (!edgeNext) return null;
+
+  const isReady = !edgeNext.disabled && (edgeNext.ready ?? true);
+  const sizeClass = size === 'hero' ? 'ui-action--hero' : 'ui-action--lg';
+
+  const handleClick = () => {
+    if (edgeNext.disabled) {
+      setStatusNotice({
+        id: 'edge-next-blocked',
+        tone: 'notice',
+        title: '暂时无法继续',
+        message: edgeNext.disabledReason || '请先完成当前步骤的必要操作。',
+      });
+      return;
+    }
+    edgeNext.onClick();
+  };
+
+  return (
+    <button
+      type="button"
+      aria-disabled={edgeNext.disabled || undefined}
+      disabled={edgeNext.disabled && !edgeNext.disabledReason ? true : undefined}
+      onClick={handleClick}
+      className={`ui-action ${sizeClass} ${isReady ? '' : 'opacity-70'} ${className}`.trim()}
+    >
+      {edgeNext.label}
+      <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+    </button>
+  );
+};

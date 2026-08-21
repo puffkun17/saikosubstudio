@@ -72,6 +72,8 @@ const copySearchParams = (incoming: URLSearchParams, kind: RequestKind) => {
     const query = incoming.get('query')?.trim() ?? '';
     if (!query || query.length > 160) return null;
     sanitized.set('query', query);
+    // Never surface adult / softcore substring hits ahead of well-known films.
+    sanitized.set('include_adult', 'false');
 
     const year = incoming.get('year');
     if (year && /^\d{4}$/.test(year)) sanitized.set('year', year);

@@ -11,7 +11,7 @@ import { CreditTool } from '@/components/Ingest/CreditTool';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { FileFormatIcon, LanguageMark } from '@/components/ui/FileFormatIcon';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
-import { useWorkflowChrome } from '@/components/Global/WorkflowChrome';
+import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
 import { getSubtitleTermHint } from '@/utils/subtitleTerminology';
 import { getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
 import { AssStylePreview } from '@/components/Ingest/AssStylePreview';
@@ -955,6 +955,10 @@ export const TaskList: React.FC = () => {
 
         </div>
 
+      </div>
+
+      <div className="mt-auto flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-[var(--v4-line)] pt-4">
+        <WorkflowContinueInFlow className="min-w-[9rem] justify-center" />
       </div>
 
       <input

@@ -18,6 +18,7 @@ execFileSync('npx', [
   'src/utils/subtitleCore.ts',
   'src/utils/mediaIdentity.ts',
   'src/utils/tmdbCandidateFit.ts',
+  'src/utils/tmdbSearchRank.ts',
   'src/utils/releaseNamingRules.ts',
   'src/utils/importSafety.ts',
   'src/utils/timeline/alignmentDiff.ts',
@@ -1778,6 +1779,129 @@ const createTmdbImages = () => ({
     'en',
     'A single Spanish mark must not override English dialogue.',
   );
+}
+
+{
+  resetStoreForTmdb();
+  const bikini = {
+    id: 99101,
+    media_type: 'movie',
+    title: 'Bikini Inception',
+    original_title: 'Bikini Inception',
+    release_date: '2010-01-01',
+    popularity: 14,
+    vote_average: 3.8,
+    vote_count: 22,
+  };
+  const inception = {
+    id: 27205,
+    media_type: 'movie',
+    title: '盗梦空间',
+    original_title: 'Inception',
+    release_date: '2010-07-16',
+    popularity: 95,
+    vote_average: 8.4,
+    vote_count: 35000,
+  };
+  global.fetch = async (url) => {
+    const target = String(url);
+    if (target.includes('/api/tmdb/search/movie')) {
+      return createTmdbSearchResult([bikini, inception]);
+    }
+    return createTmdbSearchResult(null);
+  };
+  await useStudioStore.getState().searchTmdbManual('Inception', 'movie', '');
+  const top = useStudioStore.getState().tmdbSuggestions[0];
+  assert.equal(top?.id, inception.id, 'Manual search for Inception must rank 盗梦空间 above Bikini Inception');
+}
+
+{
+  resetStoreForTmdb();
+  const suggestion = {
+    id: 27205,
+    media_type: 'movie',
+    title: '盗梦空间',
+    original_title: 'Inception',
+    release_date: '2010-07-16',
+    backdrop_path: '/inception.jpg',
+    poster_path: '/inception-poster.jpg',
+    popularity: 95,
+  };
+  useStudioStore.setState({
+    selectedTaskId: 'task-inception',
+    tasks: [{
+      id: 'task-inception',
+      title: '待补充片名',
+      zh: { id: 'zh', name: 'zh.srt', text: '1\n00:00:01,000 --> 00:00:02,000\n你好\n', lang: 'zh-CN', isBilingual: false, isCommentary: false, size: 10 },
+      en: { id: 'en', name: 'en.srt', text: '1\n00:00:01,000 --> 00:00:02,000\nHello\n', lang: 'en', isBilingual: false, isCommentary: false, size: 10 },
+      commentary: null,
+      status: 'paired',
+      files: [],
+    }],
+    customFilename: '',
+    filenameSource: 'unknown',
+  });
+  global.fetch = async (url) => {
+    const target = String(url);
+    if (target.includes('/api/tmdb/movie/27205/images')) return createTmdbImages();
+    if (target.includes('/api/tmdb/movie/27205')) {
+      return createTmdbDetails({
+        id: 27205,
+        title: '盗梦空间',
+        original_title: 'Inception',
+        release_date: '2010-07-16',
+        genres: [{ name: '科幻' }],
+        overview: 'A thief who steals corporate secrets.',
+        vote_average: 8.4,
+      });
+    }
+    return createTmdbSearchResult(null);
+  };
+  await useStudioStore.getState().selectTmdbSuggestion(suggestion);
+  const state = useStudioStore.getState();
+  assert.equal(state.tmdbData?.title, '盗梦空间');
+  assert.equal(state.customFilename, '盗梦空间.2010', 'Applying TMDB must set export/job filename');
+  assert.equal(state.tasks[0]?.title, '盗梦空间.2010', 'Applying TMDB must update task identity title');
+  assert.equal(state.filenameSource, 'tmdb');
+}
+
+{
+  resetStoreForTmdb();
+  const storage = new Map();
+  global.window = {
+    localStorage: {
+      getItem: (key) => (storage.has(key) ? storage.get(key) : null),
+      setItem: (key, value) => { storage.set(key, String(value)); },
+      removeItem: (key) => { storage.delete(key); },
+    },
+  };
+  useStudioStore.setState({
+    selectedTaskId: 'task-merge',
+    files: {
+      zh: { id: 'zh', name: 'zh.srt', text: '1\n00:00:01,000 --> 00:00:02,000\n你好\n', lang: 'zh-CN', isBilingual: false, isCommentary: false, size: 10 },
+      en: { id: 'en', name: 'en.srt', text: '1\n00:00:01,000 --> 00:00:02,000\nHello\n', lang: 'en', isBilingual: false, isCommentary: false, size: 10 },
+      commentary: null,
+    },
+    tasks: [{
+      id: 'task-merge',
+      title: 'Demo',
+      zh: { id: 'zh', name: 'zh.srt', text: '1\n00:00:01,000 --> 00:00:02,000\n你好\n', lang: 'zh-CN', isBilingual: false, isCommentary: false, size: 10 },
+      en: { id: 'en', name: 'en.srt', text: '1\n00:00:01,000 --> 00:00:02,000\nHello\n', lang: 'en', isBilingual: false, isCommentary: false, size: 10 },
+      commentary: null,
+      status: 'paired',
+      files: [],
+    }],
+    customFilename: 'Demo.Title',
+    libraryList: [],
+    alignmentMode: 'standard',
+  });
+  useStudioStore.getState().runSubtitleMerge();
+  const lib = useStudioStore.getState().libraryList;
+  assert.ok(lib.length >= 1, 'Completed merge must write a restorable archive entry');
+  assert.equal(lib[0]?.name, 'Demo.Title');
+  assert.ok(lib[0]?.subs?.length > 0, 'Archive entry must keep subtitle rows');
+  const raw = storage.get('nexus_subtitle_library');
+  assert.ok(raw && raw.includes('Demo.Title'), 'Archive must persist to localStorage');
 }
 
 console.log('Core subtitle regression checks passed.');

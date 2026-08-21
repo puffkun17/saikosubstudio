@@ -87,6 +87,7 @@ export const SystemTray = () => {
     restartSystem,
     hasUploadData,
     hasWorkbenchData,
+    hasSessionWork,
     libraryCount,
     setLibraryOpen,
     setWorkflowStep,
@@ -95,12 +96,28 @@ export const SystemTray = () => {
     restartSystem: state.restartSystem,
     hasUploadData: state.tasks.length > 0,
     hasWorkbenchData: Boolean(state.processedSubs?.length),
+    hasSessionWork: state.tasks.length > 0
+      || state.uploadedFiles.length > 0
+      || Boolean(state.processedSubs?.length),
     libraryCount: state.libraryList.length,
     setLibraryOpen: state.setLibraryOpen,
     setWorkflowStep: state.setWorkflowStep,
   })));
   const isInfoPage = pathname === '/about' || pathname === '/feedback';
   const showLibrary = !isInfoPage && workflowStep === 1;
+
+  const confirmLeaveSession = (href: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!hasSessionWork) return;
+    const ok = window.confirm(
+      '当前导入尚未结束。离开本页会丢失未存档的进度；已写入「存档」的项目仍可恢复。确定离开？',
+    );
+    if (!ok) {
+      event.preventDefault();
+      return;
+    }
+    // Allow navigation; confirm already warned.
+    void href;
+  };
 
   const handleStepClick = (targetStep: number) => {
     if (targetStep === workflowStep) return;
@@ -302,11 +319,23 @@ export const SystemTray = () => {
                 )}
               </button>
             )}
-            <Link href="/about" className={trayCtrl} title="隐私与版权" aria-label="隐私与版权">
+            <Link
+              href="/about"
+              className={trayCtrl}
+              title="隐私与版权"
+              aria-label="隐私与版权"
+              onClick={confirmLeaveSession('/about')}
+            >
               <Scale className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
               <span className={trayLabel}>隐私</span>
             </Link>
-            <Link href="/feedback" className={trayCtrl} title="反馈" aria-label="反馈">
+            <Link
+              href="/feedback"
+              className={trayCtrl}
+              title="反馈"
+              aria-label="反馈"
+              onClick={confirmLeaveSession('/feedback')}
+            >
               <PenLine className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
               <span className={trayLabel}>反馈</span>
             </Link>

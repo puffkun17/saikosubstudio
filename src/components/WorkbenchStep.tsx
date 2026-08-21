@@ -9,7 +9,7 @@ import { SourceMatchPanel, type InspectionMarkFilter } from '@/components/Workbe
 import { InspectionMarkGlyph, MARK_FILTERS, MARK_LABEL } from '@/components/Workbench/inspectionMarks';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
-import { useWorkflowChrome } from '@/components/Global/WorkflowChrome';
+import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
 import { ChevronDown, GitCompareArrows, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { analyzeAlignmentDiff } from '@/utils/timeline/alignmentDiff';
@@ -97,10 +97,11 @@ export const WorkbenchStep: React.FC = () => {
 
   useEffect(() => {
     setInfoBar({
-      title: '字幕调校',
+      title: tmdbData?.title || customFilename || '字幕调校',
+      year: tmdbData?.year || undefined,
       localChips: [
         `${processedSubs?.length || 0} 行`,
-        customFilename || '未命名字幕',
+        customFilename || tmdbData?.title || '未命名字幕',
         tmdbData ? undefined : '未匹配',
       ].filter((item): item is string => Boolean(item)),
       onBack: () => {
@@ -123,6 +124,7 @@ export const WorkbenchStep: React.FC = () => {
             字幕样式
           </button>
           <ExportDropdown variant="ghost" />
+          <WorkflowContinueInFlow />
         </>
       ),
     });
