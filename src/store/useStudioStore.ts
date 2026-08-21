@@ -3,6 +3,12 @@ import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smart
 import { assessTvYearFit, parseSeasonNumber, parseYearToken, shouldDemoteBySeasonSpan } from '../utils/tmdbCandidateFit';
 import { estimateJsonBytes, readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
 import { tmdbFetch } from '../services/tmdb';
+import {
+  compareTmdbRank,
+  isHighConfidenceTmdbPick,
+  popularityBoost,
+  rankTmdbCandidates,
+} from '../utils/tmdbSearchRank';
 
 const LIBRARY_STORAGE_KEY = 'nexus_subtitle_library';
 const STYLE_STORAGE_KEY = 'nexus_subtitle_styles_v4';
@@ -123,6 +129,8 @@ export type TmdbSuggestion = {
   backdrop_path?: string | null;
   popularity?: number;
   vote_average?: number;
+  vote_count?: number;
+  adult?: boolean;
 };
 
 type TmdbDetails = {
@@ -731,7 +739,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const data = await res.json() as { results?: TmdbSuggestion[] };
         const searchResults = (data.results || [])
           .map((item) => ({ ...item, media_type: item.media_type || (endpoint === 'multi' ? item.media_type : endpoint) }))
-          .filter((item) => item.media_type === 'movie' || item.media_type === 'tv');
+          .filter((item) => !item.adult && (item.media_type === 'movie' || item.media_type === 'tv'));
         if (typeof window !== 'undefined') {
           tmdbClientCache.set(url, { expiresAt: Date.now() + TMDB_CLIENT_CACHE_TTL_MS, results: searchResults });
         }
@@ -884,6 +892,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           return 0;
         });
         score += Math.max(0, ...queryScores);
+        // Prefer well-known titles when title scores are close (avoids parody/substring tops).
+        score += Math.round(popularityBoost(item) * 0.85);
 
         const autoConfirmThreshold = isEpisodeQuery ? 100 : year ? 80 : 50;
         const vetoes: string[] = [];
@@ -984,7 +994,17 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         return { item, score: decision.score, decision };
       });
 
-      scored.sort((a, b) => b.score - a.score || (b.item.popularity || 0) - (a.item.popularity || 0));
+      scored.sort((a, b) => {
+        const aExact = a.decision.reasons.some((r) => r === 'title:exact' || r === 'title:loose-exact');
+        const bExact = b.decision.reasons.some((r) => r === 'title:exact' || r === 'title:loose-exact');
+        const aSub = a.decision.reasons.includes('veto:title-contains-only')
+          || (a.decision.reasons.includes('title:contains') && !aExact);
+        const bSub = b.decision.reasons.includes('veto:title-contains-only')
+          || (b.decision.reasons.includes('title:contains') && !bExact);
+        if (aExact !== bExact) return aExact ? -1 : 1;
+        if (aSub !== bSub) return aSub ? 1 : -1;
+        return b.score - a.score || (b.item.popularity || 0) - (a.item.popularity || 0) || (b.item.vote_count || 0) - (a.item.vote_count || 0);
+      });
 
       // 前列分数接近时，禁止仅靠 popularity 自动采纳（本轮结果内分差，而非全局热度）。
       if (scored.length >= 2) {
@@ -1190,7 +1210,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const res = await tmdbFetch(url);
         if (!res.ok) return [];
         const data = await res.json() as { results?: TmdbSuggestion[] };
-        const searchResults = data.results || [];
+        const searchResults = (data.results || []).filter((item) => !item.adult);
         if (typeof window !== 'undefined') {
           tmdbClientCache.set(url, { expiresAt: Date.now() + TMDB_CLIENT_CACHE_TTL_MS, results: searchResults });
         }
@@ -1214,22 +1234,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         if (results.length >= 10) break;
       }
 
-      const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const calculateItemScore = (item: TmdbSuggestion) => {
-        const normTitle = normalize(item.title || item.name || '');
-        const normOrigTitle = normalize(item.original_title || item.original_name || '');
-        return Math.max(
-          0,
-          ...scoringQueries.map((query) => {
-            const normQ = normalize(query);
-            if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) return 50;
-            if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) return 20;
-            return 0;
-          })
-        );
-      };
-
-      const hasExactMatch = results.some((item) => calculateItemScore(item) >= 50);
+      const hasExactMatch = rankTmdbCandidates(results, scoringQueries).some((entry) => entry.exactTitle);
 
       // Multi-split colon search fallback for manual search
       if (!hasExactMatch && searchStr.includes(' ') && !searchStr.includes(':')) {
@@ -1258,44 +1263,33 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         }
       }
 
-      const scored = results.map((item) => {
-        let score = 0;
-        const relDate = item.release_date || item.first_air_date || '';
-        const itemYear = relDate.substring(0, 4);
-        const seasonHint = parseSeasonNumber(get().tmdbManualInput.season);
-        const userYear = parseYearToken(year);
-        let rejected = false;
+      const seasonHint = parseSeasonNumber(get().tmdbManualInput.season);
+      const userYear = parseYearToken(year);
+      const scored = rankTmdbCandidates(
+        results.map((item) => ({ ...item, media_type: type })),
+        scoringQueries,
+        {
+          year: userYear,
+          yearScore: (item, y) => {
+            const itemYear = (item.release_date || item.first_air_date || '').substring(0, 4);
+            if (type === 'tv') {
+              const fit = assessTvYearFit({ userYear: y, itemYear, season: seasonHint });
+              if (fit.match) return { delta: 100, rejected: false };
+              if (fit.veto) return { delta: -220, rejected: true };
+              if (fit.soft) return { delta: 40, rejected: false };
+              return { delta: 0, rejected: false };
+            }
+            if (itemYear === y) return { delta: 100, rejected: false };
+            if (itemYear && itemYear !== y) return { delta: -120, rejected: false };
+            return { delta: 0, rejected: false };
+          },
+        },
+      ).map((entry) => ({
+        ...entry,
+        item: { ...entry.item, media_type: type } as TmdbSuggestion,
+      }));
 
-        if (type === 'tv' && userYear) {
-          const fit = assessTvYearFit({ userYear, itemYear, season: seasonHint });
-          if (fit.match) score += 100;
-          else if (fit.veto) {
-            score -= 220;
-            rejected = true;
-          } else if (fit.soft) score += 40;
-        } else if (userYear && itemYear === userYear) {
-          score += 100;
-        } else if (userYear && itemYear && itemYear !== userYear) {
-          score -= 120;
-        }
-
-        const normTitle = normalize(item.title || item.name || '');
-        const normOrigTitle = normalize(item.original_title || item.original_name || '');
-        const queryScores = scoringQueries.map((query) => {
-          const normQ = normalize(query);
-          if (normTitle && normQ && (normTitle === normQ || normOrigTitle === normQ)) return 50;
-          if (normTitle && normQ && (normTitle.includes(normQ) || normOrigTitle.includes(normQ) || normQ.includes(normTitle) || normQ.includes(normOrigTitle))) return 20;
-          return 0;
-        });
-        score += Math.max(0, ...queryScores);
-
-        return { item: { ...item, media_type: type }, score, rejected };
-      });
-
-      scored.sort((a, b) => {
-        if (a.rejected !== b.rejected) return a.rejected ? 1 : -1;
-        return b.score - a.score || (b.item.popularity || 0) - (a.item.popularity || 0);
-      });
+      scored.sort(compareTmdbRank);
       const sortedResults = scored.map((s) => s.item).slice(0, 10);
       if (!isCurrentRequest()) return;
       set({ tmdbSuggestions: sortedResults });
@@ -1309,25 +1303,29 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       });
 
       const viable = scored.filter((entry) => !entry.rejected);
-      const softOnly = type === 'tv' && Boolean(parseYearToken(year))
+      const softOnly = type === 'tv' && Boolean(userYear)
         && viable.length > 0
         && !viable.some((entry) => {
           const itemYear = (entry.item.release_date || entry.item.first_air_date || '').substring(0, 4);
           return assessTvYearFit({
-            userYear: parseYearToken(year),
+            userYear,
             itemYear,
-            season: parseSeasonNumber(get().tmdbManualInput.season),
+            season: seasonHint,
           }).match;
         });
+      const topRank = scored.find((entry) => !entry.rejected) || null;
+      const needsConfirm = !isHighConfidenceTmdbPick(topRank);
       
       if (sortedResults.length > 0) {
         get().setStatusNotice({
           id: 'media-match',
           tone: 'notice',
-          title: softOnly ? '请确认片源年份' : '请选择匹配结果',
+          title: softOnly ? '请确认片源年份' : needsConfirm ? '请确认匹配结果' : '请选择匹配结果',
           message: softOnly
             ? '已按季跨度排除不可能的同名剧；年份更像发行/观影印象，请确认是否为目标片源。'
-            : `已找到 ${sortedResults.length} 个结果，请选择正确的一项。`,
+            : needsConfirm
+              ? `已找到 ${sortedResults.length} 个结果。首位置信度不足，请点选确认后再应用。`
+              : `已找到 ${sortedResults.length} 个结果，请选择正确的一项。`,
           meta: searchStr,
           action: 'openTmdbManual',
           actionLabel: '查看结果',
@@ -1448,7 +1446,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       };
 
       if (!isCurrentSelection()) return;
-      set({ tmdbData: meta, tmdbBackdrop: chosenBackdrop, tmdbBackdropList: backdrops });
 
       const activeTask = get().tasks.find(t => t.id === selectedTaskId);
       const epKey = activeTask?.epKey;
@@ -1456,12 +1453,28 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         ? `S${String(tmdbManualInput.season).padStart(2, '0')}E${String(tmdbManualInput.episode).padStart(2, '0')}`
         : undefined;
       const formattedName = formatTmdbOutputName(meta, epKey || manualEpisodeKey);
-      // Export name stays blank until user opts in via checklist checkboxes.
-      if (selectedTaskId) {
-        set(state => ({
-          tasks: state.tasks.map(t => t.id === selectedTaskId ? { ...t, title: formattedName, tmdbData: meta, tmdbBackdrop: chosenBackdrop, tmdbBackdropList: backdrops } : t)
-        }));
-      }
+      const keepManual = get().filenameSource === 'manual' && Boolean(get().customFilename.trim());
+      // Job identity: TMDB title flows into task title, export naming, and workbench chrome.
+      set((state) => ({
+        tmdbData: meta,
+        tmdbBackdrop: chosenBackdrop,
+        tmdbBackdropList: backdrops,
+        customFilename: keepManual ? state.customFilename : formattedName,
+        filenameSource: keepManual ? 'manual' : 'tmdb',
+        tasks: selectedTaskId
+          ? state.tasks.map((t) => (
+            t.id === selectedTaskId
+              ? {
+                  ...t,
+                  title: keepManual ? t.title : formattedName,
+                  tmdbData: meta,
+                  tmdbBackdrop: chosenBackdrop,
+                  tmdbBackdropList: backdrops,
+                }
+              : t
+          ))
+          : state.tasks,
+      }));
 
       if (!silent) get().addLog(`已匹配影片信息：${meta.title}`, 'success');
       get().setStatusNotice({
@@ -1787,9 +1800,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   },
 
   saveToLibrary: () => {
-    const { processedSubs, customFilename, tmdbBackdrop, tmdbBackdropList, customStyle, libraryList } = get();
+    const { processedSubs, customFilename, tmdbData, tmdbBackdrop, tmdbBackdropList, customStyle, libraryList } = get();
     if (!processedSubs || processedSubs.length === 0) return;
-    const name = customFilename || '未命名字幕';
+    const name = customFilename
+      || (tmdbData ? [tmdbData.title, tmdbData.year].filter(Boolean).join('.') : '')
+      || '未命名字幕';
     const newItem: LibraryItem = {
       id: `lib_${Date.now()}`,
       name: name,
@@ -1810,7 +1825,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       return;
     }
     set({ libraryList: updatedLib });
-    get().addLog(`[存入] 已成功存入系统字幕库: ${name}`, "success");
+    get().addLog(`[存档] 已写入本机历史：${name}`, "success");
   },
 
   deleteFromLibrary: (id) => {
@@ -2071,6 +2086,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           : mergeSubtitles(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t));
         set({ processedSubs: merged, previewIndex: 0, workflowStep: 2, editHistory: [], editFuture: [] });
       }
+      // Clear save point: a finished merge is restorable from 存档 after reload / leaving /.
+      get().saveToLibrary();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       get().addLog(`[异常] 合并失败: ${msg}`, 'error');

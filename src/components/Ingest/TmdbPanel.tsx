@@ -9,6 +9,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { parseSrt } from '@/utils/subtitleCore';
 import { AssStylePreview } from '@/components/Ingest/AssStylePreview';
 import { useUiModalFocus } from '@/hooks/useUiModalFocus';
+import {
+  compareTmdbRank,
+  isHighConfidenceTmdbPick,
+  rankTmdbCandidates,
+} from '@/utils/tmdbSearchRank';
 
 const countSubtitleCues = (text?: string) => {
   if (!text) return 0;
@@ -79,7 +84,11 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
     setPendingSuggestion(null);
     setTmdbSuggestions([]);
     await useStudioStore.getState().searchTmdbManual(searchStr, tmdbManualInput.type, tmdbManualInput.year);
-    setPendingSuggestion(useStudioStore.getState().tmdbSuggestions[0] || null);
+    const suggestions = useStudioStore.getState().tmdbSuggestions;
+    const ranked = rankTmdbCandidates(suggestions, [searchStr]).sort(compareTmdbRank);
+    const top = ranked.find((entry) => !entry.rejected) || null;
+    // Weak first hits (substring parodies, low popularity) stay unselected until the user confirms.
+    setPendingSuggestion(isHighConfidenceTmdbPick(top) ? (top?.item as TmdbSuggestion) : null);
   };
 
   const handleApplySuggestion = async (suggestion: TmdbSuggestion) => {
@@ -521,6 +530,8 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                     <span className="block truncate text-[var(--v4-text)]">
                       已选择 <strong className="text-[var(--v4-accent-strong)]">{pendingSuggestion.title || pendingSuggestion.name}</strong>
                     </span>
+                  ) : tmdbSuggestions.length > 0 ? (
+                    '请点选一条结果后再应用'
                   ) : (
                     '请选择匹配项'
                   )}

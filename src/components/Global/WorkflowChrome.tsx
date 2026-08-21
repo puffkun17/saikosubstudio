@@ -12,13 +12,14 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useStudioStore } from '@/store/useStudioStore';
 
-export type EdgeNextConfig = {
+/** 内容栏内「继续下一步」主操作配置（仅供 WorkflowContinueInFlow）。 */
+export type ForwardActionConfig = {
   label: string;
   disabled?: boolean;
   /** 置灰时点按给出的原因提示（走 statusNotice，而不是无响应）。 */
   disabledReason?: string;
   /**
-   * 就绪呼吸：必要工序已齐、可进入下一场景时为 true。
+   * 就绪：必要工序已齐、可进入下一场景时为 true。
    * 省略时默认按 !disabled 推断。处理中请显式传 false。
    *
    * 各步就绪条件（判「可前进」，不判「一切完美」）：
@@ -68,10 +69,10 @@ export type BottomStatusConfig = {
 } | null;
 
 type WorkflowChromeValue = {
-  edgeNext: EdgeNextConfig;
+  forwardAction: ForwardActionConfig;
   infoBar: InfoBarConfig;
   bottomStatus: BottomStatusConfig;
-  setEdgeNext: (config: EdgeNextConfig) => void;
+  setForwardAction: (config: ForwardActionConfig) => void;
   setInfoBar: (config: InfoBarConfig) => void;
   setBottomStatus: (config: BottomStatusConfig) => void;
 };
@@ -90,12 +91,12 @@ export const useWorkflowChrome = () => {
 export const useWorkflowChromeOptional = () => useContext(WorkflowChromeContext);
 
 export const WorkflowChromeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [edgeNext, setEdgeNextState] = useState<EdgeNextConfig>(null);
+  const [forwardAction, setForwardActionState] = useState<ForwardActionConfig>(null);
   const [infoBar, setInfoBarState] = useState<InfoBarConfig>(null);
   const [bottomStatus, setBottomStatusState] = useState<BottomStatusConfig>(null);
 
-  const setEdgeNext = useCallback((config: EdgeNextConfig) => {
-    setEdgeNextState(config);
+  const setForwardAction = useCallback((config: ForwardActionConfig) => {
+    setForwardActionState(config);
   }, []);
 
   const setInfoBar = useCallback((config: InfoBarConfig) => {
@@ -107,12 +108,18 @@ export const WorkflowChromeProvider: React.FC<{ children: React.ReactNode }> = (
   }, []);
 
   const value = useMemo(
-    () => ({ edgeNext, infoBar, bottomStatus, setEdgeNext, setInfoBar, setBottomStatus }),
-    [edgeNext, infoBar, bottomStatus, setEdgeNext, setInfoBar, setBottomStatus],
+    () => ({
+      forwardAction,
+      infoBar,
+      bottomStatus,
+      setForwardAction,
+      setInfoBar,
+      setBottomStatus,
+    }),
+    [forwardAction, infoBar, bottomStatus, setForwardAction, setInfoBar, setBottomStatus],
   );
 
   const infoBarActive = Boolean(infoBar);
-  const edgeNextActive = Boolean(edgeNext);
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -125,21 +132,10 @@ export const WorkflowChromeProvider: React.FC<{ children: React.ReactNode }> = (
     };
   }, [infoBarActive]);
 
-  useEffect(() => {
-    document.documentElement.style.setProperty(
-      '--edge-next-w',
-      edgeNextActive ? '2.75rem' : '0px',
-    );
-    return () => {
-      document.documentElement.style.setProperty('--edge-next-w', '0px');
-    };
-  }, [edgeNextActive]);
-
   return (
     <WorkflowChromeContext.Provider value={value}>
       {children}
       <WorkflowInfoBar config={infoBar} />
-      <WorkflowEdgeNext config={edgeNext} />
     </WorkflowChromeContext.Provider>
   );
 };
@@ -246,47 +242,44 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
 };
 
 /**
- * 通往下一步的右缘按钮。
- * 就绪时可点：琥珀光圈缓慢呼吸；置灰无呼吸，点按说明缺什么；
- * 挂载时仍有一次性「点亮」（edgeNextIgnite）；hover 向左展开标签。
+ * 内容栏内的唯一前进主按钮（Ridgeline `.ui-action`）。
+ * 配置由各步 `setForwardAction` 写入。
  */
-const WorkflowEdgeNext: React.FC<{ config: EdgeNextConfig }> = ({ config }) => {
+export const WorkflowContinueInFlow: React.FC<{
+  className?: string;
+  /** 默认 lg；空态大步可用 hero */
+  size?: 'lg' | 'hero';
+}> = ({ className = '', size = 'lg' }) => {
+  const { forwardAction } = useWorkflowChrome();
   const setStatusNotice = useStudioStore((state) => state.setStatusNotice);
-  if (!config) return null;
+  if (!forwardAction) return null;
 
-  const isReady = !config.disabled && (config.ready ?? true);
+  const isReady = !forwardAction.disabled && (forwardAction.ready ?? true);
+  const sizeClass = size === 'hero' ? 'ui-action--hero' : 'ui-action--lg';
 
   const handleClick = () => {
-    if (config.disabled) {
+    if (forwardAction.disabled) {
       setStatusNotice({
-        id: 'edge-next-blocked',
+        id: 'forward-action-blocked',
         tone: 'notice',
         title: '暂时无法继续',
-        message: config.disabledReason || '请先完成当前步骤的必要操作。',
+        message: forwardAction.disabledReason || '请先完成当前步骤的必要操作。',
       });
       return;
     }
-    config.onClick();
+    forwardAction.onClick();
   };
 
   return (
     <button
       type="button"
-      aria-disabled={config.disabled || undefined}
+      aria-disabled={forwardAction.disabled || undefined}
+      disabled={forwardAction.disabled && !forwardAction.disabledReason ? true : undefined}
       onClick={handleClick}
-      aria-label={config.label}
-      title={config.label}
-      className={`workflow-edge-next v4-focus-ring ${config.disabled ? 'is-disabled' : ''} ${isReady ? 'is-ready' : ''}`}
+      className={`ui-action ${sizeClass} ${isReady ? '' : 'opacity-70'} ${className}`.trim()}
     >
-      <span className="workflow-edge-next__rail" aria-hidden="true" />
-      <span className="workflow-edge-next__glyph">
-        <ChevronRight className="h-5 w-5" strokeWidth={2} />
-      </span>
-      <span className="workflow-edge-next__label">{config.label}</span>
-      <span className="workflow-edge-next__expanded" aria-hidden="true">
-        {config.label}
-        <ChevronRight className="h-5 w-5" strokeWidth={2} />
-      </span>
+      {forwardAction.label}
+      <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
     </button>
   );
 };

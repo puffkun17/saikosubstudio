@@ -178,7 +178,6 @@
   --tray-h: 60px;
   /* Info bar under top tray; 0 when idle (set by WorkflowChrome). */
   --info-bar-h: 0px;
-  --edge-next-w: 0px;
 
   /*
    * Tray ink（EP-0.4 TOKEN-008）— 奶油半透明，禁止托盘再手写 rgba(245,241,234,*)
@@ -660,7 +659,7 @@ body {
   left: 50%;
   z-index: var(--z-feedback);
   display: flex;
-  width: min(24rem, calc(100vw - 2rem - var(--edge-next-w)));
+  width: min(24rem, calc(100vw - 2rem));
   transform: translateX(-50%);
   flex-direction: column-reverse;
   gap: 0.5rem;
@@ -676,7 +675,7 @@ body {
   position: fixed;
   top: var(--tray-h);
   left: 0;
-  right: var(--edge-next-w);
+  right: 0;
   z-index: calc(var(--z-nav) - 1);
   height: var(--info-bar-h);
   border-bottom: 1px solid var(--v4-line);
@@ -714,170 +713,6 @@ body {
   .workflow-info-bar__year {
     font-size: 17px;
   }
-}
-
-.workflow-edge-next {
-  position: fixed;
-  top: var(--tray-h);
-  right: 0;
-  bottom: var(--tray-h);
-  z-index: calc(var(--z-nav) - 1);
-  width: var(--edge-next-w);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.85rem;
-  border: 0;
-  border-left: 1px solid var(--v4-line);
-  background: color-mix(in srgb, var(--v4-canvas-raised) 88%, transparent);
-  color: var(--v4-accent-strong);
-  cursor: pointer;
-  transition:
-    width var(--v4-dur) var(--v4-ease),
-    background var(--v4-dur) var(--v4-ease),
-    color var(--v4-dur) var(--v4-ease),
-    border-color var(--v4-dur) var(--v4-ease),
-    box-shadow var(--v4-dur) var(--v4-ease);
-}
-
-/* One-shot ignition when the button becomes available (mount) — no infinite loop. */
-.workflow-edge-next::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    270deg,
-    color-mix(in srgb, var(--v4-accent) 26%, transparent),
-    transparent 70%
-  );
-  opacity: 0;
-  animation: edgeNextIgnite 1100ms var(--v4-ease) 1;
-}
-
-@keyframes edgeNextIgnite {
-  0% {
-    opacity: 0;
-  }
-  28% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-/* 就绪态：琥珀光圈缓慢呼吸（克制，非霓虹闪） */
-.workflow-edge-next.is-ready:not(.is-disabled) {
-  border-left-color: color-mix(in srgb, var(--v4-accent) 55%, var(--v4-line));
-  animation: edgeNextReadyBreath 2.6s ease-in-out infinite;
-}
-
-.workflow-edge-next.is-ready:not(.is-disabled) .workflow-edge-next__rail {
-  background: color-mix(in srgb, var(--v4-accent) 72%, transparent);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--v4-accent) 35%, transparent);
-  opacity: 1;
-}
-
-@keyframes edgeNextReadyBreath {
-  0%,
-  100% {
-    box-shadow:
-      inset 3px 0 0 color-mix(in srgb, var(--v4-accent) 38%, transparent),
-      0 0 0 0 color-mix(in srgb, var(--v4-accent) 22%, transparent);
-  }
-  50% {
-    box-shadow:
-      inset 3px 0 0 color-mix(in srgb, var(--v4-accent) 62%, transparent),
-      0 0 18px 2px color-mix(in srgb, var(--v4-accent) 22%, transparent);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .workflow-edge-next.is-ready:not(.is-disabled) {
-    animation: none;
-    box-shadow:
-      inset 3px 0 0 color-mix(in srgb, var(--v4-accent) 55%, transparent),
-      0 0 10px color-mix(in srgb, var(--v4-accent) 16%, transparent);
-  }
-}
-
-/* Hover expands leftward over the content edge; label flips to horizontal. */
-.workflow-edge-next:hover:not(.is-disabled),
-.workflow-edge-next:focus-visible:not(.is-disabled) {
-  width: max(var(--edge-next-w), 10.5rem);
-  background: color-mix(in srgb, var(--v4-accent-soft) 80%, var(--v4-canvas-raised));
-  border-left-color: color-mix(in srgb, var(--v4-accent) 40%, var(--v4-line));
-  box-shadow: -20px 0 44px color-mix(in srgb, var(--v5-green) 14%, transparent);
-}
-
-.workflow-edge-next.is-disabled {
-  color: var(--v4-text-faint);
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.workflow-edge-next.is-disabled::after {
-  animation: none;
-}
-
-.workflow-edge-next__rail {
-  position: absolute;
-  inset: 12% auto 12% 0;
-  width: 2px;
-  border-radius: var(--radius-pill);
-  background: linear-gradient(
-    180deg,
-    transparent,
-    color-mix(in srgb, var(--v4-accent) 55%, transparent),
-    transparent
-  );
-  opacity: 0.7;
-}
-
-.workflow-edge-next__glyph {
-  display: grid;
-  place-items: center;
-  transition: opacity var(--v4-dur-fast) var(--v4-ease);
-}
-
-.workflow-edge-next__label {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  transition: opacity var(--v4-dur-fast) var(--v4-ease);
-}
-
-/* Horizontal hover layer: fades in as the button widens. */
-.workflow-edge-next__expanded {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font-size: 0.9375rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--v4-dur-fast) var(--v4-ease) 60ms;
-}
-
-.workflow-edge-next:hover:not(.is-disabled) .workflow-edge-next__expanded,
-.workflow-edge-next:focus-visible:not(.is-disabled) .workflow-edge-next__expanded {
-  opacity: 1;
-}
-
-.workflow-edge-next:hover:not(.is-disabled) .workflow-edge-next__label,
-.workflow-edge-next:hover:not(.is-disabled) .workflow-edge-next__glyph,
-.workflow-edge-next:focus-visible:not(.is-disabled) .workflow-edge-next__label,
-.workflow-edge-next:focus-visible:not(.is-disabled) .workflow-edge-next__glyph {
-  opacity: 0;
 }
 
 .soft-log-marquee {
@@ -1635,7 +1470,6 @@ body {
   overflow: hidden;
   padding-top: calc(var(--tray-h) + var(--info-bar-h));
   padding-bottom: var(--tray-h);
-  padding-right: var(--edge-next-w);
 }
 
 .source-identity-rail {

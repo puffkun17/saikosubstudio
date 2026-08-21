@@ -161,9 +161,12 @@ export const IngestStep: React.FC = () => {
                     })}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-[var(--v4-text-faint)]">
-                    <Database className="w-12 h-12 mb-4 opacity-50" />
-                    <p className="font-medium text-sm">暂无存档的字幕项目</p>
+                  <div className="flex flex-col items-center justify-center px-6 py-16 text-center text-[var(--v4-text-muted)]">
+                    <Database className="mb-4 h-12 w-12 opacity-50 text-[var(--v4-text-faint)]" />
+                    <p className="text-sm font-semibold text-[var(--v4-text)]">暂无存档的字幕项目</p>
+                    <p className="mt-2 max-w-sm text-xs leading-5 text-[var(--v4-text-muted)]">
+                      完成合轴进入工作台时，会自动写入本机历史存档。之后可从这里恢复，刷新页面也不会丢。
+                    </p>
                   </div>
                 )}
               </div>

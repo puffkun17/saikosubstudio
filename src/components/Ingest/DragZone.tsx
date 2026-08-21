@@ -27,7 +27,7 @@ import {
   warmLocalArchiveEngine,
 } from '@/utils/localArchive';
 import { FileFormatIcon, LanguageMark, resolveFileFormat } from '@/components/ui/FileFormatIcon';
-import { useWorkflowChrome } from '@/components/Global/WorkflowChrome';
+import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
 
 type ParseStatus = 'reading' | 'analyzing' | 'success' | 'warning' | 'skipped';
 
@@ -283,7 +283,7 @@ export const DragZone: React.FC = () => {
     isOfficialSubtitle: state.isOfficialSubtitle,
     setIsOfficialSubtitle: state.setIsOfficialSubtitle,
   })));
-  const { setEdgeNext, setBottomStatus } = useWorkflowChrome();
+  const { setForwardAction, setBottomStatus } = useWorkflowChrome();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
@@ -835,12 +835,12 @@ export const DragZone: React.FC = () => {
 
   useEffect(() => {
     if (isParsing || queuedItems.length === 0) {
-      setEdgeNext(null);
+      setForwardAction(null);
       return;
     }
     const acceptedCount = queuedItems.filter((item) => item.accepted).length;
     const disabled = acceptedCount === 0 || Boolean(queueIssue);
-    setEdgeNext({
+    setForwardAction({
       label: '下一步',
       disabled,
       ready: !disabled,
@@ -850,10 +850,10 @@ export const DragZone: React.FC = () => {
         void handleFilesProcess();
       },
     });
-    return () => setEdgeNext(null);
+    return () => setForwardAction(null);
     // handleFilesProcess closes over current ingest helpers; rebind when queue changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on queue snapshot
-  }, [isParsing, queuedItems, queueIssue, setEdgeNext]);
+  }, [isParsing, queuedItems, queueIssue, setForwardAction]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -1477,16 +1477,19 @@ export const DragZone: React.FC = () => {
                 })}
               </div>
 
-              <footer className="mt-6 px-1 md:mt-7">
+              <footer className="mt-6 flex flex-col gap-4 px-1 md:mt-7">
                 {(queueIssue || rejectedItems.length > 0) && (
-                  <p className="mb-3 text-sm leading-5 text-[var(--v4-warning)] md:text-[15px]">
+                  <p className="text-sm leading-5 text-[var(--v4-warning)] md:text-[15px]">
                     {queueIssue || `${rejectedItems.length} 项无法处理，可移除后继续。`}
                   </p>
                 )}
-                <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--v4-text-muted)] md:text-[15px]">
-                  <HardDrive className="h-4 w-4" aria-hidden="true" />
-                  仅在本机读取，不会上传
-                </span>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--v4-text-muted)] md:text-[15px]">
+                    <HardDrive className="h-4 w-4" aria-hidden="true" />
+                    仅在本机读取，不会上传
+                  </span>
+                  <WorkflowContinueInFlow className="min-w-[8.5rem] justify-center" />
+                </div>
               </footer>
             </motion.div>
           )}
