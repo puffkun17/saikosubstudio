@@ -41,7 +41,7 @@ export const WorkbenchStep: React.FC = () => {
     setIsSettingsOpen: state.setIsSettingsOpen,
     tmdbData: state.tmdbData,
   })));
-  const { setInfoBar, setEdgeNext } = useWorkflowChrome();
+  const { setInfoBar, setForwardAction } = useWorkflowChrome();
 
   const [showBackConfirm, setShowBackConfirm] = useState(false);
   const backModalRef = useRef<HTMLDivElement>(null);
@@ -133,15 +133,15 @@ export const WorkbenchStep: React.FC = () => {
 
   useEffect(() => {
     const hasTimeline = Boolean(processedSubs && processedSubs.length > 0);
-    setEdgeNext({
+    setForwardAction({
       label: '打开预览',
       disabled: !hasTimeline,
       ready: hasTimeline,
       disabledReason: '还没有可预览的字幕时间轴，请先完成合轴或分配。',
       onClick: () => setWorkflowStep(3),
     });
-    return () => setEdgeNext(null);
-  }, [processedSubs, setEdgeNext, setWorkflowStep]);
+    return () => setForwardAction(null);
+  }, [processedSubs, setForwardAction, setWorkflowStep]);
 
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[var(--v4-canvas)]">

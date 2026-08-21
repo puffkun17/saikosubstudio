@@ -283,7 +283,7 @@ export const DragZone: React.FC = () => {
     isOfficialSubtitle: state.isOfficialSubtitle,
     setIsOfficialSubtitle: state.setIsOfficialSubtitle,
   })));
-  const { setEdgeNext, setBottomStatus } = useWorkflowChrome();
+  const { setForwardAction, setBottomStatus } = useWorkflowChrome();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
@@ -835,12 +835,12 @@ export const DragZone: React.FC = () => {
 
   useEffect(() => {
     if (isParsing || queuedItems.length === 0) {
-      setEdgeNext(null);
+      setForwardAction(null);
       return;
     }
     const acceptedCount = queuedItems.filter((item) => item.accepted).length;
     const disabled = acceptedCount === 0 || Boolean(queueIssue);
-    setEdgeNext({
+    setForwardAction({
       label: '下一步',
       disabled,
       ready: !disabled,
@@ -850,10 +850,10 @@ export const DragZone: React.FC = () => {
         void handleFilesProcess();
       },
     });
-    return () => setEdgeNext(null);
+    return () => setForwardAction(null);
     // handleFilesProcess closes over current ingest helpers; rebind when queue changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on queue snapshot
-  }, [isParsing, queuedItems, queueIssue, setEdgeNext]);
+  }, [isParsing, queuedItems, queueIssue, setForwardAction]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();

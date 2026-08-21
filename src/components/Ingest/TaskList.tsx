@@ -32,7 +32,7 @@ export const TaskList: React.FC = () => {
   const draggingTrackRef = useRef<'zh' | 'en' | null>(null);
   /** 拖拽开始时冻结的布局槽位（不含 transform），避免让位后命中区跟着跑造成横跳 */
   const trackSlotsRef = useRef<{ zh: { top: number; bottom: number; left: number; right: number }; en: { top: number; bottom: number; left: number; right: number } } | null>(null);
-  const { setEdgeNext, setInfoBar } = useWorkflowChrome();
+  const { setForwardAction, setInfoBar } = useWorkflowChrome();
   const {
     tasks,
     selectedTaskId,
@@ -342,10 +342,10 @@ export const TaskList: React.FC = () => {
 
   useEffect(() => {
     if (!activeTask) {
-      setEdgeNext(null);
+      setForwardAction(null);
       return;
     }
-    setEdgeNext({
+    setForwardAction({
       label: edgeLabel,
       disabled: !canProceed,
       ready: canProceed && !isProcessing,
@@ -355,8 +355,8 @@ export const TaskList: React.FC = () => {
         void runSubtitleMerge();
       },
     });
-    return () => setEdgeNext(null);
-  }, [activeTask, canProceed, edgeLabel, isProcessing, runSubtitleMerge, setEdgeNext]);
+    return () => setForwardAction(null);
+  }, [activeTask, canProceed, edgeLabel, isProcessing, runSubtitleMerge, setForwardAction]);
 
   const identityTitle = (() => {
     if (!activeTask) return '核对清单';
