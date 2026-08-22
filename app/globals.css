@@ -3,8 +3,8 @@
 
 /*
  * 双字体：
- * - 正文 / 控件：系统黑体（PingFang / 雅黑）
- * - 片源 / 空态主句：自托管思源宋体（Noto Serif SC）
+ * - 正文 / 控件 / 空态与关于页大标题：系统黑体（PingFang / 雅黑 → Geist Sans）
+ * - 片名（片源名）仅：自托管思源宋体（Noto Serif SC）
  * CSP font-src 仅 'self'，故字体放在 public/fonts。
  */
 @theme {
@@ -304,13 +304,14 @@ body {
   letter-spacing: var(--tracking-eyebrow-wide);
 }
 
-/* 思源宋体 display：片源名、空态主句、剧情简介。 */
+/* 思源宋体 display：仅片名（片源名 / TMDB 结果标题）。空态与关于页大标题走 UI Sans。 */
 .font-display {
   font-family: var(--font-serif);
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
+/* 片名旁白 / 剧情简介等片源散文；非营销大标题。 */
 .prose-serif {
   font-family: var(--font-serif);
   font-weight: 500;
@@ -921,10 +922,10 @@ body {
 
 .ingest-start-card__title {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: clamp(1.85rem, 3.4vw, 2.25rem);
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.02em;
   color: var(--v4-text);
 }
 
@@ -964,7 +965,7 @@ body {
 
 .ingest-empty-intro__title {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: clamp(1.45rem, 2.8vw, 1.9rem);
   font-weight: 700;
   letter-spacing: -0.02em;

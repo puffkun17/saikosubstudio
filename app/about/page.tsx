@@ -29,7 +29,7 @@ export default function AboutPage() {
           </div>
           <div>
             <p className="text-xs font-semibold tracking-[0.12em] text-[var(--v4-accent-strong)]">SAIKOSUBSTUDIO / POLICY</p>
-            <h1 className="font-display mt-2 text-3xl tracking-tight text-[var(--v4-text)] md:text-[2rem]">隐私与版权说明</h1>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-[var(--v4-text)] md:text-[2rem]">隐私与版权说明</h1>
             <p className="mt-1 text-sm font-medium tracking-[0.04em] text-[var(--v4-text-faint)]">Privacy &amp; Copyright Notice</p>
             <p className="mt-4 max-w-2xl text-[15px] font-medium leading-7 text-[var(--v4-text-muted)] md:text-base">
               文件处理在当前设备本地完成，不会上传到本站；片源资料检索与反馈提交遵循最小必要原则。

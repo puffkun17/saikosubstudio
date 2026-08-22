@@ -71,7 +71,7 @@ export default function FeedbackPage() {
             <MessageSquareText className="h-7 w-7 stroke-[2]" aria-hidden="true" />
             <span className="text-xs font-semibold tracking-[0.12em]">SAIKOSUBSTUDIO / FEEDBACK</span>
           </div>
-          <h1 className="font-display mt-5 text-3xl tracking-tight text-[var(--v4-text)] md:text-[2rem]">提交反馈</h1>
+          <h1 className="mt-5 text-3xl font-bold tracking-tight text-[var(--v4-text)] md:text-[2rem]">提交反馈</h1>
           <p className="mt-1 text-sm font-medium tracking-[0.04em] text-[var(--v4-text-faint)]">Send feedback</p>
           <p className="mt-4 text-[15px] font-medium leading-7 text-[var(--v4-text-muted)] md:text-base">
             反馈内容会直接送达开发者。本页面仅提交表单中主动填写的文字。
