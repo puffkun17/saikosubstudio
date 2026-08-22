@@ -7,14 +7,10 @@ import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage, parseMe
 import JSZip from 'jszip';
 import {
   ChevronDown,
-  Clapperboard,
   FilePlus,
   FolderPlus,
   HardDrive,
-  Layers2,
-  Palette,
   Plus,
-  ShieldCheck,
   Trash2,
   X,
 } from 'lucide-react';
@@ -1132,17 +1128,8 @@ export const DragZone: React.FC = () => {
               // 快出：空态元素迅速让位，让「文件落桌」成为主角
               exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.985, transition: { duration: 0.14 } }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.24, ease: [0.16, 1, 0.3, 1] }}
-              className="flex w-full max-w-6xl flex-col items-center"
+              className="flex w-full flex-col items-center justify-center"
             >
-              <header className="ingest-empty-intro density-copy-x text-center">
-                <h2 className="ingest-empty-intro__title">
-                  本地字幕工作室
-                </h2>
-                <p className="ingest-empty-intro__sub">
-                  对齐合并 · 样式调整 · 预览导出
-                </p>
-              </header>
-
               {/* 整卡可点开选文件；键盘可达性交给下方 hero CTA，避免 button-in-button */}
               <div
                 className="ingest-start-card"
@@ -1165,11 +1152,11 @@ export const DragZone: React.FC = () => {
                     </motion.span>
                   ))}
                 </div>
-                <h3 className="ingest-start-card__title">
+                <h2 className="ingest-start-card__title">
                   {isDragging ? '松开即可加入' : '拖入字幕开始'}
-                </h3>
+                </h2>
                 <p className="ingest-start-card__sub">
-                  文件留在本地，不上传
+                  仅在本机读取
                 </p>
                 <div
                   className={`ingest-start-card__cta transition-opacity duration-[var(--v4-dur)] ${
@@ -1193,56 +1180,7 @@ export const DragZone: React.FC = () => {
                     文件夹
                   </button>
                 </div>
-                <p className="ingest-start-card__hint">
-                  支持 SRT / ASS 字幕，以及 ZIP / RAR / 7Z 压缩格式
-                </p>
               </div>
-
-              <ul className="ingest-feature-rail" aria-label="产品亮点">
-                {([
-                  {
-                    icon: ShieldCheck,
-                    title: '本地处理',
-                    detail: '文件不上传，隐私可控',
-                  },
-                  {
-                    icon: Layers2,
-                    title: '多轨整理',
-                    detail: '差异提示，核对微调',
-                  },
-                  {
-                    icon: Palette,
-                    title: '样式定制',
-                    detail: '字形色效，随心调整',
-                  },
-                  {
-                    icon: Clapperboard,
-                    title: '效果预览',
-                    detail: '实际呈现，所见所得',
-                  },
-                ] as const).map((feature, index) => {
-                  const Icon = feature.icon;
-                  return (
-                    <motion.li
-                      key={feature.title}
-                      className="ingest-feature-rail__item"
-                      initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{
-                        duration: shouldReduceMotion ? 0 : 0.34,
-                        delay: shouldReduceMotion ? 0 : 0.18 + index * 0.05,
-                        ease: [0.16, 1, 0.3, 1],
-                      }}
-                    >
-                      <span className="ingest-feature-rail__icon" aria-hidden="true">
-                        <Icon className="h-4 w-4" strokeWidth={2} />
-                      </span>
-                      <p className="ingest-feature-rail__title">{feature.title}</p>
-                      <p className="ingest-feature-rail__detail">{feature.detail}</p>
-                    </motion.li>
-                  );
-                })}
-              </ul>
             </motion.div>
           ) : (
             <motion.div

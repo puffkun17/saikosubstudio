@@ -268,6 +268,16 @@
 
 ---
 
+### PR-15 follow-up — 空态动作优先（In Progress · 叠在衬线收窄上）
+
+| ID | Business | Visual | Risk | 一句话 | Status |
+|----|----------|--------|------|--------|--------|
+| **SHELL-EMPTY-01** | Medium | ⭐⭐⭐⭐ | Low | 导入空屏去营销标题栈与四宫格亮点轨；只留 chips → 主句 → 隐私一句 → 双 CTA | **In Progress**（PR #15） |
+
+契约：见 `DESIGN.md` §7「空态 = 动作优先」。About 内容不动。
+
+---
+
 ## 审计 Top 20 × Impact（防混淆）
 
 | # | 问题 | 工程语气 | Business | Visual | 新 ID |

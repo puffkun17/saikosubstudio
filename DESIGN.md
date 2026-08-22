@@ -155,7 +155,7 @@ product UI headlines (empty state, About) speak in UI Sans.
 
 | 角色 | 字体 | 用在哪里 |
 |------|------|----------|
-| UI Sans | PingFang / 雅黑 → Geist Sans（`--font-sans`） | 控件、正文、导航；**空态主句**（「本地字幕工作室」「拖入字幕开始」）；**关于 / 反馈页大标题** |
+| UI Sans | PingFang / 雅黑 → Geist Sans（`--font-sans`） | 控件、正文、导航；**空态主句**（「拖入字幕开始」）；**关于 / 反馈页大标题** |
 | Display Serif | Noto Serif SC（自托管）· `.font-display` | **仅片名**：工作台信息栏片源名、Theater 标题、TMDB 结果标题 |
 | Prose Serif | 同上 · `.prose-serif` | 片名旁白 / 剧情简介等片源散文（非营销大标题） |
 | Mono | Geist Mono | 时间码、缩放、语言标、评分、键值 |
@@ -168,7 +168,7 @@ product UI headlines (empty state, About) speak in UI Sans.
 | Control / label | `--type-control` | 15px | 按钮、chip |
 | Body | `--type-body` | 16px | 默认阅读 |
 | Title | `--type-title` | 18px | 区块标题 |
-| Display (UI) | `--type-display` | ≈24px + **UI Sans** 700 | 空态 / 关于页大标题——现代工具声口，非海报书法 |
+| Display (UI) | `--type-display` | ≈24px + **UI Sans** 700 | 空态落点主句 / 关于页大标题——现代工具声口，非海报书法 |
 | Display (片名) | `.font-display` | 片名尺寸 + **Serif** 700 | **仅**片源名 / TMDB 标题 |
 
 Eyebrow tracking **仅两档**：`--tracking-eyebrow`（0.06em）· `--tracking-eyebrow-wide`（0.08em）。
@@ -308,9 +308,10 @@ Adobe CC 式文件徽章，经 Ridgeline **降饱和、偏暖** 调和：
 2. **卡片是例外**：只有承载交互时才需要容器感。
 3. **圆角有限档**：xs 2 · sm 6 · md 8 · lg 12 · xl 20 · pill 999。禁止 `rounded-[11px]` 等一次性值。
 4. **密度分区**：工作台紧（`--space-panel` = 16），关于/空态文案区松（`--space-copy` = 24）。
-5. **动效克制**：用现有 `--v5-ease` 与时长阶；动效服务层级与状态，不服务炫耀。
-6. **禁止双轨**：不要一边用 `.ui-action`，一边手写第三套按钮；**禁止**把已删除的 shadcn Button/Badge/Card 加回产品路径。
-7. **先身份，后便利**：技术上「用现成紫色组件更快」不构成设计理由。
+5. **空态 = 动作优先**：导入空屏只保留落点卡（格式 chips → 一句主句 → 一句隐私 → 双 CTA）。禁止价值主张标题栈与四宫格亮点轨——那是产品手册，不是工具桌面。
+6. **动效克制**：用现有 `--v5-ease` 与时长阶；动效服务层级与状态，不服务炫耀。
+7. **禁止双轨**：不要一边用 `.ui-action`，一边手写第三套按钮；**禁止**把已删除的 shadcn Button/Badge/Card 加回产品路径。
+8. **先身份，后便利**：技术上「用现成紫色组件更快」不构成设计理由。
 
 ### 改 UI 前的自问
 
