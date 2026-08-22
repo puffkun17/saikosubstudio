@@ -1135,51 +1135,39 @@ export const DragZone: React.FC = () => {
                 className="ingest-start-card"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <div className="ingest-start-card__glyphs" aria-hidden="true">
-                  {(['srt', 'ass', 'zip', 'rar', '7z'] as const).map((format, index) => (
-                    <motion.span
-                      key={format}
-                      className="ingest-start-card__glyph"
-                      initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{
-                        duration: shouldReduceMotion ? 0 : 0.32,
-                        delay: shouldReduceMotion ? 0 : 0.08 + index * 0.05,
-                        ease: [0.16, 1, 0.3, 1],
-                      }}
+                <div className="ingest-start-card__body">
+                  <h2 className="ingest-start-card__title">
+                    {isDragging ? '松开即可加入' : '拖入字幕开始'}
+                  </h2>
+                  <p className="ingest-start-card__sub">
+                    仅在本机读取
+                  </p>
+                  <div
+                    className={`ingest-start-card__cta transition-opacity duration-[var(--v4-dur)] ${
+                      isDragging ? 'pointer-events-none opacity-40' : 'opacity-100'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={(event) => { event.stopPropagation(); fileInputRef.current?.click(); }}
+                      className="ui-action ui-action--hero"
                     >
-                      <FileFormatIcon format={format} size="lg" />
-                    </motion.span>
-                  ))}
+                      <FilePlus className="h-5 w-5 shrink-0 stroke-[2]" aria-hidden="true" />
+                      选择字幕
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => { event.stopPropagation(); folderInputRef.current?.click(); }}
+                      className="ui-action ui-action--secondary ui-action--hero"
+                    >
+                      <FolderPlus className="h-5 w-5 shrink-0 stroke-[2]" aria-hidden="true" />
+                      文件夹
+                    </button>
+                  </div>
                 </div>
-                <h2 className="ingest-start-card__title">
-                  {isDragging ? '松开即可加入' : '拖入字幕开始'}
-                </h2>
-                <p className="ingest-start-card__sub">
-                  仅在本机读取
+                <p className="ingest-start-card__formats" aria-label="支持的格式">
+                  SRT · ASS · ZIP · RAR · 7Z
                 </p>
-                <div
-                  className={`ingest-start-card__cta transition-opacity duration-[var(--v4-dur)] ${
-                    isDragging ? 'pointer-events-none opacity-40' : 'opacity-100'
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={(event) => { event.stopPropagation(); fileInputRef.current?.click(); }}
-                    className="ui-action ui-action--hero"
-                  >
-                    <FilePlus className="h-5 w-5 shrink-0 stroke-[2]" aria-hidden="true" />
-                    选择字幕
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => { event.stopPropagation(); folderInputRef.current?.click(); }}
-                    className="ui-action ui-action--secondary ui-action--hero"
-                  >
-                    <FolderPlus className="h-5 w-5 shrink-0 stroke-[2]" aria-hidden="true" />
-                    文件夹
-                  </button>
-                </div>
               </div>
             </motion.div>
           ) : (

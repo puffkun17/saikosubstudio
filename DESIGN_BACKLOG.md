@@ -272,7 +272,7 @@
 
 | ID | Business | Visual | Risk | 一句话 | Status |
 |----|----------|--------|------|--------|--------|
-| **SHELL-EMPTY-01** | Medium | ⭐⭐⭐⭐ | Low | 导入空屏去营销标题栈与四宫格亮点轨；只留 chips → 主句 → 隐私一句 → 双 CTA | **In Progress**（PR #15） |
+| **SHELL-EMPTY-01** | Medium | ⭐⭐⭐⭐ | Low | 导入空屏：动作居中；格式降为底边注解（非英雄 chips） | **In Progress**（PR #15） |
 
 契约：见 `DESIGN.md` §7「空态 = 动作优先」。About 内容不动。
 

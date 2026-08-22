@@ -494,31 +494,22 @@ body {
   }
 }
 
-/* 空态：动作优先，奶油工作面居中一张落点卡（无营销标题栈 / 无亮点轨） */
+/* 空态：大块奶油落点区；动作居中，格式只作边角注解 */
 .ingest-stage.is-empty {
-  max-width: min(36rem, 100%);
-  min-height: min(28rem, 62vh);
+  max-width: min(44rem, 100%);
+  min-height: min(34rem, 72vh);
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
   padding-inline: clamp(1rem, 3vw, 2rem);
-  padding-block: clamp(var(--space-copy), 4vh, 3rem);
+  padding-block: clamp(var(--space-copy), 5vh, 3.5rem);
 }
 
 .ingest-stage.is-dragging .ingest-start-card {
   border-color: color-mix(in srgb, var(--v4-accent) 65%, transparent);
   background: color-mix(in srgb, var(--v4-accent-soft) 38%, transparent);
-  transform: scale(1.015);
-}
-
-/* 拖入时格式徽章向上迎接，暗示「这里能接住」 */
-.ingest-stage.is-dragging .ingest-start-card__glyph {
-  transform: translateY(-4px);
-}
-
-.ingest-stage.is-dragging .ingest-start-card__glyph:nth-child(odd) {
-  transform: translateY(-7px);
+  transform: scale(1.01);
 }
 
 /* 松手瞬间：吸收脉冲，一次性确认「已接住」 */
@@ -529,7 +520,7 @@ body {
 
 @keyframes ingestAbsorb {
   0% {
-    transform: scale(1.015);
+    transform: scale(1.01);
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--v5-orange) 35%, transparent);
   }
   100% {
@@ -543,9 +534,7 @@ body {
     animation: none;
     opacity: 0.55;
   }
-  .ingest-stage.is-dragging .ingest-start-card,
-  .ingest-stage.is-dragging .ingest-start-card__glyph,
-  .ingest-stage.is-dragging .ingest-start-card__glyph:nth-child(odd) {
+  .ingest-stage.is-dragging .ingest-start-card {
     transform: none;
   }
 }
@@ -870,14 +859,20 @@ body {
   }
 }
 
-/* 桌面隐喻：默认无底无框，内容直接坐在奶油底上；
-   虚线框只在拖拽悬停时浮现，作为「落点」提示。 */
+/* 桌面隐喻：大块落点面；虚线框只在悬停/拖入时浮现。
+   主句与 CTA 居中；格式注解贴底边，永不占 C 位。 */
 .ingest-start-card {
-  width: min(32rem, 100%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  width: min(40rem, 100%);
+  min-height: min(22rem, 52vh);
   margin-inline: auto;
-  padding: var(--space-7) var(--space-5) var(--space-6);
+  padding: var(--space-7) var(--space-6) var(--space-5);
   text-align: center;
-  border-radius: var(--v5-radius-panel);
+  border-radius: var(--radius-xl);
   border: 2px dashed transparent;
   background: transparent;
   box-shadow: none;
@@ -893,40 +888,27 @@ body {
   border-color: color-mix(in srgb, var(--v5-green) 18%, transparent);
 }
 
-.ingest-start-card:hover .ingest-start-card__glyph {
-  transform: translateY(-2px);
-}
-
 .ingest-start-card:focus-visible {
   outline: 2px solid var(--v4-accent);
   outline-offset: 3px;
 }
 
-/* 首屏视觉锚点：五种可接受格式的徽章扇列（格式提示靠 chips，不再叠长文案） */
-.ingest-start-card__glyphs {
+.ingest-start-card__body {
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 0.25rem;
-  margin-bottom: var(--space-5);
-  pointer-events: none;
-}
-
-.ingest-start-card__glyph {
-  display: inline-flex;
-  transition: transform var(--v4-dur) var(--v4-ease);
-}
-
-.ingest-start-card__glyph:nth-child(odd) {
-  transform: translateY(2px);
+  flex: 1 1 auto;
+  padding-block: var(--space-5);
 }
 
 .ingest-start-card__title {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: clamp(1.85rem, 3.4vw, 2.25rem);
+  font-size: clamp(2rem, 4vw, 2.5rem);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
   color: var(--v4-text);
 }
 
@@ -940,7 +922,7 @@ body {
 }
 
 .ingest-start-card__cta {
-  margin-top: var(--space-5);
+  margin-top: var(--space-6);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -948,9 +930,24 @@ body {
   gap: var(--space-3);
 }
 
+/* 格式 = 约束注解，非英雄：底边 mono caption，视觉 ≤ muted */
+.ingest-start-card__formats {
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  align-self: center;
+  font-family: var(--font-mono);
+  font-size: var(--type-caption, 0.8125rem);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  color: var(--v4-text-faint);
+  pointer-events: none;
+  user-select: none;
+}
+
 .ingest-stage.is-empty .ingest-start-card {
-  padding-top: var(--space-6);
-  padding-bottom: var(--space-6);
+  padding-top: var(--space-7);
+  padding-bottom: var(--space-5);
 }
 
 /* Blank fields on cream panels — white rest, orange focus ring, no cream fill. */
@@ -1436,8 +1433,13 @@ body {
   }
 
   .ingest-stage.is-empty .ingest-start-card {
-    padding-top: var(--space-5);
-    padding-bottom: var(--space-5);
+    min-height: min(18rem, 48vh);
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-4);
+  }
+
+  .ingest-start-card__title {
+    font-size: clamp(1.75rem, 5.5vw, 2.1rem);
   }
 
 }
