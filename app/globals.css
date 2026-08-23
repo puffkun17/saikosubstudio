@@ -1299,8 +1299,9 @@ body {
 }
 
 /*
- * Hero — 仅空态双 CTA（DragZone）。
+ * Hero — 空态等大 CTA 变体（若再用）。
  * 高 48 · radius-xl ≈ 20px；主钮允许唯一 CTA glow。
+ * 当前导入空态双入口用 .ui-action--secondary 横排，不用 hero。
  */
 .ui-action--hero {
   min-height: 3rem;
