@@ -1129,38 +1129,41 @@ export const DragZone: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={shouldReduceMotion ? undefined : { opacity: 0, transition: { duration: 0.14 } }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
-              className="ingest-stage-desk"
-              onClick={() => fileInputRef.current?.click()}
-              role="presentation"
+              className="ingest-local-add"
             >
-              <div className="ingest-stage-desk__center">
-                <h2 className="ingest-stage-desk__title">
-                  {isDragging ? '松开即可加入' : '拖入字幕开始'}
+              <div className="ingest-local-add__copy">
+                <h2 className="ingest-local-add__title">
+                  {isDragging ? '松开以添加' : '添加本地字幕'}
                 </h2>
-                <p className="ingest-stage-desk__privacy">仅在本机读取</p>
-                <div
-                  className={`ingest-stage-desk__actions ${
-                    isDragging ? 'is-dimmed' : ''
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={(event) => { event.stopPropagation(); fileInputRef.current?.click(); }}
-                    className="ui-action ui-action--hero"
-                  >
-                    <FilePlus className="h-5 w-5 shrink-0 stroke-[2]" aria-hidden="true" />
-                    选择字幕
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => { event.stopPropagation(); folderInputRef.current?.click(); }}
-                    className="ingest-stage-desk__folder"
-                  >
-                    文件夹
-                  </button>
-                </div>
+                <p className="ingest-local-add__hint">
+                  {isDragging ? '文件会留在本机' : '拖到此处，或点选下方'}
+                  <span className="ingest-local-add__dot" aria-hidden="true">·</span>
+                  <span className="ingest-local-add__privacy">仅在本机读取</span>
+                </p>
               </div>
-              <p className="ingest-stage-desk__formats" aria-label="支持的格式">
+              <div
+                className={`ingest-local-add__entries ${isDragging ? 'is-dimmed' : ''}`}
+                role="group"
+                aria-label="从本机添加"
+              >
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="ingest-local-add__entry"
+                >
+                  <FilePlus className="ingest-local-add__entry-icon" strokeWidth={2} aria-hidden="true" />
+                  <span className="ingest-local-add__entry-label">选择文件</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => folderInputRef.current?.click()}
+                  className="ingest-local-add__entry"
+                >
+                  <FolderPlus className="ingest-local-add__entry-icon" strokeWidth={2} aria-hidden="true" />
+                  <span className="ingest-local-add__entry-label">选择文件夹</span>
+                </button>
+              </div>
+              <p className="ingest-local-add__formats" aria-label="支持的格式">
                 SRT · ASS · ZIP · RAR · 7Z
               </p>
             </motion.div>

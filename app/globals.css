@@ -494,7 +494,7 @@ body {
   }
 }
 
-/* 空态 Stage desk：奶油工作面即落点，非卡中卡 */
+/* 空态：本机添加落点面（文件/文件夹等权） */
 .ingest-stage.is-empty {
   width: 100%;
   max-width: none;
@@ -510,13 +510,12 @@ body {
   min-height: 0;
 }
 
-.ingest-stage.is-dragging.ingest-stage.is-empty .ingest-stage-desk,
-.ingest-stage.is-empty.is-dragging .ingest-stage-desk {
+.ingest-stage.is-empty.is-dragging .ingest-local-add {
   border-color: color-mix(in srgb, var(--v4-accent) 65%, transparent);
   background: color-mix(in srgb, var(--v4-accent-soft) 28%, transparent);
 }
 
-.ingest-stage.is-empty.is-accepting .ingest-stage-desk {
+.ingest-stage.is-empty.is-accepting .ingest-local-add {
   animation: ingestAbsorb 240ms var(--v5-ease) 1;
   border-color: color-mix(in srgb, var(--v4-accent) 80%, transparent);
 }
@@ -531,7 +530,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ingest-stage.is-empty.is-accepting .ingest-stage-desk {
+  .ingest-stage.is-empty.is-accepting .ingest-local-add {
     animation: none;
     opacity: 0.55;
   }
@@ -858,17 +857,19 @@ body {
 }
 
 /*
- * Stage desk — 导入空态结构（非卡中卡）
- * 整面奶油即落点；中央一句 + 一颗柑橘主钮；文件夹为静音链；
- * 格式脚注贴右下角。休息态几乎无边，拖入时才出柑橘虚线。
+ * Local add — 导入空态
+ * 语义：仅本机。动词统一为「添加」。
+ * 结构：主句 → 拖放/点选提示 + 隐私 → 等权「选择文件 / 选择文件夹」
+ * 格式脚注贴右下角。整面奶油为拖放落点（不单点偏袒文件）。
  */
-.ingest-stage-desk {
+.ingest-local-add {
   position: relative;
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: var(--space-6);
   width: 100%;
   min-height: inherit;
   margin: 0;
@@ -878,85 +879,111 @@ body {
   border: 2px dashed transparent;
   background: transparent;
   box-shadow: none;
-  cursor: pointer;
   transition:
     border-color var(--v4-dur) var(--v4-ease),
     background var(--v4-dur) var(--v4-ease),
     box-shadow var(--v4-dur) var(--v4-ease);
 }
 
-.ingest-stage-desk:focus-visible {
-  outline: 2px solid var(--v4-accent);
-  outline-offset: 3px;
-}
-
-.ingest-stage-desk__center {
+.ingest-local-add__copy {
   display: flex;
   flex-direction: column;
   align-items: center;
   max-width: 28rem;
 }
 
-.ingest-stage-desk__title {
+.ingest-local-add__title {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: clamp(2.1rem, 4.5vw, 2.75rem);
+  font-size: clamp(1.85rem, 3.8vw, 2.4rem);
   font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
   color: var(--v4-text);
 }
 
-.ingest-stage-desk__privacy {
+.ingest-local-add__hint {
   margin: var(--space-3) 0 0;
-  font-size: var(--type-caption, 0.8125rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  font-size: 0.9375rem;
   font-weight: 500;
-  letter-spacing: 0.02em;
-  line-height: 1.4;
+  line-height: 1.5;
   color: var(--v4-text-muted);
 }
 
-.ingest-stage-desk__actions {
-  margin-top: var(--space-6);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.ingest-local-add__dot {
+  color: var(--v4-text-faint);
+}
+
+.ingest-local-add__privacy {
+  color: var(--v4-text-faint);
+}
+
+.ingest-local-add__entries {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 11.5rem));
   gap: var(--space-3);
+  width: min(100%, 24.5rem);
   transition: opacity var(--v4-dur) var(--v4-ease);
 }
 
-.ingest-stage-desk__actions.is-dimmed {
+.ingest-local-add__entries.is-dimmed {
   pointer-events: none;
   opacity: 0.4;
 }
 
-/* 次要：静音文字链，不与主 CTA 抢权 */
-.ingest-stage-desk__folder {
-  margin: 0;
-  padding: var(--space-1) var(--space-2);
-  border: 0;
-  background: transparent;
-  font-family: var(--font-sans);
-  font-size: 0.875rem;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  color: var(--v4-text-faint);
+/* 等权入口：同尺寸、同边线、同字重，禁止一主一次 */
+.ingest-local-add__entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 7.25rem;
+  padding: var(--space-5) var(--space-4);
+  border: 1px solid var(--v4-line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--v4-panel-raised, #ffffff);
+  box-shadow: var(--elevation-0);
+  color: var(--v4-text);
   cursor: pointer;
-  transition: color var(--v4-dur-fast) var(--v4-ease);
+  transition:
+    border-color var(--v4-dur-fast) var(--v4-ease),
+    background-color var(--v4-dur-fast) var(--v4-ease),
+    box-shadow var(--v4-dur-fast) var(--v4-ease),
+    color var(--v4-dur-fast) var(--v4-ease);
 }
 
-.ingest-stage-desk__folder:hover {
-  color: var(--v4-text-muted);
+.ingest-local-add__entry:hover {
+  border-color: color-mix(in srgb, var(--v4-accent) 55%, var(--v4-line-strong));
+  background: color-mix(in srgb, var(--v4-accent-soft) 45%, #ffffff);
+  box-shadow: var(--elevation-1);
 }
 
-.ingest-stage-desk__folder:focus-visible {
+.ingest-local-add__entry:focus-visible {
   outline: 2px solid var(--v4-accent);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
 }
 
-/* 格式 = 右下角脚注，永不居中、永不在标题之上 */
-.ingest-stage-desk__formats {
+.ingest-local-add__entry-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  color: var(--v4-accent-strong);
+}
+
+.ingest-local-add__entry-label {
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+}
+
+.ingest-local-add__formats {
   position: absolute;
   right: clamp(var(--space-4), 3vw, var(--space-6));
   bottom: clamp(var(--space-4), 3vh, var(--space-5));
@@ -1458,11 +1485,21 @@ body {
     min-height: min(22rem, calc(100vh - 10rem));
   }
 
-  .ingest-stage-desk__title {
-    font-size: clamp(1.85rem, 5.5vw, 2.25rem);
+  .ingest-local-add__title {
+    font-size: clamp(1.65rem, 5vw, 2rem);
   }
 
-  .ingest-stage-desk__formats {
+  .ingest-local-add__entries {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(100%, 22rem);
+  }
+
+  .ingest-local-add__entry {
+    min-height: 6.5rem;
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .ingest-local-add__formats {
     font-size: 0.625rem;
   }
 

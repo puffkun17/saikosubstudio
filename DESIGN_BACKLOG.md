@@ -272,7 +272,7 @@
 
 | ID | Business | Visual | Risk | 一句话 | Status |
 |----|----------|--------|------|--------|--------|
-| **SHELL-EMPTY-01** | Medium | ⭐⭐⭐⭐ | Low | 导入空屏 Stage desk：全幅落点 + 单主 CTA + 角落格式脚注 | **In Progress**（PR #15） |
+| **SHELL-EMPTY-01** | Medium | ⭐⭐⭐⭐ | Low | 导入空屏：本机添加；文件/文件夹等权；拖放与点选同动词 | **In Progress**（PR #15） |
 
 契约：见 `DESIGN.md` §7「空态 = 动作优先」。About 内容不动。
 
