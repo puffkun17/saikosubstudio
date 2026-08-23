@@ -1149,18 +1149,18 @@ export const DragZone: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="ingest-local-add__entry"
+                  className="ui-action ui-action--secondary ingest-local-add__entry"
                 >
-                  <FilePlus className="ingest-local-add__entry-icon" strokeWidth={2} aria-hidden="true" />
-                  <span className="ingest-local-add__entry-label">选择文件</span>
+                  <FilePlus className="ingest-local-add__entry-icon" size={20} strokeWidth={2} aria-hidden="true" />
+                  <span>选择文件</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => folderInputRef.current?.click()}
-                  className="ingest-local-add__entry"
+                  className="ui-action ui-action--secondary ingest-local-add__entry"
                 >
-                  <FolderPlus className="ingest-local-add__entry-icon" strokeWidth={2} aria-hidden="true" />
-                  <span className="ingest-local-add__entry-label">选择文件夹</span>
+                  <FolderPlus className="ingest-local-add__entry-icon" size={20} strokeWidth={2} aria-hidden="true" />
+                  <span>选择文件夹</span>
                 </button>
               </div>
               <p className="ingest-local-add__formats" aria-label="支持的格式">
