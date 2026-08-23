@@ -9,7 +9,8 @@
 ## Creed
 
 SaikoSubStudio is not an AI SaaS website.  
-It is an editorial desktop application.
+It is an editorial desktop application — a modern subtitle workbench,  
+not a 仿宋书房 / poster-calligraphy surface.
 
 Every visual decision must reinforce this identity.
 
@@ -18,6 +19,9 @@ or modern AI startup aesthetics.
 
 Preserve calmness, restraint, typography and paper-like warmth  
 before introducing visual novelty.
+
+**Editorial Desktop ≠ 仿宋书房.** Display Serif is for film titles only;  
+product UI headlines (empty state, About) speak in UI Sans.
 
 ---
 
@@ -151,8 +155,9 @@ before introducing visual novelty.
 
 | 角色 | 字体 | 用在哪里 |
 |------|------|----------|
-| UI Sans | PingFang / 雅黑 → Geist Sans | 控件、正文、导航 |
-| Display Serif | Noto Serif SC（自托管） | **仅**片源名、空态主句 |
+| UI Sans | PingFang / 雅黑 → Geist Sans（`--font-sans`） | 控件、正文、导航；**空态主句**（「添加本地字幕」）；**关于 / 反馈页大标题** |
+| Display Serif | Noto Serif SC（自托管）· `.font-display` | **仅片名**：工作台信息栏片源名、Theater 标题、TMDB 结果标题 |
+| Prose Serif | 同上 · `.prose-serif` | 片名旁白 / 剧情简介等片源散文（非营销大标题） |
 | Mono | Geist Mono | 时间码、缩放、语言标、评分、键值 |
 
 ### 字阶（产品 UI · EP-0.4 TOKEN-009）
@@ -163,7 +168,8 @@ before introducing visual novelty.
 | Control / label | `--type-control` | 15px | 按钮、chip |
 | Body | `--type-body` | 16px | 默认阅读 |
 | Title | `--type-title` | 18px | 区块标题 |
-| Display | `--type-display` | 24px + serif | 空态/片名，极少用 |
+| Display (UI) | `--type-display` | ≈24px + **UI Sans** 700 | 空态落点主句 / 关于页大标题——现代工具声口，非海报书法 |
+| Display (片名) | `.font-display` | 片名尺寸 + **Serif** 700 | **仅**片源名 / TMDB 标题 |
 
 Eyebrow tracking **仅两档**：`--tracking-eyebrow`（0.06em）· `--tracking-eyebrow-wide`（0.08em）。
 
@@ -174,15 +180,16 @@ Eyebrow tracking **仅两档**：`--tracking-eyebrow`（0.06em）· `--tracking-
 | Body 默认 | **450** | 产品阅读默认（`body { font-weight: 450 }`）；设计选择，非遗漏 |
 | Meta / caption | 500 | 副文案、旁注 |
 | Control | 600 | 按钮、chip、选择项 |
-| Display / 强调 | 700 | 空态主句、托盘关键数字；少用喊话 |
+| Display / 强调 | 600–700 | 空态与关于页大标题（UI Sans）、片名（Serif）、托盘关键数字；少用喊话 |
 
 同层级禁止 medium/semibold 随机跳（同一角色用同一档）。
 
 ### 规则
 
-- 宋体不是「高级装饰」，是**片名与空态的编辑声口**；工具栏、按钮、表单禁止衬线。
+- **Display Serif = 片名 only。** 空态 hero / 关于与反馈页营销大标题必须用 UI Sans（约 600–700），禁止再挂 `.font-display` / `font-family: var(--font-serif)`。
+- 宋体不是「高级装饰」，更不是书房气质；它只给**已确认的影视片名**身份感。工具栏、按钮、表单、产品空态禁止衬线。
 - 禁止同屏用一堆 `text-[11px]` / `text-[14px]` / `text-[17px]` 打穿字阶；新代码走 `--type-*` 或 Tailwind 阶（`text-xs` = Caption）。
-- Tracking：eyebrow / 大写品牌标只用上述两档；正文保持克制。
+- Tracking：eyebrow / 大写品牌标只用上述两档；正文保持克制。不借此改动静默 fork 色板或其它 token。
 
 ---
 
@@ -256,7 +263,7 @@ Adobe CC 式文件徽章，经 Ridgeline **降饱和、偏暖** 调和：
 - 大写扩展名码是主体；禁止再加装饰、渐变、玻璃、外发光。
 - 尺寸 API：`sm 24` · `md 30` · `lg 36` · `xl 44`  
   - 列表 / 选择器默认 **md**  
-  - 空态展示条可用 **lg**  
+  - **禁止**在导入空态英雄位用 lg/xl 格式条；空态格式只作底边注解（见 §7）  
   - 禁止同列表随意混 sm/xl
 
 ### 色板（封闭）
@@ -301,9 +308,10 @@ Adobe CC 式文件徽章，经 Ridgeline **降饱和、偏暖** 调和：
 2. **卡片是例外**：只有承载交互时才需要容器感。
 3. **圆角有限档**：xs 2 · sm 6 · md 8 · lg 12 · xl 20 · pill 999。禁止 `rounded-[11px]` 等一次性值。
 4. **密度分区**：工作台紧（`--space-panel` = 16），关于/空态文案区松（`--space-copy` = 24）。
-5. **动效克制**：用现有 `--v5-ease` 与时长阶；动效服务层级与状态，不服务炫耀。
-6. **禁止双轨**：不要一边用 `.ui-action`，一边手写第三套按钮；**禁止**把已删除的 shadcn Button/Badge/Card 加回产品路径。
-7. **先身份，后便利**：技术上「用现成紫色组件更快」不构成设计理由。
+5. **空态 = 本机添加**：语义只谈本机文件/文件夹，禁止暗示云端、URL、库引用。动词统一为「添加」（拖放与点选同义）。结构：**主句「添加本地字幕」** → **「拖到此处，或点选下方」+「仅在本机读取」** → **等权双入口「选择文件 / 选择文件夹」**（同尺寸同权重，禁止一主一次）。格式仅右下角脚注。禁止：营销 intro、四宫格亮点轨、格式英雄位、单侧偏袒的整面点击。
+6. **动效克制**：用现有 `--v5-ease` 与时长阶；动效服务层级与状态，不服务炫耀。
+7. **禁止双轨**：不要一边用 `.ui-action`，一边手写第三套按钮；**禁止**把已删除的 shadcn Button/Badge/Card 加回产品路径。
+8. **先身份，后便利**：技术上「用现成紫色组件更快」不构成设计理由。
 
 ### 改 UI 前的自问
 
@@ -319,7 +327,7 @@ Adobe CC 式文件徽章，经 Ridgeline **降饱和、偏暖** 调和：
 ### Do
 
 - 维持奶油工作面 + 墨绿双托盘 + 柑橘单点强调
-- 片名 / 空态主句用思源宋体；控件用系统黑体
+- 片名用思源宋体；空态 / 关于页大标题与控件用系统黑体（UI Sans）
 - Lucide 做 UI；文件/语言/检查走既有专用体系
 - 元信息尽量排印化；徽章按角色表选用
 - 新色、新半径、新 elevation 先写入本文与 token，再落地组件

@@ -7,14 +7,10 @@ import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage, parseMe
 import JSZip from 'jszip';
 import {
   ChevronDown,
-  Clapperboard,
   FilePlus,
   FolderPlus,
   HardDrive,
-  Layers2,
-  Palette,
   Plus,
-  ShieldCheck,
   Trash2,
   X,
 } from 'lucide-react';
@@ -1112,137 +1108,64 @@ export const DragZone: React.FC = () => {
 
   return (
     <div
-      className="ingest-drop-zone group/outer flex w-full flex-col items-center py-1 md:py-2"
+      className={`ingest-drop-zone group/outer flex w-full flex-col ${
+        queuedItems.length === 0 ? 'ingest-drop-zone--empty flex-1' : 'items-center py-1 md:py-2'
+      }`}
       onDragOver={handleDragOver}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       <div
-        className={`ingest-stage relative z-10 select-none px-3 py-4 md:px-4 md:py-6 ${
-          queuedItems.length > 0 ? 'has-queue' : 'is-empty'
+        className={`ingest-stage relative z-10 select-none ${
+          queuedItems.length > 0 ? 'has-queue px-3 py-4 md:px-4 md:py-6' : 'is-empty'
         } ${isDragging ? 'is-dragging' : ''} ${isAccepting ? 'is-accepting' : ''}`}
       >
         <AnimatePresence mode="wait">
           {queuedItems.length === 0 ? (
             <motion.div
               key="empty"
-              initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              // 快出：空态元素迅速让位，让「文件落桌」成为主角
-              exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.985, transition: { duration: 0.14 } }}
-              transition={{ duration: shouldReduceMotion ? 0 : 0.24, ease: [0.16, 1, 0.3, 1] }}
-              className="flex w-full max-w-6xl flex-col items-center"
+              initial={shouldReduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={shouldReduceMotion ? undefined : { opacity: 0, transition: { duration: 0.14 } }}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
+              className="ingest-local-add"
             >
-              <header className="ingest-empty-intro density-copy-x text-center">
-                <h2 className="ingest-empty-intro__title">
-                  本地字幕工作室
+              <div className="ingest-local-add__copy">
+                <h2 className="ingest-local-add__title">
+                  {isDragging ? '松开以添加' : '添加本地字幕'}
                 </h2>
-                <p className="ingest-empty-intro__sub">
-                  对齐合并 · 样式调整 · 预览导出
-                </p>
-              </header>
-
-              {/* 整卡可点开选文件；键盘可达性交给下方 hero CTA，避免 button-in-button */}
-              <div
-                className="ingest-start-card"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <div className="ingest-start-card__glyphs" aria-hidden="true">
-                  {(['srt', 'ass', 'zip', 'rar', '7z'] as const).map((format, index) => (
-                    <motion.span
-                      key={format}
-                      className="ingest-start-card__glyph"
-                      initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{
-                        duration: shouldReduceMotion ? 0 : 0.32,
-                        delay: shouldReduceMotion ? 0 : 0.08 + index * 0.05,
-                        ease: [0.16, 1, 0.3, 1],
-                      }}
-                    >
-                      <FileFormatIcon format={format} size="lg" />
-                    </motion.span>
-                  ))}
-                </div>
-                <h3 className="ingest-start-card__title">
-                  {isDragging ? '松开即可加入' : '拖入字幕开始'}
-                </h3>
-                <p className="ingest-start-card__sub">
-                  文件留在本地，不上传
-                </p>
-                <div
-                  className={`ingest-start-card__cta transition-opacity duration-[var(--v4-dur)] ${
-                    isDragging ? 'pointer-events-none opacity-40' : 'opacity-100'
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={(event) => { event.stopPropagation(); fileInputRef.current?.click(); }}
-                    className="ui-action ui-action--hero"
-                  >
-                    <FilePlus className="h-5 w-5 shrink-0 stroke-[2]" aria-hidden="true" />
-                    选择字幕
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => { event.stopPropagation(); folderInputRef.current?.click(); }}
-                    className="ui-action ui-action--secondary ui-action--hero"
-                  >
-                    <FolderPlus className="h-5 w-5 shrink-0 stroke-[2]" aria-hidden="true" />
-                    文件夹
-                  </button>
-                </div>
-                <p className="ingest-start-card__hint">
-                  支持 SRT / ASS 字幕，以及 ZIP / RAR / 7Z 压缩格式
+                <p className="ingest-local-add__hint">
+                  {isDragging ? '文件会留在本机' : '拖到此处，或点选下方'}
+                  <span className="ingest-local-add__dot" aria-hidden="true">·</span>
+                  <span className="ingest-local-add__privacy">仅在本机读取</span>
                 </p>
               </div>
-
-              <ul className="ingest-feature-rail" aria-label="产品亮点">
-                {([
-                  {
-                    icon: ShieldCheck,
-                    title: '本地处理',
-                    detail: '文件不上传，隐私可控',
-                  },
-                  {
-                    icon: Layers2,
-                    title: '多轨整理',
-                    detail: '差异提示，核对微调',
-                  },
-                  {
-                    icon: Palette,
-                    title: '样式定制',
-                    detail: '字形色效，随心调整',
-                  },
-                  {
-                    icon: Clapperboard,
-                    title: '效果预览',
-                    detail: '实际呈现，所见所得',
-                  },
-                ] as const).map((feature, index) => {
-                  const Icon = feature.icon;
-                  return (
-                    <motion.li
-                      key={feature.title}
-                      className="ingest-feature-rail__item"
-                      initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{
-                        duration: shouldReduceMotion ? 0 : 0.34,
-                        delay: shouldReduceMotion ? 0 : 0.18 + index * 0.05,
-                        ease: [0.16, 1, 0.3, 1],
-                      }}
-                    >
-                      <span className="ingest-feature-rail__icon" aria-hidden="true">
-                        <Icon className="h-4 w-4" strokeWidth={2} />
-                      </span>
-                      <p className="ingest-feature-rail__title">{feature.title}</p>
-                      <p className="ingest-feature-rail__detail">{feature.detail}</p>
-                    </motion.li>
-                  );
-                })}
-              </ul>
+              <div
+                className={`ingest-local-add__entries ${isDragging ? 'is-dimmed' : ''}`}
+                role="group"
+                aria-label="从本机添加"
+              >
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="ingest-local-add__entry"
+                >
+                  <FilePlus className="ingest-local-add__entry-icon" strokeWidth={2} aria-hidden="true" />
+                  <span className="ingest-local-add__entry-label">选择文件</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => folderInputRef.current?.click()}
+                  className="ingest-local-add__entry"
+                >
+                  <FolderPlus className="ingest-local-add__entry-icon" strokeWidth={2} aria-hidden="true" />
+                  <span className="ingest-local-add__entry-label">选择文件夹</span>
+                </button>
+              </div>
+              <p className="ingest-local-add__formats" aria-label="支持的格式">
+                SRT · ASS · ZIP · RAR · 7Z
+              </p>
             </motion.div>
           ) : (
             <motion.div

@@ -137,7 +137,7 @@
 | 角色 | 实现 | 评价 |
 |---|---|---|
 | UI 无衬线 | PingFang / 雅黑 → Geist Sans | 产品向，合适 |
-| Display 衬线 | Noto Serif SC（自托管） | 片源名/空态主句，有辨识度 |
+| Display 衬线 | Noto Serif SC（自托管） | **仅**片源名 / TMDB 标题；空态与关于页大标题改走 UI Sans |
 | Mono | Geist Mono | 时间码、缩放、语言标 |
 
 ### 4.2 尺寸：声明与实战脱节
@@ -162,7 +162,8 @@
 | Control / label | 14–15px | 600 | 按钮、chip |
 | Body | 16px | 450–500 | 默认 |
 | Title (section) | 18px | 600–700 | |
-| Display | 22–26px + `.font-display` | 700 | 仅空态/片名 |
+| Display (片名) | 片名尺寸 + `.font-display` | 700 | 仅片源名 / TMDB 标题 |
+| Display (UI) | 22–26px + UI Sans | 600–700 | 空态 / 关于页大标题 |
 
 禁止：同屏混用 `text-[11px]` 与 `text-xs` 表达同一层级。
 
