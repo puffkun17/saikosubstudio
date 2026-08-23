@@ -1108,67 +1108,61 @@ export const DragZone: React.FC = () => {
 
   return (
     <div
-      className="ingest-drop-zone group/outer flex w-full flex-col items-center py-1 md:py-2"
+      className={`ingest-drop-zone group/outer flex w-full flex-col ${
+        queuedItems.length === 0 ? 'ingest-drop-zone--empty flex-1' : 'items-center py-1 md:py-2'
+      }`}
       onDragOver={handleDragOver}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       <div
-        className={`ingest-stage relative z-10 select-none px-3 py-4 md:px-4 md:py-6 ${
-          queuedItems.length > 0 ? 'has-queue' : 'is-empty'
+        className={`ingest-stage relative z-10 select-none ${
+          queuedItems.length > 0 ? 'has-queue px-3 py-4 md:px-4 md:py-6' : 'is-empty'
         } ${isDragging ? 'is-dragging' : ''} ${isAccepting ? 'is-accepting' : ''}`}
       >
         <AnimatePresence mode="wait">
           {queuedItems.length === 0 ? (
             <motion.div
               key="empty"
-              initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              // 快出：空态元素迅速让位，让「文件落桌」成为主角
-              exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.985, transition: { duration: 0.14 } }}
-              transition={{ duration: shouldReduceMotion ? 0 : 0.24, ease: [0.16, 1, 0.3, 1] }}
-              className="flex w-full flex-col items-center justify-center"
+              initial={shouldReduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={shouldReduceMotion ? undefined : { opacity: 0, transition: { duration: 0.14 } }}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
+              className="ingest-stage-desk"
+              onClick={() => fileInputRef.current?.click()}
+              role="presentation"
             >
-              {/* 整卡可点开选文件；键盘可达性交给下方 hero CTA，避免 button-in-button */}
-              <div
-                className="ingest-start-card"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <div className="ingest-start-card__body">
-                  <h2 className="ingest-start-card__title">
-                    {isDragging ? '松开即可加入' : '拖入字幕开始'}
-                  </h2>
-                  <p className="ingest-start-card__sub">
-                    仅在本机读取
-                  </p>
-                  <div
-                    className={`ingest-start-card__cta transition-opacity duration-[var(--v4-dur)] ${
-                      isDragging ? 'pointer-events-none opacity-40' : 'opacity-100'
-                    }`}
+              <div className="ingest-stage-desk__center">
+                <h2 className="ingest-stage-desk__title">
+                  {isDragging ? '松开即可加入' : '拖入字幕开始'}
+                </h2>
+                <p className="ingest-stage-desk__privacy">仅在本机读取</p>
+                <div
+                  className={`ingest-stage-desk__actions ${
+                    isDragging ? 'is-dimmed' : ''
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={(event) => { event.stopPropagation(); fileInputRef.current?.click(); }}
+                    className="ui-action ui-action--hero"
                   >
-                    <button
-                      type="button"
-                      onClick={(event) => { event.stopPropagation(); fileInputRef.current?.click(); }}
-                      className="ui-action ui-action--hero"
-                    >
-                      <FilePlus className="h-5 w-5 shrink-0 stroke-[2]" aria-hidden="true" />
-                      选择字幕
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(event) => { event.stopPropagation(); folderInputRef.current?.click(); }}
-                      className="ui-action ui-action--secondary ui-action--hero"
-                    >
-                      <FolderPlus className="h-5 w-5 shrink-0 stroke-[2]" aria-hidden="true" />
-                      文件夹
-                    </button>
-                  </div>
+                    <FilePlus className="h-5 w-5 shrink-0 stroke-[2]" aria-hidden="true" />
+                    选择字幕
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(event) => { event.stopPropagation(); folderInputRef.current?.click(); }}
+                    className="ingest-stage-desk__folder"
+                  >
+                    文件夹
+                  </button>
                 </div>
-                <p className="ingest-start-card__formats" aria-label="支持的格式">
-                  SRT · ASS · ZIP · RAR · 7Z
-                </p>
               </div>
+              <p className="ingest-stage-desk__formats" aria-label="支持的格式">
+                SRT · ASS · ZIP · RAR · 7Z
+              </p>
             </motion.div>
           ) : (
             <motion.div

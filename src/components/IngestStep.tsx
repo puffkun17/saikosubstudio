@@ -65,7 +65,7 @@ export const IngestStep: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="ingest-empty mx-auto flex w-full max-w-6xl flex-1 flex-col items-stretch justify-start gap-3 pb-6 pt-4 md:gap-4 md:pb-8 md:pt-8 lg:pt-10"
+            className="ingest-empty flex w-full flex-1 flex-col"
           >
             <DragZone />
           </motion.div>

@@ -494,48 +494,46 @@ body {
   }
 }
 
-/* 空态：大块奶油落点区；动作居中，格式只作边角注解 */
+/* 空态 Stage desk：奶油工作面即落点，非卡中卡 */
 .ingest-stage.is-empty {
-  max-width: min(44rem, 100%);
-  min-height: min(34rem, 72vh);
+  width: 100%;
+  max-width: none;
+  flex: 1 1 auto;
+  min-height: min(28rem, calc(100vh - 11rem));
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  justify-content: center;
-  padding-inline: clamp(1rem, 3vw, 2rem);
-  padding-block: clamp(var(--space-copy), 5vh, 3.5rem);
+  margin-inline: 0;
+  padding: 0;
 }
 
-.ingest-stage.is-dragging .ingest-start-card {
+.ingest-drop-zone--empty {
+  min-height: 0;
+}
+
+.ingest-stage.is-dragging.ingest-stage.is-empty .ingest-stage-desk,
+.ingest-stage.is-empty.is-dragging .ingest-stage-desk {
   border-color: color-mix(in srgb, var(--v4-accent) 65%, transparent);
-  background: color-mix(in srgb, var(--v4-accent-soft) 38%, transparent);
-  transform: scale(1.01);
+  background: color-mix(in srgb, var(--v4-accent-soft) 28%, transparent);
 }
 
-/* 松手瞬间：吸收脉冲，一次性确认「已接住」 */
-.ingest-stage.is-accepting .ingest-start-card {
+.ingest-stage.is-empty.is-accepting .ingest-stage-desk {
   animation: ingestAbsorb 240ms var(--v5-ease) 1;
   border-color: color-mix(in srgb, var(--v4-accent) 80%, transparent);
 }
 
 @keyframes ingestAbsorb {
   0% {
-    transform: scale(1.01);
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--v5-orange) 35%, transparent);
   }
   100% {
-    transform: scale(0.99);
-    box-shadow: 0 0 0 22px color-mix(in srgb, var(--v5-orange) 0%, transparent);
+    box-shadow: 0 0 0 28px color-mix(in srgb, var(--v5-orange) 0%, transparent);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ingest-stage.is-accepting .ingest-start-card {
+  .ingest-stage.is-empty.is-accepting .ingest-stage-desk {
     animation: none;
     opacity: 0.55;
-  }
-  .ingest-stage.is-dragging .ingest-start-card {
-    transform: none;
   }
 }
 
@@ -859,20 +857,24 @@ body {
   }
 }
 
-/* 桌面隐喻：大块落点面；虚线框只在悬停/拖入时浮现。
-   主句与 CTA 居中；格式注解贴底边，永不占 C 位。 */
-.ingest-start-card {
+/*
+ * Stage desk — 导入空态结构（非卡中卡）
+ * 整面奶油即落点；中央一句 + 一颗柑橘主钮；文件夹为静音链；
+ * 格式脚注贴右下角。休息态几乎无边，拖入时才出柑橘虚线。
+ */
+.ingest-stage-desk {
   position: relative;
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
-  width: min(40rem, 100%);
-  min-height: min(22rem, 52vh);
-  margin-inline: auto;
-  padding: var(--space-7) var(--space-6) var(--space-5);
+  width: 100%;
+  min-height: inherit;
+  margin: 0;
+  padding: clamp(var(--space-6), 8vh, 5rem) var(--space-5);
   text-align: center;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   border: 2px dashed transparent;
   background: transparent;
   box-shadow: none;
@@ -880,74 +882,94 @@ body {
   transition:
     border-color var(--v4-dur) var(--v4-ease),
     background var(--v4-dur) var(--v4-ease),
-    box-shadow var(--v4-dur) var(--v4-ease),
-    transform var(--v4-dur) var(--v4-ease);
+    box-shadow var(--v4-dur) var(--v4-ease);
 }
 
-.ingest-start-card:hover {
-  border-color: color-mix(in srgb, var(--v5-green) 18%, transparent);
-}
-
-.ingest-start-card:focus-visible {
+.ingest-stage-desk:focus-visible {
   outline: 2px solid var(--v4-accent);
   outline-offset: 3px;
 }
 
-.ingest-start-card__body {
+.ingest-stage-desk__center {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  flex: 1 1 auto;
-  padding-block: var(--space-5);
+  max-width: 28rem;
 }
 
-.ingest-start-card__title {
+.ingest-stage-desk__title {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: clamp(2rem, 4vw, 2.5rem);
+  font-size: clamp(2.1rem, 4.5vw, 2.75rem);
   font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1.2;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
   color: var(--v4-text);
 }
 
-.ingest-start-card__sub {
+.ingest-stage-desk__privacy {
   margin: var(--space-3) 0 0;
-  font-size: 0.9375rem;
+  font-size: var(--type-caption, 0.8125rem);
   font-weight: 500;
-  line-height: 1.5;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
   color: var(--v4-text-muted);
 }
 
-.ingest-start-card__cta {
+.ingest-stage-desk__actions {
   margin-top: var(--space-6);
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: var(--space-3);
+  transition: opacity var(--v4-dur) var(--v4-ease);
 }
 
-/* 格式 = 约束注解，非英雄：底边 mono caption，视觉 ≤ muted */
-.ingest-start-card__formats {
-  margin: var(--space-5) 0 0;
-  padding: 0;
-  align-self: center;
-  font-family: var(--font-mono);
-  font-size: var(--type-caption, 0.8125rem);
+.ingest-stage-desk__actions.is-dimmed {
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+/* 次要：静音文字链，不与主 CTA 抢权 */
+.ingest-stage-desk__folder {
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
   font-weight: 500;
-  letter-spacing: 0.04em;
-  line-height: 1.4;
+  letter-spacing: 0.01em;
+  color: var(--v4-text-faint);
+  cursor: pointer;
+  transition: color var(--v4-dur-fast) var(--v4-ease);
+}
+
+.ingest-stage-desk__folder:hover {
+  color: var(--v4-text-muted);
+}
+
+.ingest-stage-desk__folder:focus-visible {
+  outline: 2px solid var(--v4-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* 格式 = 右下角脚注，永不居中、永不在标题之上 */
+.ingest-stage-desk__formats {
+  position: absolute;
+  right: clamp(var(--space-4), 3vw, var(--space-6));
+  bottom: clamp(var(--space-4), 3vh, var(--space-5));
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
   color: var(--v4-text-faint);
   pointer-events: none;
   user-select: none;
-}
-
-.ingest-stage.is-empty .ingest-start-card {
-  padding-top: var(--space-7);
-  padding-bottom: var(--space-5);
 }
 
 /* Blank fields on cream panels — white rest, orange focus ring, no cream fill. */
@@ -1432,14 +1454,16 @@ body {
     min-height: 220px;
   }
 
-  .ingest-stage.is-empty .ingest-start-card {
-    min-height: min(18rem, 48vh);
-    padding-top: var(--space-6);
-    padding-bottom: var(--space-4);
+  .ingest-stage.is-empty {
+    min-height: min(22rem, calc(100vh - 10rem));
   }
 
-  .ingest-start-card__title {
-    font-size: clamp(1.75rem, 5.5vw, 2.1rem);
+  .ingest-stage-desk__title {
+    font-size: clamp(1.85rem, 5.5vw, 2.25rem);
+  }
+
+  .ingest-stage-desk__formats {
+    font-size: 0.625rem;
   }
 
 }
