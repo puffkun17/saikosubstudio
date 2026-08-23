@@ -877,8 +877,8 @@ body {
   padding: clamp(var(--space-6), 8vh, 5rem) var(--space-5);
   text-align: center;
   border-radius: var(--radius-lg);
-  border: 1.5px dashed color-mix(in srgb, var(--v4-line-strong) 55%, transparent);
-  background: color-mix(in srgb, var(--v5-cream) 92%, var(--v5-panel-raised));
+  border: 1.5px dashed color-mix(in srgb, var(--v4-line-strong) 70%, transparent);
+  background: color-mix(in srgb, var(--v5-cream) 88%, #ffffff);
   box-shadow: none;
   transition:
     border-color var(--v4-dur) var(--v4-ease),
@@ -929,8 +929,8 @@ body {
   flex-wrap: wrap;
   align-items: stretch;
   justify-content: center;
-  gap: var(--space-3);
-  width: min(100%, 26rem);
+  gap: var(--space-2);
+  width: min(100%, 24rem);
   transition: opacity var(--v4-dur) var(--v4-ease);
 }
 
@@ -939,19 +939,21 @@ body {
   opacity: 0.4;
 }
 
-/* 等权入口：同尺寸横排按钮，禁止一主一次、禁止高方砖卡片 */
+/* 等权入口：横排描边按钮，禁止一主一次、禁止高方砖卡片 */
 .ingest-local-add__entry.ui-action {
   flex: 1 1 0;
-  min-width: 9.5rem;
-  min-height: 2.75rem;
-  padding: 0.55rem 1.1rem;
+  min-width: 8.75rem;
+  min-height: 2.5rem;
+  padding: 0.45rem 1rem;
   font-size: 0.875rem;
+  border-color: color-mix(in srgb, var(--v4-line-strong) 85%, transparent);
+  background: color-mix(in srgb, var(--v5-cream) 55%, transparent);
   box-shadow: none;
 }
 
 .ingest-local-add__entry.ui-action:hover {
-  border-color: color-mix(in srgb, var(--v4-accent) 45%, var(--v4-line-strong));
-  background: color-mix(in srgb, var(--v4-accent-soft) 35%, var(--v4-panel-raised));
+  border-color: color-mix(in srgb, var(--v4-accent) 50%, var(--v4-line-strong));
+  background: color-mix(in srgb, var(--v4-accent-soft) 40%, transparent);
   box-shadow: none;
 }
 
