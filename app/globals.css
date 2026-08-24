@@ -494,25 +494,37 @@ body {
   }
 }
 
-/* 空态：本机添加落点面（文件/文件夹等权） */
+/* 空态：本机添加落点面（文件/文件夹等权）— idle 即可见拖放井 */
 .ingest-stage.is-empty {
   width: 100%;
   max-width: none;
   flex: 1 1 auto;
-  min-height: min(28rem, calc(100vh - 11rem));
+  min-height: min(32rem, calc(100vh - 10.5rem));
   display: flex;
   flex-direction: column;
   margin-inline: 0;
-  padding: 0;
+  /* 奶油边与虚线井之间留缝，冷眼读成 inset drop well */
+  padding: clamp(0.65rem, 1.4vw, 1rem);
 }
 
 .ingest-drop-zone--empty {
   min-height: 0;
 }
 
+/* Hover：虚线加深，仍低于 dragging */
+.ingest-stage.is-empty:hover:not(.is-dragging) .ingest-local-add {
+  border-color: color-mix(
+    in srgb,
+    var(--v5-green) 68%,
+    color-mix(in srgb, var(--v5-orange) 26%, var(--v5-cream))
+  );
+  background: color-mix(in srgb, var(--v5-cream) 72%, #ffffff);
+}
+
 .ingest-stage.is-empty.is-dragging .ingest-local-add {
-  border-color: color-mix(in srgb, var(--v4-accent) 65%, transparent);
-  background: color-mix(in srgb, var(--v4-accent-soft) 28%, transparent);
+  border-color: color-mix(in srgb, var(--v4-accent) 55%, var(--v5-green) 20%);
+  border-style: dashed;
+  background: color-mix(in srgb, var(--v4-accent-soft) 32%, transparent);
 }
 
 .ingest-stage.is-empty.is-accepting .ingest-local-add {
@@ -859,9 +871,10 @@ body {
 /*
  * Local add — 导入空态（单面奶油拖放舞台）
  * 语义：仅本机。动词统一为「添加」。
- * 结构：主句 → 拖放/点选提示 + 隐私 → 横排等权「选择文件 | 选择文件夹」
- *        （.ui-action--secondary，非高白方砖）
+ * 结构：Upload 示意 → 主句 → 拖放（视觉主）/点选提示 + 隐私
+ *        → 横排等权「选择文件 | 选择文件夹」（.ui-action--secondary，非高白方砖）
  * 格式脚注贴右下角。整面奶油为拖放落点（不单点偏袒文件）。
+ * Idle 必须可见虚线拖放井；hover 加深；dragging 最强。
  */
 .ingest-local-add {
   position: relative;
@@ -874,10 +887,16 @@ body {
   width: 100%;
   min-height: inherit;
   margin: 0;
-  padding: clamp(var(--space-6), 8vh, 5rem) var(--space-5);
+  /* 略增内边距，空态读成 drop well 而非贴在奶油上的字+钮 */
+  padding: clamp(var(--space-7), 10vh, 5.75rem) clamp(var(--space-5), 4vw, var(--space-7));
   text-align: center;
   border-radius: var(--radius-lg);
-  border: 1.5px dashed color-mix(in srgb, var(--v4-line-strong) 70%, transparent);
+  /* Idle：墨绿/柑橘实色混入奶油的虚线（避免半透明贴奶油看不见） */
+  border: 2px dashed color-mix(
+    in srgb,
+    var(--v5-green) 55%,
+    color-mix(in srgb, var(--v5-orange) 20%, var(--v5-cream))
+  );
   background: color-mix(in srgb, var(--v5-cream) 88%, #ffffff);
   box-shadow: none;
   transition:
@@ -891,6 +910,23 @@ body {
   flex-direction: column;
   align-items: center;
   max-width: 28rem;
+}
+
+.ingest-local-add__cue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-3);
+  color: color-mix(in srgb, var(--v5-green) 62%, var(--v5-orange) 38%);
+}
+
+.ingest-local-add__cue-icon {
+  display: block;
+  opacity: 1;
+}
+
+.ingest-stage.is-empty.is-dragging .ingest-local-add__cue {
+  color: var(--v4-accent-strong);
 }
 
 .ingest-local-add__title {
@@ -914,6 +950,21 @@ body {
   font-weight: 500;
   line-height: 1.5;
   color: var(--v4-text-muted);
+}
+
+/* 「拖到此处」视觉主；点选从句保持次要（同一短语内无额外 gap） */
+.ingest-local-add__hint-lead {
+  display: inline;
+}
+
+.ingest-local-add__hint-drag {
+  font-weight: 700;
+  color: var(--v4-text);
+}
+
+.ingest-local-add__hint-click {
+  font-weight: 500;
+  color: var(--v4-text-faint);
 }
 
 .ingest-local-add__dot {
@@ -1464,7 +1515,7 @@ body {
   }
 
   .ingest-stage.is-empty {
-    min-height: min(22rem, calc(100vh - 10rem));
+    min-height: min(26rem, calc(100vh - 9.5rem));
   }
 
   .ingest-local-add__title {
