@@ -70,7 +70,7 @@ export interface SubRow {
   type?: string;
   cueKind?: CueKind;
   auxiliary?: AuxiliaryCueClassification;
-  alignment?: 'expanded-dialogue' | 'shifted-match';
+  alignment?: 'expanded-dialogue' | 'coverage-merge' | 'shifted-match';
   provenance?: AlignmentProvenance;
   index: number;
 }
@@ -103,9 +103,16 @@ export type SubtitleLanguage =
 
 export interface SubtitleLanguagePair {
   primary: 'zh-CN' | 'zh-TW';
-  /** Main-path secondary is English only; other languages are demoted before pairing. */
+  /** Single-file bilingual pair secondary; main-path auto-bind may also use ja/ko when English is missing/sparse. */
   secondary: 'en';
 }
+
+/** Languages allowed in the 原文 slot (auto + manual). Western false positives stay out of auto-bind. */
+export const MAIN_PATH_SECONDARY_LANGUAGES = ['en', 'ja', 'ko'] as const;
+export type MainPathSecondaryLanguage = (typeof MAIN_PATH_SECONDARY_LANGUAGES)[number];
+
+/** Cue-count ratio below which an English track is treated as non-dialogue (on-screen/sparse). */
+export const SPARSE_SECONDARY_CUE_RATIO = 0.25;
 
 export interface SubtitleLanguageDetection {
   lang: SubtitleLanguage;
@@ -241,8 +248,13 @@ const hasFilenameToken = (name: string, tokens: string[]): boolean => {
   return tokens.some(token => new RegExp(`(^|\\s|-)${token}(\\s|-|$)`, 'i').test(normalized));
 };
 
-/** Main-path secondary slot accepts English only. */
-export function isMainPathSecondaryLanguage(language: string): language is 'en' {
+/** Auto-bind 原文 may use English, or ja/ko when English is missing / clearly not dialogue. */
+export function isMainPathSecondaryLanguage(language: string): language is MainPathSecondaryLanguage {
+  return (MAIN_PATH_SECONDARY_LANGUAGES as readonly string[]).includes(language);
+}
+
+/** True English dialogue candidate for auto-bind (not merely “eligible secondary”). */
+export function isEnglishSecondaryLanguage(language: string): language is 'en' {
   return language === 'en';
 }
 
@@ -257,7 +269,7 @@ export function isSdhOrCcSubtitleFilename(name: string): boolean {
     .replace(/\.[a-z0-9]{2,5}$/i, '')
     .replace(/[._()[\]{}+]+/g, ' ');
   if (hasFilenameToken(normalized, ['sdh', 'cc'])) return true;
-  return /\b(closed\s*captions?|subtitles?\s+for\s+the\s+deaf)\b/i.test(normalized);
+  return /\b(closed\s*captions?|subtitles?\s+for\s+the\s+deaf|听障|聽障)\b/i.test(normalized);
 }
 
 /** Prefer Simplified Chinese over Traditional when both are candidates. */
@@ -267,17 +279,51 @@ export function mainPathPrimaryRank(language: string): number {
   return 0;
 }
 
-/** Prefer plain English dialogue tracks over SDH/CC when ranking secondary candidates. */
-export function mainPathSecondaryRank(name: string): number {
-  return isSdhOrCcSubtitleFilename(name) ? 0 : 1;
+/**
+ * Prefer plain English dialogue over SDH/CC.
+ * Non-English source-language fallbacks (ja/ko) rank below any English candidate.
+ */
+export function mainPathSecondaryRank(name: string, language = ''): number {
+  if (language === 'en' || (!language && !/(^|[._\s-])(ja|jpn|ko|kor)([._\s-]|$)/i.test(name))) {
+    return isSdhOrCcSubtitleFilename(name) ? 10 : 20;
+  }
+  if (language === 'ja') return 4;
+  if (language === 'ko') return 3;
+  return 0;
+}
+
+/**
+ * English (or other secondary) is “sparse / not dialogue” when cue count is tiny vs primary
+ * (e.g. 24 on-screen English lines vs ~467 Chinese dialogue cues).
+ */
+export function isSparseSecondaryTrack(primaryCueCount: number, secondaryCueCount: number): boolean {
+  if (primaryCueCount <= 0 || secondaryCueCount <= 0) return false;
+  if (secondaryCueCount >= 80 && secondaryCueCount / primaryCueCount >= SPARSE_SECONDARY_CUE_RATIO) {
+    return false;
+  }
+  return secondaryCueCount / primaryCueCount < SPARSE_SECONDARY_CUE_RATIO;
 }
 
 export function detectLanguageByFilename(name: string): SubtitleLanguage {
   const normalized = name.toLowerCase();
   if (/(commentary|comment|director|解说|導評|导轨)/i.test(name)) return 'commentary';
   if (/(双语|雙語|中英|中日|中韩|中韓|中法|中西|bilingual|dual[-_.\s]?sub)/i.test(name)) return 'bilingual';
-  if (/(chinese[._\s-]*traditional|traditional[._\s-]*chinese|zh[-_.\s]?tw|繁體|繁体|繁中|big5)/i.test(name) || hasFilenameToken(normalized, ['cht', 'tc'])) return 'zh-TW';
-  if (/(chinese[._\s-]*simplified|simplified[._\s-]*chinese|zh[-_.\s]?cn|简体|簡體|简中|簡中|gbk|gb2312|gb18030)/i.test(name) || hasFilenameToken(normalized, ['chs', 'sc'])) return 'zh-CN';
+  if (
+    /(chinese[._\s-]*traditional|traditional[._\s-]*chinese|zh[-_.\s]?tw|zh[-_.\s]?hant|繁體|繁体|繁中|big5)/i.test(name)
+    || hasFilenameToken(normalized, ['cht', 'tc', 'zh-hant'])
+  ) return 'zh-TW';
+  if (
+    /(chinese[._\s-]*simplified|simplified[._\s-]*chinese|zh[-_.\s]?cn|zh[-_.\s]?hans|简体|簡體|简中|簡中|gbk|gb2312|gb18030)/i.test(name)
+    || hasFilenameToken(normalized, ['chs', 'sc', 'zh-hans', 'zh', 'chi', 'zho'])
+  ) return 'zh-CN';
+  // Bare SDH/CC (no eng token) → English caption track so preflight is not「待识别」; demoted vs plain eng at bind.
+  if (
+    isSdhOrCcSubtitleFilename(name)
+    && !hasFilenameToken(normalized, ['jpn', 'ja', 'kor', 'ko', 'fre', 'fra', 'fr', 'spa', 'esp', 'es'])
+    && !/(japanese|日本語|日语|日語|korean|한국어|韩语|韓語|french|français|spanish|español|日文|韩文|韓文|法语|法語|西语|西語)/i.test(name)
+  ) {
+    return 'en';
+  }
   if (/(english|英语|英語|英文)/i.test(name) || hasFilenameToken(normalized, ['eng', 'en'])) return 'en';
   if (/(japanese|日本語|日语|日語|日文)/i.test(name) || hasFilenameToken(normalized, ['jpn', 'ja'])) return 'ja';
   if (/(korean|한국어|韩语|韓語|韩文|韓文)/i.test(name) || hasFilenameToken(normalized, ['kor', 'ko'])) return 'ko';
@@ -289,17 +335,25 @@ export function detectLanguageByFilename(name: string): SubtitleLanguage {
 export function detectSubtitleLanguage(name: string, text: string): SubtitleLanguageDetection {
   const filenameLang = detectLanguageByFilename(name);
   const languagePair = detectSubtitleLanguagePair(text, name);
-  // Main path: only zh(+TW) + English counts as bilingual; other secondaries are demoted.
+  // Single-file bilingual still requires zh + English pair detection.
   const isBilingual = Boolean(languagePair);
   const contentLang = detectLanguageByContent(text);
-  const lang: SubtitleLanguage = isBilingual
-    ? 'bilingual'
-    : filenameLang === 'bilingual'
-      // Filename claims bilingual (e.g. 中日) but no English secondary → demote to content/primary.
-      ? (contentLang !== 'unknown' ? contentLang : 'zh-CN')
-      : filenameLang !== 'unknown'
-        ? filenameLang
-        : contentLang;
+  const sdhFilename = isSdhOrCcSubtitleFilename(name);
+
+  let lang: SubtitleLanguage;
+  if (isBilingual) {
+    lang = 'bilingual';
+  } else if (filenameLang === 'bilingual') {
+    // Filename claims bilingual (e.g. 中日) but no English secondary → demote to content/primary.
+    lang = contentLang !== 'unknown' ? contentLang : 'zh-CN';
+  } else if (filenameLang !== 'unknown') {
+    lang = filenameLang;
+  } else if (sdhFilename && (contentLang === 'en' || contentLang === 'latin' || contentLang === 'unknown')) {
+    // Content-fallback: unmarked SDH with Latin/English body → English (still demoted vs plain eng).
+    lang = 'en';
+  } else {
+    lang = contentLang;
+  }
 
   return languagePair
     ? { lang, isBilingual, languagePair }
@@ -443,8 +497,14 @@ export function cleanSubtitleContent(text: string, isEnglish = false): string {
   let cleaned = text.replace(/\{[^}]*\}/g, '');
   cleaned = cleaned.replace(/<[^>]*>/g, '');
   cleaned = cleaned.replace(/\[字幕组\]|\[制作\]|\[压制\]/g, '');
-  cleaned = cleaned.replace(/^-+\s*/, '');
-  cleaned = cleaned.replace(/\s*-+$/, '');
+  // Do not strip speaker dashes when the cue looks like packed multi-speaker dialogue
+  // ("-A-B" / "-A\n-B"); packed-turn expansion reads those markers from source text.
+  const packedSpeakerDashes = (cleaned.match(/(^|\n)\s*[-—–]\s*\S/g) || []).length >= 2
+    || /^[-—–]\s*\S[\s\S]*[-—–]\s*\S/.test(cleaned);
+  if (!packedSpeakerDashes) {
+    cleaned = cleaned.replace(/^-+\s*/, '');
+    cleaned = cleaned.replace(/\s*-+$/, '');
+  }
   
   if (isEnglish) {
     cleaned = cleaned.replace(/^[A-Z\s]+:\s*/, '');
@@ -455,6 +515,16 @@ export function cleanSubtitleContent(text: string, isEnglish = false): string {
 }
 
 const timestampRegex = /\d{2}:\d{2}:\d{2}[,.]\d{3}\s*-->\s*\d{2}:\d{2}:\d{2}[,.]\d{3}/;
+
+/** Cheap cue-count estimate for bind-time dialogue quality (SRT blocks / ASS Dialogue lines). */
+export function estimateSubtitleCueCount(text: string): number {
+  if (!text) return 0;
+  if (text.includes('[Events]') && text.includes('Dialogue:')) {
+    return text.split(/\r?\n/).filter((line) => line.trim().startsWith('Dialogue:')).length;
+  }
+  const srtBlocks = text.match(/\d{2}:\d{2}:\d{2}[,.]\d{2,3}\s*-->\s*\d{2}:\d{2}:\d{2}[,.]\d{2,3}/g);
+  return srtBlocks ? srtBlocks.length : 0;
+}
 
 const stripSubtitleInlineTags = (text: string): string => text
   .replace(/\{\\[^}]*\}/g, '')
@@ -844,17 +914,21 @@ export function parseSubtitle(text: string): RawSub[] {
         formatKeys = trimmed.replace('Format:', '').split(',').map(key => key.trim().toLowerCase());
       }
       if (trimmed.startsWith('Dialogue:')) {
+        // Text is always the last Format field — join remainder so commas inside Text stay intact.
+        // Style names with commas still shift early fields; prefer Format indices when present.
         const parts = l.split(',');
         if (parts.length >= 10) {
           const startIdx = formatKeys.indexOf('start') >= 0 ? formatKeys.indexOf('start') : 1;
           const endIdx = formatKeys.indexOf('end') >= 0 ? formatKeys.indexOf('end') : 2;
           const styleIdx = formatKeys.indexOf('style') >= 0 ? formatKeys.indexOf('style') : 3;
           const textIdx = formatKeys.indexOf('text') >= 0 ? formatKeys.indexOf('text') : 9;
-          const ts = `${parts[startIdx].replace('.', ',')} --> ${parts[endIdx].replace('.', ',')}`;
-          const rawDiag = parts.slice(textIdx).join(',');
-          const cleanDiag = rawDiag.replace(/\\N/g, '\n').replace(/\{[^}]*\}/g, '').trim();
-          const cueMeta = classifySubtitleCue(rawDiag, { assStyle: parts[styleIdx] || '' });
-          parsed.push({ ts, text: cleanDiag, cueKind: cueMeta.kind, cueMeta, auxiliary: cueMeta.auxiliary });
+          if (parts.length > textIdx) {
+            const ts = `${assClockToSrtTimestamp(parts[startIdx])} --> ${assClockToSrtTimestamp(parts[endIdx])}`;
+            const rawDiag = parts.slice(textIdx).join(',');
+            const cleanDiag = rawDiag.replace(/\\N/g, '\n').replace(/\{[^}]*\}/g, '').trim();
+            const cueMeta = classifySubtitleCue(rawDiag, { assStyle: parts[styleIdx] || '' });
+            parsed.push({ ts, text: cleanDiag, cueKind: cueMeta.kind, cueMeta, auxiliary: cueMeta.auxiliary });
+          }
         }
       }
     });
@@ -865,9 +939,24 @@ export function parseSubtitle(text: string): RawSub[] {
 
 export function timeToMs(t: string): number {
   if (!t) return 0;
-  const [hms, ms] = t.split(',');
+  const normalized = t.trim().replace('.', ',');
+  const [hms, fracRaw = '0'] = normalized.split(',');
   const [h, m, s] = hms.split(':');
-  return (parseInt(h) * 3600 + parseInt(m) * 60 + parseInt(s)) * 1000 + parseInt(ms || '0');
+  // ASS centiseconds are 1–2 digits; SRT milliseconds are 3. Pad/truncate to ms.
+  const frac = (fracRaw.replace(/\D/g, '') + '000').slice(0, 3);
+  return (parseInt(h || '0', 10) * 3600 + parseInt(m || '0', 10) * 60 + parseInt(s || '0', 10)) * 1000
+    + parseInt(frac || '0', 10);
+}
+
+/** Convert ASS H:MM:SS.cc (centiseconds) to SRT-style HH:MM:SS,mmm. */
+function assClockToSrtTimestamp(value: string): string {
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(\d+):(\d{1,2}):(\d{1,2})[.:](\d{1,2})$/);
+  if (!match) return trimmed.replace('.', ',');
+  const [, h, m, s, cs] = match;
+  const ms = (cs + '00').slice(0, 3);
+  const pad = (n: string, len: number) => n.padStart(len, '0');
+  return `${pad(h, 2)}:${pad(m, 2)}:${pad(s, 2)},${ms}`;
 }
 
 export function msToTime(ms: number): string {
@@ -1015,15 +1104,38 @@ function preprocessMixedContent(subs: RawSub[]): PreprocessedRow[] {
   return processed;
 }
 
-function calculateOverlapRatio(s1: number, e1: number, s2: number, e2: number): number {
+/**
+ * Overlap quality for cue pairing.
+ * Union ratio alone fails when a short cue sits fully inside a long one (overlap/union < 0.5).
+ * Containment (overlap / min duration) treats that case as a strong match without widening startDiff.
+ */
+export function calculateOverlapRatio(s1: number, e1: number, s2: number, e2: number): number {
   const oS = Math.max(s1, s2);
   const oE = Math.min(e1, e2);
-  if (oS < oE) {
-    const oD = oE - oS;
-    const tD = Math.max(e1, e2) - Math.min(s1, s2);
-    return tD > 0 ? oD / tD : 0;
-  }
-  return 0;
+  if (oS >= oE) return 0;
+  const overlap = oE - oS;
+  const union = Math.max(e1, e2) - Math.min(s1, s2);
+  const unionRatio = union > 0 ? overlap / union : 0;
+  const minDur = Math.min(Math.max(0, e1 - s1), Math.max(0, e2 - s2));
+  const containmentRatio = minDur > 0 ? overlap / minDur : 0;
+  return Math.max(unionRatio, containmentRatio);
+}
+
+/** True when the inner cue is mostly covered by the outer timespan (official 1:N coverage). */
+export function isCueMostlyCoveredBy(
+  outerStart: number,
+  outerEnd: number,
+  innerStart: number,
+  innerEnd: number,
+  coverage = 0.85,
+): boolean {
+  if (!(outerEnd > outerStart) || !(innerEnd > innerStart)) return false;
+  const overlap = Math.max(0, Math.min(outerEnd, innerEnd) - Math.max(outerStart, innerStart));
+  const innerDur = innerEnd - innerStart;
+  if (innerDur <= 0) return false;
+  if (overlap / innerDur >= coverage) return true;
+  const mid = (innerStart + innerEnd) / 2;
+  return mid >= outerStart && mid <= outerEnd && overlap / innerDur >= 0.55;
 }
 
 const isStructuralCueKind = (kind?: CueKind): boolean => (
@@ -1101,7 +1213,7 @@ interface ExpandedDialogueRow {
   type: 'merged';
   cueKind?: CueKind;
   auxiliary?: AuxiliaryCueClassification;
-  alignment: 'expanded-dialogue';
+  alignment: 'expanded-dialogue' | 'coverage-merge';
   provenance: AlignmentProvenance;
 }
 
@@ -1217,7 +1329,9 @@ const createMergedRow = (
     || isLyricText(primary.text)
     || isLyricText(secondary.text);
   return {
-    ts: `${msToTime(Math.min(primaryTiming.start, secondaryTiming.start))} --> ${msToTime(Math.max(primaryTiming.end, secondaryTiming.end))}`,
+    // Prefer primary timing so a short secondary inside a long primary does not stretch
+    // into the next cue (min/max envelope). Provenance still records both source cues.
+    ts: `${msToTime(primaryTiming.start)} --> ${msToTime(primaryTiming.end)}`,
     text: `${primary.text}\n${secondary.text}`,
     type: isLyricsRow ? 'lyrics' : 'merged',
     cueKind: isLyricsRow ? 'lyrics' as CueKind : cueKind,
@@ -1270,16 +1384,96 @@ function buildExpandedDialogueRows(
   ];
 }
 
+/**
+ * General 1:N / N:1 coverage (no dash markers): one cue's timespan covers ≥2 counterparts.
+ * Emit one merged row per covered counterpart using the finer (covered) cue timing to avoid stretch.
+ */
+function buildCoverageMergeRows(
+  outer: PreprocessedRow,
+  counterparts: PreprocessedRow[],
+  outerIsPrimary: boolean,
+): ExpandedDialogueRow[] | null {
+  if (counterparts.length < 2) return null;
+  if (counterparts.some((row) => !shouldAttemptCueMerge(outer, row))) return null;
+
+  const [outerStart, outerEnd] = outer.ts.split(' --> ').map(timeToMs);
+  if ([outerStart, outerEnd].some(Number.isNaN)) return null;
+
+  for (const counterpart of counterparts) {
+    const [innerStart, innerEnd] = counterpart.ts.split(' --> ').map(timeToMs);
+    if ([innerStart, innerEnd].some(Number.isNaN)) return null;
+    if (!isCueMostlyCoveredBy(outerStart, outerEnd, innerStart, innerEnd)) return null;
+  }
+
+  // Counterparts should be temporally contiguous (small gaps only).
+  for (let index = 1; index < counterparts.length; index += 1) {
+    const prevEnd = timeToMs(counterparts[index - 1].ts.split(' --> ')[1] || '');
+    const nextStart = timeToMs(counterparts[index].ts.split(' --> ')[0] || '');
+    if (Number.isNaN(prevEnd) || Number.isNaN(nextStart) || nextStart - prevEnd > 1600) {
+      return null;
+    }
+  }
+
+  const groupId = `cover-${outer.sourceIndex}-${counterparts.map((row) => row.sourceIndex).join('-')}`;
+  return counterparts.map((counterpart) => ({
+    ts: counterpart.ts,
+    text: outerIsPrimary
+      ? `${outer.text}\n${counterpart.text}`
+      : `${counterpart.text}\n${outer.text}`,
+    type: 'merged' as const,
+    cueKind: combineCueKind(outer.cueKind, counterpart.cueKind),
+    auxiliary: combineAuxiliaryCue(outer.auxiliary, counterpart.auxiliary),
+    // Distinct from dash packed-dialogue expansion — full outer text is reused, not split.
+    alignment: 'coverage-merge' as const,
+    provenance: {
+      method: 'expanded-dialogue' as const,
+      timingSource: outerIsPrimary ? 'secondary' as const : 'primary' as const,
+      groupId,
+      primary: createSourceRef(outerIsPrimary ? outer : counterpart),
+      secondary: createSourceRef(outerIsPrimary ? counterpart : outer),
+    },
+  }));
+}
+
+function collectCoveredRun(
+  outer: PreprocessedRow,
+  candidates: PreprocessedRow[],
+  startIdx: number,
+  maxCount = 4,
+): PreprocessedRow[] {
+  const [outerStart, outerEnd] = outer.ts.split(' --> ').map(timeToMs);
+  if ([outerStart, outerEnd].some(Number.isNaN)) return [];
+  const covered: PreprocessedRow[] = [];
+  for (let index = startIdx; index < candidates.length && covered.length < maxCount; index += 1) {
+    const candidate = candidates[index];
+    const [innerStart, innerEnd] = candidate.ts.split(' --> ').map(timeToMs);
+    if ([innerStart, innerEnd].some(Number.isNaN)) break;
+    if (innerStart > outerEnd + 200) break;
+    if (!shouldAttemptCueMerge(outer, candidate)) break;
+    if (!isCueMostlyCoveredBy(outerStart, outerEnd, innerStart, innerEnd)) {
+      if (covered.length === 0 && innerEnd < outerStart) continue;
+      break;
+    }
+    if (covered.length > 0) {
+      const prevEnd = timeToMs(covered[covered.length - 1].ts.split(' --> ')[1] || '');
+      if (innerStart - prevEnd > 1600) break;
+    }
+    covered.push(candidate);
+  }
+  return covered;
+}
+
 /** Shared temporal match policy for fast merge and industrial DP (keep in sync via this table only). */
 export const CUE_MATCH_POLICY = {
   strongOverlap: 0.5,
   nearStartMs: 300,
   looseOverlap: 0.2,
   looseStartMs: 1500,
-  maxAlignmentCells: 8_000_000,
+  /** ~2000×2000 official packs stay in full industrial DP; banded kicks in above this. */
+  maxAlignmentCells: 16_000_000,
   /** Sakoe–Chiba half-width when the full M×N matrix exceeds maxAlignmentCells. */
   minBandHalfWidth: 48,
-  maxBandHalfWidth: 160,
+  maxBandHalfWidth: 220,
 } as const;
 
 export function isTemporalCueMatch(overlap: number, startDiffMs: number): boolean {
@@ -1479,6 +1673,8 @@ type ExpandedDialoguePlan = {
   advancePath: number;
   skipEnIdx?: number;
   skipZhIdx?: number;
+  skipEnIdxs?: number[];
+  skipZhIdxs?: number[];
 };
 
 /**
@@ -1533,6 +1729,26 @@ function tryExpandPackedDialogueAtPath(
         const advancePath = next?.zhIdx === null && next.enIdx === nextEnIdx ? 1 : 0;
         return { rows, advancePath, skipEnIdx: nextEnIdx };
       }
+
+      // Coverage 1:N without dash markers.
+      const coveredEn = collectCoveredRun(zhDialogues[current.zhIdx], enDialogues, current.enIdx);
+      if (coveredEn.length >= 2) {
+        const coverageRows = buildCoverageMergeRows(zhDialogues[current.zhIdx], coveredEn, true);
+        if (coverageRows) {
+          const skipEnIdxs = coveredEn
+            .slice(1)
+            .map((row) => enDialogues.indexOf(row))
+            .filter((idx) => idx >= 0);
+          let advancePath = 0;
+          for (let look = pathIndex + 1; look < path.length; look += 1) {
+            const step = path[look];
+            if (step.zhIdx !== null) break;
+            if (step.enIdx !== null && skipEnIdxs.includes(step.enIdx)) advancePath += 1;
+            else break;
+          }
+          return { rows: coverageRows, advancePath, skipEnIdxs };
+        }
+      }
     }
   }
 
@@ -1550,6 +1766,25 @@ function tryExpandPackedDialogueAtPath(
       if (rows) {
         const advancePath = next?.enIdx === null && next.zhIdx === nextZhIdx ? 1 : 0;
         return { rows, advancePath, skipZhIdx: nextZhIdx };
+      }
+
+      const coveredZh = collectCoveredRun(enDialogues[current.enIdx], zhDialogues, current.zhIdx);
+      if (coveredZh.length >= 2) {
+        const coverageRows = buildCoverageMergeRows(enDialogues[current.enIdx], coveredZh, false);
+        if (coverageRows) {
+          const skipZhIdxs = coveredZh
+            .slice(1)
+            .map((row) => zhDialogues.indexOf(row))
+            .filter((idx) => idx >= 0);
+          let advancePath = 0;
+          for (let look = pathIndex + 1; look < path.length; look += 1) {
+            const step = path[look];
+            if (step.enIdx !== null) break;
+            if (step.zhIdx !== null && skipZhIdxs.includes(step.zhIdx)) advancePath += 1;
+            else break;
+          }
+          return { rows: coverageRows, advancePath, skipZhIdxs };
+        }
       }
     }
   }
@@ -1611,6 +1846,30 @@ export function mergeSubtitles(
         continue;
       }
 
+      // Coverage 1:N — one CN timespan covers multiple EN cues (no dash markers required).
+      const coveredEn = collectCoveredRun(zh, enDialogues, j);
+      if (coveredEn.length >= 2) {
+        const coverageRows = buildCoverageMergeRows(zh, coveredEn, true);
+        if (coverageRows) {
+          mergedDialogues.push(...coverageRows);
+          i += 1;
+          j += coveredEn.length;
+          continue;
+        }
+      }
+
+      // Coverage N:1 — one EN timespan covers multiple CN cues.
+      const coveredZh = collectCoveredRun(en, zhDialogues, i);
+      if (coveredZh.length >= 2) {
+        const coverageRows = buildCoverageMergeRows(en, coveredZh, false);
+        if (coverageRows) {
+          mergedDialogues.push(...coverageRows);
+          i += coveredZh.length;
+          j += 1;
+          continue;
+        }
+      }
+
       mergedDialogues.push(createMergedRow(
         zh,
         en,
@@ -1618,10 +1877,52 @@ export function mergeSubtitles(
         { start: enS, end: enE },
       ));
       i++; j++;
-    } else if (zhS <= enS) {
-      mergedDialogues.push(createSingleTrackRow(zh, 'primary')); i++;
     } else {
-      mergedDialogues.push(createSingleTrackRow(en, 'secondary')); j++;
+      // Look-ahead recovery: one extra cue must not permanently derail the rest of the track.
+      const nextEn = enDialogues[j + 1];
+      const nextZh = zhDialogues[i + 1];
+      let skipSecondary = false;
+      let skipPrimary = false;
+      if (nextEn && shouldAttemptCueMerge(zh, nextEn)) {
+        const [nS, nE] = nextEn.ts.split(' --> ').map(timeToMs);
+        const nextOverlap = calculateOverlapRatio(zhS, zhE, nS, nE);
+        const nextDiff = Math.abs(zhS - nS);
+        if (isTemporalCueMatch(nextOverlap, nextDiff)) {
+          const enWouldMatchNextZh = nextZh && shouldAttemptCueMerge(nextZh, en)
+            ? (() => {
+              const [nzS, nzE] = nextZh.ts.split(' --> ').map(timeToMs);
+              return isTemporalCueMatch(calculateOverlapRatio(nzS, nzE, enS, enE), Math.abs(nzS - enS));
+            })()
+            : false;
+          if (!enWouldMatchNextZh) skipSecondary = true;
+        }
+      }
+      if (!skipSecondary && nextZh && shouldAttemptCueMerge(nextZh, en)) {
+        const [nzS, nzE] = nextZh.ts.split(' --> ').map(timeToMs);
+        const nextOverlap = calculateOverlapRatio(nzS, nzE, enS, enE);
+        const nextDiff = Math.abs(nzS - enS);
+        if (isTemporalCueMatch(nextOverlap, nextDiff)) {
+          const zhWouldMatchNextEn = nextEn && shouldAttemptCueMerge(zh, nextEn)
+            ? (() => {
+              const [nS, nE] = nextEn.ts.split(' --> ').map(timeToMs);
+              return isTemporalCueMatch(calculateOverlapRatio(zhS, zhE, nS, nE), Math.abs(zhS - nS));
+            })()
+            : false;
+          if (!zhWouldMatchNextEn) skipPrimary = true;
+        }
+      }
+
+      if (skipSecondary) {
+        mergedDialogues.push(createSingleTrackRow(en, 'secondary'));
+        j += 1;
+      } else if (skipPrimary) {
+        mergedDialogues.push(createSingleTrackRow(zh, 'primary'));
+        i += 1;
+      } else if (zhS <= enS) {
+        mergedDialogues.push(createSingleTrackRow(zh, 'primary')); i++;
+      } else {
+        mergedDialogues.push(createSingleTrackRow(en, 'secondary')); j++;
+      }
     }
   }
   while (i < zhDialogues.length) {
@@ -1651,6 +1952,15 @@ export function mergeSubtitles(
   
   addLog(`[合并] 处理完成，生成 ${result.length} 条对齐块`, "success");
   return result;
+}
+
+/** Orphan / structure-diff rate used to auto-upgrade 智能 → 精校 without wiping ingest. */
+export function measureMergeOrphanRate(rows: SubRow[]): number {
+  if (rows.length === 0) return 0;
+  const dialogueLike = rows.filter((row) => row.type === 'merged' || row.type === 'dialogue' || row.type === 'lyrics');
+  if (dialogueLike.length === 0) return 0;
+  const orphans = dialogueLike.filter((row) => row.type === 'dialogue' || row.provenance?.method === 'single-track');
+  return orphans.length / dialogueLike.length;
 }
 
 /**
@@ -1757,6 +2067,8 @@ export function alignSubtitlesIndustrial(
       mergedDialogues.push(...expanded.rows);
       if (expanded.skipEnIdx != null) skippedEn.add(expanded.skipEnIdx);
       if (expanded.skipZhIdx != null) skippedZh.add(expanded.skipZhIdx);
+      for (const idx of expanded.skipEnIdxs || []) skippedEn.add(idx);
+      for (const idx of expanded.skipZhIdxs || []) skippedZh.add(idx);
       pathIndex += expanded.advancePath;
       continue;
     }

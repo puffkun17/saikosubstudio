@@ -783,10 +783,10 @@ export const TaskList: React.FC = () => {
                     智能
                   </div>
                   <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
-                    按时间轴就近配对主副轨，速度快、占用低。适合对白节奏接近、断句差异不大的常规双语。
+                    按时间轴就近配对，并识别一侧覆盖多句的断句；速度快、占用低。适合对白节奏接近的常规双语。
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-[var(--v4-text-faint)]">
-                    一侧多句/少句或翻译节奏差较大时，可能漏配或错位。
+                    插入/删减较多时可能漏配；孤立行偏多时会自动改用精校，不会清空已导入文件。
                   </p>
                 </button>
                 <button
@@ -809,7 +809,7 @@ export const TaskList: React.FC = () => {
                     用更完整的对齐搜索处理插入、删减与断句不一致，准确度更高。适合翻译节奏不同、一侧多句或少句的片子。
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-[var(--v4-text-faint)]">
-                    耗时与内存更高；字幕体量很大时会自动降级或收窄搜索带。
+                    耗时与内存更高；超大体量时启用带状搜索，仅极端情况才降级。
                   </p>
                 </button>
               </div>

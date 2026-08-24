@@ -54,9 +54,9 @@
    music / screenText / speechContext / ambient / bracket / unknownBase 集中命名，分类器只读表。
 
 4. **带状 DP（Sakoe–Chiba）** — 2026-07-18 续  
-   - `M*N > maxAlignmentCells` 时不再默认快速合并，改为对角线附近带宽 `2*half+1`（半宽夹在 `minBandHalfWidth`…`maxBandHalfWidth`）的工业 DP。  
+   - `M*N > maxAlignmentCells`（现 16M）时不再默认快速合并，改为对角线附近带宽 `2*half+1`（半宽夹在 `minBandHalfWidth`…`maxBandHalfWidth`）的工业 DP。  
    - `onFallback.reason = 'banded'` → UI「已启用带状对齐」；仅极端体量（最小带宽仍超预算）才 `matrix_too_large` → 快速合并。  
-   - 路径计算抽到 `computeAlignmentPath`；带外回溯沿比例对角线步行。
+   - 约 2000×2000 官方包可走完整工业矩阵；更大体积走带状。
 
 ## P2 落地（2026-07-18）
 

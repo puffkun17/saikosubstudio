@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity, isMainPathSecondaryLanguage, mainPathPrimaryRank, mainPathSecondaryRank } from '../utils/subtitleCore';
+import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity, isMainPathSecondaryLanguage, isEnglishSecondaryLanguage, mainPathPrimaryRank, mainPathSecondaryRank, estimateSubtitleCueCount, isSparseSecondaryTrack, measureMergeOrphanRate, isSdhOrCcSubtitleFilename } from '../utils/subtitleCore';
 import { assessTvYearFit, parseSeasonNumber, parseYearToken, shouldDemoteBySeasonSpan } from '../utils/tmdbCandidateFit';
 import { estimateJsonBytes, readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
 import { tmdbFetch } from '../services/tmdb';
@@ -389,7 +389,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   editHistory: [],
   editFuture: [],
 
-  setAlignmentMode: (alignmentMode) => set({ alignmentMode }),
+  setAlignmentMode: (alignmentMode) => {
+    // Mode switch must not wipe ingest; only the next merge consumes the new mode.
+    set({ alignmentMode });
+  },
   setCreatorCredit: (creatorCredit) => set({ creatorCredit }),
   setAppendCreatorCredit: (appendCreatorCredit) => set({ appendCreatorCredit }),
   setIsOfficialSubtitle: (isOfficialSubtitle) => set({ isOfficialSubtitle }),
@@ -1662,8 +1665,18 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             }
           } else if (trackKey === 'en') {
             updated.isBilingualSingle = false;
-            // Post-bind filter: secondary slot is English-only; demote other languages.
+            // Manual 原文 bind: allow en/ja/ko. Do not silent-empty; explain other languages.
             if (selectedFile && !isMainPathSecondaryLanguage(selectedFile.lang)) {
+              const blockedName = selectedFile.name;
+              const blockedLang = selectedFile.lang;
+              setTimeout(() => {
+                get().setStatusNotice({
+                  id: 'secondary-bind-blocked',
+                  tone: 'notice',
+                  title: '原文轨未绑定',
+                  message: `「${blockedName}」语种为 ${blockedLang}，自动合轴原文槽支持英语 / 日语 / 韩语。请改选文件，或先纠正语种标签。`,
+                });
+              }, 0);
               updated.en = null;
             }
           }
@@ -1932,9 +1945,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         );
         const normalFiles = files.filter(f => !commentaryFiles.includes(f));
 
-        // Main path: primary = 简中优先 / 繁中回退；secondary = English only；其他语言 demote。
+        // Main path: primary = 简中优先 / 繁中回退；
+        // secondary = 真实英语对白优先（普通 eng 优于 SDH）；英语缺失或明显非对白时回退 ja/ko。
         const zhFiles = normalFiles.filter(f => f.lang === 'zh' || f.lang === 'zh-CN' || f.lang === 'zh-TW');
-        const enFiles = normalFiles.filter(f => isMainPathSecondaryLanguage(f.lang));
+        const enFiles = normalFiles.filter(f => isEnglishSecondaryLanguage(f.lang));
+        const sourceLangFiles = normalFiles.filter(f => f.lang === 'ja' || f.lang === 'ko');
         const bilingualFiles = normalFiles.filter(f => f.lang === 'bilingual');
 
         const getBestFile = (list: Subfile[]): Subfile | null => {
@@ -1959,30 +1974,77 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           })[0];
         };
 
-        // 原文轨：普通 en 优先于 SDH/CC（后者常更大，旧逻辑会误绑）。
-        const getBestSecondary = (list: Subfile[]): Subfile | null => {
-          if (list.length === 0) return null;
-          return [...list].sort((a, b) => {
-            const rankDiff = mainPathSecondaryRank(b.name) - mainPathSecondaryRank(a.name);
+        // 原文轨：普通 en 优先于 SDH/CC（后者常更大，旧逻辑会误绑）。勿改回纯体积优先。
+        const bestZh = getBestPrimary(zhFiles);
+        const primaryCueCount = bestZh ? estimateSubtitleCueCount(bestZh.text) : 0;
+
+        const pickDialogueEnglish = (): Subfile | null => {
+          if (enFiles.length === 0) return null;
+          const ranked = [...enFiles].sort((a, b) => {
+            const rankDiff = mainPathSecondaryRank(b.name, b.lang) - mainPathSecondaryRank(a.name, a.lang);
             if (rankDiff !== 0) return rankDiff;
             const aAss = a.name.toLowerCase().endsWith('.ass') ? 1 : 0;
             const bAss = b.name.toLowerCase().endsWith('.ass') ? 1 : 0;
             if (aAss !== bAss) return bAss - aAss;
             return b.size - a.size;
+          });
+          // Prefer a non-SDH English track whose cue count looks like dialogue vs primary.
+          const nonSdh = ranked.filter((file) => !isSdhOrCcSubtitleFilename(file.name));
+          const dialoguePool = (nonSdh.length > 0 ? nonSdh : ranked).filter((file) => {
+            if (primaryCueCount <= 0) return true;
+            return !isSparseSecondaryTrack(primaryCueCount, estimateSubtitleCueCount(file.text));
+          });
+          if (dialoguePool.length > 0) return dialoguePool[0];
+          // Only SDH remains and is not sparse → still usable (Stuart-only-SDH case).
+          const sdhFallback = ranked.find((file) => {
+            if (primaryCueCount <= 0) return true;
+            return !isSparseSecondaryTrack(primaryCueCount, estimateSubtitleCueCount(file.text));
+          });
+          return sdhFallback || null;
+        };
+
+        const pickSourceLanguageFallback = (): Subfile | null => {
+          if (sourceLangFiles.length === 0) return null;
+          return [...sourceLangFiles].sort((a, b) => {
+            const rankDiff = mainPathSecondaryRank(b.name, b.lang) - mainPathSecondaryRank(a.name, a.lang);
+            if (rankDiff !== 0) return rankDiff;
+            if (primaryCueCount > 0) {
+              const aCount = estimateSubtitleCueCount(a.text);
+              const bCount = estimateSubtitleCueCount(b.text);
+              const aSparse = isSparseSecondaryTrack(primaryCueCount, aCount) ? 1 : 0;
+              const bSparse = isSparseSecondaryTrack(primaryCueCount, bCount) ? 1 : 0;
+              if (aSparse !== bSparse) return aSparse - bSparse;
+              const aDelta = Math.abs(aCount - primaryCueCount);
+              const bDelta = Math.abs(bCount - primaryCueCount);
+              if (aDelta !== bDelta) return aDelta - bDelta;
+            }
+            return b.size - a.size;
           })[0];
         };
 
-        const bestZh = getBestPrimary(zhFiles);
-        const bestEn = getBestSecondary(enFiles);
+        const bestEnDialogue = pickDialogueEnglish();
+        const bestSourceFallback = !bestEnDialogue ? pickSourceLanguageFallback() : null;
+        const bestSecondary = bestEnDialogue || bestSourceFallback;
         const bestBilingual = getBestFile(bilingualFiles);
         const bestCommentary = getBestFile(commentaryFiles);
 
         task.commentary = bestCommentary;
 
-        if (bestZh && bestEn) {
+        if (bestZh && bestSecondary) {
           task.zh = bestZh;
-          task.en = bestEn;
+          task.en = bestSecondary;
           task.isBilingualSingle = false;
+          if (!bestEnDialogue && bestSourceFallback) {
+            // Toast only once per optimize pass via deferred notice from processFiles caller path.
+            setTimeout(() => {
+              get().setStatusNotice({
+                id: 'secondary-source-fallback',
+                tone: 'notice',
+                title: '原文已回退到源语言轨',
+                message: `未找到可用的英语对白轨（缺失或行数过少），已绑定「${bestSourceFallback.name}」。可手动改绑。`,
+              });
+            }, 0);
+          }
         } else if (bestBilingual) {
           task.zh = bestBilingual;
           task.en = null;
@@ -1991,9 +2053,19 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           task.zh = bestZh;
           task.en = null;
           task.isBilingualSingle = false;
-        } else if (bestEn) {
+          if (enFiles.length > 0 && !bestEnDialogue) {
+            setTimeout(() => {
+              get().setStatusNotice({
+                id: 'secondary-en-sparse',
+                tone: 'notice',
+                title: '英语轨未自动绑定',
+                message: '检测到的英语文件行数远少于主字幕，更像屏显/稀疏字幕；可手动指定原文，或改用日/韩等源语言轨。',
+              });
+            }, 0);
+          }
+        } else if (bestSecondary) {
           task.zh = null;
-          task.en = bestEn;
+          task.en = bestSecondary;
           task.isBilingualSingle = false;
         } else {
           const bestAny = getBestFile(normalFiles);
@@ -2011,7 +2083,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
               task.en = null;
               task.isBilingualSingle = false;
             } else {
-              // ja/ko/fr/es/latin 等：demote，不进入主 secondary 槽。
+              // fr/es/latin 等：不自动进原文槽（避免西欧语误判抢槽）；用户可手动绑定 en/ja/ko。
               task.zh = null;
               task.en = null;
               task.isBilingualSingle = false;
@@ -2063,7 +2135,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const commParsed = parseSubtitle(files.commentary?.text || '');
 
         const { alignmentMode } = get();
-        const merged = alignmentMode === 'industrial'
+        let usedMode: 'standard' | 'industrial' = alignmentMode;
+        let merged = alignmentMode === 'industrial'
           ? alignSubtitlesIndustrial(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t), {
               onFallback: (info) => {
                 if (info.reason === 'banded') {
@@ -2084,6 +2157,31 @@ export const useStudioStore = create<StudioState>((set, get) => ({
               },
             })
           : mergeSubtitles(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t));
+
+        // 智能 orphans 爆炸时自动升级精校；不清理 uploadedFiles / 任务绑定。
+        if (alignmentMode === 'standard' && measureMergeOrphanRate(merged) >= 0.22) {
+          get().addLog('[合并] 智能对齐孤立行偏多，自动改用精校对齐', 'info');
+          usedMode = 'industrial';
+          merged = alignSubtitlesIndustrial(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t), {
+            onFallback: (info) => {
+              if (info.reason === 'banded') {
+                get().setStatusNotice({
+                  id: 'alignment-banded',
+                  tone: 'notice',
+                  title: '已启用带状对齐',
+                  message: `字幕体量较大（约 ${Math.round(info.cells / 1_000_000)}M 对齐单元），使用带宽 ${((info.bandHalfWidth ?? 0) * 2) + 1} 的工业对齐以控制内存。`,
+                });
+              }
+            },
+          });
+          get().setStatusNotice({
+            id: 'alignment-auto-industrial',
+            tone: 'notice',
+            title: '已自动改用精校',
+            message: '智能对齐出现较多未配对行，已在不重新导入的前提下改用精校对齐。',
+          });
+        }
+        void usedMode;
         set({ processedSubs: merged, previewIndex: 0, workflowStep: 2, editHistory: [], editFuture: [] });
       }
       // Clear save point: a finished merge is restorable from 存档 after reload / leaving /.
