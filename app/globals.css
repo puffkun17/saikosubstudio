@@ -388,6 +388,34 @@ body {
   color: var(--v5-orange);
 }
 
+/* Narrow chrome (≤843): top essentials only — LOCAL / scale % yield space to wordmark. */
+@media (max-width: 843px) {
+  .system-tray__local-badge {
+    display: none;
+  }
+
+  .system-tray__scale-pct {
+    display: none;
+  }
+
+  .system-tray__scale {
+    padding-inline: 0.65rem;
+  }
+
+  .system-tray__clock {
+    gap: 0;
+  }
+
+  /* Bottom workflow segments: readable labels, ≥44px targets */
+  .system-tray__workflow-seg {
+    min-height: 2.75rem; /* 44px */
+  }
+
+  .system-tray__workflow-bar {
+    min-width: 0;
+  }
+}
+
 /* Forest panels (theater chrome only): remap cream tokens to on-green. */
 [data-surface="forest"] {
   --surface-text: var(--v5-cream);
@@ -1486,6 +1514,16 @@ body {
   overflow: hidden;
   padding-top: calc(var(--tray-h) + var(--info-bar-h));
   padding-bottom: var(--tray-h);
+  /* Flex scroll chain: workspace must be allowed to shrink below content height */
+  min-height: 0;
+}
+
+.app-main-pad > * {
+  min-height: 0;
+}
+
+.app-workspace {
+  min-height: 0;
 }
 
 .source-identity-rail {
@@ -1590,7 +1628,42 @@ body {
   .ingest-local-add__formats {
     font-size: 0.625rem;
   }
+}
 
+/*
+ * Landscape / short viewport: cream content must clear the fixed bottom tray.
+ * Prefer scroll over clipping so formats footnote stays reachable.
+ */
+@media (max-height: 480px), (orientation: landscape) and (max-height: 520px) {
+  .app-main-pad {
+    /* Keep tray padding; allow the workspace column to scroll if needed */
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .ingest-shell {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    /* Extra bottom slack so formats footnote clears the forest tray */
+    scroll-padding-bottom: calc(var(--tray-h) + 0.5rem);
+  }
+
+  .ingest-stage.is-empty {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .ingest-local-add {
+    justify-content: flex-start;
+    gap: var(--space-3);
+    padding-block: var(--space-4);
+    min-height: 0;
+  }
+
+  .ingest-local-add__formats {
+    margin-top: var(--space-2);
+    padding-bottom: var(--space-2);
+  }
 }
 
 /* Keyframe animations */

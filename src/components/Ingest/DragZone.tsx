@@ -133,6 +133,37 @@ const getTapFirstServerSnapshot = () => false;
 const useTapFirstIngest = () =>
   useSyncExternalStore(subscribeTapFirst, getTapFirstSnapshot, getTapFirstServerSnapshot);
 
+/**
+ * Directory pick: File System Access API, or legacy webkitdirectory.
+ * Tap-first / coarse mobile often exposes the attribute but cannot usefully
+ * pick folders — treat those as unsupported and steer users to「选择文件」.
+ */
+const getFolderPickSupported = () => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return true;
+  if ('showDirectoryPicker' in window) return true;
+  try {
+    const input = document.createElement('input');
+    const hasLegacy = 'webkitdirectory' in input || 'directory' in input;
+    if (!hasLegacy) return false;
+    // Attribute present but coarse/narrow tap-first: unreliable — disable.
+    if (window.matchMedia(TAP_FIRST_MQ).matches) return false;
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const subscribeFolderPick = (onStoreChange: () => void) => {
+  const mq = window.matchMedia(TAP_FIRST_MQ);
+  mq.addEventListener('change', onStoreChange);
+  return () => mq.removeEventListener('change', onStoreChange);
+};
+
+const useFolderPickSupported = () =>
+  useSyncExternalStore(subscribeFolderPick, getFolderPickSupported, () => true);
+
+const FOLDER_UNSUPPORTED_HINT = '当前环境不支持选择文件夹，请改用「选择文件」';
+
 /** 树杈伸展节奏：主干先长，叶枝随后逐条抽出（封顶避免长列表拖沓）。 */
 const leafDelayMs = (index: number) => Math.min(90 + index * 70, 480);
 
@@ -292,7 +323,7 @@ const describeTrack = (file: Subfile) => {
 };
 
 export const DragZone: React.FC = () => {
-  const { isDragging, setIsDragging, processFiles, addLog, setIngestClearing, isOfficialSubtitle, setIsOfficialSubtitle } = useStudioStore(useShallow((state) => ({
+  const { isDragging, setIsDragging, processFiles, addLog, setIngestClearing, isOfficialSubtitle, setIsOfficialSubtitle, setStatusNotice } = useStudioStore(useShallow((state) => ({
     isDragging: state.isDragging,
     setIsDragging: state.setIsDragging,
     processFiles: state.processFiles,
@@ -300,6 +331,7 @@ export const DragZone: React.FC = () => {
     setIngestClearing: state.setIngestClearing,
     isOfficialSubtitle: state.isOfficialSubtitle,
     setIsOfficialSubtitle: state.setIsOfficialSubtitle,
+    setStatusNotice: state.setStatusNotice,
   })));
   const { setForwardAction, setBottomStatus } = useWorkflowChrome();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -307,6 +339,20 @@ export const DragZone: React.FC = () => {
   const dragCounterRef = useRef(0);
   const shouldReduceMotion = useReducedMotion();
   const tapFirst = useTapFirstIngest();
+  const folderPickSupported = useFolderPickSupported();
+
+  const handleFolderPick = () => {
+    if (!folderPickSupported) {
+      setStatusNotice({
+        id: 'folder-pick-unsupported',
+        tone: 'notice',
+        title: '无法选择文件夹',
+        message: FOLDER_UNSUPPORTED_HINT,
+      });
+      return;
+    }
+    folderInputRef.current?.click();
+  };
 
   // Parsing states
   const [isParsing, setIsParsing] = useState(false);
@@ -1203,8 +1249,10 @@ export const DragZone: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => folderInputRef.current?.click()}
-                  className="ui-action ui-action--secondary ingest-local-add__entry"
+                  onClick={handleFolderPick}
+                  aria-disabled={!folderPickSupported || undefined}
+                  title={folderPickSupported ? '选择文件夹' : FOLDER_UNSUPPORTED_HINT}
+                  className={`ui-action ui-action--secondary ingest-local-add__entry ${folderPickSupported ? '' : 'opacity-55'}`}
                 >
                   <FolderPlus className="ingest-local-add__entry-icon" size={20} strokeWidth={2} aria-hidden="true" />
                   <span>选择文件夹</span>
@@ -1270,11 +1318,20 @@ export const DragZone: React.FC = () => {
                         </button>
                         <button
                           type="button"
-                          className="flex w-full items-center gap-2 border-t border-[var(--v4-line)] px-3.5 py-3 text-left text-sm font-normal text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)] md:text-[15px]"
-                          onClick={() => { setAddMenuOpen(false); folderInputRef.current?.click(); }}
+                          className={`flex w-full items-center gap-2 border-t border-[var(--v4-line)] px-3.5 py-3 text-left text-sm font-normal md:text-[15px] ${
+                            folderPickSupported
+                              ? 'text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)]'
+                              : 'cursor-help text-[var(--v4-text-faint)]'
+                          }`}
+                          title={folderPickSupported ? undefined : FOLDER_UNSUPPORTED_HINT}
+                          aria-disabled={!folderPickSupported || undefined}
+                          onClick={() => {
+                            setAddMenuOpen(false);
+                            handleFolderPick();
+                          }}
                         >
                           <FolderPlus className="h-4 w-4 text-[var(--v4-accent-strong)]" />
-                          文件夹
+                          {folderPickSupported ? '文件夹' : '文件夹（不可用）'}
                         </button>
                       </div>
                     )}
