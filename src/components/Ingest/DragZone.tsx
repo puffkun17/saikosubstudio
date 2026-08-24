@@ -12,6 +12,7 @@ import {
   HardDrive,
   Plus,
   Trash2,
+  Upload,
   X,
 } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
@@ -1132,11 +1133,21 @@ export const DragZone: React.FC = () => {
               className="ingest-local-add"
             >
               <div className="ingest-local-add__copy">
+                <span className="ingest-local-add__cue" aria-hidden="true">
+                  <Upload className="ingest-local-add__cue-icon" size={28} strokeWidth={1.75} />
+                </span>
                 <h2 className="ingest-local-add__title">
                   {isDragging ? '松开以添加' : '添加本地字幕'}
                 </h2>
                 <p className="ingest-local-add__hint">
-                  {isDragging ? '文件会留在本机' : '拖到此处，或点选下方'}
+                  {isDragging ? (
+                    '文件会留在本机'
+                  ) : (
+                    <>
+                      <span className="ingest-local-add__hint-drag">拖到此处</span>
+                      <span className="ingest-local-add__hint-click">，或点选下方</span>
+                    </>
+                  )}
                   <span className="ingest-local-add__dot" aria-hidden="true">·</span>
                   <span className="ingest-local-add__privacy">仅在本机读取</span>
                 </p>
