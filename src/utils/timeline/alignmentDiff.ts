@@ -1,7 +1,7 @@
 import type { AlignmentProvenance, SubRow } from '../subtitleCore';
 import { parseSubtitleRange } from './timecode';
 
-export type AlignmentDiffKind = 'expanded-dialogue' | 'single-track' | 'shifted-match';
+export type AlignmentDiffKind = 'expanded-dialogue' | 'coverage-merge' | 'single-track' | 'shifted-match';
 
 export interface AlignmentDiffEntry {
   id: string;
@@ -183,27 +183,32 @@ export function analyzeAlignmentDiff(rows: SubRow[]): AlignmentDiffSummary {
 
     flushShiftedGroup();
 
-    const isDirectPair = row.type === 'merged' && secondaryText && row.alignment !== 'expanded-dialogue';
+    const isDirectPair = row.type === 'merged'
+      && secondaryText
+      && row.alignment !== 'expanded-dialogue'
+      && row.alignment !== 'coverage-merge';
 
     if (isDirectPair) {
       directPairCount += 1;
       continue;
     }
 
-    if (row.alignment === 'expanded-dialogue') {
+    if (row.alignment === 'expanded-dialogue' || row.alignment === 'coverage-merge') {
       flushSingleTrackGroup();
       expandedDialogueCount += 1;
       entries.push({
         id: `expanded-${row.index}`,
-        kind: 'expanded-dialogue',
+        kind: row.alignment === 'coverage-merge' ? 'coverage-merge' : 'expanded-dialogue',
         rowIndexes: [row.index],
         ts: row.ts,
         startMs: item.startMs,
         endMs: item.endMs,
         primaryText,
         secondaryText,
-        label: '已展开的对话组',
-        detail: '压缩的角色间对白已按另一轨的连续时间轴拆为两句。',
+        label: row.alignment === 'coverage-merge' ? '时间覆盖合并' : '已展开的对话组',
+        detail: row.alignment === 'coverage-merge'
+          ? '一侧时间轴覆盖对侧多句，已按较细时间轴拆成多行（主句文本整段复用）。'
+          : '压缩的角色间对白已按另一轨的连续时间轴拆为两句。',
         isBoundaryCandidate: false,
         provenance: row.provenance ? [row.provenance] : [],
       });

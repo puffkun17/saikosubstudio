@@ -52,9 +52,16 @@ const {
   detectSubtitleLanguage,
   detectSubtitleLanguagePair,
   isMainPathSecondaryLanguage,
+  isEnglishSecondaryLanguage,
   mainPathPrimaryRank,
   isSdhOrCcSubtitleFilename,
   mainPathSecondaryRank,
+  estimateSubtitleCueCount,
+  isSparseSecondaryTrack,
+  calculateOverlapRatio,
+  isCueMostlyCoveredBy,
+  isTemporalCueMatch,
+  measureMergeOrphanRate,
   appendCreatorCredit,
   extractStylesFromAss,
   extractSubtitleAttributions,
@@ -504,6 +511,14 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
     noopLog,
   );
   assert.equal(aligned.some(row => row.alignment === 'expanded-dialogue'), false, 'Ordinary visual line breaks must not be mistaken for two-speaker dialogue.');
+  // Time coverage may still emit coverage-merge rows, but must reuse the full CN text (never split on \\n).
+  const coverageRows = aligned.filter(row => row.alignment === 'coverage-merge');
+  if (coverageRows.length > 0) {
+    assert.ok(
+      coverageRows.every(row => row.text.includes('这是普通的换行') && row.text.includes('并不是两人对话')),
+      'Coverage merge must reuse full primary text, not split visual line breaks into speakers.',
+    );
+  }
 }
 
 {
@@ -542,11 +557,11 @@ const makeRegressionTs = (startMs) => {
 };
 
 {
-  const primary = Array.from({ length: 3000 }, (_, index) => ({
+  const primary = Array.from({ length: 5000 }, (_, index) => ({
     ts: makeRegressionTs(index * 1000),
     text: `中文 ${index}`,
   }));
-  const secondary = Array.from({ length: 3000 }, (_, index) => ({
+  const secondary = Array.from({ length: 5000 }, (_, index) => ({
     ts: makeRegressionTs(index * 1000 + 40),
     text: `English ${index}`,
   }));
@@ -560,14 +575,14 @@ const makeRegressionTs = (startMs) => {
   assert.equal(fallback.reason, 'banded', 'Typical film-length tracks should stay in industrial mode via banded DP.');
   assert.ok(typeof fallback.bandHalfWidth === 'number' && fallback.bandHalfWidth >= CUE_MATCH_POLICY.minBandHalfWidth);
   assert.ok(logs.some(message => /带状 DP/.test(message)), 'Banded mode should be logged explicitly.');
-  assert.equal(logs.some(message => /低内存快速合并/.test(message)), false, 'Banded mode must not fall through to low-memory merge for 3k×3k tracks.');
-  assert.ok(aligned.filter(row => row.type === 'merged').length >= 2900, 'Banded industrial align should still pair nearly all in-sync cues.');
+  assert.equal(logs.some(message => /低内存快速合并/.test(message)), false, 'Banded mode must not fall through to low-memory merge for large in-sync tracks.');
+  assert.ok(aligned.filter(row => row.type === 'merged').length >= 4800, 'Banded industrial align should still pair nearly all in-sync cues.');
 }
 
 {
   // Extreme cue counts: minimum band fill still exceeds budget → true low-memory fallback.
-  // M * (2*minBandHalfWidth+1) > maxAlignmentCells  ⇒  M > ~82k
-  const extremeCount = 90_000;
+  // M * (2*minBandHalfWidth+1) > maxAlignmentCells  ⇒  M > ~165k at 16M cells
+  const extremeCount = 180_000;
   const primary = Array.from({ length: extremeCount }, (_, index) => ({
     ts: makeRegressionTs(index * 40),
     text: `中文 ${index}`,
@@ -857,7 +872,11 @@ Lets begin.`;
     { lang: 'bilingual', isBilingual: true, languagePair: { primary: 'zh-CN', secondary: 'en' } },
   );
   assert.equal(isMainPathSecondaryLanguage('en'), true);
-  assert.equal(isMainPathSecondaryLanguage('ja'), false);
+  assert.equal(isMainPathSecondaryLanguage('ja'), true, 'Japanese may occupy 原文 when English is missing/sparse.');
+  assert.equal(isMainPathSecondaryLanguage('ko'), true);
+  assert.equal(isMainPathSecondaryLanguage('fr'), false, 'Western false positives must stay out of auto 原文.');
+  assert.equal(isEnglishSecondaryLanguage('en'), true);
+  assert.equal(isEnglishSecondaryLanguage('ja'), false);
   assert.ok(mainPathPrimaryRank('zh-CN') > mainPathPrimaryRank('zh-TW'), 'Simplified Chinese ranks above Traditional.');
 }
 
@@ -1090,12 +1109,25 @@ const resetStoreForTmdb = () => {
   useStudioStore.getState().processFiles([zhTw, zhCn, ja, en]);
   const task = useStudioStore.getState().tasks[0];
   assert.equal(task?.zh?.id, 'f-zhcn', 'Binding must prefer Simplified Chinese over Traditional.');
-  assert.equal(task?.en?.id, 'f-en', 'Binding secondary must be English only.');
-  assert.notEqual(task?.en?.lang, 'ja', 'Japanese must not occupy the secondary slot even if larger.');
+  assert.equal(task?.en?.id, 'f-en', 'When a real English dialogue track exists, auto-bind must prefer it over Japanese.');
+  assert.notEqual(task?.en?.lang, 'ja', 'Japanese must not occupy the secondary slot when English dialogue is present.');
   assert.equal(task?.status, 'paired');
 
   useStudioStore.getState().bindTrack(task.id, 'en', 'f-ja');
-  assert.equal(useStudioStore.getState().tasks[0]?.en, null, 'Post-bind filter must demote non-English secondary selections.');
+  assert.equal(useStudioStore.getState().tasks[0]?.en?.id, 'f-ja', 'Manual 原文 bind must allow Japanese.');
+
+  const fr = {
+    id: 'f-fr',
+    name: 'Sample.Movie.2024.FRA.ass',
+    text: 'Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,Bonjour',
+    lang: 'fr',
+    isBilingual: false,
+    isCommentary: false,
+    size: 40,
+  };
+  useStudioStore.setState({ uploadedFiles: [...useStudioStore.getState().uploadedFiles, fr] });
+  useStudioStore.getState().bindTrack(task.id, 'en', 'f-fr');
+  assert.equal(useStudioStore.getState().tasks[0]?.en, null, 'French must not silent-bind into 原文; user gets a notice instead.');
 }
 
 {
@@ -1158,6 +1190,193 @@ const resetStoreForTmdb = () => {
     'stuart-en-sdh',
     'SDH remains usable when it is the only English track.',
   );
+}
+
+{
+  // Bare SDH.srt (no eng token): must be recognized as English AND demoted vs plain eng.
+  assert.equal(detectLanguageByFilename('Movie.SDH.srt'), 'en', 'Bare SDH filename must not stay 待识别.');
+  assert.equal(detectLanguageByFilename('SDH.srt'), 'en');
+  assert.equal(isSdhOrCcSubtitleFilename('Movie.SDH.srt'), true);
+  assert.ok(mainPathSecondaryRank('Movie.eng.srt', 'en') > mainPathSecondaryRank('Movie.SDH.srt', 'en'));
+
+  assert.equal(detectLanguageByFilename('episode.zh.srt'), 'zh-CN', 'zh.srt token must resolve to Simplified Chinese.');
+  assert.equal(detectLanguageByFilename('episode.en.srt'), 'en');
+  assert.equal(detectLanguageByFilename('Show.S01E01.简中.srt'), 'zh-CN');
+  assert.equal(detectLanguageByFilename('Show.S01E01.eng.srt'), 'en');
+
+  resetStoreForTmdb();
+  const zhHans = {
+    id: 'toy-zh',
+    name: 'Sample.Pack.简中.srt',
+    text: Array.from({ length: 40 }, (_, i) => `${i + 1}\n00:${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')},000 --> 00:${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')},800\n对白${i}\n`).join('\n'),
+    lang: 'zh-CN',
+    isBilingual: false,
+    isCommentary: false,
+    size: 40000,
+  };
+  const engPlain = {
+    id: 'toy-eng',
+    name: 'Sample.Pack.eng.srt',
+    text: Array.from({ length: 42 }, (_, i) => `${i + 1}\n00:${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')},050 --> 00:${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')},850\nLine ${i}\n`).join('\n'),
+    lang: 'en',
+    isBilingual: false,
+    isCommentary: false,
+    size: 35000,
+  };
+  const sdhBare = {
+    id: 'toy-sdh',
+    name: 'Sample.Pack.SDH.srt',
+    text: Array.from({ length: 55 }, (_, i) => `${i + 1}\n00:${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')},000 --> 00:${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')},900\n[door opens] Line ${i}\n`).join('\n'),
+    lang: detectSubtitleLanguage('Sample.Pack.SDH.srt', 'Hello and thank you for the help.').lang,
+    isBilingual: false,
+    isCommentary: false,
+    size: 52000,
+  };
+  assert.equal(sdhBare.lang, 'en', 'SDH content/filename path must classify as English.');
+  useStudioStore.getState().processFiles([zhHans, sdhBare, engPlain]);
+  const toyTask = useStudioStore.getState().tasks[0];
+  assert.equal(toyTask?.zh?.id, 'toy-zh', 'Primary must auto-pick 简中.');
+  assert.equal(toyTask?.en?.id, 'toy-eng', 'Plain eng must beat larger bare SDH for 原文.');
+}
+
+{
+  // Sparse English + Korean source: auto-bind KR, not the 24-cue English screen text.
+  resetStoreForTmdb();
+  const makeTimed = (count, prefix, startPad = 0) => Array.from({ length: count }, (_, i) => {
+    const sec = i * 2;
+    const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+    const ss = String(sec % 60).padStart(2, '0');
+    return `${i + 1}\n00:${mm}:${ss},000 --> 00:${mm}:${ss},800\n${prefix}${i}\n`;
+  }).join('\n');
+  const zhMany = {
+    id: 'shop-zh',
+    name: 'Shop.S02E08.简中.srt',
+    text: makeTimed(40, '中文'),
+    lang: 'zh-CN',
+    isBilingual: false,
+    isCommentary: false,
+    size: 20000,
+  };
+  const enSparse = {
+    id: 'shop-en',
+    name: 'Shop.S02E08.eng.srt',
+    text: makeTimed(4, 'ON SCREEN '),
+    lang: 'en',
+    isBilingual: false,
+    isCommentary: false,
+    size: 2000,
+  };
+  const koDialogue = {
+    id: 'shop-ko',
+    name: 'Shop.S02E08.kor.srt',
+    text: makeTimed(36, '한국어'),
+    lang: 'ko',
+    isBilingual: false,
+    isCommentary: false,
+    size: 18000,
+  };
+  assert.equal(isSparseSecondaryTrack(40, 4), true);
+  assert.equal(isSparseSecondaryTrack(40, 36), false);
+  useStudioStore.getState().processFiles([zhMany, enSparse, koDialogue]);
+  const shop = useStudioStore.getState().tasks[0];
+  assert.equal(shop?.zh?.id, 'shop-zh');
+  assert.equal(shop?.en?.id, 'shop-ko', 'When English is sparse vs CN, auto-bind Korean source dialogue.');
+}
+
+{
+  // CN + JP only (no English): Japanese must become 原文, not bounce.
+  resetStoreForTmdb();
+  const zh = {
+    id: 'gits-zh',
+    name: 'Show.S01E07.简中.srt',
+    text: '1\n00:00:01,000 --> 00:00:02,000\n你好\n',
+    lang: 'zh-CN',
+    isBilingual: false,
+    isCommentary: false,
+    size: 10,
+  };
+  const ja = {
+    id: 'gits-ja',
+    name: 'Show.S01E07.jpn.srt',
+    text: '1\n00:00:01,000 --> 00:00:02,000\nこんにちは\n',
+    lang: 'ja',
+    isBilingual: false,
+    isCommentary: false,
+    size: 12,
+  };
+  useStudioStore.getState().processFiles([zh, ja]);
+  assert.equal(useStudioStore.getState().tasks[0]?.en?.id, 'gits-ja', 'CN+JP pack must auto-bind Japanese as 原文.');
+}
+
+{
+  // Short cue fully inside long cue: containment must match (union ratio alone can be < 0.5).
+  const overlap = calculateOverlapRatio(0, 10000, 3000, 4500);
+  assert.ok(overlap >= 0.5, `Containment overlap should be strong, got ${overlap}`);
+  assert.equal(isCueMostlyCoveredBy(0, 10000, 3000, 4500), true);
+  assert.equal(isTemporalCueMatch(overlap, 3000), true, 'Containment must satisfy temporal match without loosening looseStartMs.');
+
+  const zh = [{ ts: '00:00:01,000 --> 00:00:10,000', text: '这一整段中文' }];
+  const en = [{ ts: '00:00:03,000 --> 00:00:04,500', text: 'Short English inside' }];
+  const merged = mergeSubtitles(zh, en, [], noopLog);
+  assert.ok(merged.some((row) => row.type === 'merged' && row.text.includes('Short English inside')), 'Short-in-long must merge.');
+}
+
+{
+  // Coverage 1:N — one CN covers two EN cues (no dash packed-dialogue markers).
+  const zh = [{ ts: '00:00:01,000 --> 00:00:08,000', text: '一句中文覆盖两句英文' }];
+  const en = [
+    { ts: '00:00:01,200 --> 00:00:03,500', text: 'First English beat' },
+    { ts: '00:00:03,800 --> 00:00:07,200', text: 'Second English beat' },
+  ];
+  const merged = mergeSubtitles(zh, en, [], noopLog);
+  const expanded = merged.filter((row) => row.alignment === 'coverage-merge');
+  assert.equal(expanded.length, 2, 'Coverage 1:N should emit two merged rows.');
+  assert.ok(expanded.every((row) => row.text.includes('一句中文覆盖两句英文')));
+  assert.ok(merged.every((row) => row.type !== 'dialogue' || row.provenance?.method !== 'single-track'), 'Covered EN cues should not remain orphans.');
+}
+
+{
+  // Greedy look-ahead: one extra EN must not derail the rest.
+  const zh = [
+    { ts: '00:00:01,000 --> 00:00:03,000', text: '第一句' },
+    { ts: '00:00:04,000 --> 00:00:06,000', text: '第二句' },
+    { ts: '00:00:07,000 --> 00:00:09,000', text: '第三句' },
+  ];
+  const en = [
+    { ts: '00:00:00,200 --> 00:00:00,800', text: 'Extra credit line' },
+    { ts: '00:00:01,050 --> 00:00:03,050', text: 'First' },
+    { ts: '00:00:04,050 --> 00:00:06,050', text: 'Second' },
+    { ts: '00:00:07,050 --> 00:00:09,050', text: 'Third' },
+  ];
+  const merged = mergeSubtitles(zh, en, [], noopLog);
+  assert.ok(merged.some((row) => row.text === '第一句\nFirst'));
+  assert.ok(merged.some((row) => row.text === '第二句\nSecond'));
+  assert.ok(merged.some((row) => row.text === '第三句\nThird'));
+  assert.ok(measureMergeOrphanRate(merged) < 0.4);
+}
+
+{
+  // Accent must not alone relabel English (commit 228806b4).
+  assert.equal(detectLanguageByContent('Thank you for the café meeting and the hello.'), 'en');
+  assert.equal(detectLanguageByContent('The señor said yes and that was that.'), 'en');
+}
+
+{
+  assert.ok(estimateSubtitleCueCount('1\n00:00:01,000 --> 00:00:02,000\nA\n\n2\n00:00:03,000 --> 00:00:04,000\nB\n') >= 2);
+  const modeBefore = useStudioStore.getState().alignmentMode;
+  useStudioStore.getState().processFiles([{
+    id: 'keep-ingest',
+    name: 'Keep.Ingest.chs.srt',
+    text: '1\n00:00:01,000 --> 00:00:02,000\n你好\n',
+    lang: 'zh-CN',
+    isBilingual: false,
+    isCommentary: false,
+    size: 8,
+  }]);
+  const filesBefore = useStudioStore.getState().uploadedFiles.length;
+  useStudioStore.getState().setAlignmentMode(modeBefore === 'standard' ? 'industrial' : 'standard');
+  assert.equal(useStudioStore.getState().uploadedFiles.length, filesBefore, 'Switching 智能/精校 must not wipe imported files.');
+  useStudioStore.getState().setAlignmentMode(modeBefore);
 }
 
 {
