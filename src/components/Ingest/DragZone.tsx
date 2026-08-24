@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
 import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity, isSdhOrCcSubtitleFilename } from '@/utils/subtitleCore';
@@ -111,6 +111,27 @@ const formatBytes = (bytes: number) => {
 
 const getQueueKey = (file: File, relativePath?: string) =>
   `${relativePath || ''}:${file.name}:${file.size}:${file.lastModified}`;
+
+/**
+ * Touch-primary / narrow-coarse：不教拖放（手机不是多任务桌面）。
+ * 与 globals.css TAP-FIRST 媒体条件对齐：
+ * `(hover: none) and (pointer: coarse)`，或 `(max-width: 768px) and (pointer: coarse)`。
+ * 细指针平板（部分 iPad）仍走桌面拖放示意。
+ */
+const TAP_FIRST_MQ =
+  '(hover: none) and (pointer: coarse), (max-width: 768px) and (pointer: coarse)';
+
+const subscribeTapFirst = (onStoreChange: () => void) => {
+  const mq = window.matchMedia(TAP_FIRST_MQ);
+  mq.addEventListener('change', onStoreChange);
+  return () => mq.removeEventListener('change', onStoreChange);
+};
+
+const getTapFirstSnapshot = () => window.matchMedia(TAP_FIRST_MQ).matches;
+const getTapFirstServerSnapshot = () => false;
+
+const useTapFirstIngest = () =>
+  useSyncExternalStore(subscribeTapFirst, getTapFirstSnapshot, getTapFirstServerSnapshot);
 
 /** 树杈伸展节奏：主干先长，叶枝随后逐条抽出（封顶避免长列表拖沓）。 */
 const leafDelayMs = (index: number) => Math.min(90 + index * 70, 480);
@@ -285,6 +306,7 @@ export const DragZone: React.FC = () => {
   const folderInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
   const shouldReduceMotion = useReducedMotion();
+  const tapFirst = useTapFirstIngest();
 
   // Parsing states
   const [isParsing, setIsParsing] = useState(false);
@@ -1120,7 +1142,7 @@ export const DragZone: React.FC = () => {
       <div
         className={`ingest-stage relative z-10 select-none ${
           queuedItems.length > 0 ? 'has-queue px-3 py-4 md:px-4 md:py-6' : 'is-empty'
-        } ${isDragging ? 'is-dragging' : ''} ${isAccepting ? 'is-accepting' : ''}`}
+        } ${tapFirst ? 'ingest-stage--tap-first' : ''} ${isDragging && !tapFirst ? 'is-dragging' : ''} ${isAccepting ? 'is-accepting' : ''}`}
       >
         <AnimatePresence mode="wait">
           {queuedItems.length === 0 ? (
@@ -1133,27 +1155,41 @@ export const DragZone: React.FC = () => {
               className="ingest-local-add"
             >
               <div className="ingest-local-add__copy">
-                <span className="ingest-local-add__cue" aria-hidden="true">
-                  <Upload className="ingest-local-add__cue-icon" size={28} strokeWidth={1.75} />
-                </span>
+                {!tapFirst && (
+                  <span className="ingest-local-add__cue" aria-hidden="true">
+                    <Upload className="ingest-local-add__cue-icon" size={28} strokeWidth={1.75} />
+                  </span>
+                )}
                 <h2 className="ingest-local-add__title">
-                  {isDragging ? '松开以添加' : '添加本地字幕'}
+                  {!tapFirst && isDragging ? '松开以添加' : '添加本地字幕'}
                 </h2>
                 <p className="ingest-local-add__hint">
-                  {isDragging ? (
-                    '文件会留在本机'
+                  {tapFirst ? (
+                    <>
+                      <span className="ingest-local-add__hint-tap">点选下方添加</span>
+                      <span className="ingest-local-add__dot" aria-hidden="true">·</span>
+                      <span className="ingest-local-add__privacy">仅在本机读取</span>
+                    </>
+                  ) : isDragging ? (
+                    <>
+                      文件会留在本机
+                      <span className="ingest-local-add__dot" aria-hidden="true">·</span>
+                      <span className="ingest-local-add__privacy">仅在本机读取</span>
+                    </>
                   ) : (
-                    <span className="ingest-local-add__hint-lead">
-                      <span className="ingest-local-add__hint-drag">拖到此处</span>
-                      <span className="ingest-local-add__hint-click">，或点选下方</span>
-                    </span>
+                    <>
+                      <span className="ingest-local-add__hint-lead">
+                        <span className="ingest-local-add__hint-drag">拖到此处</span>
+                        <span className="ingest-local-add__hint-click">，或点选下方</span>
+                      </span>
+                      <span className="ingest-local-add__dot" aria-hidden="true">·</span>
+                      <span className="ingest-local-add__privacy">仅在本机读取</span>
+                    </>
                   )}
-                  <span className="ingest-local-add__dot" aria-hidden="true">·</span>
-                  <span className="ingest-local-add__privacy">仅在本机读取</span>
                 </p>
               </div>
               <div
-                className={`ingest-local-add__entries ${isDragging ? 'is-dimmed' : ''}`}
+                className={`ingest-local-add__entries ${!tapFirst && isDragging ? 'is-dimmed' : ''}`}
                 role="group"
                 aria-label="从本机添加"
               >
@@ -1187,7 +1223,7 @@ export const DragZone: React.FC = () => {
               transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
               className="ingest-queue flex flex-col text-left"
             >
-              {isDragging && (
+              {!tapFirst && isDragging && (
                 <p className="mb-4 px-1 text-sm font-medium text-[var(--v4-accent-strong)] md:text-base">
                   松开以继续添加
                 </p>
