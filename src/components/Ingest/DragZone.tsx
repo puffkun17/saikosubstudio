@@ -1143,10 +1143,10 @@ export const DragZone: React.FC = () => {
                   {isDragging ? (
                     '文件会留在本机'
                   ) : (
-                    <>
+                    <span className="ingest-local-add__hint-lead">
                       <span className="ingest-local-add__hint-drag">拖到此处</span>
                       <span className="ingest-local-add__hint-click">，或点选下方</span>
-                    </>
+                    </span>
                   )}
                   <span className="ingest-local-add__dot" aria-hidden="true">·</span>
                   <span className="ingest-local-add__privacy">仅在本机读取</span>

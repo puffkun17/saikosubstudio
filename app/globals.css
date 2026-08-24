@@ -503,7 +503,8 @@ body {
   display: flex;
   flex-direction: column;
   margin-inline: 0;
-  padding: 0;
+  /* 奶油边与虚线井之间留缝，冷眼读成 inset drop well */
+  padding: clamp(0.65rem, 1.4vw, 1rem);
 }
 
 .ingest-drop-zone--empty {
@@ -514,16 +515,16 @@ body {
 .ingest-stage.is-empty:hover:not(.is-dragging) .ingest-local-add {
   border-color: color-mix(
     in srgb,
-    var(--v5-green) 42%,
-    color-mix(in srgb, var(--v5-orange) 28%, transparent)
+    var(--v5-green) 68%,
+    color-mix(in srgb, var(--v5-orange) 26%, var(--v5-cream))
   );
-  background: color-mix(in srgb, var(--v5-cream) 78%, #ffffff);
+  background: color-mix(in srgb, var(--v5-cream) 72%, #ffffff);
 }
 
 .ingest-stage.is-empty.is-dragging .ingest-local-add {
-  border-color: color-mix(in srgb, var(--v4-accent) 72%, var(--v5-green) 18%);
+  border-color: color-mix(in srgb, var(--v4-accent) 55%, var(--v5-green) 20%);
   border-style: dashed;
-  background: color-mix(in srgb, var(--v4-accent-soft) 28%, transparent);
+  background: color-mix(in srgb, var(--v4-accent-soft) 32%, transparent);
 }
 
 .ingest-stage.is-empty.is-accepting .ingest-local-add {
@@ -887,14 +888,14 @@ body {
   min-height: inherit;
   margin: 0;
   /* 略增内边距，空态读成 drop well 而非贴在奶油上的字+钮 */
-  padding: clamp(var(--space-7, 2.5rem), 10vh, 5.75rem) clamp(var(--space-5), 4vw, var(--space-7, 2.5rem));
+  padding: clamp(var(--space-7), 10vh, 5.75rem) clamp(var(--space-5), 4vw, var(--space-7));
   text-align: center;
   border-radius: var(--radius-lg);
-  /* Idle：墨绿/柑橘柔和虚线，冷眼即知可拖放 */
+  /* Idle：墨绿/柑橘实色混入奶油的虚线（避免半透明贴奶油看不见） */
   border: 2px dashed color-mix(
     in srgb,
-    var(--v5-green) 32%,
-    color-mix(in srgb, var(--v5-orange) 22%, transparent)
+    var(--v5-green) 55%,
+    color-mix(in srgb, var(--v5-orange) 20%, var(--v5-cream))
   );
   background: color-mix(in srgb, var(--v5-cream) 88%, #ffffff);
   box-shadow: none;
@@ -916,12 +917,12 @@ body {
   align-items: center;
   justify-content: center;
   margin-bottom: var(--space-3);
-  color: color-mix(in srgb, var(--v5-green) 55%, var(--v5-orange) 30%);
+  color: color-mix(in srgb, var(--v5-green) 62%, var(--v5-orange) 38%);
 }
 
 .ingest-local-add__cue-icon {
   display: block;
-  opacity: 0.92;
+  opacity: 1;
 }
 
 .ingest-stage.is-empty.is-dragging .ingest-local-add__cue {
@@ -951,15 +952,19 @@ body {
   color: var(--v4-text-muted);
 }
 
-/* 「拖到此处」视觉主；点选从句保持次要 */
+/* 「拖到此处」视觉主；点选从句保持次要（同一短语内无额外 gap） */
+.ingest-local-add__hint-lead {
+  display: inline;
+}
+
 .ingest-local-add__hint-drag {
-  font-weight: 600;
-  color: color-mix(in srgb, var(--v5-green) 78%, var(--v5-orange) 22%);
+  font-weight: 700;
+  color: var(--v4-text);
 }
 
 .ingest-local-add__hint-click {
   font-weight: 500;
-  color: var(--v4-text-muted);
+  color: var(--v4-text-faint);
 }
 
 .ingest-local-add__dot {
@@ -1510,7 +1515,7 @@ body {
   }
 
   .ingest-stage.is-empty {
-    min-height: min(22rem, calc(100vh - 10rem));
+    min-height: min(26rem, calc(100vh - 9.5rem));
   }
 
   .ingest-local-add__title {
