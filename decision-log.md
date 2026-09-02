@@ -1,5 +1,11 @@
 # Decision Log
 
+## 2026-09-03 (merge quality)
+
+- Split `coverageMergeCount` from `expandedDialogueCount` in `analyzeAlignmentDiff` so workbench review can treat timespan coverage separately from dash packed-dialogue expansion.
+- Added regression for coverage N:1, large inter-cue gap rejection, industrial↔fast coverage 1:N parity, and review-summary counting.
+- Scope unchanged: intelligent dual-track merge + human assist only (no translation).
+
 ## 2026-09-03
 
 - Closed stale PRs #6–#13 (EP-0 / REL tip chain from 2026-07). Bases pointed at each other and were not based on `cf-pages-hosted`.
