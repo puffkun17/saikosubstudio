@@ -1,1 +1,1 @@
-file:///workspace/saiko-edit/scripts/regression-subtitle-core.mjs
+@/workspace/saiko-edit/scripts/regression-subtitle-core.mjs
