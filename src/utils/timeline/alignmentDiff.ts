@@ -21,6 +21,8 @@ export interface AlignmentDiffEntry {
 export interface AlignmentDiffSummary {
   directPairCount: number;
   expandedDialogueCount: number;
+  /** Timespan coverage 1:N / N:1 — separate from dash packed-dialogue expansion for review UX. */
+  coverageMergeCount: number;
   singleTrackCount: number;
   shiftedMatchCount: number;
   entries: AlignmentDiffEntry[];
@@ -143,6 +145,7 @@ export function analyzeAlignmentDiff(rows: SubRow[]): AlignmentDiffSummary {
   const entries: AlignmentDiffEntry[] = [];
   let directPairCount = 0;
   let expandedDialogueCount = 0;
+  let coverageMergeCount = 0;
   let singleTrackCount = 0;
   let shiftedMatchCount = 0;
   let singleTrackGroup: TimelineRow[] = [];
@@ -195,19 +198,21 @@ export function analyzeAlignmentDiff(rows: SubRow[]): AlignmentDiffSummary {
 
     if (row.alignment === 'expanded-dialogue' || row.alignment === 'coverage-merge') {
       flushSingleTrackGroup();
-      expandedDialogueCount += 1;
+      const isCoverage = row.alignment === 'coverage-merge';
+      if (isCoverage) coverageMergeCount += 1;
+      else expandedDialogueCount += 1;
       entries.push({
-        id: `expanded-${row.index}`,
-        kind: row.alignment === 'coverage-merge' ? 'coverage-merge' : 'expanded-dialogue',
+        id: `${isCoverage ? 'coverage' : 'expanded'}-${row.index}`,
+        kind: isCoverage ? 'coverage-merge' : 'expanded-dialogue',
         rowIndexes: [row.index],
         ts: row.ts,
         startMs: item.startMs,
         endMs: item.endMs,
         primaryText,
         secondaryText,
-        label: row.alignment === 'coverage-merge' ? '时间覆盖合并' : '已展开的对话组',
-        detail: row.alignment === 'coverage-merge'
-          ? '一侧时间轴覆盖对侧多句，已按较细时间轴拆成多行（主句文本整段复用）。'
+        label: isCoverage ? '时间覆盖合并' : '已展开的对话组',
+        detail: isCoverage
+          ? '一侧时间轴覆盖对侧多句，已按较细时间轴拆成多行（主句文本整段复用）。建议核对覆盖是否过宽。'
           : '压缩的角色间对白已按另一轨的连续时间轴拆为两句。',
         isBoundaryCandidate: false,
         provenance: row.provenance ? [row.provenance] : [],
@@ -241,6 +246,7 @@ export function analyzeAlignmentDiff(rows: SubRow[]): AlignmentDiffSummary {
   return {
     directPairCount,
     expandedDialogueCount,
+    coverageMergeCount,
     singleTrackCount,
     shiftedMatchCount,
     entries,
