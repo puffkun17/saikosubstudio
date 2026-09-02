@@ -54,6 +54,7 @@ const reasonFromRow = (row: SubRow) => {
 
 const badgeTone = (kind: UnifiedKind) => {
   if (kind === 'shifted-match') return 'bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]';
+  if (kind === 'coverage-merge') return 'bg-[var(--v4-warning)]/12 text-[var(--v4-warning)]';
   if (kind === 'expanded-dialogue') return 'bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]';
   if (kind === 'screen-text' || kind === 'lyrics' || kind === 'credit') {
     return undefined;
@@ -86,6 +87,7 @@ const badgeToneStyle = (kind: UnifiedKind): React.CSSProperties | undefined => {
 
 const BadgeIcon = ({ kind }: { kind: UnifiedKind }) => {
   if (kind === 'shifted-match') return <MoveHorizontal className="h-2.5 w-2.5" />;
+  if (kind === 'coverage-merge') return <Rows3 className="h-2.5 w-2.5" />;
   if (kind === 'expanded-dialogue') return <SplitSquareVertical className="h-2.5 w-2.5" />;
   if (kind === 'screen-text') return <Captions className="h-2.5 w-2.5" />;
   if (kind === 'sound-caption') return <Volume2 className="h-2.5 w-2.5" />;
