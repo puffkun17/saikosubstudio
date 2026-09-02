@@ -28,6 +28,43 @@ export interface AlignmentDiffSummary {
   entries: AlignmentDiffEntry[];
 }
 
+/** Provenance confidence is 0–1 (offset diagnosis). Below this → low-confidence review copy. */
+export const SHIFTED_REVIEW_CONFIDENCE_THRESHOLD = 0.75;
+
+/** Auxiliary classification confidence is 0–100. Soft survivors below this enter 其他存疑. */
+export const AUXILIARY_REVIEW_CONFIDENCE_THRESHOLD = 60;
+
+export type MergeReviewCategory =
+  | 'coverage-merge'
+  | 'expanded-dialogue'
+  | 'single-track'
+  | 'shifted-match'
+  | 'other-suspect';
+
+export type MergeReviewFilter = MergeReviewCategory | 'all';
+
+export interface MergeReviewItem {
+  id: string;
+  category: MergeReviewCategory;
+  rowIndexes: number[];
+  startMs: number;
+  endMs: number;
+  ts: string;
+  text: string;
+  reason: string;
+  /** review = needs eyes; watch = labeled but lower urgency */
+  severity: 'review' | 'watch';
+  isBoundaryCandidate?: boolean;
+  confidence?: number;
+  provenance?: AlignmentProvenance[];
+}
+
+export interface MergeReviewQueue {
+  total: number;
+  counts: Record<MergeReviewCategory, number>;
+  items: MergeReviewItem[];
+}
+
 interface TimelineRow {
   row: SubRow;
   startMs: number;
@@ -40,6 +77,14 @@ const SINGLE_TRACK_GROUP_GAP_MS = 20_000;
 const SINGLE_TRACK_GROUP_SPAN_MS = 75_000;
 const BOUNDARY_WINDOW_MS = 90_000;
 const SHIFTED_GROUP_GAP_MS = 20_000;
+
+const EMPTY_COUNTS = (): Record<MergeReviewCategory, number> => ({
+  'coverage-merge': 0,
+  'expanded-dialogue': 0,
+  'single-track': 0,
+  'shifted-match': 0,
+  'other-suspect': 0,
+});
 
 const isCjkText = (text: string) => /[一-龥\u3040-\u30ff\u31f0-\u31ff\uac00-\ud7af]/.test(text);
 
@@ -71,6 +116,11 @@ const toTimelineRow = (row: SubRow): TimelineRow => ({
   ...parseSubtitleRange(row.ts),
   ...getRowSides(row),
 });
+
+const previewText = (primaryText: string, secondaryText: string, fallback = '') => {
+  const text = (primaryText || secondaryText || fallback).replace(/\s+/g, ' ').trim();
+  return text || '--';
+};
 
 const makeSingleTrackEntry = (group: TimelineRow[], firstStartMs: number, lastEndMs: number): AlignmentDiffEntry => {
   const first = group[0];
@@ -251,4 +301,126 @@ export function analyzeAlignmentDiff(rows: SubRow[]): AlignmentDiffSummary {
     shiftedMatchCount,
     entries,
   };
+}
+
+const entryToReviewItem = (entry: AlignmentDiffEntry): MergeReviewItem => {
+  const confidence = entry.provenance.find(item => typeof item.confidence === 'number')?.confidence;
+  let reason = entry.detail;
+  let severity: MergeReviewItem['severity'] = 'review';
+
+  if (entry.kind === 'coverage-merge') {
+    reason = '时间覆盖合并，建议核对覆盖是否过宽';
+    severity = 'review';
+  } else if (entry.kind === 'expanded-dialogue') {
+    reason = '已展开对话组，建议确认拆句是否自然';
+    severity = 'review';
+  } else if (entry.kind === 'single-track') {
+    if (entry.isBoundaryCandidate) {
+      reason = '片头/片尾单轨，可能是附加内容或未配对对白';
+      severity = 'watch';
+    } else {
+      reason = '片中单轨未配对，建议人工核对';
+      severity = 'review';
+    }
+  } else if (entry.kind === 'shifted-match') {
+    const low = typeof confidence === 'number' && confidence < SHIFTED_REVIEW_CONFIDENCE_THRESHOLD;
+    reason = low
+      ? `平移配对置信偏低（${Math.round((confidence ?? 0) * 100)}%），建议重点抽查`
+      : '整体平移配对，建议抽查片头片尾是否仍对齐';
+    severity = low ? 'review' : 'watch';
+  }
+
+  return {
+    id: `review-${entry.id}`,
+    category: entry.kind,
+    rowIndexes: entry.rowIndexes,
+    startMs: entry.startMs,
+    endMs: entry.endMs,
+    ts: entry.ts,
+    text: previewText(entry.primaryText, entry.secondaryText),
+    reason,
+    severity,
+    isBoundaryCandidate: entry.isBoundaryCandidate,
+    confidence,
+    provenance: entry.provenance,
+  };
+};
+
+const isOtherSuspectRow = (row: SubRow): boolean => {
+  const aux = row.auxiliary;
+  if (!aux) return false;
+  if (aux.suspicion?.kind === 'needs_review') return true;
+  if (typeof aux.confidence === 'number' && aux.confidence < AUXILIARY_REVIEW_CONFIDENCE_THRESHOLD) {
+    // Survived into timeline with soft classification — flag for eyes.
+    return true;
+  }
+  return false;
+};
+
+const otherSuspectReason = (row: SubRow): string => {
+  const aux = row.auxiliary;
+  if (aux?.suspicion?.detail) return aux.suspicion.detail;
+  if (aux?.suspicion?.reasons?.length) return `存疑：${aux.suspicion.reasons.join('、')}`;
+  if (typeof aux?.confidence === 'number') {
+    return `辅助分类置信偏低（${Math.round(aux.confidence)}），建议复核`;
+  }
+  return '辅助内容存疑，建议复核';
+};
+
+/**
+ * Post-merge human-assist queue. Reuses analyzeAlignmentDiff grouping;
+ * does not change merge algorithm. Adds soft auxiliary suspects when fields exist.
+ */
+export function buildMergeReviewQueue(rows: SubRow[]): MergeReviewQueue {
+  const summary = analyzeAlignmentDiff(rows);
+  const coveredIndexes = new Set<number>();
+  const items: MergeReviewItem[] = [];
+
+  for (const entry of summary.entries) {
+    const item = entryToReviewItem(entry);
+    items.push(item);
+    for (const index of item.rowIndexes) coveredIndexes.add(index);
+  }
+
+  for (const row of rows) {
+    if (coveredIndexes.has(row.index)) continue;
+    if (!isOtherSuspectRow(row)) continue;
+    const { startMs, endMs } = parseSubtitleRange(row.ts);
+    if (!(endMs > startMs)) continue;
+    const sides = getRowSides(row);
+    items.push({
+      id: `review-suspect-${row.index}`,
+      category: 'other-suspect',
+      rowIndexes: [row.index],
+      startMs,
+      endMs,
+      ts: row.ts,
+      text: previewText(sides.primaryText, sides.secondaryText, row.text),
+      reason: otherSuspectReason(row),
+      severity: 'review',
+      confidence: typeof row.auxiliary?.confidence === 'number'
+        ? row.auxiliary.confidence / 100
+        : undefined,
+      provenance: row.provenance ? [row.provenance] : undefined,
+    });
+  }
+
+  items.sort((a, b) => a.startMs - b.startMs || a.rowIndexes[0] - b.rowIndexes[0]);
+
+  const counts = EMPTY_COUNTS();
+  for (const item of items) counts[item.category] += 1;
+
+  return {
+    total: items.length,
+    counts,
+    items,
+  };
+}
+
+export function filterMergeReviewQueue(
+  queue: MergeReviewQueue,
+  filter: MergeReviewFilter,
+): MergeReviewItem[] {
+  if (filter === 'all') return queue.items;
+  return queue.items.filter(item => item.category === filter);
 }

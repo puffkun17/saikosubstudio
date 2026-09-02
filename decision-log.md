@@ -1,5 +1,13 @@
 # Decision Log
 
+## 2026-09-03 (merge review queue)
+
+- Added `buildMergeReviewQueue` / `filterMergeReviewQueue` beside `analyzeAlignmentDiff` (no merge-algorithm change).
+- Queue includes coverage-merge、expanded-dialogue、single-track（片中优先标复核）、shifted-match（始终入队；置信 < 0.75 标偏低）、以及低置信/ suspicion 辅助行（其他存疑）。
+- Workbench：字幕信息概览显示「待复核 N」；详细内容面板增加筛选 chips（全部 / 覆盖合并 / 展开对话 / 单轨 / 平移 / 其他存疑）与定位。
+- Regression: `scripts/regression-review-queue.inc.js` injected by the thin `test:core` loader.
+- Scope unchanged: dual-track merge + human assist only (no translation).
+
 ## 2026-09-03 (merge quality)
 
 - Split `coverageMergeCount` from `expandedDialogueCount` in `analyzeAlignmentDiff` so workbench review can treat timespan coverage separately from dash packed-dialogue expansion.
