@@ -1,5 +1,13 @@
 # Decision Log
 
+## 2026-09-03
+
+- Closed stale PRs #6–#13 (EP-0 / REL tip chain from 2026-07). Bases pointed at each other and were not based on `cf-pages-hosted`.
+- Recorded branch policy in `docs/BRANCH_POLICY.md`:
+  - `cf-pages-hosted` = public-beta / hosted source of truth for features, effects, and merge algorithms.
+  - `main` = open-source self-host line; algorithms must be derived from hosted, then strip private/commercial APIs — do not maintain a second merge implementation.
+- Product boundary confirmed: no translation / NMT / LLM remapping work. Scope is high-quality intelligent dual-track merge plus human-in-the-loop assist UX only.
+
 ## 2026-06-26
 
 - Added conservative auxiliary subtitle classification for SDH-like bracket cues.

@@ -8,6 +8,13 @@ SaikoSubStudio focuses on three steps:
 - **Workbench**: review aligned subtitle lines, edit text, tune styles, and export ASS / SRT.
 - **Theater**: preview subtitles in a cinema-style simulator with scene backdrops, TV masks, aspect ratio controls, and guide overlays.
 
+## Branches
+
+- `cf-pages-hosted` — public beta / hosted source of truth (product + merge algorithms).
+- `main` — open-source self-host line; derive behavior from hosted, then strip private APIs.
+
+See [`docs/BRANCH_POLICY.md`](docs/BRANCH_POLICY.md). Current product scope: intelligent dual-track merge and human review assist — not translation.
+
 ## Key Features
 
 - Drag and drop SRT / ASS, folders, and locally extracted ZIP / 7Z / RAR archives.
