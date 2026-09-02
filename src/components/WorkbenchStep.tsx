@@ -12,7 +12,7 @@ import { ExportDropdown } from '@/hooks/useExport';
 import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
 import { ChevronDown, GitCompareArrows, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { analyzeAlignmentDiff } from '@/utils/timeline/alignmentDiff';
+import { analyzeAlignmentDiff, buildMergeReviewQueue } from '@/utils/timeline/alignmentDiff';
 import { createSourceMatchReport } from '@/utils/timeline/sourceMatch';
 import { formatMsClock } from '@/utils/timeline/timecode';
 import { InfoHint } from '@/components/ui/InfoHint';
@@ -54,11 +54,16 @@ export const WorkbenchStep: React.FC = () => {
     () => (processedSubs ? analyzeAlignmentDiff(processedSubs) : null),
     [processedSubs],
   );
+  const reviewQueue = useMemo(
+    () => (processedSubs ? buildMergeReviewQueue(processedSubs) : null),
+    [processedSubs],
+  );
   const profileStats = useMemo(
     () => (processedSubs ? createSourceMatchReport(processedSubs, sourceDurationMs).stats : null),
     [processedSubs, sourceDurationMs],
   );
   const structureCount = alignmentSummary?.entries.length ?? 0;
+  const reviewCount = reviewQueue?.total ?? 0;
   const screenCount = processedSubs?.filter(row => (
     (row.cueKind === 'screen_text' || row.auxiliary?.category === 'screen_text')
     && row.cueKind !== 'credit'
@@ -155,15 +160,22 @@ export const WorkbenchStep: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <GitCompareArrows className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
                       <h2 className="text-sm font-semibold text-[var(--v4-text)]">字幕信息概览</h2>
-                      {structureCount > 0 ? (
+                      {reviewCount > 0 ? (
                         <span
-                          className="inline-flex min-w-6 items-center justify-center rounded-md bg-[var(--v4-danger)]/12 px-1.5 py-0.5 text-sm font-semibold tabular-nums text-[var(--v4-danger)]"
-                          title={`${structureCount} 处结构差异请复核`}
+                          className="inline-flex items-center gap-1 rounded-md bg-[var(--v4-danger)]/12 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-[var(--v4-danger)]"
+                          title={`待复核 ${reviewCount} 项（覆盖合并 / 展开对话 / 单轨 / 平移 / 存疑）`}
+                        >
+                          待复核 {reviewCount}
+                        </span>
+                      ) : structureCount > 0 ? (
+                        <span
+                          className="inline-flex min-w-6 items-center justify-center rounded-md bg-[var(--v4-warning)]/12 px-1.5 py-0.5 text-sm font-semibold tabular-nums text-[var(--v4-warning)]"
+                          title={`${structureCount} 处结构差异`}
                         >
                           {structureCount}
                         </span>
                       ) : (
-                        <span className="text-xs font-medium text-[var(--v4-text-faint)]">无结构差异</span>
+                        <span className="text-xs font-medium text-[var(--v4-text-faint)]">无需复核</span>
                       )}
                     </div>
 

@@ -76,7 +76,7 @@
 ## 仍留后续（P2+/P3）
 
 - 继续拆 `parse` / `classify` / `align` / `export` 模块
-- 低置信度队列（非 shifted）与解析器多阶段
+- ~~低置信度队列（非 shifted）~~ → 已用 `buildMergeReviewQueue` 落地（coverage / 展开 / 单轨 / 平移 / 其他存疑）；解析器多阶段仍待拆
 - 分窗拼接（window stitch）作为带状之外的第二种大矩阵策略
 
 ## 验证
@@ -92,6 +92,6 @@ npm run lint
 - 政策与展开：`src/utils/subtitleCore.ts`（`CUE_MATCH_POLICY`、`tryExpandPackedDialogueAtPath`、`classifyAuxiliaryCue`）
 - 身份：`src/utils/mediaIdentity.ts`
 - 偏移：`src/utils/timeline/offsetDiagnosis.ts`
-- 差异复核：`src/utils/timeline/alignmentDiff.ts`、`AlignmentDiffPanel.tsx`
+- 差异复核 / 待复核队列：`src/utils/timeline/alignmentDiff.ts`（`analyzeAlignmentDiff` + `buildMergeReviewQueue`）、`AlignmentDiffPanel.tsx`、`WorkbenchStep.tsx`
 - 降级通知：`src/store/useStudioStore.ts` → `runSubtitleMerge`
 - 回归：`scripts/regression-subtitle-core.mjs`
