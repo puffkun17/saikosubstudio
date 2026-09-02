@@ -1,5 +1,12 @@
 # Decision Log
 
+## 2026-09-03 (eng platform)
+
+- Added `.github/workflows/ci.yml`: PR/push on `cf-pages-hosted` runs `npm ci --legacy-peer-deps`, `test:core`, `tsc --noEmit`, `lint`.
+- Pinned `eslint-config-next` to `15.5.2` (was 16.2.6) to match `next@15.5.2`; FlatCompat in `eslint.config.mjs` for ESLint 9.
+- Documented upgrade gate in `docs/ENG_PLATFORM.md`: `@cloudflare/next-on-pages` deprecated → migrate to OpenNext Cloudflare before Next bump; do not `npm audit fix --force` on hosted.
+- No OpenNext migration / no Next bump / no merge-algorithm or Workbench UI change in this change set.
+
 ## 2026-09-03 (merge review queue)
 
 - Added `buildMergeReviewQueue` / `filterMergeReviewQueue` beside `analyzeAlignmentDiff` (no merge-algorithm change).

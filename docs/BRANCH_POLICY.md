@@ -25,3 +25,4 @@
 
 - `decision-log.md`：决策记录
 - `docs/ALGORITHM_CORE_DEBT.md`：合并算法债与后续项
+- `docs/ENG_PLATFORM.md`：Next 钉版 / next-on-pages → OpenNext 升级闸门；CI 须保持 `test:core` 绿
