@@ -1,0 +1,41 @@
+name: CI (hosted line)
+
+on:
+  pull_request:
+    branches: [ cf-pages-hosted ]
+  push:
+    branches: [ cf-pages-hosted ]
+
+# Keep Actions runtime on Node 24 while project build/test stays on Node 20
+# (Next 15.5.2 + @cloudflare/next-on-pages pin). Same rationale as deploy.yml.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        # --legacy-peer-deps required for current next-on-pages + Next 15.5.2 pin.
+        run: npm ci --legacy-peer-deps
+
+      - name: Core regression (merge algorithm)
+        run: npm run test:core
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        # eslint-config-next pinned to 15.5.2; FlatCompat bridges legacy extends.
+        run: npm run lint
