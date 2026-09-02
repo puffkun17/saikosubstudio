@@ -1,0 +1,154 @@
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import Module from 'node:module';
+import { mkdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+
+const outDir = join(tmpdir(), 'saiko-substudio-core-regression');
+process.env.NODE_PATH = join(process.cwd(), 'node_modules');
+Module._initPaths();
+
+rmSync(outDir, { recursive: true, force: true });
+mkdirSync(outDir, { recursive: true });
+
+execFileSync('npx', [
+  'tsc',
+  'src/utils/subtitleCore.ts',
+  'src/utils/mediaIdentity.ts',
+  'src/utils/tmdbCandidateFit.ts',
+  'src/utils/tmdbSearchRank.ts',
+  'src/utils/releaseNamingRules.ts',
+  'src/utils/importSafety.ts',
+  'src/utils/timeline/alignmentDiff.ts',
+  'src/utils/timeline/offsetDiagnosis.ts',
+  'src/utils/timeline/timecode.ts',
+  'src/store/useStudioStore.ts',
+  '--target',
+  'ES2020',
+  '--module',
+  'commonjs',
+  '--moduleResolution',
+  'node',
+  '--outDir',
+  outDir,
+  '--skipLibCheck',
+], { stdio: 'inherit' });
+
+const require = createRequire(import.meta.url);
+const {
+  alignSubtitlesIndustrial,
+  assessMediaIdentity,
+  buildTmdbSearchQueries,
+  checkIsBilingual,
+  cleanFilename,
+  classifySubtitleCue,
+  classifyAuxiliaryCue,
+  CUE_MATCH_POLICY,
+  smartDetectTitle,
+  detectLanguageByContent,
+  detectLanguageByFilename,
+  detectSubtitleLanguage,
+  detectSubtitleLanguagePair,
+  isMainPathSecondaryLanguage,
+  isEnglishSecondaryLanguage,
+  mainPathPrimaryRank,
+  isSdhOrCcSubtitleFilename,
+  mainPathSecondaryRank,
+  estimateSubtitleCueCount,
+  isSparseSecondaryTrack,
+  calculateOverlapRatio,
+  isCueMostlyCoveredBy,
+  isTemporalCueMatch,
+  measureMergeOrphanRate,
+  appendCreatorCredit,
+  extractStylesFromAss,
+  extractSubtitleAttributions,
+  generateAssContent,
+  generateSrtContent,
+  applyAuxiliarySubtitleMode,
+  isSubtitleCreditText,
+  mergeSubtitles,
+  normalizeSingleBilingualRows,
+  parseMediaFilename,
+  parseSubtitle,
+  splitSingleBilingualText,
+} = require(join(outDir, 'utils/subtitleCore.js'));
+const { analyzeAlignmentDiff } = require(join(outDir, 'utils/timeline/alignmentDiff.js'));
+const { useStudioStore } = require(join(outDir, 'store/useStudioStore.js'));
+const { CLIENT_IMPORT_LIMITS, getClientFileIssue } = require(join(outDir, 'utils/importSafety.js'));
+const { assessTvYearFit, shouldDemoteBySeasonSpan } = require(join(outDir, 'utils/tmdbCandidateFit.js'));
+
+const noopLog = () => {};
+
+const assertIncludes = (items, expected, message) => {
+  assert.ok(items.includes(expected), `${message}\nExpected: ${expected}\nActual: ${items.join(' | ')}`);
+};
+
+{
+  const oversizedRar = { name: 'subtitle-pack.rar', size: CLIENT_IMPORT_LIMITS.maxArchiveBytes + 1 };
+  assert.match(getClientFileIssue(oversizedRar), /字幕包/, 'RAR packages should follow the same local size boundary as ZIP packages.');
+  const acceptable7z = { name: 'subtitle-pack.7z', size: CLIENT_IMPORT_LIMITS.maxArchiveBytes };
+  assert.equal(getClientFileIssue(acceptable7z), null, 'A 7z package at the stated boundary should remain eligible for local extraction.');
+}
+
+{
+  const queries = buildTmdbSearchQueries('Down Cemetery Road XXX');
+  assertIncludes(queries, 'Down Cemetery Road', 'Dirty manual query should fall back to the real title.');
+}
+
+{
+  const zh = '新攻壳机动队.The.Ghost.in.the.Shell.S01E02.简中.srt';
+  const tw = '新攻壳机动队.The.Ghost.in.the.Shell.S01E02.繁中.srt';
+  const en = '新攻壳机动队.The.Ghost.in.the.Shell.S01E02.eng.srt';
+  assert.equal(detectLanguageByFilename(zh), 'zh-CN');
+  assert.equal(detectLanguageByFilename(tw), 'zh-TW');
+  assert.equal(detectLanguageByFilename(en), 'en');
+  assert.equal(cleanFilename(zh), '新攻壳机动队 The Ghost in the Shell');
+  assert.equal(cleanFilename(tw), '新攻壳机动队 The Ghost in the Shell');
+  assert.equal(cleanFilename(en), '新攻壳机动队 The Ghost in the Shell');
+  assert.equal(parseMediaFilename(zh).title, '新攻壳机动队 The Ghost in the Shell');
+  assert.equal(parseMediaFilename(tw).title, '新攻壳机动队 The Ghost in the Shell');
+  assert.equal(assessMediaIdentity(zh).title, '新攻壳机动队 The Ghost in the Shell');
+  const queries = buildTmdbSearchQueries(zh, 8);
+  assertIncludes(queries, '新攻壳机动队 The Ghost in the Shell', 'Mixed CN/EN TV pack titles should keep a clean search seed.');
+  assertIncludes(queries, 'The Ghost in the Shell', 'Latin title alone should be searchable for mixed filenames.');
+  assertIncludes(queries, '新攻壳机动队', 'Chinese title alone should be searchable for mixed filenames.');
+  assert.equal(
+    cleanFilename(zh),
+    cleanFilename(en),
+    'Language-tagged sibling tracks in one episode pack must share the same task base title.',
+  );
+}
+
+{
+  const queries = buildTmdbSearchQueries('[zmk.pw]Down.Cemetery.Road.S01E02.A.Kind.of.Grief.1080p.ATVP.WEB-DL.DD.5.1.Atmos.H.264-playWEB.简体&英文');
+  assert.equal(queries[0], 'Down Cemetery Road', 'Release/site tags should not outrank the real title.');
+}
+
+{
+  const queries = buildTmdbSearchQueries('[zmk.pw]【收藏级精修】Slow.Horses.S05.1080p_2160p.WEB.zip');
+  assert.equal(queries[0], 'Slow Horses', 'Subtitle package labels should be stripped before TMDB search.');
+}
+
+{
+  const sample = 'Mayor of Kingstown Teeth and Tissue AMZN playWEB 简体&英文';
+  assert.equal(cleanFilename(sample), 'Mayor of Kingstown Teeth and Tissue');
+  const queries = buildTmdbSearchQueries(sample, 12);
+  assertIncludes(queries, 'Mayor of Kingstown', 'Episode titles without SxxExx should still fall back to the series title.');
+}
+
+{
+  const sample = 'Alien_Earth_S01E02_1080p_DSNP_WEB-DL_DDP5_1_H_264_zh-CN_merged_20260617_223000.ass';
+  assert.equal(cleanFilename(sample), 'Alien Earth');
+  const parsed = parseMediaFilename(sample);
+  assert.equal(parsed.title, 'Alien Earth');
+  assert.equal(parsed.episodeKey, 'S01E02');
+  assert.equal(parsed.year, undefined, 'Episode filenames without a release year should not invent one.');
+  assert.deepEqual(buildTmdbSearchQueries(sample, 8), ['Alien Earth']);
+}
+
+{
+  const sample = 'Lucky.2026.S01E01.1080p.WEB.h264-ETHEL.简体中文.ass';
+  const parse
