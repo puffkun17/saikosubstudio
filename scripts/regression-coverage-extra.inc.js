@@ -43,5 +43,29 @@
   const diff = analyzeAlignmentDiff(industrial.map((row, index) => ({ ...row, index: index + 1 })));
   assert.equal(diff.coverageMergeCount, 2, 'Review summary must count coverage-merge separately.');
   assert.equal(diff.expandedDialogueCount, 0, 'Coverage rows must not inflate expanded-dialogue count.');
+  assert.ok(
+    expanded.every((row) => row.provenance?.method === 'coverage-merge'),
+    'Industrial coverage-merge rows must expose provenance.method coverage-merge.',
+  );
+}
+
+{
+  // Fast merge path: coverage-merge provenance.method must match alignment (not expanded-dialogue).
+  const zh = [{ ts: '00:00:01,000 --> 00:00:08,000', text: '一句中文覆盖两句英文' }];
+  const en = [
+    { ts: '00:00:01,200 --> 00:00:03,500', text: 'First English beat' },
+    { ts: '00:00:03,800 --> 00:00:07,200', text: 'Second English beat' },
+  ];
+  const fast = mergeSubtitles(zh, en, [], noopLog);
+  const coverage = fast.filter((row) => row.alignment === 'coverage-merge');
+  assert.ok(coverage.length >= 2, 'Fast coverage 1:N should emit coverage-merge rows.');
+  assert.ok(
+    coverage.every((row) => row.provenance?.method === 'coverage-merge'),
+    'Fast coverage-merge rows must expose provenance.method coverage-merge.',
+  );
+  assert.ok(
+    coverage.every((row) => row.provenance?.method !== 'expanded-dialogue'),
+    'coverage-merge must not reuse expanded-dialogue provenance.method.',
+  );
 }
 

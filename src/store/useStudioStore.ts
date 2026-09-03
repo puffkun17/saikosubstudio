@@ -200,6 +200,8 @@ export interface StudioState {
   logs: LogEntry[];
   statusNotices: StatusNotice[];
   previewIndex: number;
+  /** 0-based row indexes highlighted as a locate group (review queue / coverage group). */
+  locateGroupIndexes: number[];
   /** Continuous preview clock in ms (drives fade / playhead). */
   previewClockMs: number;
   isPreviewPlaying: boolean;
@@ -267,6 +269,7 @@ export interface StudioState {
   saveCustomTemplate: (name: string) => void;
   deleteCustomTemplate: (id: string) => void;
   setPreviewIndex: (idx: number) => void;
+  setLocateGroupIndexes: (indexes: number[]) => void;
   setPreviewClockMs: (ms: number) => void;
   setIsPreviewPlaying: (playing: boolean) => void;
   setSceneBackground: (bg: string) => void;
@@ -355,6 +358,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   logs: [],
   statusNotices: [],
   previewIndex: 0,
+  locateGroupIndexes: [],
   previewClockMs: 0,
   isPreviewPlaying: false,
   sceneBackground: 'cinema',
@@ -482,6 +486,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     persistStyles(get());
   },
   setPreviewIndex: (previewIndex) => set({ previewIndex }),
+  setLocateGroupIndexes: (locateGroupIndexes) => set({ locateGroupIndexes }),
   setPreviewClockMs: (previewClockMs) => set({ previewClockMs }),
   setIsPreviewPlaying: (isPreviewPlaying) => set({ isPreviewPlaying }),
   setSceneBackground: (sceneBackground) => set({ sceneBackground }),

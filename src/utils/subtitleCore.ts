@@ -55,7 +55,7 @@ export interface AlignmentSourceRef {
 }
 
 export interface AlignmentProvenance {
-  method: 'exact-match' | 'shifted-match' | 'expanded-dialogue' | 'single-track';
+  method: 'exact-match' | 'shifted-match' | 'expanded-dialogue' | 'coverage-merge' | 'single-track';
   timingSource: 'primary' | 'secondary';
   groupId?: string;
   confidence?: number;
@@ -1426,7 +1426,7 @@ function buildCoverageMergeRows(
     // Distinct from dash packed-dialogue expansion — full outer text is reused, not split.
     alignment: 'coverage-merge' as const,
     provenance: {
-      method: 'expanded-dialogue' as const,
+      method: 'coverage-merge' as const,
       timingSource: outerIsPrimary ? 'secondary' as const : 'primary' as const,
       groupId,
       primary: createSourceRef(outerIsPrimary ? outer : counterpart),

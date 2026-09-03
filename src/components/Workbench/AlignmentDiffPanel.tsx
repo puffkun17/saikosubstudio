@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { Captions, FileSearch2, LocateFixed, MoveHorizontal, Music2, Rows3, SplitSquareVertical, Star, Volume2 } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Captions, Check, ChevronDown, ChevronUp, FileSearch2, LocateFixed, MoveHorizontal, Music2, Rows3, SplitSquareVertical, Star, Volume2 } from 'lucide-react';
 import { describeAuxiliaryReason, isLyricText, isSubtitleCreditText, type AlignmentProvenance, type SubRow } from '@/utils/subtitleCore';
 import {
   buildMergeReviewQueue,
@@ -21,9 +21,11 @@ interface UnifiedReviewItem {
   kind: UnifiedKind;
   startMs: number;
   locateIndex: number;
+  rowIndexes: number[];
   badge: string;
   text: string;
   reason: string;
+  severity?: 'review' | 'watch';
   provenance?: AlignmentProvenance[];
 }
 
@@ -110,6 +112,12 @@ const badgeToneStyle = (kind: UnifiedKind): React.CSSProperties | undefined => {
   return undefined;
 };
 
+const severityTone = (severity: 'review' | 'watch') => (
+  severity === 'review'
+    ? 'bg-[var(--v4-danger)]/12 text-[var(--v4-danger)]'
+    : 'bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)]'
+);
+
 const BadgeIcon = ({ kind }: { kind: UnifiedKind }) => {
   if (kind === 'shifted-match') return <MoveHorizontal className="h-2.5 w-2.5" />;
   if (kind === 'coverage-merge' || kind === 'other-suspect') return <Rows3 className="h-2.5 w-2.5" />;
@@ -126,25 +134,53 @@ const queueItemToUnified = (item: MergeReviewItem): UnifiedReviewItem => ({
   kind: item.category,
   startMs: item.startMs,
   locateIndex: item.rowIndexes[0],
+  rowIndexes: item.rowIndexes,
   badge: item.category === 'single-track' && item.isBoundaryCandidate
     ? '片头/片尾单轨'
     : CATEGORY_BADGE[item.category],
   text: item.text,
   reason: item.reason,
+  severity: item.severity,
   provenance: item.provenance,
 });
 
+export interface AlignmentDiffPanelProps {
+  rows: SubRow[];
+  /** Increment to scroll/focus the panel (e.g. overview 待复核 badge). */
+  focusNonce?: number;
+  /** When focusNonce changes, optionally force this filter. */
+  preferredFilter?: MergeReviewFilter;
+}
+
 /** Detail table — merge review queue + auxiliary listing; filters in header chips. */
-export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
+export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
+  rows,
+  focusNonce = 0,
+  preferredFilter,
+}) => {
+  const panelRef = useRef<HTMLElement>(null);
   const [sourceEntryId, setSourceEntryId] = useState<string | null>(null);
   const [reviewFilter, setReviewFilter] = useState<MergeReviewFilter>('all');
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(() => new Set());
+  const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const setPreviewIndex = useStudioStore((state) => state.setPreviewIndex);
+  const setLocateGroupIndexes = useStudioStore((state) => state.setLocateGroupIndexes);
   const setJumpLineVal = useStudioStore((state) => state.setJumpLineVal);
   const showAllSubs = useStudioStore((state) => state.showAllSubs);
   const setShowAllSubs = useStudioStore((state) => state.setShowAllSubs);
   const lyricPosition = useStudioStore((state) => state.customStyle.lyricPosition ?? 'top');
 
   const queue = useMemo(() => buildMergeReviewQueue(rows), [rows]);
+
+  useEffect(() => {
+    if (!focusNonce) return;
+    if (preferredFilter) setReviewFilter(preferredFilter);
+    const el = panelRef.current;
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      el.focus({ preventScroll: true });
+    }
+  }, [focusNonce, preferredFilter]);
 
   const items = useMemo((): UnifiedReviewItem[] => {
     const structureItems = filterMergeReviewQueue(queue, reviewFilter).map(queueItemToUnified);
@@ -160,6 +196,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
         kind: 'screen-text' as const,
         startMs: parseSubtitleRange(row.ts).startMs,
         locateIndex: row.index,
+        rowIndexes: [row.index],
         badge: MARK_LABEL.screen,
         text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
         reason: reasonFromRow(row),
@@ -170,6 +207,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
       kind: 'sound-caption' as const,
       startMs: parseSubtitleRange(row.ts).startMs,
       locateIndex: row.index,
+      rowIndexes: [row.index],
       badge: MARK_LABEL.sound,
       text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
       reason: reasonFromRow(row),
@@ -181,6 +219,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
       kind: 'lyrics' as const,
       startMs: parseSubtitleRange(row.ts).startMs,
       locateIndex: row.index,
+      rowIndexes: [row.index],
       badge: MARK_LABEL.lyrics,
       text: row.text.replace(/\\N/gi, ' / ').replace(/\s+/g, ' ').trim(),
       reason: `歌词显示平面 · ${lyricPosLabel}`,
@@ -191,6 +230,7 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
       kind: 'credit' as const,
       startMs: parseSubtitleRange(row.ts).startMs,
       locateIndex: row.index,
+      rowIndexes: [row.index],
       badge: MARK_LABEL.credit,
       text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
       reason: '字幕制作署名，不属于影片画面或对白',
@@ -205,11 +245,62 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
       .sort((a, b) => a.startMs - b.startMs || a.locateIndex - b.locateIndex);
   }, [queue, reviewFilter, rows, lyricPosition]);
 
-  const handleLocate = (rowIndex: number) => {
-    const arrayIndex = Math.max(0, rowIndex - 1);
-    setPreviewIndex(arrayIndex);
-    setJumpLineVal(String(rowIndex));
-    if (arrayIndex >= 100 && !showAllSubs) setShowAllSubs(true);
+  const activeIndex = useMemo(() => {
+    if (!activeItemId) return items.length > 0 ? 0 : -1;
+    const idx = items.findIndex(item => item.id === activeItemId);
+    return idx >= 0 ? idx : (items.length > 0 ? 0 : -1);
+  }, [activeItemId, items]);
+
+  useEffect(() => {
+    if (items.length === 0) {
+      setActiveItemId(null);
+      return;
+    }
+    if (!activeItemId || !items.some(item => item.id === activeItemId)) {
+      setActiveItemId(items[0].id);
+    }
+  }, [items, activeItemId]);
+
+  const handleLocate = (item: UnifiedReviewItem) => {
+    const indexes = (item.rowIndexes.length > 0 ? item.rowIndexes : [item.locateIndex])
+      .map(rowIndex => Math.max(0, rowIndex - 1));
+    const first = indexes[0] ?? 0;
+    setActiveItemId(item.id);
+    setPreviewIndex(first);
+    setJumpLineVal(String(first + 1));
+    setLocateGroupIndexes(indexes.length > 1 ? indexes : []);
+    if (first >= 100 && !showAllSubs) setShowAllSubs(true);
+  };
+
+  const goRelative = (delta: number) => {
+    if (items.length === 0 || activeIndex < 0) return;
+    const next = (activeIndex + delta + items.length) % items.length;
+    const item = items[next];
+    setActiveItemId(item.id);
+    handleLocate(item);
+  };
+
+  const toggleChecked = (id: string) => {
+    setCheckedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const markCheckedAndMaybeNext = (id: string) => {
+    setCheckedIds(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+    const idx = items.findIndex(item => item.id === id);
+    if (idx >= 0 && idx < items.length - 1) {
+      const item = items[idx + 1];
+      setActiveItemId(item.id);
+      handleLocate(item);
+    }
   };
 
   const chipCount = (id: MergeReviewFilter) => {
@@ -217,15 +308,45 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
     return queue.counts[id];
   };
 
+  const checkedCount = items.filter(item => checkedIds.has(item.id)).length;
+
   return (
-    <section className="v4-panel overflow-hidden">
+    <section
+      ref={panelRef}
+      tabIndex={-1}
+      className="v4-panel overflow-hidden outline-none"
+      aria-label="待复核明细"
+    >
       <div className="flex flex-col gap-2 border-b border-[var(--v4-line)] px-4 py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-[var(--v4-text-faint)]">
             待复核队列与辅助内容明细
             {queue.total > 0 ? ` · 待复核 ${queue.total}` : ''}
             {items.length > 0 ? ` · 当前 ${items.length}` : ''}
+            {checkedCount > 0 ? ` · 已核对 ${checkedCount}` : ''}
           </p>
+          <div className="flex flex-wrap items-center gap-1">
+            <button
+              type="button"
+              className="ui-action ui-action--quiet"
+              disabled={items.length === 0}
+              onClick={() => goRelative(-1)}
+              title="上一项"
+            >
+              <ChevronUp className="h-3 w-3" />
+              上一项
+            </button>
+            <button
+              type="button"
+              className="ui-action ui-action--quiet"
+              disabled={items.length === 0}
+              onClick={() => goRelative(1)}
+              title="下一项"
+            >
+              <ChevronDown className="h-3 w-3" />
+              下一项
+            </button>
+          </div>
         </div>
         <div className="ui-choice-group flex flex-wrap" role="tablist" aria-label="待复核筛选">
           {REVIEW_FILTERS.map(item => {
@@ -269,10 +390,12 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
           {items.map((item) => {
             const hasSource = Boolean(item.provenance && item.provenance.length > 0);
             const isSourceOpen = sourceEntryId === item.id;
+            const isActive = activeItemId === item.id;
+            const isChecked = checkedIds.has(item.id);
             return (
               <div
                 key={item.id}
-                className="border-b border-[var(--v4-line)] last:border-b-0"
+                className={`border-b border-[var(--v4-line)] last:border-b-0 ${isActive ? 'bg-[var(--v4-accent-soft)]/35' : ''} ${isChecked ? 'opacity-70' : ''}`}
                 style={{ contentVisibility: 'auto', containIntrinsicSize: '0 48px' }}
               >
                 <div className="grid grid-cols-1 gap-1.5 px-4 py-2 md:grid-cols-[4.75rem_minmax(0,1.35fr)_minmax(0,1fr)_auto] md:items-center md:gap-3">
@@ -280,13 +403,26 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                     <div className="font-mono text-xs tabular-nums text-[var(--v4-text-muted)]">
                       {formatMsClock(item.startMs)}
                     </div>
-                    <span
-                      className={`mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-xs font-medium ${badgeTone(item.kind) ?? ''}`}
-                      style={badgeToneStyle(item.kind)}
-                    >
-                      <BadgeIcon kind={item.kind} />
-                      <span className="truncate">{item.badge}</span>
-                    </span>
+                    <div className="mt-1 flex flex-wrap items-center gap-1">
+                      <span
+                        className={`inline-flex max-w-full items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-xs font-medium ${badgeTone(item.kind) ?? ''}`}
+                        style={badgeToneStyle(item.kind)}
+                      >
+                        <BadgeIcon kind={item.kind} />
+                        <span className="truncate">{item.badge}</span>
+                      </span>
+                      {item.severity && (
+                        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${severityTone(item.severity)}`}>
+                          {item.severity === 'review' ? '需复核' : '留意'}
+                        </span>
+                      )}
+                      {isChecked && (
+                        <span className="inline-flex items-center gap-0.5 rounded-md bg-[var(--v4-accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--v4-accent-strong)]">
+                          <Check className="h-2.5 w-2.5" />
+                          已核对
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="min-w-0 truncate text-xs leading-5 text-[var(--v4-text-muted)]" title={item.text}>
                     {item.text}
@@ -308,9 +444,20 @@ export const AlignmentDiffPanel: React.FC<{ rows: SubRow[] }> = ({ rows }) => {
                     )}
                     <button
                       type="button"
-                      onClick={() => handleLocate(item.locateIndex)}
+                      onClick={() => (isChecked ? toggleChecked(item.id) : markCheckedAndMaybeNext(item.id))}
+                      className={isChecked ? 'ui-action' : 'ui-action ui-action--quiet'}
+                      title={isChecked ? '取消已核对' : '标记已核对并跳到下一项'}
+                    >
+                      <Check className="h-3 w-3" />
+                      已核对
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleLocate(item)}
                       className="ui-action ui-action--quiet"
-                      title={`定位到第 ${item.locateIndex} 行`}
+                      title={item.rowIndexes.length > 1
+                        ? `定位并高亮 ${item.rowIndexes.length} 行`
+                        : `定位到第 ${item.locateIndex} 行`}
                     >
                       <LocateFixed className="h-3 w-3" />
                       定位

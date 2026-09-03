@@ -48,6 +48,7 @@ export const WorkbenchStep: React.FC = () => {
   useUiModalFocus(showBackConfirm, backModalRef, () => setShowBackConfirm(false));
   const [sourceDurationMs, setSourceDurationMs] = useState<number | undefined>(undefined);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [reviewFocusNonce, setReviewFocusNonce] = useState(0);
   const [markFilter, setMarkFilter] = useState<InspectionMarkFilter>('all');
 
   const alignmentSummary = useMemo(
@@ -161,12 +162,18 @@ export const WorkbenchStep: React.FC = () => {
                       <GitCompareArrows className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
                       <h2 className="text-sm font-semibold text-[var(--v4-text)]">字幕信息概览</h2>
                       {reviewCount > 0 ? (
-                        <span
-                          className="inline-flex items-center gap-1 rounded-md bg-[var(--v4-danger)]/12 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-[var(--v4-danger)]"
-                          title={`待复核 ${reviewCount} 项（覆盖合并 / 展开对话 / 单轨 / 平移 / 存疑）`}
+                        <button
+                          type="button"
+                          className="v4-focus-ring inline-flex items-center gap-1 rounded-md bg-[var(--v4-danger)]/12 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-[var(--v4-danger)] hover:bg-[var(--v4-danger)]/18"
+                          title={`待复核 ${reviewCount} 项（覆盖合并 / 展开对话 / 单轨 / 平移 / 存疑）· 点击打开明细`}
+                          aria-expanded={isDetailOpen}
+                          onClick={() => {
+                            setIsDetailOpen(true);
+                            setReviewFocusNonce(value => value + 1);
+                          }}
                         >
                           待复核 {reviewCount}
-                        </span>
+                        </button>
                       ) : structureCount > 0 ? (
                         <span
                           className="inline-flex min-w-6 items-center justify-center rounded-md bg-[var(--v4-warning)]/12 px-1.5 py-0.5 text-sm font-semibold tabular-nums text-[var(--v4-warning)]"
@@ -273,7 +280,13 @@ export const WorkbenchStep: React.FC = () => {
                     onTimelineDurationChange={setSourceDurationMs}
                     markFilter={markFilter}
                   />
-                  {isDetailOpen && <AlignmentDiffPanel rows={processedSubs} />}
+                  {isDetailOpen && (
+                    <AlignmentDiffPanel
+                      rows={processedSubs}
+                      focusNonce={reviewFocusNonce}
+                      preferredFilter="all"
+                    />
+                  )}
                 </div>
               </section>
             )}
