@@ -20,6 +20,8 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
     processedSubs,
     previewIndex,
     setPreviewIndex,
+    locateGroupIndexes,
+    setLocateGroupIndexes,
     setJumpLineVal,
     showAllSubs,
     setShowAllSubs,
@@ -33,6 +35,8 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
     processedSubs: state.processedSubs,
     previewIndex: state.previewIndex,
     setPreviewIndex: state.setPreviewIndex,
+    locateGroupIndexes: state.locateGroupIndexes,
+    setLocateGroupIndexes: state.setLocateGroupIndexes,
     setJumpLineVal: state.setJumpLineVal,
     showAllSubs: state.showAllSubs,
     setShowAllSubs: state.setShowAllSubs,
@@ -54,9 +58,11 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
   const longPressTimerRef = useRef<number | null>(null);
   const longPressFiredRef = useRef(false);
 
-  const selectedIndexes = multiSelectedIndexes.size > 1
-    ? multiSelectedIndexes
-    : new Set<number>([previewIndex]);
+  const selectedIndexes = (() => {
+    if (multiSelectedIndexes.size > 1) return multiSelectedIndexes;
+    if (locateGroupIndexes.length > 1) return new Set<number>(locateGroupIndexes);
+    return new Set<number>([previewIndex]);
+  })();
 
   const THRESHOLD = 500;
   const LIMIT = 100;
@@ -106,6 +112,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
 
   const handleRowSelect = useCallback((sub: SubRow, event: React.MouseEvent | React.KeyboardEvent) => {
     const idx = sub.index - 1;
+    if (locateGroupIndexes.length > 0) setLocateGroupIndexes([]);
     const shift = 'shiftKey' in event && event.shiftKey;
     const toggle = ('metaKey' in event && event.metaKey)
       || ('ctrlKey' in event && event.ctrlKey)
@@ -134,7 +141,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
       setSelectionAnchor(idx);
     }
     applyPreview(idx);
-  }, [applyPreview, previewIndex, selectionAnchor]);
+  }, [applyPreview, previewIndex, selectionAnchor, locateGroupIndexes, setLocateGroupIndexes]);
 
   const beginEditing = (sub: SubRow) => {
     const parts = sub.text.replace(/\\N/gi, '\n').split('\n');
@@ -278,6 +285,9 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                 || isSubtitleCreditText(sub.text)
               );
               const isExpandedDialogue = sub.alignment === 'expanded-dialogue';
+              const isCoverageMerge = sub.alignment === 'coverage-merge';
+              const isShiftedMatch = sub.alignment === 'shifted-match';
+              const isSingleTrack = sub.provenance?.method === 'single-track' && !isExpandedDialogue && !isCoverageMerge && !isShiftedMatch;
               const isSoundCaption = !isLyric && !isCredit && sub.cueKind === 'sound_caption';
               const isScreenText = !isLyric && !isCredit && (
                 sub.cueKind === 'screen_text' || sub.auxiliary?.category === 'screen_text'
@@ -297,14 +307,23 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     : isScreenText
                       ? 'screen'
                       : null;
+              const alignmentBadge = isCoverageMerge
+                ? { short: '覆', title: '时间覆盖合并' }
+                : isExpandedDialogue
+                  ? { short: '组', title: '对话组' }
+                  : isShiftedMatch
+                    ? { short: '移', title: '整体平移配对' }
+                    : isSingleTrack
+                      ? { short: '单', title: '单侧字轨' }
+                      : null;
               const rowMarkTitle = rowMarkKind === 'lyrics'
                 ? `${MARK_LABEL.lyrics} · ${lyricPosLabel}`
                 : rowMarkKind
                   ? MARK_LABEL[rowMarkKind]
                   : isAuxiliarySemantic
                     ? '辅助信息'
-                    : isExpandedDialogue
-                      ? '对话组'
+                    : alignmentBadge
+                      ? alignmentBadge.title
                       : undefined;
 
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
@@ -367,14 +386,14 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     <span
                       className="inline-flex h-3 w-3 shrink-0 items-center justify-center"
                       title={rowMarkTitle}
-                      aria-label={rowMarkKind || isAuxiliarySemantic || isExpandedDialogue ? rowMarkTitle : undefined}
-                      aria-hidden={!rowMarkKind && !isAuxiliarySemantic && !isExpandedDialogue}
+                      aria-label={rowMarkKind || isAuxiliarySemantic || alignmentBadge ? rowMarkTitle : undefined}
+                      aria-hidden={!rowMarkKind && !isAuxiliarySemantic && !alignmentBadge}
                     >
                       {rowMarkKind ? (
                         <InspectionMarkGlyph kind={rowMarkKind} size={10} />
-                      ) : (isAuxiliarySemantic || isExpandedDialogue) ? (
+                      ) : (isAuxiliarySemantic || alignmentBadge) ? (
                         <span className="inline-flex h-3 min-w-3 items-center justify-center rounded-[var(--radius-xs)] border border-[var(--v4-line-strong)] px-0.5 font-mono text-[8px] font-semibold leading-none text-[var(--v4-text-faint)]">
-                          {isExpandedDialogue ? '组' : '辅'}
+                          {alignmentBadge ? alignmentBadge.short : '辅'}
                         </span>
                       ) : null}
                     </span>

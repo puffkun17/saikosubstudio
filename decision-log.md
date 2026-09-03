@@ -1,5 +1,12 @@
 # Decision Log
 
+## 2026-09-03 (human-assist P0)
+
+- 待复核闭环：概览「待复核 N」可点击打开/聚焦 AlignmentDiffPanel；明细展示 severity（需复核/留意）；会话内「已核对」+「上一项/下一项」；定位高亮整组 `rowIndexes`。
+- SequenceList 行徽章：`coverage-merge`（覆）、`shifted-match`（移）、可选 `single-track`（单），并保留对话组（组）。
+- 修正 coverage 路径 `provenance.method` 为 `coverage-merge`（含类型联合扩展）；`test:core` 增加回归断言。
+- 未改核心合轴算法行为（除 provenance 字段）；未 bump Next/OpenNext；未动 `main`。
+
 ## 2026-09-03 (eng platform)
 
 - Added `.github/workflows/ci.yml`: PR/push on `cf-pages-hosted` runs `npm ci --legacy-peer-deps`, `test:core`, `tsc --noEmit`, `lint`.
