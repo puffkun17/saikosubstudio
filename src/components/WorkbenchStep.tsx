@@ -16,6 +16,7 @@ import { analyzeAlignmentDiff, buildMergeReviewQueue } from '@/utils/timeline/al
 import { createSourceMatchReport } from '@/utils/timeline/sourceMatch';
 import { formatMsClock } from '@/utils/timeline/timecode';
 import { InfoHint } from '@/components/ui/InfoHint';
+import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import { useUiModalFocus } from '@/hooks/useUiModalFocus';
 
@@ -172,14 +173,19 @@ export const WorkbenchStep: React.FC = () => {
                             setReviewFocusNonce(value => value + 1);
                           }}
                         >
-                          待复核 {reviewCount}
+                          待复核{' '}
+                          <AnimatedCounter
+                            value={reviewCount}
+                            separator=""
+                            className="text-xs font-semibold text-[var(--v4-danger)]"
+                          />
                         </button>
                       ) : structureCount > 0 ? (
                         <span
                           className="inline-flex min-w-6 items-center justify-center rounded-md bg-[var(--v4-warning)]/12 px-1.5 py-0.5 text-sm font-semibold tabular-nums text-[var(--v4-warning)]"
                           title={`${structureCount} 处结构差异`}
                         >
-                          {structureCount}
+                          <AnimatedCounter value={structureCount} separator="" className="text-sm font-semibold text-[var(--v4-warning)]" />
                         </span>
                       ) : (
                         <span className="text-xs font-medium text-[var(--v4-text-faint)]">无需复核</span>

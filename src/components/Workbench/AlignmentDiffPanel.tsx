@@ -13,6 +13,8 @@ import {
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 import { useStudioStore } from '@/store/useStudioStore';
 import { MARK_COLOR, MARK_LABEL } from '@/components/Workbench/inspectionMarks';
+import { GooeyNav } from '@/components/ui/gooey-nav';
+import { AnimatedCounter } from '@/components/ui/animated-counter';
 
 type UnifiedKind = MergeReviewCategory | 'screen-text' | 'sound-caption' | 'lyrics' | 'credit';
 
@@ -31,11 +33,11 @@ interface UnifiedReviewItem {
 
 const REVIEW_FILTERS: Array<{ id: MergeReviewFilter; label: string }> = [
   { id: 'all', label: '全部' },
-  { id: 'coverage-merge', label: '覆盖合并' },
-  { id: 'expanded-dialogue', label: '展开对话' },
+  { id: 'coverage-merge', label: '覆盖' },
+  { id: 'expanded-dialogue', label: '对话' },
   { id: 'single-track', label: '单轨' },
   { id: 'shifted-match', label: '平移' },
-  { id: 'other-suspect', label: '其他存疑' },
+  { id: 'other-suspect', label: '其他' },
 ];
 
 const CATEGORY_BADGE: Record<MergeReviewCategory, string> = {
@@ -319,11 +321,31 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
     >
       <div className="flex flex-col gap-2 border-b border-[var(--v4-line)] px-4 py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-[var(--v4-text-faint)]">
-            待复核队列与辅助内容明细
-            {queue.total > 0 ? ` · 待复核 ${queue.total}` : ''}
-            {items.length > 0 ? ` · 当前 ${items.length}` : ''}
-            {checkedCount > 0 ? ` · 已核对 ${checkedCount}` : ''}
+          <p className="inline-flex flex-wrap items-center gap-x-1 text-xs text-[var(--v4-text-faint)]">
+            <span>待复核队列与辅助内容明细</span>
+            {queue.total > 0 && (
+              <>
+                <span>· 待复核</span>
+                <AnimatedCounter
+                  value={queue.total}
+                  separator=""
+                  className="font-semibold text-[var(--v4-danger)]"
+                  aria-label={`待复核 ${queue.total}`}
+                />
+              </>
+            )}
+            {items.length > 0 && (
+              <>
+                <span>· 当前</span>
+                <AnimatedCounter value={items.length} separator="" className="font-semibold text-[var(--v4-text-muted)]" />
+              </>
+            )}
+            {checkedCount > 0 && (
+              <>
+                <span>· 已核对</span>
+                <AnimatedCounter value={checkedCount} separator="" className="font-semibold text-[var(--v4-accent-strong)]" />
+              </>
+            )}
           </p>
           <div className="flex flex-wrap items-center gap-1">
             <button
@@ -348,27 +370,23 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
             </button>
           </div>
         </div>
-        <div className="ui-choice-group flex flex-wrap" role="tablist" aria-label="待复核筛选">
-          {REVIEW_FILTERS.map(item => {
-            const count = chipCount(item.id);
-            const disabled = item.id !== 'all' && count === 0;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={reviewFilter === item.id}
-                disabled={disabled}
-                onClick={() => setReviewFilter(item.id)}
-                className={`ui-choice inline-flex items-center gap-1 ${reviewFilter === item.id ? 'ui-choice--on' : ''} ${disabled ? 'opacity-40' : ''}`}
-              >
-                {item.label}
-                {count > 0 && (
-                  <span className="tabular-nums text-[var(--v4-text-faint)]">{count}</span>
-                )}
-              </button>
-            );
-          })}
+        <div className="max-w-full overflow-x-auto pb-0.5" aria-label="待复核筛选">
+          <GooeyNav
+            size="xs"
+            activeColor="var(--v4-accent-strong)"
+            activeLabelColor="#ffffff"
+            items={REVIEW_FILTERS.map((item) => {
+              const count = chipCount(item.id);
+              return count > 0 ? `${item.label} ${count}` : item.label;
+            })}
+            value={Math.max(0, REVIEW_FILTERS.findIndex((item) => item.id === reviewFilter))}
+            onChange={(index) => {
+              const next = REVIEW_FILTERS[index];
+              if (!next) return;
+              if (next.id !== 'all' && chipCount(next.id) === 0) return;
+              setReviewFilter(next.id);
+            }}
+          />
         </div>
       </div>
 

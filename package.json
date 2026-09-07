@@ -17,6 +17,8 @@
     "@radix-ui/react-slot": "^1.2.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "figma-squircle": "^1.1.0",
+    "flubber": "^0.4.2",
     "framer-motion": "^12.40.0",
     "geist": "^1.7.1",
     "jszip": "^3.10.1",
@@ -26,6 +28,7 @@
     "next": "15.5.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-use-measure": "^2.1.7",
     "tailwind-merge": "^3.6.0",
     "zustand": "^5.0.13"
   },
