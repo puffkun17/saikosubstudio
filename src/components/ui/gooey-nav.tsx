@@ -25,8 +25,8 @@ const NECK_H = 100;
 const FADE_IN = "transition-colors duration-[400ms]";
 const FADE_OUT = "transition-colors duration-0";
 
-const BAR = "bg-[#F4F4F9] dark:bg-[#262626]";
-const BAR_TEXT = "text-[#F4F4F9] dark:text-[#262626]";
+const BAR = "bg-[var(--v4-panel-muted)]";
+const BAR_TEXT = "text-[var(--v4-panel-muted)]";
 
 const SIZES = {
   xs: {
@@ -178,7 +178,7 @@ function NavLabel({
       "flex cursor-pointer items-center whitespace-nowrap font-medium [&_svg]:shrink-0",
       isActive ? FADE_IN : FADE_OUT,
       SIZES[size].label,
-      !isActive && "text-[#868593]",
+      !isActive && "text-[var(--v4-text-muted)]",
     ),
     style: isActive ? { color: activeLabelColor } : undefined,
     onClick: onSelect,
@@ -203,8 +203,8 @@ export function GooeyNav({
   defaultValue = 0,
   onChange,
   size = "md",
-  activeColor = "#FC4C01",
-  activeLabelColor = "#ffffff",
+  activeColor = "var(--v4-accent-strong)",
+  activeLabelColor = "var(--v4-accent-ink)",
   separation,
   radius,
   className,
