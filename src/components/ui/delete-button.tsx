@@ -43,16 +43,15 @@ const PRESS = {
 } as const;
 const INSTANT = { duration: 0 } as const;
 
-const SURFACE = "bg-[#F4F4F9] dark:bg-[#262626]";
-const RECESS = "bg-[#E7E7EF] dark:bg-[#1B1B1B]";
-const GLYPH = "text-[#868593] dark:text-[#9B9AA7]";
-const FOCUS = "outline-none focus-visible:ring-2 focus-visible:ring-[#868593]";
-const ACCENT = "#FF5F2E";
+const SURFACE = "border border-[var(--v4-line)] bg-[var(--v4-panel)]";
+const RECESS = "border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]";
+const GLYPH = "text-[var(--v4-text-muted)]";
+const FOCUS = "outline-none focus-visible:ring-2 focus-visible:ring-[var(--v4-line-strong)]";
+const ACCENT = "var(--v4-danger)";
 
-const LIFT =
-  "shadow-[0_0.5px_1px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.08),inset_0_0.5px_0_rgba(255,255,255,0.9)] dark:shadow-[0_0.5px_1px_rgba(0,0,0,0.35),0_1.5px_4px_rgba(0,0,0,0.25),inset_0_0.5px_0_rgba(255,255,255,0.07)]";
+const LIFT = "shadow-[var(--elevation-0)]";
 
-const CIRCLE = `grid h-7 w-7 place-items-center rounded-full transition-colors duration-200 hover:bg-[#FAFAFD] dark:hover:bg-[#2C2C2C] ${FOCUS} ${SURFACE} ${LIFT}`;
+const CIRCLE = `grid h-7 w-7 place-items-center rounded-full transition-colors duration-200 hover:bg-[var(--v4-panel-raised)] hover:text-[var(--v4-text)] ${FOCUS} ${SURFACE} ${LIFT}`;
 
 const ICON = {
   viewBox: "0 0 24 24",
