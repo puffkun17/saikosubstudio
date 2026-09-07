@@ -11,7 +11,6 @@ import {
   FolderPlus,
   HardDrive,
   Plus,
-  Trash2,
   Upload,
   X,
 } from 'lucide-react';
@@ -24,6 +23,7 @@ import {
   warmLocalArchiveEngine,
 } from '@/utils/localArchive';
 import { FileFormatIcon, LanguageMark, resolveFileFormat } from '@/components/ui/FileFormatIcon';
+import { DeleteButton } from '@/components/ui/delete-button';
 import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
 
 type ParseStatus = 'reading' | 'analyzing' | 'success' | 'warning' | 'skipped';
@@ -1336,14 +1336,13 @@ export const DragZone: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => { setQueuedItems([]); setQueueIssue(null); }}
-                    className="ui-action ui-action--quiet ui-action--lg"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    清空
-                  </button>
+                  <div className="inline-flex items-center gap-2">
+                    <span className="text-xs text-[var(--v4-text-faint)]">清空队列</span>
+                    <DeleteButton
+                      aria-label="清空导入队列"
+                      onConfirm={() => { setQueuedItems([]); setQueueIssue(null); }}
+                    />
+                  </div>
                 </div>
               </header>
 

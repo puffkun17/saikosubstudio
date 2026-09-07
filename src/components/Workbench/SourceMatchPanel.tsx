@@ -3,6 +3,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, HardDrive, MonitorPlay, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { DurationPicker, type DurationValue } from '@/components/ui/duration-picker';
 import type { SubRow } from '@/utils/subtitleCore';
 import { isLyricText, isSubtitleCreditText } from '@/utils/subtitleCore';
 import { createSourceMatchReport, type SourceMatchFinding, type SourceMatchReport } from '@/utils/timeline/sourceMatch';
@@ -262,6 +263,26 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
     if (mark.arrayIndex >= 100 && !showAllSubs) setShowAllSubs(true);
   };
 
+  const durationValueFromMs = (ms: number | undefined): DurationValue => {
+    if (!ms || ms <= 0) return { hours: 0, minutes: 0 };
+    const totalMinutes = Math.round(ms / 60000);
+    return {
+      hours: Math.floor(totalMinutes / 60),
+      minutes: totalMinutes % 60,
+    };
+  };
+
+  const applyManualDuration = (value: DurationValue) => {
+    const nextMs = (value.hours * 60 + value.minutes) * 60_000;
+    const durationMs = nextMs > 0 ? nextMs : undefined;
+    setVideoDurationMs(durationMs);
+    onTimelineDurationChange?.(durationMs);
+    if (durationMs) {
+      setVideoName((current) => current || '手动片源时长');
+      setMetadataError('');
+    }
+  };
+
   const handleVideoFile = (file: File | undefined) => {
     if (!file) return;
     setMetadataError('');
@@ -488,6 +509,25 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
             <span>{formatMsClock(timelineDurationMs / 2)}</span>
             <span>{formatMsClock(timelineDurationMs)}</span>
           </div>
+        </div>
+
+        <div className="mt-3 flex flex-col gap-2 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]/40 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-[var(--v4-text-muted)]">片源时长辅助（本地）</p>
+            <p className="mt-0.5 text-[11px] leading-4 text-[var(--v4-text-faint)]">
+              可手填时·分覆盖对比基准；仅本机计算，不上传片源或字幕。
+            </p>
+          </div>
+          <DurationPicker
+            value={durationValueFromMs(videoDurationMs)}
+            onConfirm={applyManualDuration}
+            hoursLabel="时"
+            minutesLabel="分"
+            maxHours={9}
+            maxMinutes={59}
+            className="scale-90 origin-right"
+            aria-label="片源时长选择器"
+          />
         </div>
 
         <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--v4-text-faint)]">
