@@ -242,6 +242,11 @@ export interface StudioState {
   /** 字幕文本编辑历史（跨组件持久，抽屉开关不丢栈）。 */
   editHistory: SubtitleEditRecord[];
   editFuture: SubtitleEditRecord[];
+  /**
+   * Session-scoped merge-review checked ids, keyed by taskId (or filename fallback).
+   * Survives closing the detail panel; cleared on task clear / restart / remarge.
+   */
+  mergeReviewCheckedByTask: Record<string, string[]>;
 
   // Actions
   setAlignmentMode: (mode: 'standard' | 'industrial') => void;
@@ -289,6 +294,10 @@ export interface StudioState {
   editSubtitleText: (index: number, text: string) => void;
   undoSubtitleEdit: () => void;
   redoSubtitleEdit: () => void;
+  setMergeReviewChecked: (taskKey: string, ids: string[]) => void;
+  toggleMergeReviewChecked: (taskKey: string, id: string) => void;
+  markMergeReviewChecked: (taskKey: string, id: string) => void;
+  clearMergeReviewChecked: (taskKey?: string) => void;
   setLightsOff: (on: boolean) => void;
   setShowAllSubs: (show: boolean) => void;
   setShowAssHint: (val: boolean) => void;
@@ -392,6 +401,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   isLightsOff: false,
   editHistory: [],
   editFuture: [],
+  mergeReviewCheckedByTask: {},
 
   setAlignmentMode: (alignmentMode) => {
     // Mode switch must not wipe ingest; only the next merge consumes the new mode.
@@ -599,6 +609,60 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       editFuture: state.editFuture.slice(0, -1),
       editHistory: [...state.editHistory, record],
     }));
+  },
+
+  setMergeReviewChecked: (taskKey, ids) => {
+    if (!taskKey) return;
+    const unique = Array.from(new Set(ids));
+    set(state => ({
+      mergeReviewCheckedByTask: {
+        ...state.mergeReviewCheckedByTask,
+        [taskKey]: unique,
+      },
+    }));
+  },
+
+  toggleMergeReviewChecked: (taskKey, id) => {
+    if (!taskKey || !id) return;
+    set(state => {
+      const current = state.mergeReviewCheckedByTask[taskKey] ?? [];
+      const next = current.includes(id)
+        ? current.filter(item => item !== id)
+        : [...current, id];
+      return {
+        mergeReviewCheckedByTask: {
+          ...state.mergeReviewCheckedByTask,
+          [taskKey]: next,
+        },
+      };
+    });
+  },
+
+  markMergeReviewChecked: (taskKey, id) => {
+    if (!taskKey || !id) return;
+    set(state => {
+      const current = state.mergeReviewCheckedByTask[taskKey] ?? [];
+      if (current.includes(id)) return state;
+      return {
+        mergeReviewCheckedByTask: {
+          ...state.mergeReviewCheckedByTask,
+          [taskKey]: [...current, id],
+        },
+      };
+    });
+  },
+
+  clearMergeReviewChecked: (taskKey) => {
+    if (!taskKey) {
+      set({ mergeReviewCheckedByTask: {} });
+      return;
+    }
+    set(state => {
+      if (!(taskKey in state.mergeReviewCheckedByTask)) return state;
+      const next = { ...state.mergeReviewCheckedByTask };
+      delete next[taskKey];
+      return { mergeReviewCheckedByTask: next };
+    });
   },
 
   setLightsOff: (isLightsOff) => set({ isLightsOff }),
@@ -1812,6 +1876,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       detectedAttributions: [],
       editHistory: [],
       editFuture: [],
+      mergeReviewCheckedByTask: {},
       isLightsOff: false
     });
     get().addLog("已取消本次导入", "info");
@@ -2119,10 +2184,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   },
 
   runSubtitleMerge: () => {
-    const { files, selectedTaskId, tasks } = get();
+    const { files, selectedTaskId, tasks, customFilename } = get();
     const currentTask = tasks.find(t => t.id === selectedTaskId);
     if (!files.zh && !files.en) return;
 
+    const taskKey = selectedTaskId || customFilename || '_default';
+    get().clearMergeReviewChecked(taskKey);
     set({ isProcessing: true, processedSubs: null });
     
     try {
@@ -2223,6 +2290,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       detectedAttributions: [],
       editHistory: [],
       editFuture: [],
+      mergeReviewCheckedByTask: {},
       isLightsOff: false,
       isOfficialSubtitle: false,
       creditDeclaration: 'none',

@@ -32,6 +32,8 @@ export const WorkbenchStep: React.FC = () => {
     isSettingsOpen,
     setIsSettingsOpen,
     tmdbData,
+    mergeReviewCheckedByTask,
+    setStatusNotice,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     customFilename: state.customFilename,
@@ -41,6 +43,8 @@ export const WorkbenchStep: React.FC = () => {
     isSettingsOpen: state.isSettingsOpen,
     setIsSettingsOpen: state.setIsSettingsOpen,
     tmdbData: state.tmdbData,
+    mergeReviewCheckedByTask: state.mergeReviewCheckedByTask,
+    setStatusNotice: state.setStatusNotice,
   })));
   const { setInfoBar, setForwardAction } = useWorkflowChrome();
 
@@ -65,7 +69,14 @@ export const WorkbenchStep: React.FC = () => {
     [processedSubs, sourceDurationMs],
   );
   const structureCount = alignmentSummary?.entries.length ?? 0;
-  const reviewCount = reviewQueue?.total ?? 0;
+  const reviewTotal = reviewQueue?.total ?? 0;
+  const reviewTaskKey = selectedTaskId || customFilename || '_default';
+  const reviewCheckedCount = useMemo(() => {
+    if (!reviewQueue) return 0;
+    const checked = new Set(mergeReviewCheckedByTask[reviewTaskKey] ?? []);
+    return reviewQueue.items.reduce((count, item) => count + (checked.has(item.id) ? 1 : 0), 0);
+  }, [reviewQueue, mergeReviewCheckedByTask, reviewTaskKey]);
+  const reviewRemaining = Math.max(0, reviewTotal - reviewCheckedCount);
   const screenCount = processedSubs?.filter(row => (
     (row.cueKind === 'screen_text' || row.auxiliary?.category === 'screen_text')
     && row.cueKind !== 'credit'
@@ -145,10 +156,20 @@ export const WorkbenchStep: React.FC = () => {
       disabled: !hasTimeline,
       ready: hasTimeline,
       disabledReason: '还没有可预览的字幕时间轴，请先完成合轴或分配。',
-      onClick: () => setWorkflowStep(3),
+      onClick: () => {
+        if (reviewRemaining > 0) {
+          setStatusNotice({
+            id: 'merge-review-unchecked',
+            tone: 'notice',
+            title: `还有 ${reviewRemaining} 项未核对，仍可继续`,
+            message: `合轴待复核已核对 ${reviewCheckedCount} / 共 ${reviewTotal}。可先预览，稍后再回明细核对。`,
+          });
+        }
+        setWorkflowStep(3);
+      },
     });
     return () => setForwardAction(null);
-  }, [processedSubs, setForwardAction, setWorkflowStep]);
+  }, [processedSubs, reviewRemaining, reviewCheckedCount, reviewTotal, setForwardAction, setStatusNotice, setWorkflowStep]);
 
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[var(--v4-canvas)]">
@@ -162,11 +183,11 @@ export const WorkbenchStep: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <GitCompareArrows className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
                       <h2 className="text-sm font-semibold text-[var(--v4-text)]">字幕信息概览</h2>
-                      {reviewCount > 0 ? (
+                      {reviewTotal > 0 && reviewRemaining > 0 ? (
                         <button
                           type="button"
                           className="v4-focus-ring inline-flex items-center gap-1 rounded-md bg-[var(--v4-danger)]/12 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-[var(--v4-danger)] hover:bg-[var(--v4-danger)]/18"
-                          title={`待复核 ${reviewCount} 项（覆盖合并 / 展开对话 / 单轨 / 平移 / 存疑）· 点击打开明细`}
+                          title={`合轴待复核剩余 ${reviewRemaining} 项（已核对 ${reviewCheckedCount}/${reviewTotal}：覆盖 / 对话 / 单轨 / 平移 / 存疑）· 点击打开明细`}
                           aria-expanded={isDetailOpen}
                           onClick={() => {
                             setIsDetailOpen(true);
@@ -175,10 +196,23 @@ export const WorkbenchStep: React.FC = () => {
                         >
                           待复核{' '}
                           <AnimatedCounter
-                            value={reviewCount}
+                            value={reviewRemaining}
                             separator=""
                             className="text-xs font-semibold text-[var(--v4-danger)]"
                           />
+                        </button>
+                      ) : reviewTotal > 0 ? (
+                        <button
+                          type="button"
+                          className="v4-focus-ring inline-flex items-center gap-1 rounded-md bg-[var(--v4-accent-soft)] px-1.5 py-0.5 text-xs font-semibold tabular-nums text-[var(--v4-accent-strong)] hover:opacity-90"
+                          title={`合轴待复核已全部核对 ${reviewCheckedCount}/${reviewTotal} · 点击打开明细`}
+                          aria-expanded={isDetailOpen}
+                          onClick={() => {
+                            setIsDetailOpen(true);
+                            setReviewFocusNonce(value => value + 1);
+                          }}
+                        >
+                          已核对 {reviewCheckedCount}/{reviewTotal}
                         </button>
                       ) : structureCount > 0 ? (
                         <span

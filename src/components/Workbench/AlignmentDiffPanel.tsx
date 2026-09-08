@@ -13,9 +13,8 @@ import {
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 import { useStudioStore } from '@/store/useStudioStore';
 import { MARK_COLOR, MARK_LABEL } from '@/components/Workbench/inspectionMarks';
-import { GooeyNav } from '@/components/ui/gooey-nav';
-import { AnimatedCounter } from '@/components/ui/animated-counter';
 
+type SurfaceTab = 'merge' | 'aux';
 type UnifiedKind = MergeReviewCategory | 'screen-text' | 'sound-caption' | 'lyrics' | 'credit';
 
 interface UnifiedReviewItem {
@@ -38,6 +37,11 @@ const REVIEW_FILTERS: Array<{ id: MergeReviewFilter; label: string }> = [
   { id: 'single-track', label: '单轨' },
   { id: 'shifted-match', label: '平移' },
   { id: 'other-suspect', label: '其他' },
+];
+
+const SURFACE_TABS: Array<{ id: SurfaceTab; label: string }> = [
+  { id: 'merge', label: '合轴待复核' },
+  { id: 'aux', label: '辅助内容' },
 ];
 
 const CATEGORY_BADGE: Record<MergeReviewCategory, string> = {
@@ -146,6 +150,58 @@ const queueItemToUnified = (item: MergeReviewItem): UnifiedReviewItem => ({
   provenance: item.provenance,
 });
 
+const buildAuxItems = (rows: SubRow[], lyricPosition: 'top' | 'bottom'): UnifiedReviewItem[] => {
+  const screenItems: UnifiedReviewItem[] = rows
+    .filter(row => isScreenTextRow(row) && !isCreditRow(row) && !isLyricsRow(row))
+    .map(row => ({
+      id: `screen-${row.index}`,
+      kind: 'screen-text' as const,
+      startMs: parseSubtitleRange(row.ts).startMs,
+      locateIndex: row.index,
+      rowIndexes: [row.index],
+      badge: MARK_LABEL.screen,
+      text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
+      reason: reasonFromRow(row),
+    }));
+
+  const soundItems: UnifiedReviewItem[] = rows.filter(isSoundCaptionRow).map(row => ({
+    id: `sound-${row.index}`,
+    kind: 'sound-caption' as const,
+    startMs: parseSubtitleRange(row.ts).startMs,
+    locateIndex: row.index,
+    rowIndexes: [row.index],
+    badge: MARK_LABEL.sound,
+    text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
+    reason: reasonFromRow(row),
+  }));
+
+  const lyricPosLabel = lyricPosition === 'bottom' ? '底部' : '顶部';
+  const lyricItems: UnifiedReviewItem[] = rows.filter(isLyricsRow).map(row => ({
+    id: `lyrics-${row.index}`,
+    kind: 'lyrics' as const,
+    startMs: parseSubtitleRange(row.ts).startMs,
+    locateIndex: row.index,
+    rowIndexes: [row.index],
+    badge: MARK_LABEL.lyrics,
+    text: row.text.replace(/\\N/gi, ' / ').replace(/\s+/g, ' ').trim(),
+    reason: `歌词显示平面 · ${lyricPosLabel}`,
+  }));
+
+  const creditItems: UnifiedReviewItem[] = rows.filter(isCreditRow).map(row => ({
+    id: `credit-${row.index}`,
+    kind: 'credit' as const,
+    startMs: parseSubtitleRange(row.ts).startMs,
+    locateIndex: row.index,
+    rowIndexes: [row.index],
+    badge: MARK_LABEL.credit,
+    text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
+    reason: '字幕制作署名，不属于影片画面或对白',
+  }));
+
+  return [...screenItems, ...soundItems, ...lyricItems, ...creditItems]
+    .sort((a, b) => a.startMs - b.startMs || a.locateIndex - b.locateIndex);
+};
+
 export interface AlignmentDiffPanelProps {
   rows: SubRow[];
   /** Increment to scroll/focus the panel (e.g. overview 待复核 badge). */
@@ -154,7 +210,7 @@ export interface AlignmentDiffPanelProps {
   preferredFilter?: MergeReviewFilter;
 }
 
-/** Detail table — merge review queue + auxiliary listing; filters in header chips. */
+/** Detail table — merge review queue primary; auxiliary listing on a secondary tab. */
 export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
   rows,
   focusNonce = 0,
@@ -162,9 +218,17 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
 }) => {
   const panelRef = useRef<HTMLElement>(null);
   const [sourceEntryId, setSourceEntryId] = useState<string | null>(null);
+  const [surfaceTab, setSurfaceTab] = useState<SurfaceTab>('merge');
   const [reviewFilter, setReviewFilter] = useState<MergeReviewFilter>('all');
-  const [checkedIds, setCheckedIds] = useState<Set<string>>(() => new Set());
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
+
+  const selectedTaskId = useStudioStore((state) => state.selectedTaskId);
+  const customFilename = useStudioStore((state) => state.customFilename);
+  const taskKey = selectedTaskId || customFilename || '_default';
+  const checkedIdList = useStudioStore((state) => state.mergeReviewCheckedByTask[taskKey] ?? []);
+  const checkedIds = useMemo(() => new Set(checkedIdList), [checkedIdList]);
+  const toggleMergeReviewChecked = useStudioStore((state) => state.toggleMergeReviewChecked);
+  const markMergeReviewChecked = useStudioStore((state) => state.markMergeReviewChecked);
   const setPreviewIndex = useStudioStore((state) => state.setPreviewIndex);
   const setLocateGroupIndexes = useStudioStore((state) => state.setLocateGroupIndexes);
   const setJumpLineVal = useStudioStore((state) => state.setJumpLineVal);
@@ -173,9 +237,11 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
   const lyricPosition = useStudioStore((state) => state.customStyle.lyricPosition ?? 'top');
 
   const queue = useMemo(() => buildMergeReviewQueue(rows), [rows]);
+  const auxItems = useMemo(() => buildAuxItems(rows, lyricPosition), [rows, lyricPosition]);
 
   useEffect(() => {
     if (!focusNonce) return;
+    setSurfaceTab('merge');
     if (preferredFilter) setReviewFilter(preferredFilter);
     const el = panelRef.current;
     if (el) {
@@ -184,68 +250,13 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
     }
   }, [focusNonce, preferredFilter]);
 
-  const items = useMemo((): UnifiedReviewItem[] => {
-    const structureItems = filterMergeReviewQueue(queue, reviewFilter).map(queueItemToUnified);
+  const mergeItems = useMemo((): UnifiedReviewItem[] => (
+    filterMergeReviewQueue(queue, reviewFilter)
+      .map(queueItemToUnified)
+      .sort((a, b) => a.startMs - b.startMs || a.locateIndex - b.locateIndex)
+  ), [queue, reviewFilter]);
 
-    if (reviewFilter !== 'all') {
-      return structureItems.sort((a, b) => a.startMs - b.startMs || a.locateIndex - b.locateIndex);
-    }
-
-    const screenItems: UnifiedReviewItem[] = rows
-      .filter(row => isScreenTextRow(row) && !isCreditRow(row) && !isLyricsRow(row))
-      .map(row => ({
-        id: `screen-${row.index}`,
-        kind: 'screen-text' as const,
-        startMs: parseSubtitleRange(row.ts).startMs,
-        locateIndex: row.index,
-        rowIndexes: [row.index],
-        badge: MARK_LABEL.screen,
-        text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
-        reason: reasonFromRow(row),
-      }));
-
-    const soundItems: UnifiedReviewItem[] = rows.filter(isSoundCaptionRow).map(row => ({
-      id: `sound-${row.index}`,
-      kind: 'sound-caption' as const,
-      startMs: parseSubtitleRange(row.ts).startMs,
-      locateIndex: row.index,
-      rowIndexes: [row.index],
-      badge: MARK_LABEL.sound,
-      text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
-      reason: reasonFromRow(row),
-    }));
-
-    const lyricPosLabel = lyricPosition === 'bottom' ? '底部' : '顶部';
-    const lyricItems: UnifiedReviewItem[] = rows.filter(isLyricsRow).map(row => ({
-      id: `lyrics-${row.index}`,
-      kind: 'lyrics' as const,
-      startMs: parseSubtitleRange(row.ts).startMs,
-      locateIndex: row.index,
-      rowIndexes: [row.index],
-      badge: MARK_LABEL.lyrics,
-      text: row.text.replace(/\\N/gi, ' / ').replace(/\s+/g, ' ').trim(),
-      reason: `歌词显示平面 · ${lyricPosLabel}`,
-    }));
-
-    const creditItems: UnifiedReviewItem[] = rows.filter(isCreditRow).map(row => ({
-      id: `credit-${row.index}`,
-      kind: 'credit' as const,
-      startMs: parseSubtitleRange(row.ts).startMs,
-      locateIndex: row.index,
-      rowIndexes: [row.index],
-      badge: MARK_LABEL.credit,
-      text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
-      reason: '字幕制作署名，不属于影片画面或对白',
-    }));
-
-    // Avoid duplicating other-suspect rows that are already screen/sound/etc.
-    const structureIds = new Set(structureItems.map(item => item.locateIndex));
-    const aux = [...screenItems, ...soundItems, ...lyricItems, ...creditItems]
-      .filter(item => !structureIds.has(item.locateIndex));
-
-    return [...structureItems, ...aux]
-      .sort((a, b) => a.startMs - b.startMs || a.locateIndex - b.locateIndex);
-  }, [queue, reviewFilter, rows, lyricPosition]);
+  const items = surfaceTab === 'merge' ? mergeItems : auxItems;
 
   const activeIndex = useMemo(() => {
     if (!activeItemId) return items.length > 0 ? 0 : -1;
@@ -283,20 +294,11 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
   };
 
   const toggleChecked = (id: string) => {
-    setCheckedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    toggleMergeReviewChecked(taskKey, id);
   };
 
   const markCheckedAndMaybeNext = (id: string) => {
-    setCheckedIds(prev => {
-      const next = new Set(prev);
-      next.add(id);
-      return next;
-    });
+    markMergeReviewChecked(taskKey, id);
     const idx = items.findIndex(item => item.id === id);
     if (idx >= 0 && idx < items.length - 1) {
       const item = items[idx + 1];
@@ -310,40 +312,58 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
     return queue.counts[id];
   };
 
-  const checkedCount = items.filter(item => checkedIds.has(item.id)).length;
+  const mergeCheckedCount = queue.items.filter(item => checkedIds.has(item.id)).length;
+  const mergeRemaining = Math.max(0, queue.total - mergeCheckedCount);
+  const listCheckedCount = items.filter(item => checkedIds.has(item.id)).length;
+
 
   return (
     <section
       ref={panelRef}
       tabIndex={-1}
       className="v4-panel overflow-hidden outline-none"
-      aria-label="待复核明细"
+      aria-label="合轴待复核明细"
     >
       <div className="flex flex-col gap-2 border-b border-[var(--v4-line)] px-4 py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="inline-flex flex-wrap items-center gap-x-1 text-xs text-[var(--v4-text-faint)]">
-            <span>待复核队列与辅助内容明细</span>
-            {queue.total > 0 && (
-              <>
-                <span>· 待复核</span>
-                <AnimatedCounter
-                  value={queue.total}
-                  separator=""
-                  className="font-semibold text-[var(--v4-danger)]"
-                  aria-label={`待复核 ${queue.total}`}
-                />
-              </>
-            )}
-            {items.length > 0 && (
-              <>
-                <span>· 当前</span>
-                <AnimatedCounter value={items.length} separator="" className="font-semibold text-[var(--v4-text-muted)]" />
-              </>
-            )}
-            {checkedCount > 0 && (
+            <span className="font-medium text-[var(--v4-text-muted)]">合轴待复核</span>
+            {queue.total > 0 ? (
               <>
                 <span>· 已核对</span>
-                <AnimatedCounter value={checkedCount} separator="" className="font-semibold text-[var(--v4-accent-strong)]" />
+                <span className="font-semibold tabular-nums text-[var(--v4-accent-strong)]">
+                  {mergeCheckedCount}
+                </span>
+                <span>/</span>
+                <span className="font-semibold tabular-nums text-[var(--v4-text-muted)]">
+                  {queue.total}
+                </span>
+                {mergeRemaining > 0 && (
+                  <>
+                    <span>· 未核</span>
+                    <span className="font-semibold tabular-nums text-[var(--v4-danger)]">
+                      {mergeRemaining}
+                    </span>
+                  </>
+                )}
+              </>
+            ) : (
+              <span>· 暂无合轴待复核项</span>
+            )}
+            {surfaceTab === 'aux' && auxItems.length > 0 && (
+              <>
+                <span>· 辅助</span>
+                <span className="font-semibold tabular-nums text-[var(--v4-text-muted)]">
+                  {auxItems.length}
+                </span>
+                {listCheckedCount > 0 && (
+                  <>
+                    <span>· 已看</span>
+                    <span className="font-semibold tabular-nums text-[var(--v4-accent-strong)]">
+                      {listCheckedCount}
+                    </span>
+                  </>
+                )}
               </>
             )}
           </p>
@@ -370,31 +390,66 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
             </button>
           </div>
         </div>
-        <div className="max-w-full overflow-x-auto pb-0.5" aria-label="待复核筛选">
-          <GooeyNav
-            size="xs"
-            activeColor="var(--v4-accent-strong)"
-            activeLabelColor="#ffffff"
-            items={REVIEW_FILTERS.map((item) => {
-              const count = chipCount(item.id);
-              return count > 0 ? `${item.label} ${count}` : item.label;
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="ui-choice-group" role="tablist" aria-label="复核面">
+            {SURFACE_TABS.map((tab) => {
+              const count = tab.id === 'merge' ? queue.total : auxItems.length;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={surfaceTab === tab.id}
+                  onClick={() => setSurfaceTab(tab.id)}
+                  className={`ui-choice inline-flex items-center gap-1.5 ${surfaceTab === tab.id ? 'ui-choice--on' : ''}`}
+                >
+                  {tab.label}
+                  {count > 0 ? (
+                    <span className="tabular-nums opacity-70">{count}</span>
+                  ) : null}
+                </button>
+              );
             })}
-            value={Math.max(0, REVIEW_FILTERS.findIndex((item) => item.id === reviewFilter))}
-            onChange={(index) => {
-              const next = REVIEW_FILTERS[index];
-              if (!next) return;
-              if (next.id !== 'all' && chipCount(next.id) === 0) return;
-              setReviewFilter(next.id);
-            }}
-          />
+          </div>
         </div>
+
+        {surfaceTab === 'merge' && (
+          <div className="ui-choice-group max-w-full overflow-x-auto" role="tablist" aria-label="合轴待复核筛选">
+            {REVIEW_FILTERS.map((item) => {
+              const count = chipCount(item.id);
+              const disabled = item.id !== 'all' && count === 0;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={reviewFilter === item.id}
+                  disabled={disabled}
+                  onClick={() => {
+                    if (disabled) return;
+                    setReviewFilter(item.id);
+                  }}
+                  className={`ui-choice inline-flex items-center gap-1.5 ${reviewFilter === item.id ? 'ui-choice--on' : ''} ${disabled ? 'opacity-40' : ''}`}
+                >
+                  {item.label}
+                  {count > 0 ? (
+                    <span className="tabular-nums opacity-70">{count}</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {items.length === 0 ? (
         <div className="px-4 py-6 text-center text-xs text-[var(--v4-text-faint)]">
-          {reviewFilter === 'all'
-            ? '没有需要列出的非直接配对或存疑内容'
-            : '当前筛选下暂无待复核项'}
+          {surfaceTab === 'aux'
+            ? '没有列出的辅助内容（画面字 / 声音描述 / 歌词 / 署名）'
+            : reviewFilter === 'all'
+              ? '没有需要合轴复核的结构项'
+              : '当前筛选下暂无待复核项'}
         </div>
       ) : (
         <div className="max-h-[min(32vh,280px)] overflow-y-auto">
