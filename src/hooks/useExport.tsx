@@ -12,6 +12,7 @@ import {
   generateAssContent,
   type AssScriptMeta,
 } from '@/utils/subtitleCore';
+import { buildMergeReviewQueue } from '@/utils/timeline/alignmentDiff';
 
 const DECLARATION_LABEL: Record<CreditDeclaration, string | null> = {
   none: null,
@@ -56,7 +57,10 @@ export const useExport = () => {
     creditDeclaration,
     creditPlacement,
     isOfficialSubtitle,
+    selectedTaskId,
+    mergeReviewCheckedByTask,
     addLog,
+    setStatusNotice,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     customFilename: state.customFilename,
@@ -66,11 +70,29 @@ export const useExport = () => {
     creditDeclaration: state.creditDeclaration,
     creditPlacement: state.creditPlacement,
     isOfficialSubtitle: state.isOfficialSubtitle,
+    selectedTaskId: state.selectedTaskId,
+    mergeReviewCheckedByTask: state.mergeReviewCheckedByTask,
     addLog: state.addLog,
+    setStatusNotice: state.setStatusNotice,
   })));
 
   const handleDownload = (format: 'ass' | 'srt') => {
     if (!processedSubs || processedSubs.length === 0) return;
+
+    const taskKey = selectedTaskId || customFilename || '_default';
+    const queue = buildMergeReviewQueue(processedSubs);
+    const checked = new Set(mergeReviewCheckedByTask[taskKey] ?? []);
+    const checkedCount = queue.items.reduce((count, item) => count + (checked.has(item.id) ? 1 : 0), 0);
+    const remaining = Math.max(0, queue.total - checkedCount);
+    if (remaining > 0) {
+      setStatusNotice({
+        id: 'merge-review-unchecked',
+        tone: 'notice',
+        title: `还有 ${remaining} 项未核对，仍可继续`,
+        message: `合轴待复核已核对 ${checkedCount} / 共 ${queue.total}。导出不会被拦截。`,
+      });
+    }
+
     try {
       let content = '';
       let mimeType = 'text/plain';
