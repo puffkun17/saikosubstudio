@@ -12,6 +12,7 @@ import {
 } from '@/utils/timeline/alignmentDiff';
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 import { useStudioStore } from '@/store/useStudioStore';
+import { EMPTY_CHECKED_IDS } from '@/lib/emptyCheckedIds';
 import { MARK_COLOR, MARK_LABEL } from '@/components/Workbench/inspectionMarks';
 
 type SurfaceTab = 'merge' | 'aux';
@@ -39,6 +40,7 @@ const REVIEW_FILTERS: Array<{ id: MergeReviewFilter; label: string }> = [
   { id: 'other-suspect', label: '其他' },
 ];
 
+/** Stable empty list so Zustand Object.is equality does not thrash when a task has no checked ids yet. */
 const SURFACE_TABS: Array<{ id: SurfaceTab; label: string }> = [
   { id: 'merge', label: '合轴待复核' },
   { id: 'aux', label: '辅助内容' },
@@ -225,7 +227,7 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
   const selectedTaskId = useStudioStore((state) => state.selectedTaskId);
   const customFilename = useStudioStore((state) => state.customFilename);
   const taskKey = selectedTaskId || customFilename || '_default';
-  const checkedIdList = useStudioStore((state) => state.mergeReviewCheckedByTask[taskKey] ?? []);
+  const checkedIdList = useStudioStore((state) => state.mergeReviewCheckedByTask[taskKey] ?? EMPTY_CHECKED_IDS);
   const checkedIds = useMemo(() => new Set(checkedIdList), [checkedIdList]);
   const toggleMergeReviewChecked = useStudioStore((state) => state.toggleMergeReviewChecked);
   const markMergeReviewChecked = useStudioStore((state) => state.markMergeReviewChecked);
