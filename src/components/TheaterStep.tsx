@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { ScreenSimulator } from '@/components/Theater/ScreenSimulator';
 import { SimulatorBoundary } from '@/components/Theater/SimulatorBoundary';
-import { ControlDeck } from '@/components/Theater/ControlDeck';
+import { TheaterSystemChrome } from '@/components/Theater/ControlDeck';
 import { TimelineControls } from '@/components/Workbench/TimelineControls';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
@@ -190,7 +190,8 @@ export const TheaterStep: React.FC = () => {
             </div>
           </div>
 
-          <div className="relative flex items-center gap-2">
+          <div className="relative flex flex-wrap items-center justify-end gap-2">
+            <TheaterSystemChrome />
             <button
               onClick={() => setIsSettingsOpen(!isSettingsOpen)}
               className={isSettingsOpen ? 'ui-action' : 'ui-action ui-action--secondary'}
@@ -227,8 +228,6 @@ export const TheaterStep: React.FC = () => {
               variant="theater"
               theaterChrome={{
                 lightsOff: isLightsOff,
-                onToggleLights: () => setLightsOff(!isLightsOff),
-                tools: <ControlDeck />,
               }}
             />
           </div>

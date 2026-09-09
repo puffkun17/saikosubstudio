@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Pause, Play, LampCeiling } from 'lucide-react';
+import { Pause, Play, SquareCenterlineDashedHorizontal } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
@@ -9,11 +9,9 @@ import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 interface TimelineControlsProps {
   variant?: 'full' | 'compact' | 'theater';
   timelineDurationMs?: number;
-  /** 放映厅：关灯时只留进度条；附带工具条与关灯钮。 */
+  /** 放映厅：关灯时只留进度条；底栏仅播放 / 画幅辅助线 / 进度。 */
   theaterChrome?: {
     lightsOff: boolean;
-    onToggleLights: () => void;
-    tools?: React.ReactNode;
   };
 }
 
@@ -78,6 +76,8 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
     setPreviewClockMs,
     isPreviewPlaying,
     setIsPreviewPlaying,
+    showGuides,
+    setShowGuides,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     previewIndex: state.previewIndex,
@@ -90,6 +90,8 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
     setPreviewClockMs: state.setPreviewClockMs,
     isPreviewPlaying: state.isPreviewPlaying,
     setIsPreviewPlaying: state.setIsPreviewPlaying,
+    showGuides: state.showGuides,
+    setShowGuides: state.setShowGuides,
   })));
   const [scrubTimeMs, setScrubTimeMs] = useState<number | null>(null);
   const [sliderTip, setSliderTip] = useState<{ x: number; y: number } | null>(null);
@@ -313,6 +315,23 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
       setSliderTip({ x: clientX, y: clientY });
     };
 
+    const guidesButton = (
+      <button
+        type="button"
+        onClick={() => setShowGuides(!showGuides)}
+        aria-pressed={showGuides}
+        title="显示画幅辅助线"
+        aria-label="显示画幅辅助线"
+        className={`theater-chrome-chip v4-focus-ring inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border px-2 text-xs font-semibold transition-colors
+          ${showGuides
+            ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
+            : 'border-[var(--v4-line)] text-[var(--v4-text-muted)] hover:text-[var(--v4-text)]'}`}
+      >
+        <SquareCenterlineDashedHorizontal className="h-4 w-4 stroke-[2]" aria-hidden="true" />
+        <span className="hidden sm:inline">画幅辅助线</span>
+      </button>
+    );
+
     return (
       <div
         className={`theater-chrome-bar flex w-full items-center gap-1.5 rounded-lg border border-[var(--v4-line)] px-2 py-2 sm:gap-2 sm:px-2.5 ${
@@ -322,14 +341,8 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
         {!lightsOff && (
           <>
             {playButton}
-            {theaterChrome?.tools ? (
-              <>
-                <div className="mx-0.5 hidden h-5 w-px shrink-0 bg-[var(--v4-line)] md:block" aria-hidden="true" />
-                <div className="min-w-0 max-w-[min(100%,34rem)] overflow-x-auto scrollbar-none">
-                  {theaterChrome.tools}
-                </div>
-              </>
-            ) : null}
+            <div className="mx-0.5 hidden h-5 w-px shrink-0 bg-[var(--v4-line)] sm:block" aria-hidden="true" />
+            {guidesButton}
           </>
         )}
 
@@ -379,19 +392,6 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
             </div>
           )}
         </div>
-
-        {!lightsOff && theaterChrome && (
-          <button
-            type="button"
-            onClick={theaterChrome.onToggleLights}
-            aria-pressed={false}
-            title="关灯观影（L）"
-            aria-label="关灯观影"
-            className="theater-chrome-chip v4-focus-ring grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-md border border-[var(--v4-line)] text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)]"
-          >
-            <LampCeiling className="h-4 w-4 stroke-[2]" aria-hidden="true" />
-          </button>
-        )}
       </div>
     );
   }

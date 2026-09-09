@@ -1771,6 +1771,46 @@ button {
 }
 
 /* 播放条毛玻璃；图标钮仅半透明底，避免嵌套 backdrop 发糊 */
+/* 关灯：顶栏醒目灯控，像影院调光钮——暖橙微光，不抢导出主按钮。 */
+.theater-lights-action {
+  border-color: color-mix(in srgb, var(--v5-orange) 58%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--v5-orange) 22%, transparent),
+      color-mix(in srgb, var(--v5-orange) 10%, transparent)
+    );
+  color: color-mix(in srgb, var(--v5-orange) 88%, #fff);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--v5-orange) 12%, transparent),
+    0 0 22px color-mix(in srgb, var(--v5-orange) 16%, transparent);
+}
+
+.theater-lights-action:hover {
+  border-color: color-mix(in srgb, var(--v5-orange) 78%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--v5-orange) 30%, transparent),
+      color-mix(in srgb, var(--v5-orange) 14%, transparent)
+    );
+  color: #fff4e8;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--v5-orange) 22%, transparent),
+    0 0 28px color-mix(in srgb, var(--v5-orange) 24%, transparent);
+}
+
+.theater-lights-action--on {
+  border-color: color-mix(in srgb, var(--v5-cream) 28%, transparent);
+  background: color-mix(in srgb, #0a0e0d 70%, transparent);
+  color: var(--v4-accent-strong);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--v5-orange) 10%, transparent);
+}
+
+.theater-system-chrome {
+  max-width: 100%;
+}
+
 .theater-chrome-bar {
   background: color-mix(in srgb, #142e29 72%, transparent);
   backdrop-filter: blur(16px) saturate(1.15);
