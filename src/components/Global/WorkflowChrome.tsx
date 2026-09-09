@@ -252,6 +252,20 @@ export const WorkflowContinueInFlow: React.FC<{
 }> = ({ className = '', size = 'lg' }) => {
   const { forwardAction } = useWorkflowChrome();
   const setStatusNotice = useStudioStore((state) => state.setStatusNotice);
+  const statusNotices = useStudioStore((state) => state.statusNotices);
+  const dismissStatusNotice = useStudioStore((state) => state.dismissStatusNotice);
+  const blockedNotice = [...statusNotices]
+    .reverse()
+    .find((notice) => notice.id === 'forward-action-blocked');
+
+  useEffect(() => {
+    if (!blockedNotice) return;
+    const timer = window.setTimeout(() => {
+      dismissStatusNotice('forward-action-blocked');
+    }, 4500);
+    return () => window.clearTimeout(timer);
+  }, [blockedNotice?.createdAt, blockedNotice, dismissStatusNotice]);
+
   if (!forwardAction) return null;
 
   const isReady = !forwardAction.disabled && (forwardAction.ready ?? true);
@@ -271,15 +285,38 @@ export const WorkflowContinueInFlow: React.FC<{
   };
 
   return (
-    <button
-      type="button"
-      aria-disabled={forwardAction.disabled || undefined}
-      disabled={forwardAction.disabled && !forwardAction.disabledReason ? true : undefined}
-      onClick={handleClick}
-      className={`ui-action ${sizeClass} ${isReady ? '' : 'opacity-70'} ${className}`.trim()}
-    >
-      {forwardAction.label}
-      <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-    </button>
+    <div className="workflow-continue-in-flow flex max-w-full flex-col items-end gap-1.5">
+      <button
+        type="button"
+        aria-disabled={forwardAction.disabled || undefined}
+        aria-describedby={blockedNotice ? 'forward-action-blocked-hint' : undefined}
+        disabled={forwardAction.disabled && !forwardAction.disabledReason ? true : undefined}
+        onClick={handleClick}
+        className={`ui-action ${sizeClass} ${isReady ? '' : 'opacity-70'} ${className}`.trim()}
+      >
+        {forwardAction.label}
+        <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+      </button>
+      <AnimatePresence initial={false}>
+        {blockedNotice && (
+          <motion.p
+            key={`${blockedNotice.id}-${blockedNotice.createdAt}`}
+            id="forward-action-blocked-hint"
+            role="status"
+            aria-live="polite"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -2 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="max-w-[min(22rem,100%)] text-right text-xs leading-5 text-[var(--v4-warning)] md:text-sm"
+          >
+            <span className="font-semibold text-[var(--v4-text)]">{blockedNotice.title}</span>
+            {blockedNotice.message ? (
+              <span className="text-[var(--v4-text-muted)]"> · {blockedNotice.message}</span>
+            ) : null}
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };

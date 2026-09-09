@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Archive, ArrowLeft, Menu, PenLine, RotateCcw, Scale, X } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
@@ -181,6 +181,8 @@ export const SystemTray = () => {
     setLibraryOpen,
     setWorkflowStep,
     setStatusNotice,
+    statusNotices,
+    dismissStatusNotice,
   } = useStudioStore(useShallow((state) => ({
     workflowStep: state.workflowStep,
     restartSystem: state.restartSystem,
@@ -193,12 +195,37 @@ export const SystemTray = () => {
     setLibraryOpen: state.setLibraryOpen,
     setWorkflowStep: state.setWorkflowStep,
     setStatusNotice: state.setStatusNotice,
+    statusNotices: state.statusNotices,
+    dismissStatusNotice: state.dismissStatusNotice,
   })));
+  const gateNotice = [...statusNotices]
+    .reverse()
+    .find((notice) => notice.id === 'workflow-gated');
   const isInfoPage = pathname === '/about' || pathname === '/feedback';
   const showLibrary = !isInfoPage && workflowStep === 1;
   /** Narrow studio: workflow lives in bottom tray; status deck yields. */
   const showBottomWorkflow = isNarrowChrome && !isInfoPage;
   const showTopWorkflow = !isNarrowChrome && !isInfoPage;
+
+  /** Quiet auto-clear so the anchored gate callout does not linger. */
+  useEffect(() => {
+    if (!gateNotice) return;
+    const timer = window.setTimeout(() => {
+      dismissStatusNotice('workflow-gated');
+    }, 4500);
+    return () => window.clearTimeout(timer);
+  }, [gateNotice?.createdAt, dismissStatusNotice, gateNotice]);
+
+  const focusIngestDropZone = () => {
+    if (typeof document === 'undefined') return;
+    const zone = document.querySelector<HTMLElement>('[data-ingest-drop-zone]');
+    if (!zone) return;
+    zone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    zone.setAttribute('data-gate-hint', 'true');
+    window.setTimeout(() => {
+      zone.removeAttribute('data-gate-hint');
+    }, 2200);
+  };
 
   const confirmLeaveSession = (href: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (!hasSessionWork) return;
@@ -231,7 +258,9 @@ export const SystemTray = () => {
           tone: 'notice',
           title: '请先添加字幕',
           message: '加入文件并整理后，即可进入工作台。',
+          meta: '2',
         });
+        focusIngestDropZone();
         return;
       }
       setWorkflowStep(2);
@@ -247,7 +276,9 @@ export const SystemTray = () => {
           message: hasUploadData
             ? '在工作台确认轨道后，再打开预览。'
             : '加入文件并整理后，再进入工作台与预览。',
+          meta: '3',
         });
+        if (!hasUploadData) focusIngestDropZone();
         return;
       }
       setWorkflowStep(3);
@@ -288,38 +319,84 @@ export const SystemTray = () => {
     <div
       className={
         variant === 'top'
-          ? 'relative h-9 w-full max-w-[14rem] overflow-hidden rounded-[var(--radius-md)] border border-[var(--tray-line)] bg-[var(--tray-fill-soft)] sm:max-w-[18rem] md:max-w-[22rem]'
-          : 'system-tray__workflow-bar relative flex h-11 w-full min-w-0 overflow-hidden rounded-[var(--radius-md)] border border-[var(--tray-line)] bg-[var(--tray-fill-soft)]'
+          ? 'relative w-full max-w-[14rem] sm:max-w-[18rem] md:max-w-[22rem]'
+          : 'relative w-full min-w-0'
       }
-      role="group"
-      aria-label="工作流程进度"
     >
-      <motion.div
-        className="absolute inset-y-0 left-0 bg-[var(--v5-orange)]"
-        initial={false}
-        animate={{ width: `${(workflowStep / WORKFLOW_STEPS.length) * 100}%` }}
-        transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-        aria-hidden="true"
-      />
       <div
         className={
           variant === 'top'
-            ? 'relative z-10 grid h-full grid-cols-3'
-            : 'relative z-10 flex h-full min-w-0 flex-1'
+            ? 'relative h-9 w-full overflow-hidden rounded-[var(--radius-md)] border border-[var(--tray-line)] bg-[var(--tray-fill-soft)]'
+            : 'system-tray__workflow-bar relative flex h-11 w-full min-w-0 overflow-hidden rounded-[var(--radius-md)] border border-[var(--tray-line)] bg-[var(--tray-fill-soft)]'
         }
+        role="group"
+        aria-label="工作流程进度"
       >
-        {WORKFLOW_STEPS.map((step, index) => (
-          <WorkflowStepButton
-            key={step.id}
-            step={step}
-            index={index}
-            workflowStep={workflowStep}
-            disabled={stepDisabled(step.id)}
-            onSelect={handleStepClick}
-            variant={variant}
-          />
-        ))}
+        <motion.div
+          className="absolute inset-y-0 left-0 bg-[var(--v5-orange)]"
+          initial={false}
+          animate={{ width: `${(workflowStep / WORKFLOW_STEPS.length) * 100}%` }}
+          transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+          aria-hidden="true"
+        />
+        <div
+          className={
+            variant === 'top'
+              ? 'relative z-10 grid h-full grid-cols-3'
+              : 'relative z-10 flex h-full min-w-0 flex-1'
+          }
+        >
+          {WORKFLOW_STEPS.map((step, index) => (
+            <WorkflowStepButton
+              key={step.id}
+              step={step}
+              index={index}
+              workflowStep={workflowStep}
+              disabled={stepDisabled(step.id)}
+              onSelect={handleStepClick}
+              variant={variant}
+            />
+          ))}
+        </div>
       </div>
+
+      <AnimatePresence>
+        {gateNotice && (
+          <motion.aside
+            key={`${gateNotice.id}-${gateNotice.createdAt}-${variant}`}
+            role="status"
+            aria-live="polite"
+            initial={{ opacity: 0, y: variant === 'top' ? -4 : 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: variant === 'top' ? -2 : 2 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className={`workflow-gate-callout absolute z-[calc(var(--z-nav)+1)] ${
+              variant === 'top'
+                ? 'left-0 top-[calc(100%+0.4rem)] w-[min(18rem,calc(100vw-2rem))]'
+                : 'bottom-[calc(100%+0.45rem)] left-1/2 w-[min(22rem,calc(100vw-1.5rem))] -translate-x-1/2'
+            }`}
+          >
+            <div className="rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--v5-green)_22%,var(--v4-line-strong))] bg-[color-mix(in_srgb,var(--v5-panel)_97%,transparent)] px-3 py-2.5 shadow-[var(--elevation-2)] backdrop-blur-md">
+              <div className="flex items-start gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold leading-5 text-[var(--v4-text)]">{gateNotice.title}</p>
+                  {gateNotice.message && (
+                    <p className="mt-0.5 text-xs leading-5 text-[var(--v4-text-muted)]">{gateNotice.message}</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  aria-label="关闭提示"
+                  onClick={() => dismissStatusNotice(gateNotice.id)}
+                  className="v4-focus-ring grid h-7 w-7 shrink-0 place-items-center rounded-md text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]"
+                >
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>
     </div>
   );
 

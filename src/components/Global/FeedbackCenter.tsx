@@ -7,7 +7,13 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 
-const CONTEXTUAL_NOTICE_IDS = new Set(['media-match', 'media-identity']);
+const CONTEXTUAL_NOTICE_IDS = new Set([
+  'media-match',
+  'media-identity',
+  /** Nav step gate + in-flow continue — rendered next to the action, not in the floating dock. */
+  'workflow-gated',
+  'forward-action-blocked',
+]);
 
 const errorLogStyle = {
   shell: 'border-[color-mix(in_srgb,var(--v5-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-danger)]',

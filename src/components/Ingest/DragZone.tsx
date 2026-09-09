@@ -323,7 +323,7 @@ const describeTrack = (file: Subfile) => {
 };
 
 export const DragZone: React.FC = () => {
-  const { isDragging, setIsDragging, processFiles, addLog, setIngestClearing, isOfficialSubtitle, setIsOfficialSubtitle, setStatusNotice } = useStudioStore(useShallow((state) => ({
+  const { isDragging, setIsDragging, processFiles, addLog, setIngestClearing, isOfficialSubtitle, setIsOfficialSubtitle, setStatusNotice, statusNotices, dismissStatusNotice } = useStudioStore(useShallow((state) => ({
     isDragging: state.isDragging,
     setIsDragging: state.setIsDragging,
     processFiles: state.processFiles,
@@ -332,7 +332,12 @@ export const DragZone: React.FC = () => {
     isOfficialSubtitle: state.isOfficialSubtitle,
     setIsOfficialSubtitle: state.setIsOfficialSubtitle,
     setStatusNotice: state.setStatusNotice,
+    statusNotices: state.statusNotices,
+    dismissStatusNotice: state.dismissStatusNotice,
   })));
+  const gateNotice = [...statusNotices]
+    .reverse()
+    .find((notice) => notice.id === 'workflow-gated');
   const { setForwardAction, setBottomStatus } = useWorkflowChrome();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -365,6 +370,12 @@ export const DragZone: React.FC = () => {
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
   const addMenuRef = useRef<HTMLDivElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!gateNotice || queuedItems.length > 0) return;
+    dropZoneRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [gateNotice?.createdAt, gateNotice, queuedItems.length]);
 
   const setPhase = (phase: IngestPhase, message = PHASE_COPY[phase]) => {
     setIngestPhase(phase);
@@ -1177,9 +1188,11 @@ export const DragZone: React.FC = () => {
 
   return (
     <div
+      ref={dropZoneRef}
+      data-ingest-drop-zone
       className={`ingest-drop-zone group/outer flex w-full flex-col ${
         queuedItems.length === 0 ? 'ingest-drop-zone--empty flex-1' : 'items-center py-1 md:py-2'
-      }`}
+      } ${gateNotice && queuedItems.length === 0 ? 'ingest-drop-zone--gate-hint' : ''}`}
       onDragOver={handleDragOver}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
@@ -1200,6 +1213,37 @@ export const DragZone: React.FC = () => {
               transition={{ duration: shouldReduceMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
               className="ingest-local-add"
             >
+              <AnimatePresence initial={false}>
+                {gateNotice && (
+                  <motion.div
+                    key={`${gateNotice.id}-${gateNotice.createdAt}`}
+                    role="status"
+                    aria-live="polite"
+                    initial={shouldReduceMotion ? false : { opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={shouldReduceMotion ? undefined : { opacity: 0, y: -4 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className="ingest-gate-banner mb-3 w-full max-w-xl px-1"
+                  >
+                    <div className="flex items-start gap-2 rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--v5-orange)_34%,var(--v4-line-strong))] bg-[color-mix(in_srgb,var(--v4-panel-muted)_92%,transparent)] px-3.5 py-2.5">
+                      <div className="min-w-0 flex-1 text-left">
+                        <p className="text-sm font-semibold leading-5 text-[var(--v4-text)]">{gateNotice.title}</p>
+                        {gateNotice.message && (
+                          <p className="mt-0.5 text-xs leading-5 text-[var(--v4-text-muted)] md:text-sm">{gateNotice.message}</p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="关闭提示"
+                        onClick={() => dismissStatusNotice(gateNotice.id)}
+                        className="v4-focus-ring grid h-7 w-7 shrink-0 place-items-center rounded-md text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]"
+                      >
+                        <X className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <div className="ingest-local-add__copy">
                 {!tapFirst && (
                   <span className="ingest-local-add__cue" aria-hidden="true">
