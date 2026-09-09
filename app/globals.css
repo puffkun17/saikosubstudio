@@ -539,6 +539,20 @@ body {
   min-height: 0;
 }
 
+/* Workflow gate: quietly draw the eye back to the drop well (not a flash toast). */
+.ingest-drop-zone--gate-hint .ingest-local-add,
+.ingest-drop-zone[data-gate-hint='true'] .ingest-local-add {
+  border-color: color-mix(in srgb, var(--v5-orange) 52%, var(--v5-green) 18%);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--v5-orange) 28%, transparent),
+    var(--elevation-1-dim);
+  transition: border-color 220ms var(--v5-ease), box-shadow 220ms var(--v5-ease);
+}
+
+.ingest-gate-banner {
+  align-self: center;
+}
+
 /* Hover：虚线加深，仍低于 dragging（仅桌面拖放示意） */
 .ingest-stage.is-empty:not(.ingest-stage--tap-first):hover:not(.is-dragging) .ingest-local-add {
   border-color: color-mix(
