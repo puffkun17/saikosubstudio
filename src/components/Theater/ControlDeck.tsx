@@ -345,12 +345,12 @@ export const TheaterSystemChrome: React.FC = () => {
         type="button"
         onClick={() => setLightsOff(!isLightsOff)}
         aria-pressed={isLightsOff}
-        title="关灯观影（L）"
+        title="关灯观影（L）· 推荐：沉浸核对字幕"
         aria-label={isLightsOff ? '开灯' : '关灯观影'}
-        className={`theater-lights-action v4-focus-ring inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-[var(--radius-md)] border px-3 py-1.5 text-sm font-semibold transition-colors
+        className={`theater-lights-action v4-focus-ring inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-md)] border px-3.5 py-2 text-sm font-bold tracking-wide transition-[color,background,border-color,box-shadow,filter] duration-200
           ${isLightsOff ? 'theater-lights-action--on' : ''}`}
       >
-        <LampCeiling className="h-4 w-4 stroke-[2]" aria-hidden="true" />
+        <LampCeiling className="h-5 w-5 stroke-[2.25]" aria-hidden="true" />
         {isLightsOff ? '开灯' : '关灯'}
       </button>
     </div>

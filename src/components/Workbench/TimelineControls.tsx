@@ -9,7 +9,7 @@ import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 interface TimelineControlsProps {
   variant?: 'full' | 'compact' | 'theater';
   timelineDurationMs?: number;
-  /** 放映厅：关灯时只留进度条；底栏仅播放 / 画幅辅助线 / 进度。 */
+  /** 放映厅：关灯仍保留播放+进度；画幅辅助线放在播放单元外侧，不打断进度条。 */
   theaterChrome?: {
     lightsOff: boolean;
   };
@@ -332,66 +332,67 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
       </button>
     );
 
+    // 播放+进度是固定肌肉记忆单元；画幅辅助线放在整条胶囊右侧，避免插在中间。
+    // 关灯不省略播放——与开灯同相对位置。
     return (
       <div
         className={`theater-chrome-bar flex w-full items-center gap-1.5 rounded-lg border border-[var(--v4-line)] px-2 py-2 sm:gap-2 sm:px-2.5 ${
           lightsOff ? 'theater-chrome-bar--lights-off' : ''
         }`}
       >
-        {!lightsOff && (
-          <>
-            {playButton}
-            <div className="mx-0.5 hidden h-5 w-px shrink-0 bg-[var(--v4-line)] sm:block" aria-hidden="true" />
-            {guidesButton}
-          </>
-        )}
-
-        <div
-          className="relative min-w-0 flex-1 px-0.5"
-          onPointerEnter={(event) => updateSliderTip(event.clientX, event.clientY)}
-          onPointerMove={(event) => updateSliderTip(event.clientX, event.clientY)}
-          onPointerLeave={() => {
-            if (!isPointerScrubbing.current) setSliderTip(null);
-          }}
-        >
-          <input
-            type="range"
-            min="0"
-            max={sharedDurationMs}
-            step="16"
-            value={displayTimeMs}
-            onChange={(event) => handleTimelineChange(event.target.value)}
-            onPointerDown={(event) => {
-              beginScrub(event);
-              updateSliderTip(event.clientX, event.clientY);
+        <div className="theater-playback-unit flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
+          {playButton}
+          <div className="mx-0.5 hidden h-5 w-px shrink-0 bg-[var(--v4-line)] sm:block" aria-hidden="true" />
+          <div
+            className="relative min-w-0 flex-1 px-0.5"
+            onPointerEnter={(event) => updateSliderTip(event.clientX, event.clientY)}
+            onPointerMove={(event) => updateSliderTip(event.clientX, event.clientY)}
+            onPointerLeave={() => {
+              if (!isPointerScrubbing.current) setSliderTip(null);
             }}
-            onPointerUp={(event) => {
-              endScrub(event.currentTarget.value);
-              updateSliderTip(event.clientX, event.clientY);
-            }}
-            onPointerCancel={() => {
-              isPointerScrubbing.current = false;
-              setScrubTimeMs(null);
-              setSliderTip(null);
-            }}
-            onBlur={(event) => {
-              if (scrubTimeMs !== null) endScrub(event.currentTarget.value);
-            }}
-            style={timelineStyle}
-            className="v9-timeline-dial-slider w-full min-w-0"
-            aria-label={`字幕预览时间，第 ${tipLine} 行，${timelinePercent}%`}
-            title={`第 ${tipLine} 行 · ${timelinePercent}%`}
-          />
-          {showSliderTip && (
-            <div
-              className="pointer-events-none fixed z-[var(--z-dropdown)] -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-[var(--radius-md)] border border-[var(--v4-line-strong)] bg-[color-mix(in_srgb,var(--v5-green)_88%,#000)] px-2 py-1 font-mono text-xs font-semibold tabular-nums text-[var(--v4-accent-strong)] shadow-[var(--elevation-1-dim)] backdrop-blur-md"
-              style={{ left: sliderTip.x, top: sliderTip.y }}
-              role="status"
-            >
-              行 {tipLine} · {timelinePercent}%
-            </div>
-          )}
+          >
+            <input
+              type="range"
+              min="0"
+              max={sharedDurationMs}
+              step="16"
+              value={displayTimeMs}
+              onChange={(event) => handleTimelineChange(event.target.value)}
+              onPointerDown={(event) => {
+                beginScrub(event);
+                updateSliderTip(event.clientX, event.clientY);
+              }}
+              onPointerUp={(event) => {
+                endScrub(event.currentTarget.value);
+                updateSliderTip(event.clientX, event.clientY);
+              }}
+              onPointerCancel={() => {
+                isPointerScrubbing.current = false;
+                setScrubTimeMs(null);
+                setSliderTip(null);
+              }}
+              onBlur={(event) => {
+                if (scrubTimeMs !== null) endScrub(event.currentTarget.value);
+              }}
+              style={timelineStyle}
+              className="v9-timeline-dial-slider w-full min-w-0"
+              aria-label={`字幕预览时间，第 ${tipLine} 行，${timelinePercent}%`}
+              title={`第 ${tipLine} 行 · ${timelinePercent}%`}
+            />
+            {showSliderTip && (
+              <div
+                className="pointer-events-none fixed z-[var(--z-dropdown)] -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-[var(--radius-md)] border border-[var(--v4-line-strong)] bg-[color-mix(in_srgb,var(--v5-green)_88%,#000)] px-2 py-1 font-mono text-xs font-semibold tabular-nums text-[var(--v4-accent-strong)] shadow-[var(--elevation-1-dim)] backdrop-blur-md"
+                style={{ left: sliderTip.x, top: sliderTip.y }}
+                role="status"
+              >
+                行 {tipLine} · {timelinePercent}%
+              </div>
+            )}
+          </div>
         </div>
+
+        <div className="mx-0.5 hidden h-5 w-px shrink-0 bg-[var(--v4-line)] sm:block" aria-hidden="true" />
+        {guidesButton}
       </div>
     );
   }

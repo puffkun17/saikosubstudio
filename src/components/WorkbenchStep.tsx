@@ -4,13 +4,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { SequenceList } from '@/components/Workbench/SequenceList';
-import { AlignmentDiffPanel } from '@/components/Workbench/AlignmentDiffPanel';
 import { SourceMatchPanel, type InspectionMarkFilter } from '@/components/Workbench/SourceMatchPanel';
 import { InspectionMarkGlyph, MARK_FILTERS, MARK_LABEL } from '@/components/Workbench/inspectionMarks';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
 import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
-import { ChevronDown, GitCompareArrows, SlidersHorizontal } from 'lucide-react';
+import { GitCompareArrows, SlidersHorizontal } from 'lucide-react';
+import { MergeReviewModal } from '@/components/Workbench/MergeReviewModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { analyzeAlignmentDiff, buildMergeReviewQueue } from '@/utils/timeline/alignmentDiff';
 import { createSourceMatchReport } from '@/utils/timeline/sourceMatch';
@@ -52,8 +52,13 @@ export const WorkbenchStep: React.FC = () => {
   const backModalRef = useRef<HTMLDivElement>(null);
   useUiModalFocus(showBackConfirm, backModalRef, () => setShowBackConfirm(false));
   const [sourceDurationMs, setSourceDurationMs] = useState<number | undefined>(undefined);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewFocusNonce, setReviewFocusNonce] = useState(0);
+
+  const openReviewModal = () => {
+    setIsReviewModalOpen(true);
+    setReviewFocusNonce(value => value + 1);
+  };
   const [markFilter, setMarkFilter] = useState<InspectionMarkFilter>('all');
 
   const alignmentSummary = useMemo(
@@ -105,13 +110,12 @@ export const WorkbenchStep: React.FC = () => {
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      if (showBackConfirm) return; // REL-2：确认框由 useUiModalFocus 处理
+      if (showBackConfirm || isReviewModalOpen) return; // REL-2：弹层由 useUiModalFocus 处理
       if (isSettingsOpen) setIsSettingsOpen(false);
-      else if (isDetailOpen) setIsDetailOpen(false);
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [isDetailOpen, isSettingsOpen, setIsSettingsOpen, showBackConfirm]);
+  }, [isReviewModalOpen, isSettingsOpen, setIsSettingsOpen, showBackConfirm]);
 
   useEffect(() => {
     setInfoBar({
@@ -141,7 +145,7 @@ export const WorkbenchStep: React.FC = () => {
             <SlidersHorizontal className="h-4 w-4" />
             字幕样式
           </button>
-          <ExportDropdown variant="ghost" />
+          <ExportDropdown variant="primary" />
           <WorkflowContinueInFlow />
         </>
       ),
@@ -186,31 +190,30 @@ export const WorkbenchStep: React.FC = () => {
                       {reviewTotal > 0 && reviewRemaining > 0 ? (
                         <button
                           type="button"
-                          className="v4-focus-ring inline-flex items-center gap-1 rounded-md bg-[var(--v4-danger)]/12 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-[var(--v4-danger)] hover:bg-[var(--v4-danger)]/18"
+                          className="workbench-review-action v4-focus-ring"
                           title={`合轴待复核剩余 ${reviewRemaining} 项（已核对 ${reviewCheckedCount}/${reviewTotal}：覆盖 / 对话 / 单轨 / 平移 / 存疑）· 点击打开明细`}
-                          aria-expanded={isDetailOpen}
-                          onClick={() => {
-                            setIsDetailOpen(true);
-                            setReviewFocusNonce(value => value + 1);
-                          }}
+                          aria-label={`待复核 ${reviewRemaining} 项，点击打开明细`}
+                          aria-haspopup="dialog"
+                          aria-expanded={isReviewModalOpen}
+                          onClick={openReviewModal}
                         >
-                          待复核{' '}
+                          <span className="workbench-review-action__label">待复核</span>
                           <AnimatedCounter
                             value={reviewRemaining}
                             separator=""
-                            className="text-xs font-semibold text-[var(--v4-danger)]"
+                            className="workbench-review-action__count"
                           />
+                          <span className="workbench-review-action__unit">项需关注</span>
                         </button>
                       ) : reviewTotal > 0 ? (
                         <button
                           type="button"
-                          className="v4-focus-ring inline-flex items-center gap-1 rounded-md bg-[var(--v4-accent-soft)] px-1.5 py-0.5 text-xs font-semibold tabular-nums text-[var(--v4-accent-strong)] hover:opacity-90"
+                          className="workbench-review-action workbench-review-action--done v4-focus-ring"
                           title={`合轴待复核已全部核对 ${reviewCheckedCount}/${reviewTotal} · 点击打开明细`}
-                          aria-expanded={isDetailOpen}
-                          onClick={() => {
-                            setIsDetailOpen(true);
-                            setReviewFocusNonce(value => value + 1);
-                          }}
+                          aria-label={`已核对 ${reviewCheckedCount}/${reviewTotal}，点击打开明细`}
+                          aria-haspopup="dialog"
+                          aria-expanded={isReviewModalOpen}
+                          onClick={openReviewModal}
                         >
                           已核对 {reviewCheckedCount}/{reviewTotal}
                         </button>
@@ -304,12 +307,12 @@ export const WorkbenchStep: React.FC = () => {
                     </div>
                     <button
                       type="button"
-                      className="v4-focus-ring inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-[var(--v4-text-muted)] hover:text-[var(--v4-text)]"
-                      onClick={() => setIsDetailOpen(value => !value)}
-                      aria-expanded={isDetailOpen}
+                      className="ui-action ui-action--secondary ui-action--quiet"
+                      onClick={openReviewModal}
+                      aria-haspopup="dialog"
+                      aria-expanded={isReviewModalOpen}
                     >
-                      {isDetailOpen ? '返回概览' : '查看详细内容'}
-                      <ChevronDown className={`h-4 w-4 transition-transform ${isDetailOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                      打开合轴复核
                     </button>
                   </div>
                 </div>
@@ -320,13 +323,6 @@ export const WorkbenchStep: React.FC = () => {
                     onTimelineDurationChange={setSourceDurationMs}
                     markFilter={markFilter}
                   />
-                  {isDetailOpen && (
-                    <AlignmentDiffPanel
-                      rows={processedSubs}
-                      focusNonce={reviewFocusNonce}
-                      preferredFilter="all"
-                    />
-                  )}
                 </div>
               </section>
             )}
@@ -362,6 +358,14 @@ export const WorkbenchStep: React.FC = () => {
           )}
         </AnimatePresence>
       </div>
+
+
+      <MergeReviewModal
+        open={Boolean(isReviewModalOpen && processedSubs)}
+        rows={processedSubs ?? []}
+        focusNonce={reviewFocusNonce}
+        onClose={() => setIsReviewModalOpen(false)}
+      />
 
       <OverlayPortal>
         <AnimatePresence>

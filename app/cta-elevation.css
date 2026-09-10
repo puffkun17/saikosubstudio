@@ -1,0 +1,142 @@
+/* CTA elevation overrides — imported after globals.css */
+.theater-lights-action {
+  border-color: color-mix(in srgb, var(--v5-orange) 72%, transparent);
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--v5-orange) 38%, transparent),
+      color-mix(in srgb, var(--v5-orange) 16%, transparent) 55%,
+      color-mix(in srgb, #1a1208 40%, transparent)
+    );
+  color: #fff1e0;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--v5-orange) 28%, transparent),
+    0 0 28px color-mix(in srgb, var(--v5-orange) 28%, transparent),
+    0 6px 14px color-mix(in srgb, var(--v5-orange) 18%, transparent);
+  text-shadow: 0 1px 0 color-mix(in srgb, #000 35%, transparent);
+}
+
+.theater-lights-action:hover {
+  border-color: color-mix(in srgb, var(--v5-orange) 92%, transparent);
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--v5-orange) 48%, transparent),
+      color-mix(in srgb, var(--v5-orange) 22%, transparent) 55%,
+      color-mix(in srgb, #1a1208 28%, transparent)
+    );
+  color: #fffaf2;
+  filter: brightness(1.04);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--v5-orange) 40%, transparent),
+    0 0 36px color-mix(in srgb, var(--v5-orange) 36%, transparent),
+    0 8px 18px color-mix(in srgb, var(--v5-orange) 22%, transparent);
+}
+
+.theater-lights-action--on {
+  border-color: color-mix(in srgb, var(--v5-cream) 34%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--v5-orange) 14%, transparent),
+      color-mix(in srgb, #0a0e0d 78%, transparent)
+    );
+  color: var(--v4-accent-strong);
+  text-shadow: none;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--v5-orange) 18%, transparent),
+    0 0 20px color-mix(in srgb, var(--v5-orange) 14%, transparent);
+}
+
+/* 导出字幕：流程下一步主 CTA，实心强调 + 轻 glow，高于次要 ghost */
+.export-next-cta {
+  border-color: transparent;
+  background: var(--v4-accent);
+  color: var(--v4-accent-ink);
+  font-weight: 700;
+  box-shadow: var(--glow-cta);
+}
+
+.export-next-cta:hover {
+  border-color: transparent;
+  background: var(--v4-accent);
+  color: var(--v4-accent-ink);
+  filter: brightness(1.06);
+  box-shadow: var(--glow-cta);
+}
+
+/* 工作台概览：待复核从 tip 升到需操作的 action tier */
+.workbench-review-action {
+  display: inline-flex;
+  min-height: 2.25rem;
+  cursor: pointer;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--v4-danger) 48%, transparent);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--v4-danger) 22%, transparent),
+      color-mix(in srgb, var(--v4-danger) 12%, transparent)
+    );
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--v4-danger);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--v4-danger) 10%, transparent),
+    0 4px 12px color-mix(in srgb, var(--v4-danger) 14%, transparent);
+  transition:
+    background-color var(--v4-dur-fast) var(--v4-ease),
+    border-color var(--v4-dur-fast) var(--v4-ease),
+    box-shadow var(--v4-dur-fast) var(--v4-ease),
+    filter var(--v4-dur-fast) var(--v4-ease);
+}
+
+.workbench-review-action:hover {
+  border-color: color-mix(in srgb, var(--v4-danger) 68%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--v4-danger) 30%, transparent),
+      color-mix(in srgb, var(--v4-danger) 16%, transparent)
+    );
+  filter: brightness(1.03);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--v4-danger) 16%, transparent),
+    0 6px 16px color-mix(in srgb, var(--v4-danger) 20%, transparent);
+}
+
+.workbench-review-action__label {
+  letter-spacing: 0.02em;
+}
+
+.workbench-review-action__count {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--v4-danger);
+}
+
+.workbench-review-action__unit {
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.92;
+}
+
+.workbench-review-action--done {
+  border-color: color-mix(in srgb, var(--v4-accent) 42%, transparent);
+  background: var(--v4-accent-soft);
+  color: var(--v4-accent-strong);
+  box-shadow: none;
+  font-weight: 600;
+}
+
+.workbench-review-action--done:hover {
+  border-color: color-mix(in srgb, var(--v4-accent) 60%, transparent);
+  background: color-mix(in srgb, var(--v4-accent) 22%, transparent);
+  filter: none;
+  box-shadow: none;
+}

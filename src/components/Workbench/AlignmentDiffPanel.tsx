@@ -247,7 +247,7 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
     if (preferredFilter) setReviewFilter(preferredFilter);
     const el = panelRef.current;
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      // Modal host owns scrolling; avoid yanking the workbench behind the dialog.
       el.focus({ preventScroll: true });
     }
   }, [focusNonce, preferredFilter]);
@@ -454,7 +454,7 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
               : '当前筛选下暂无待复核项'}
         </div>
       ) : (
-        <div className="max-h-[min(32vh,280px)] overflow-y-auto">
+        <div className="max-h-[min(58vh,36rem)] overflow-y-auto">
           <div className="sticky top-0 z-10 hidden grid-cols-[4.75rem_minmax(0,1.35fr)_minmax(0,1fr)_auto] gap-3 border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-4 py-1.5 text-xs font-medium text-[var(--v4-text-faint)] md:grid">
             <span>时间</span>
             <span>内容</span>
