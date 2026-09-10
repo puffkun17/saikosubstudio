@@ -1,1 +1,1 @@
-file:///workspace/agent-tools/AD_FOR_MCP.tsx
+__LOAD_FROM_FILE__:/workspace/agent-tools/AD_FOR_MCP.tsx
