@@ -225,7 +225,7 @@ export const ExportDropdown: React.FC<{
     return () => document.removeEventListener('keydown', handler);
   }, [open]);
 
-  const primaryClass = 'ui-action ui-action--lg';
+  const primaryClass = 'ui-action ui-action--lg export-next-cta';
   const ghostClass = 'ui-action ui-action--secondary ui-action--lg';
   const menuClass =
     menuShell === 'theater'
