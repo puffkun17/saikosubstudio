@@ -472,6 +472,13 @@ body {
 
 /* Theater dim：关灯舞台字色/边线角色；阴影走 elevation-*-dim */
 [data-surface="theater"],
+
+.lights-off-exit-tip {
+  /* Above dim scrim; tip is informational only (pointer-events none in markup). */
+  max-width: min(22rem, calc(100vw - 2rem));
+  text-align: center;
+}
+
 .lights-off-stage {
   --surface-text: color-mix(in srgb, var(--v5-cream) 92%, transparent);
   --surface-text-muted: color-mix(in srgb, var(--v5-cream) 72%, transparent);
