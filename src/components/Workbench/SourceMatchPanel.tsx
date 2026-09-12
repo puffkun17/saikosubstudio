@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, CheckCircle2, HardDrive, MonitorPlay, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, HardDrive, MonitorPlay, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { DurationPicker, type DurationValue } from '@/components/ui/duration-picker';
 import type { SubRow } from '@/utils/subtitleCore';
@@ -165,6 +165,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
   const [videoName, setVideoName] = useState('');
   const [videoDurationMs, setVideoDurationMs] = useState<number | undefined>(undefined);
   const [metadataError, setMetadataError] = useState('');
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const report = useMemo(
     () => createSourceMatchReport(rows, videoDurationMs),
@@ -307,30 +308,53 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
     video.src = url;
   };
 
+  const collapsedSummary = [
+    isMatchMode ? meta.label : '时间分布',
+    report.stats.distributionLabel,
+    `${formatCount(report.stats.lineCount)} 行`,
+    videoDurationMs ? `片源 ${formatMsClock(videoDurationMs)}` : null,
+  ].filter(Boolean).join(' · ');
+
   return (
     <section className="v4-panel w-full overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3">
-        <div className="min-w-0">
-          <div className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--v4-text)]">
-            {isMatchMode ? '片源覆盖分布' : '字幕时间分布'}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+        <div className="flex min-w-0 flex-1 items-start gap-2">
+          <button
+            type="button"
+            className="v4-focus-ring flex min-w-0 flex-1 items-start gap-2 rounded-md text-left"
+            aria-expanded={detailsOpen}
+            onClick={() => setDetailsOpen((open) => !open)}
+          >
+            <span className="mt-0.5 shrink-0 text-[var(--v4-text-muted)]" aria-hidden="true">
+              {detailsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </span>
+            <span className="min-w-0">
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--v4-text)]">
+                {isMatchMode ? '片源覆盖分布' : '字幕时间分布'}
+              </span>
+              <span className="mt-0.5 block truncate text-xs text-[var(--v4-text-faint)]">
+                {collapsedSummary}
+                {!detailsOpen ? ' · 展开分布图' : ''}
+              </span>
+            </span>
+          </button>
+          <span className="mt-0.5 shrink-0">
             <InfoHint label="字幕分布图说明">
               上方曲线表示字幕疏密；下方标记轨表示分类（结构差异、画面文字、声音描述、歌词、署名信息），点击可定位到对应行。
             </InfoHint>
-          </div>
-          <div className="mt-0.5 text-xs text-[var(--v4-text-faint)]">
-            {report.stats.distributionLabel} · {formatCount(report.stats.lineCount)} 行
-            {isMatchMode ? ` · ${meta.label}` : ''}
-          </div>
+          </span>
         </div>
         <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-3 text-xs text-[var(--v4-text-faint)] sm:flex">
-            {MARK_KIND_ORDER.map((kind) => (
-              <span key={kind} className="inline-flex items-center gap-1.5">
-                <InspectionMarkGlyph kind={kind} size={8} />
-                {MARK_LABEL[kind]}
-              </span>
-            ))}
-          </div>
+          {detailsOpen && (
+            <div className="hidden items-center gap-3 text-xs text-[var(--v4-text-faint)] sm:flex">
+              {MARK_KIND_ORDER.map((kind) => (
+                <span key={kind} className="inline-flex items-center gap-1.5">
+                  <InspectionMarkGlyph kind={kind} size={8} />
+                  {MARK_LABEL[kind]}
+                </span>
+              ))}
+            </div>
+          )}
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
@@ -349,7 +373,8 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
         </div>
       </div>
 
-      <div className="px-4 pb-4 pt-2">
+      {detailsOpen && (
+      <div className="px-4 pb-4 pt-0">
         <div className="relative overflow-hidden rounded-lg bg-[color-mix(in_srgb,var(--v4-panel-muted)_70%,transparent)] ring-1 ring-[var(--v4-line)]">
           {/* Density curve — marks live in HTML lane below to avoid SVG stretch */}
           <div
@@ -561,6 +586,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
           </div>
         ) : null}
       </div>
+      )}
     </section>
   );
 };

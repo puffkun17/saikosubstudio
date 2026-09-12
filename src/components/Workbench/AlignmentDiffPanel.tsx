@@ -210,6 +210,8 @@ export interface AlignmentDiffPanelProps {
   focusNonce?: number;
   /** When focusNonce changes, optionally force this filter. */
   preferredFilter?: MergeReviewFilter;
+  /** Called after 定位 from the locate button (e.g. close review modal). */
+  onAfterLocate?: () => void;
 }
 
 /** Detail table — merge review queue primary; auxiliary listing on a secondary tab. */
@@ -217,6 +219,7 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
   rows,
   focusNonce = 0,
   preferredFilter,
+  onAfterLocate,
 }) => {
   const panelRef = useRef<HTMLElement>(null);
   const [sourceEntryId, setSourceEntryId] = useState<string | null>(null);
@@ -528,14 +531,21 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleLocate(item)}
+                      onClick={() => {
+                        handleLocate(item);
+                        onAfterLocate?.();
+                      }}
                       className="ui-action ui-action--quiet"
-                      title={item.rowIndexes.length > 1
-                        ? `定位并高亮 ${item.rowIndexes.length} 行`
-                        : `定位到第 ${item.locateIndex} 行`}
+                      title={onAfterLocate
+                        ? (item.rowIndexes.length > 1
+                          ? `定位并高亮 ${item.rowIndexes.length} 行后关闭`
+                          : `定位到第 ${item.locateIndex} 行后关闭`)
+                        : (item.rowIndexes.length > 1
+                          ? `定位并高亮 ${item.rowIndexes.length} 行`
+                          : `定位到第 ${item.locateIndex} 行`)}
                     >
                       <LocateFixed className="h-3 w-3" />
-                      定位
+                      {onAfterLocate ? '定位并关闭' : '定位'}
                     </button>
                   </div>
                 </div>
