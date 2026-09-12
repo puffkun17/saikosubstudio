@@ -10,7 +10,10 @@ import { OverlayPortal } from '@/components/Global/OverlayPortal';
 const CONTEXTUAL_NOTICE_IDS = new Set([
   'media-match',
   'media-identity',
-  /** Nav step gate + in-flow continue — rendered next to the action, not in the floating dock. */
+  /**
+   * Nav step gate (meta '2' workbench / meta '3' preview) + in-flow continue.
+   * Rendered by SystemTray (near tabs) and DragZone banner — not the floating dock.
+   */
   'workflow-gated',
   'forward-action-blocked',
 ]);
@@ -32,6 +35,7 @@ const noticeStyles = {
  * Floating dock = strong notices + errors only.
  * Soft info/success logs flip in the bottom tray marquee.
  * Media-match notices render inline in SourceIdentityStrip.
+ * workflow-gated meta '2'/'3' stay contextual (SystemTray + DropZone), same path for both.
  */
 export const FeedbackCenter: React.FC = () => {
   const {
