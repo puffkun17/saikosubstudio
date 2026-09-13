@@ -366,13 +366,20 @@ export const SystemTray = () => {
             key={`${gateNotice.id}-${gateNotice.createdAt}-${variant}`}
             role="status"
             aria-live="polite"
+            data-gate-meta={gateNotice.meta || undefined}
             initial={{ opacity: 0, y: variant === 'top' ? -4 : 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: variant === 'top' ? -2 : 2 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className={`workflow-gate-callout absolute z-[calc(var(--z-nav)+1)] ${
               variant === 'top'
-                ? 'left-0 top-[calc(100%+0.4rem)] w-[min(18rem,calc(100vw-2rem))]'
+                ? (
+                  gateNotice.meta === '3'
+                    ? 'left-auto right-0 top-[calc(100%+0.4rem)] w-[min(18rem,calc(100vw-2rem))]'
+                    : gateNotice.meta === '2'
+                      ? 'left-1/2 top-[calc(100%+0.4rem)] w-[min(18rem,calc(100vw-2rem))] -translate-x-1/2'
+                      : 'left-0 top-[calc(100%+0.4rem)] w-[min(18rem,calc(100vw-2rem))]'
+                )
                 : 'bottom-[calc(100%+0.45rem)] left-1/2 w-[min(22rem,calc(100vw-1.5rem))] -translate-x-1/2'
             }`}
           >

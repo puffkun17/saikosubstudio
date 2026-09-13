@@ -16,6 +16,39 @@ import { getSubtitleTermHint } from '@/utils/subtitleTerminology';
 import { getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
 import { AssStylePreview } from '@/components/Ingest/AssStylePreview';
 
+
+const isChineseFamilyLang = (lang?: string | null, name?: string | null): boolean => {
+  const code = (lang || '').trim().toLowerCase();
+  if (
+    code === 'zh'
+    || code === 'zh-cn'
+    || code === 'zh-tw'
+    || code === 'zh-hans'
+    || code === 'zh-hant'
+    || code === 'cmn'
+    || code === 'yue'
+    || code === 'chinese'
+    || code === 'chs'
+    || code === 'cht'
+  ) {
+    return true;
+  }
+  const hay = `${lang || ''} ${name || ''}`.toLowerCase();
+  if (/(简体|簡體|简中|簡中|繁体|繁體|繁中|chinese)/i.test(hay)) return true;
+  if (/(^|[._\s\-\[\(])(chs|cht|sc|tc|zh[-_.]?cn|zh[-_.]?tw|zh[-_.]?hans|zh[-_.]?hant|cmn|yue)([._\s\-\]\)]|$)/i.test(hay)) {
+    return true;
+  }
+  return false;
+};
+
+const isEnglishLikeLang = (lang?: string | null, name?: string | null): boolean => {
+  const code = (lang || '').trim().toLowerCase();
+  if (code === 'en' || code === 'eng' || code === 'english') return true;
+  const hay = `${lang || ''} ${name || ''}`.toLowerCase();
+  return /(^|[._\s\-\[\(])(en|eng|english)([._\s\-\]\)]|$)/i.test(hay)
+    || /英语|英語|英文/.test(hay);
+};
+
 export const TaskList: React.FC = () => {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [pendingCancelUpload, setPendingCancelUpload] = useState(false);
@@ -61,6 +94,7 @@ export const TaskList: React.FC = () => {
     tmdbData,
     isSearchingTmdb,
     isOfficialSubtitle,
+    setStatusNotice,
   } = useStudioStore(useShallow((state) => ({
     tasks: state.tasks,
     selectedTaskId: state.selectedTaskId,
@@ -88,6 +122,7 @@ export const TaskList: React.FC = () => {
     tmdbData: state.tmdbData,
     isSearchingTmdb: state.isSearchingTmdb,
     isOfficialSubtitle: state.isOfficialSubtitle,
+    setStatusNotice: state.setStatusNotice,
   })));
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -334,6 +369,47 @@ export const TaskList: React.FC = () => {
 
   const needsTitleInput = Boolean(activeTask?.title.includes('待补充片名'));
   const canProceed = Boolean(activeTask && (activeTask.zh || activeTask.en) && !isProcessing);
+
+  const primaryFile = activeTask?.zh ?? null;
+  const secondaryFile = activeTask?.en ?? null;
+  const secondaryLooksEnglish = Boolean(
+    secondaryFile && isEnglishLikeLang(secondaryFile.lang, secondaryFile.name),
+  );
+  const secondaryLabel = secondaryLooksEnglish ? '原文' : '次语言 / 原文轨';
+  const secondaryPlaceholder = secondaryLooksEnglish
+    ? '选择英语原文（可选）'
+    : '选择次语言 / 原文轨（可选）';
+  const secondaryHint = '次语言通常为英语等与主语言不同的对白轨；与主字幕同语种（含简繁互为）不能作为合轴对。';
+
+  const sameScriptPairBound = Boolean(
+    activeTask
+    && !activeTask.isBilingualSingle
+    && primaryFile
+    && secondaryFile
+    && isChineseFamilyLang(primaryFile.lang, primaryFile.name)
+    && isChineseFamilyLang(secondaryFile.lang, secondaryFile.name),
+  );
+
+  const unboundSameScriptOnly = Boolean(
+    activeTask
+    && !activeTask.isBilingualSingle
+    && primaryFile
+    && !secondaryFile
+    && isChineseFamilyLang(primaryFile.lang, primaryFile.name)
+    && (() => {
+      const unbound = uploadedFiles.filter((f) => (
+        f.id !== primaryFile.id
+        && f.id !== activeTask.commentary?.id
+      ));
+      if (unbound.length === 0) return false;
+      const hasEnglishLike = unbound.some((f) => isEnglishLikeLang(f.lang, f.name));
+      if (hasEnglishLike) return false;
+      return unbound.every((f) => isChineseFamilyLang(f.lang, f.name));
+    })(),
+  );
+
+  const showSameScriptWarning = sameScriptPairBound || unboundSameScriptOnly;
+
   const edgeLabel = isProcessing
     ? '正在准备…'
     : needsTitleInput
@@ -348,15 +424,26 @@ export const TaskList: React.FC = () => {
     setForwardAction({
       label: edgeLabel,
       disabled: !canProceed,
-      ready: canProceed && !isProcessing,
-      disabledReason: '请先为当前任务绑定至少一条主字幕轨。',
+      ready: canProceed && !isProcessing && !sameScriptPairBound,
+      disabledReason: sameScriptPairBound
+        ? '当前像是两套中文主语言字幕，请补上次语言轨或取消次轨后再继续。'
+        : '请先为当前任务绑定至少一条主字幕轨。',
       onClick: () => {
         if (!canProceed) return;
+        if (sameScriptPairBound) {
+          setStatusNotice({
+            id: 'same-script-pair-blocked',
+            tone: 'warning',
+            title: '无法按双语合轴继续',
+            message: '当前像是两套中文主语言字幕，不是双语对。请补上英语等次语言轨再合轴；或取消次轨，按单语整理/导出。',
+          });
+          return;
+        }
         void runSubtitleMerge();
       },
     });
     return () => setForwardAction(null);
-  }, [activeTask, canProceed, edgeLabel, isProcessing, runSubtitleMerge, setForwardAction]);
+  }, [activeTask, canProceed, edgeLabel, isProcessing, runSubtitleMerge, sameScriptPairBound, setForwardAction, setStatusNotice]);
 
   const identityTitle = (() => {
     if (!activeTask) return '核对清单';
@@ -575,7 +662,7 @@ export const TaskList: React.FC = () => {
                 字幕序列
               </h4>
               <InfoHint label="字幕序列说明">
-                选择要处理的字幕文件。双语单文件会自动识别；分开的中文主字幕与原文轨将按时间轴合并。
+                选择要处理的字幕文件。双语单文件会自动识别；分开的中文主字幕与次语言轨将按时间轴合并。同语种（含简繁）不能作为合轴对。
               </InfoHint>
               {activeTask.isBilingualSingle && (
                 <span className="rd-chip rd-chip--tight text-[var(--v4-text-muted)]">
@@ -649,7 +736,7 @@ export const TaskList: React.FC = () => {
                             swapPrimaryTracks(activeTask.id);
                           }
                         }}
-                        aria-label={canReorderTracks ? `拖动以对调${trackKey === 'zh' ? '主字幕' : '原文'}顺序` : undefined}
+                        aria-label={canReorderTracks ? `拖动以对调${trackKey === 'zh' ? '主字幕' : '次语言'}顺序` : undefined}
                         title={canReorderTracks ? '按住拖动，对调主副轨' : undefined}
                         className={`grid h-11 w-8 shrink-0 place-items-center rounded-md text-[var(--v4-text-muted)] transition-colors touch-none ${
                           canReorderTracks
@@ -689,12 +776,12 @@ export const TaskList: React.FC = () => {
                         {renderPrimaryRow(
                           'en',
                           <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-[var(--v4-text-muted)]">
-                            原文
-                            <InfoHint label="原文说明" side="right">
-                              原文轨通常为英语对白，将与主字幕按时间轴合并。主路径仅自动绑定英语；其他语种需你手动指定。
+                            {secondaryLabel}
+                            <InfoHint label="次语言 / 原文轨说明" side="right">
+                              {secondaryHint}
                             </InfoHint>
                           </span>,
-                          '选择英语原文（可选）',
+                          secondaryPlaceholder,
                           enRowRef,
                         )}
 
@@ -752,13 +839,28 @@ export const TaskList: React.FC = () => {
             </div>
           </div>
 
+          {showSameScriptWarning && (
+            <div
+              role="status"
+              className="rounded-lg border border-[var(--v4-warning)]/30 bg-[var(--v4-warning)]/10 px-3 py-2.5 text-xs leading-5 text-[var(--v4-warning)]"
+            >
+              <p className="inline-flex items-start gap-1.5 font-semibold">
+                <CircleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                当前像是两套中文主语言字幕，不是双语对
+              </p>
+              <p className="mt-1 text-[var(--v4-text-muted)]">
+                请补上英语等次语言轨再合轴；或取消次轨，按单语整理/导出。简繁中文互为同语种，不能作为合轴对。
+              </p>
+            </div>
+          )}
+
           {/* 对齐方式：紧挨字幕序列，全宽双栏说明 */}
           {!activeTask.isBilingualSingle && (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-1.5">
                 <h4 className="text-base font-semibold text-[var(--v4-text)]">对齐方式</h4>
                 <InfoHint label="对齐方式说明">
-                  仅在主字幕与原文分轨时生效。双语单文件无需选择。
+                  仅在主字幕与次语言分轨时生效。双语单文件无需选择。同语种（含简繁）不能作为合轴对。
                 </InfoHint>
               </div>
               <div

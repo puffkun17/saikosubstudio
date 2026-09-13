@@ -110,7 +110,7 @@ export const WorkbenchStep: React.FC = () => {
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      if (showBackConfirm || isReviewModalOpen) return; // REL-2：弹层由 useUiModalFocus 处理
+      if (showBackConfirm || isReviewModalOpen) return;
       if (isSettingsOpen) setIsSettingsOpen(false);
     };
     document.addEventListener('keydown', handleEscape);
@@ -162,6 +162,17 @@ export const WorkbenchStep: React.FC = () => {
       disabledReason: '还没有可预览的字幕时间轴，请先完成合轴或分配。',
       onClick: () => {
         if (reviewRemaining > 0) {
+          const skipConfirm = typeof sessionStorage !== 'undefined'
+            && sessionStorage.getItem('saiko_skip_review_confirm') === '1';
+          if (!skipConfirm) {
+            const ok = window.confirm(`还有 ${reviewRemaining} 项未核对，仍要继续？`);
+            if (!ok) return;
+            try {
+              sessionStorage.setItem('saiko_skip_review_confirm', '1');
+            } catch {
+              /* ignore */
+            }
+          }
           setStatusNotice({
             id: 'merge-review-unchecked',
             tone: 'notice',
@@ -305,15 +316,6 @@ export const WorkbenchStep: React.FC = () => {
                         </button>
                       ))}
                     </div>
-                    <button
-                      type="button"
-                      className="ui-action ui-action--secondary ui-action--quiet"
-                      onClick={openReviewModal}
-                      aria-haspopup="dialog"
-                      aria-expanded={isReviewModalOpen}
-                    >
-                      打开合轴复核
-                    </button>
                   </div>
                 </div>
 
@@ -326,7 +328,7 @@ export const WorkbenchStep: React.FC = () => {
                 </div>
               </section>
             )}
-            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div className="flex min-h-[40vh] flex-1 flex-col overflow-hidden">
               <SequenceList key={selectedTaskId || customFilename} timelineDurationMs={sourceDurationMs} />
             </div>
           </div>
@@ -358,7 +360,6 @@ export const WorkbenchStep: React.FC = () => {
           )}
         </AnimatePresence>
       </div>
-
 
       <MergeReviewModal
         open={Boolean(isReviewModalOpen && processedSubs)}

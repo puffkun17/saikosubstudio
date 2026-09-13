@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { ScreenSimulator } from '@/components/Theater/ScreenSimulator';
@@ -83,6 +83,19 @@ export const TheaterStep: React.FC = () => {
   const safePreviewIndex = processedSubs && processedSubs.length > 0
     ? Math.min(Math.max(previewIndex, 0), processedSubs.length - 1)
     : 0;
+
+  const [showLightsExitTip, setShowLightsExitTip] = useState(false);
+
+  // 进入关灯时给短提示；开灯或卸载时清掉。
+  useEffect(() => {
+    if (!isLightsOff) {
+      setShowLightsExitTip(false);
+      return;
+    }
+    setShowLightsExitTip(true);
+    const timer = window.setTimeout(() => setShowLightsExitTip(false), 3500);
+    return () => window.clearTimeout(timer);
+  }, [isLightsOff]);
 
   const handleBack = () => {
     if (isTemplateLab) {
@@ -269,8 +282,8 @@ export const TheaterStep: React.FC = () => {
           {isLightsOff && (
             <motion.button
               type="button"
-              aria-label="开灯"
-              title="点击开灯（L / Esc）"
+              aria-label="再点空白处退出关灯 · Esc / L"
+              title="再点空白处退出关灯 · Esc / L"
               initial={{ opacity: 0 }}
               // 关灯像影院调光：先快速压到六成，再缓缓沉到全暗；开灯一步到位（快出）。
               animate={{ opacity: [0, 0.62, 1] }}
@@ -279,6 +292,23 @@ export const TheaterStep: React.FC = () => {
               className="lights-off-scrim"
               onClick={() => setLightsOff(false)}
             />
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {isLightsOff && showLightsExitTip && (
+            <motion.div
+              role="status"
+              aria-live="polite"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="lights-off-exit-tip pointer-events-none fixed bottom-8 left-1/2 z-[calc(var(--z-dim)+1)] w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 text-center"
+            >
+              <span className="inline-flex items-center rounded-[var(--radius-md)] border border-white/10 bg-black/70 px-3 py-1.5 text-xs font-medium tracking-wide text-white/90 shadow-[var(--elevation-2)] backdrop-blur-sm">
+                再点空白处退出关灯 · Esc / L
+              </span>
+            </motion.div>
           )}
         </AnimatePresence>
       </OverlayPortal>

@@ -345,7 +345,7 @@ export const TheaterSystemChrome: React.FC = () => {
         type="button"
         onClick={() => setLightsOff(!isLightsOff)}
         aria-pressed={isLightsOff}
-        title="关灯观影（L）· 推荐：沉浸核对字幕"
+        title="关灯观影（L）· 再点空白处 / Esc / L 退出"
         aria-label={isLightsOff ? '开灯' : '关灯观影'}
         className={`theater-lights-action v4-focus-ring inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-md)] border px-3.5 py-2 text-sm font-bold tracking-wide transition-[color,background,border-color,box-shadow,filter] duration-200
           ${isLightsOff ? 'theater-lights-action--on' : ''}`}

@@ -73,6 +73,7 @@ export const MergeReviewModal: React.FC<MergeReviewModalProps> = ({
                   rows={rows}
                   focusNonce={focusNonce}
                   preferredFilter="all"
+                  onAfterLocate={onClose}
                 />
               </div>
             </motion.div>

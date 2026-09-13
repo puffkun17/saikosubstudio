@@ -85,6 +85,17 @@ export const useExport = () => {
     const checkedCount = queue.items.reduce((count, item) => count + (checked.has(item.id) ? 1 : 0), 0);
     const remaining = Math.max(0, queue.total - checkedCount);
     if (remaining > 0) {
+      const skipConfirm = typeof sessionStorage !== 'undefined'
+        && sessionStorage.getItem('saiko_skip_review_confirm') === '1';
+      if (!skipConfirm) {
+        const ok = window.confirm(`还有 ${remaining} 项未核对，仍要继续？`);
+        if (!ok) return;
+        try {
+          sessionStorage.setItem('saiko_skip_review_confirm', '1');
+        } catch {
+          /* ignore quota / private mode */
+        }
+      }
       setStatusNotice({
         id: 'merge-review-unchecked',
         tone: 'notice',
