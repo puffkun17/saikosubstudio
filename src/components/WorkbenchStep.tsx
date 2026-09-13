@@ -199,33 +199,118 @@ export const WorkbenchStep: React.FC = () => {
                       <GitCompareArrows className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
                       <h2 className="text-sm font-semibold text-[var(--v4-text)]">字幕信息概览</h2>
                       {reviewTotal > 0 && reviewRemaining > 0 ? (
-                        <button type="button" className="workbench-review-action v4-focus-ring" title={`合轴待复核剩余 ${reviewRemaining} 项`} aria-label={`待复核 ${reviewRemaining} 项`} aria-haspopup="dialog" aria-expanded={isReviewModalOpen} onClick={openReviewModal}>
+                        <button
+                          type="button"
+                          className="workbench-review-action v4-focus-ring"
+                          title={`合轴待复核剩余 ${reviewRemaining} 项（已核对 ${reviewCheckedCount}/${reviewTotal}：覆盖 / 对话 / 单轨 / 平移 / 存疑）· 点击打开明细`}
+                          aria-label={`待复核 ${reviewRemaining} 项，点击打开明细`}
+                          aria-haspopup="dialog"
+                          aria-expanded={isReviewModalOpen}
+                          onClick={openReviewModal}
+                        >
                           <span className="workbench-review-action__label">待复核</span>
-                          <AnimatedCounter value={reviewRemaining} separator="" className="workbench-review-action__count" />
+                          <AnimatedCounter
+                            value={reviewRemaining}
+                            separator=""
+                            className="workbench-review-action__count"
+                          />
                           <span className="workbench-review-action__unit">项需关注</span>
                         </button>
                       ) : reviewTotal > 0 ? (
-                        <button type="button" className="workbench-review-action workbench-review-action--done v4-focus-ring" onClick={openReviewModal}>已核对 {reviewCheckedCount}/{reviewTotal}</button>
+                        <button
+                          type="button"
+                          className="workbench-review-action workbench-review-action--done v4-focus-ring"
+                          title={`合轴待复核已全部核对 ${reviewCheckedCount}/${reviewTotal} · 点击打开明细`}
+                          aria-label={`已核对 ${reviewCheckedCount}/${reviewTotal}，点击打开明细`}
+                          aria-haspopup="dialog"
+                          aria-expanded={isReviewModalOpen}
+                          onClick={openReviewModal}
+                        >
+                          已核对 {reviewCheckedCount}/{reviewTotal}
+                        </button>
                       ) : structureCount > 0 ? (
-                        <span className="inline-flex min-w-6 items-center justify-center rounded-md bg-[var(--v4-warning)]/12 px-1.5 py-0.5 text-sm font-semibold tabular-nums text-[var(--v4-warning)]"><AnimatedCounter value={structureCount} separator="" className="text-sm font-semibold text-[var(--v4-warning)]" /></span>
+                        <span
+                          className="inline-flex min-w-6 items-center justify-center rounded-md bg-[var(--v4-warning)]/12 px-1.5 py-0.5 text-sm font-semibold tabular-nums text-[var(--v4-warning)]"
+                          title={`${structureCount} 处结构差异`}
+                        >
+                          <AnimatedCounter value={structureCount} separator="" className="text-sm font-semibold text-[var(--v4-warning)]" />
+                        </span>
                       ) : (
                         <span className="text-xs font-medium text-[var(--v4-text-faint)]">无需复核</span>
                       )}
                     </div>
+
                     {profileStats && (
                       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-[var(--v4-text-muted)]">
-                        <span>文本量 <strong className="font-semibold tabular-nums text-[var(--v4-text)]">{formatCount(profileStats.characterCount)}</strong></span>
+                        <span>
+                          文本量{' '}
+                          <strong className="font-semibold tabular-nums text-[var(--v4-text)]">
+                            {formatCount(profileStats.characterCount)}
+                          </strong>
+                        </span>
                         <span className="text-[var(--v4-line-strong)]">·</span>
-                        <span>跨度 <strong className="font-semibold tabular-nums text-[var(--v4-text)]">{formatMsClock(profileStats.spanMs)}</strong></span>
+                        <span>
+                          跨度{' '}
+                          <strong className="font-semibold tabular-nums text-[var(--v4-text)]">
+                            {formatMsClock(profileStats.spanMs)}
+                          </strong>
+                        </span>
                         <span className="text-[var(--v4-line-strong)]">·</span>
-                        <span className="inline-flex items-center gap-1">密度<InfoHint label="字幕密度说明">每分钟字幕行数。</InfoHint><strong className="font-semibold tabular-nums text-[var(--v4-accent-strong)]">{profileStats.densityPerMinute}</strong></span>
+                        <span className="inline-flex items-center gap-1">
+                          密度
+                          <InfoHint label="字幕密度说明">
+                            每分钟字幕行数。声音描述、歌词和画面文字也会影响该指标。
+                          </InfoHint>
+                          <strong className="font-semibold tabular-nums text-[var(--v4-accent-strong)]">
+                            {profileStats.densityPerMinute}
+                          </strong>
+                        </span>
+                        {(screenCount > 0 || soundCount > 0 || lyricsCount > 0 || creditCount > 0) && (
+                          <>
+                            <span className="text-[var(--v4-line-strong)]">·</span>
+                            <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[var(--v4-text-faint)]">
+                              {screenCount > 0 && (
+                                <span className="inline-flex items-center gap-1">
+                                  <InspectionMarkGlyph kind="screen" size={7} />
+                                  {MARK_LABEL.screen} {screenCount}
+                                </span>
+                              )}
+                              {soundCount > 0 && (
+                                <span className="inline-flex items-center gap-1">
+                                  <InspectionMarkGlyph kind="sound" size={7} />
+                                  {MARK_LABEL.sound} {soundCount}
+                                </span>
+                              )}
+                              {lyricsCount > 0 && (
+                                <span className="inline-flex items-center gap-1">
+                                  <InspectionMarkGlyph kind="lyrics" size={7} />
+                                  {MARK_LABEL.lyrics} {lyricsCount}
+                                </span>
+                              )}
+                              {creditCount > 0 && (
+                                <span className="inline-flex items-center gap-1">
+                                  <InspectionMarkGlyph kind="credit" size={7} />
+                                  {MARK_LABEL.credit} {creditCount}
+                                </span>
+                              )}
+                            </span>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
+
                   <div className="flex flex-wrap items-center justify-between gap-2 md:justify-end">
                     <div className="ui-choice-group" role="tablist" aria-label="时间轴标记筛选">
                       {MARK_FILTERS.map(item => (
-                        <button key={item.id} type="button" role="tab" aria-selected={markFilter === item.id} onClick={() => setMarkFilter(item.id)} className={`ui-choice inline-flex items-center gap-1.5 ${markFilter === item.id ? 'ui-choice--on' : ''}`}>
+                        <button
+                          key={item.id}
+                          type="button"
+                          role="tab"
+                          aria-selected={markFilter === item.id}
+                          onClick={() => setMarkFilter(item.id)}
+                          className={`ui-choice inline-flex items-center gap-1.5 ${markFilter === item.id ? 'ui-choice--on' : ''}`}
+                        >
                           {item.kind ? <InspectionMarkGlyph kind={item.kind} size={8} /> : null}
                           {item.label}
                         </button>
@@ -233,8 +318,13 @@ export const WorkbenchStep: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
                 <div className="space-y-3 border-t border-[var(--v4-line)] p-3 md:p-4">
-                  <SourceMatchPanel rows={processedSubs} onTimelineDurationChange={setSourceDurationMs} markFilter={markFilter} />
+                  <SourceMatchPanel
+                    rows={processedSubs}
+                    onTimelineDurationChange={setSourceDurationMs}
+                    markFilter={markFilter}
+                  />
                 </div>
               </section>
             )}
@@ -243,28 +333,90 @@ export const WorkbenchStep: React.FC = () => {
             </div>
           </div>
         </div>
+
         <AnimatePresence>
           {isSettingsOpen && (
             <>
-              <motion.button type="button" aria-label="关闭样式参数" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-40 bg-black/55 lg:hidden" onClick={() => setIsSettingsOpen(false)} />
-              <motion.aside aria-label="样式参数" initial={{ x: 360, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 360, opacity: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} className="v4-panel absolute inset-y-4 right-4 z-50 flex w-[min(390px,calc(100vw-2rem))] flex-col overflow-hidden lg:relative lg:inset-auto lg:z-20 lg:my-6 lg:mr-6 lg:w-[390px] lg:shrink-0">
+              <motion.button
+                type="button"
+                aria-label="关闭样式参数"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-40 bg-black/55 lg:hidden"
+                onClick={() => setIsSettingsOpen(false)}
+              />
+              <motion.aside
+                aria-label="样式参数"
+                initial={{ x: 360, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 360, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="v4-panel absolute inset-y-4 right-4 z-50 flex w-[min(390px,calc(100vw-2rem))] flex-col overflow-hidden lg:relative lg:inset-auto lg:z-20 lg:my-6 lg:mr-6 lg:w-[390px] lg:shrink-0"
+              >
                 <StyleSidebar />
               </motion.aside>
             </>
           )}
         </AnimatePresence>
       </div>
-      <MergeReviewModal open={Boolean(isReviewModalOpen && processedSubs)} rows={processedSubs ?? []} focusNonce={reviewFocusNonce} onClose={() => setIsReviewModalOpen(false)} />
+
+      <MergeReviewModal
+        open={Boolean(isReviewModalOpen && processedSubs)}
+        rows={processedSubs ?? []}
+        focusNonce={reviewFocusNonce}
+        onClose={() => setIsReviewModalOpen(false)}
+      />
+
       <OverlayPortal>
         <AnimatePresence>
           {showBackConfirm && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-4 backdrop-blur-sm" onClick={(event) => { if (event.target === event.currentTarget) setShowBackConfirm(false); }}>
-              <motion.div ref={backModalRef} role="alertdialog" aria-modal="true" aria-labelledby="workbench-back-title" aria-describedby="workbench-back-description" initial={{ opacity: 0, y: 10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.98 }} className="ui-modal" tabIndex={-1}>
-                <h3 id="workbench-back-title" className="text-lg font-semibold text-[var(--v4-text)]">是否重新导入</h3>
-                <p id="workbench-back-description" className="mt-2 text-sm leading-6 text-[var(--v4-text-muted)]">已导入的文件与轨道选择会保留。再次进入工作台时，将按当前选择重新生成预览。</p>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
+              onClick={(event) => {
+                if (event.target === event.currentTarget) setShowBackConfirm(false);
+              }}
+            >
+              <motion.div
+                ref={backModalRef}
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="workbench-back-title"
+                aria-describedby="workbench-back-description"
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                className="ui-modal"
+                tabIndex={-1}
+              >
+                <h3 id="workbench-back-title" className="text-lg font-semibold text-[var(--v4-text)]">
+                  是否重新导入
+                </h3>
+                <p id="workbench-back-description" className="mt-2 text-sm leading-6 text-[var(--v4-text-muted)]">
+                  已导入的文件与轨道选择会保留。再次进入工作台时，将按当前选择重新生成预览。
+                </p>
                 <div className="mt-5 grid grid-cols-2 gap-2">
-                  <button type="button" className="ui-action ui-action--quiet w-full" onClick={() => setShowBackConfirm(false)}>继续编辑</button>
-                  <button type="button" className="ui-action w-full" onClick={() => { setShowBackConfirm(false); setProcessedSubs(null); setWorkflowStep(1); }}>返回导入</button>
+                  <button
+                    type="button"
+                    className="ui-action ui-action--quiet w-full"
+                    onClick={() => setShowBackConfirm(false)}
+                  >
+                    继续编辑
+                  </button>
+                  <button
+                    type="button"
+                    className="ui-action w-full"
+                    onClick={() => {
+                      setShowBackConfirm(false);
+                      setProcessedSubs(null);
+                      setWorkflowStep(1);
+                    }}
+                  >
+                    返回导入
+                  </button>
                 </div>
               </motion.div>
             </motion.div>
