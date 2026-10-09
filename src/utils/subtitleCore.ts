@@ -83,10 +83,7 @@ export interface RawSub {
   auxiliary?: AuxiliaryCueClassification;
 }
 
-export interface DecodeResult {
-  text: string;
-  encoding: string;
-}
+export type { DecodeResult } from './textEncoding';
 
 export type SubtitleLanguage =
   | 'zh-CN'
@@ -160,38 +157,8 @@ export interface StyleSettings {
   enFontFamily?: string;
 }
 
-/**
- * Try to decode file buffer with correct encoding.
- */
-export function decodeBuffer(buffer: ArrayBuffer): DecodeResult {
-  const arr = new Uint8Array(buffer);
-  
-  if (arr.length >= 2) {
-    if (arr[0] === 0xFF && arr[1] === 0xFE) return { text: new TextDecoder('utf-16le').decode(buffer), encoding: 'utf-16le (BOM)' };
-    if (arr[0] === 0xFE && arr[1] === 0xFF) return { text: new TextDecoder('utf-16be').decode(buffer), encoding: 'utf-16be (BOM)' };
-  }
-  if (arr.length >= 3 && arr[0] === 0xEF && arr[1] === 0xBB && arr[2] === 0xBF) {
-    return { text: new TextDecoder('utf-8').decode(buffer), encoding: 'utf-8 (BOM)' };
-  }
-
-  const decoders = ['utf-8', 'gbk', 'gb18030', 'big5', 'utf-16le', 'utf-16be'];
-  for (const encoding of decoders) {
-    try {
-      const decoder = new TextDecoder(encoding, { fatal: true });
-      const text = decoder.decode(buffer);
-      if (/[一-龥]/.test(text)) {
-        return { text, encoding };
-      }
-      if (/\d{2}:\d{2}:\d{2}/.test(text)) {
-        return { text, encoding: encoding + ' (Auto)' };
-      }
-    } catch {
-      continue;
-    }
-  }
-  
-  return { text: new TextDecoder('utf-8').decode(buffer), encoding: 'utf-8 (fallback)' };
-}
+// Encoding detection lives in ./textEncoding (scoring over UTF-8/16, GBK, Big5, Shift-JIS, EUC-KR).
+export { decodeBuffer } from './textEncoding';
 
 /**
  * Determine language from text content.
@@ -360,6 +327,27 @@ export function detectSubtitleLanguage(name: string, text: string): SubtitleLang
     : { lang, isBilingual };
 }
 
+const isLatinOrDigit = (ch: string | undefined): boolean => Boolean(ch && /[A-Za-z0-9]/.test(ch));
+
+/**
+ * Middle cut for a Chinese line without punctuation: never split inside a Latin word or
+ * number (e.g.「iPhone」「2026」); move to the nearest word boundary within 25%–75%.
+ */
+function findChineseFallbackBreak(line: string): number {
+  const middle = Math.ceil(line.length / 2);
+  const isInsideWord = (i: number) => isLatinOrDigit(line[i - 1]) && isLatinOrDigit(line[i]);
+  if (!isInsideWord(middle)) return middle;
+  const min = Math.ceil(line.length * 0.25);
+  const max = Math.floor(line.length * 0.75);
+  for (let delta = 1; delta <= line.length; delta++) {
+    for (const candidate of [middle - delta, middle + delta]) {
+      if (candidate >= min && candidate <= max && !isInsideWord(candidate)) return candidate;
+    }
+    if (middle - delta < min && middle + delta > max) break;
+  }
+  return middle;
+}
+
 /**
  * Line wrap text intelligently.
  */
@@ -397,26 +385,28 @@ export function smartLineWrap(text: string, isChinese = true, maxChars = 20): st
         return line.slice(0, breakIndex) + "\\N" + line.slice(breakIndex).trim();
       }
       
-      const balancedMiddle = Math.ceil(line.length / 2);
-      return line.slice(0, balancedMiddle) + "\\N" + line.slice(balancedMiddle);
+      const breakIndex = findChineseFallbackBreak(line);
+      return line.slice(0, breakIndex) + "\\N" + line.slice(breakIndex).trim();
     } else {
-      if (line.length <= maxChars * 3) return line;
-      const words = line.split(' ');
-      let currentLen = 0;
+      // maxChars is a per-line character budget (maxLenEn). It used to be multiplied by 3,
+      // so English effectively never wrapped below ~240 characters.
+      const limit = Math.max(1, maxChars);
+      if (line.length <= limit) return line;
+      const words = line.split(/\s+/).filter(Boolean);
       const result: string[] = [];
-      let currentLine: string[] = [];
-      
-      words.forEach(word => {
-        if (currentLen + word.length > maxChars * 3) {
-          result.push(currentLine.join(' '));
-          currentLine = [word];
-          currentLen = word.length;
+      let currentLine = '';
+
+      for (const word of words) {
+        if (!currentLine) {
+          currentLine = word;
+        } else if (currentLine.length + 1 + word.length > limit) {
+          result.push(currentLine);
+          currentLine = word;
         } else {
-          currentLine.push(word);
-          currentLen += word.length + 1;
+          currentLine += ' ' + word;
         }
-      });
-      result.push(currentLine.join(' '));
+      }
+      if (currentLine) result.push(currentLine);
       return result.join('\\N');
     }
   });
@@ -563,6 +553,25 @@ const MUSIC_KEYWORD_RE = /\b(?:song|singing|lyrics?|playing)\b/i;
 const MUSIC_ZH_RE = /(歌词|歌声|唱歌|哼唱|音乐|音樂|歌声|歌聲)/;
 const TITLE_CARD_INNER_RE = /^(?:\d{4}年|\d{1,2}月|\d{1,2}日|[一二三四五六七八九十\d]+个月后|[一二三四五六七八九十\d]+年后|第[一二三四五六七八九十\d]+章|第[一二三四五六七八九十\d]+幕)/;
 
+const SCREEN_TEXT_MARKER_EN_RE = /\b(?:ON[\s-]?SCREEN|SCREEN[\s-]?TEXT|TITLE[\s-]?CARD|CAPTION|SUBTITLE|TEXT|SIGN)\b|sign reads|text reads/i;
+const SCREEN_TEXT_MARKER_EN_UPPER_RE = /\b(?:ON[\s-]?SCREEN|SCREEN[\s-]?TEXT|TITLE[\s-]?CARD|CAPTION|SUBTITLE|TEXT|SIGN)\b/;
+const SCREEN_TEXT_READS_RE = /\b(?:sign|text) reads\b/i;
+const SCREEN_TEXT_MARKER_ZH_RE = /牌匾|招牌|标识|路牌|屏幕|短信|邮件|标题|告示|字幕显示/;
+const DIALOGUE_FUNCTION_WORD_RE = /(是|有|在|去|来|说|做|看|听|想|要|会|能|的|了|着|过|吗|呢|吧)/;
+
+/**
+ * A full spoken sentence (ends with sentence punctuation and carries a function word),
+ * with no bracket / lyric / emphasis wrapping. Keyword hits alone (「字幕」「回忆」「短信」…)
+ * must not turn such a line into a note or screen text — that blocked bilingual pairing.
+ */
+function isSentenceLikeDialogue(text: string): boolean {
+  const t = (text || '').trim();
+  if (!t || /[()（）\[\]【】♪♫♬♩🎵🎶*《》]/.test(t)) return false;
+  if (/^(?:旁白|画外音|畫外音|独白|獨白|解说|解說|心想)\s*[:：]/.test(t)) return false;
+  if (!/[。！？!?…]["”』」']?$/.test(t)) return false;
+  return DIALOGUE_FUNCTION_WORD_RE.test(t) || /[A-Za-z]{2,}\s+[A-Za-z]{2,}/.test(t);
+}
+
 const isConfirmedAmbientSound = (innerText: string): boolean => (
   CONFIRMED_AMBIENT_EN_RE.test(innerText) || CONFIRMED_AMBIENT_ZH_RE.test(innerText)
 );
@@ -633,7 +642,14 @@ export function classifyAuxiliaryCue(text: string): AuxiliaryCueClassification {
 
   // Short English tokens need word boundaries — otherwise SIGN matches "signed"/"designed",
   // and TEXT matches "treatment"/"context", which wrongly blocks dialogue pairing.
-  if (/\b(?:ON[\s-]?SCREEN|SCREEN[\s-]?TEXT|TITLE[\s-]?CARD|CAPTION|SUBTITLE|TEXT|SIGN)\b|sign reads|text reads|牌匾|招牌|标识|路牌|屏幕|短信|邮件|标题|告示|字幕显示/i.test(innerText)) {
+  // Outside brackets, only UPPERCASE markers count: plain sentences such as
+  // "This is a test subtitle." / "Did you get my text?" /「你收到短信了吗？」are dialogue.
+  const screenTextMarker = fullyWrapped
+    ? SCREEN_TEXT_MARKER_EN_RE.test(innerText) || SCREEN_TEXT_MARKER_ZH_RE.test(innerText)
+    : SCREEN_TEXT_MARKER_EN_UPPER_RE.test(innerText)
+      || SCREEN_TEXT_READS_RE.test(innerText)
+      || (!isSentenceLikeDialogue(innerText) && SCREEN_TEXT_MARKER_ZH_RE.test(innerText));
+  if (screenTextMarker) {
     category = 'screen_text';
     confidence = AUXILIARY_CLASSIFY_SCORES.screenText;
     action = 'keep_visible';
@@ -899,6 +915,26 @@ export function parseSrt(text: string): RawSub[] {
 }
 
 /**
+ * Remove ASS vector-drawing payloads. Inside `{\\pN}` with N > 0, text is drawing commands
+ * (`m 0 0 l 100 0 …`) until `{\\p0}`. Override blocks are kept so classification still sees
+ * tags such as `\\pos`; only the drawing coordinates are dropped.
+ */
+export function stripAssDrawingCommands(assText: string): string {
+  let drawing = false;
+  let out = '';
+  for (const segment of assText.match(/\{[^}]*\}|[^{]+|\{/g) || []) {
+    if (segment.startsWith('{') && segment.endsWith('}')) {
+      const scales = [...segment.matchAll(/\\p(\d+)/g)];
+      if (scales.length > 0) drawing = Number(scales[scales.length - 1][1]) > 0;
+      out += segment;
+    } else if (!drawing) {
+      out += segment;
+    }
+  }
+  return out;
+}
+
+/**
  * Universal Subtitle Parser (SRT & ASS).
  */
 export function parseSubtitle(text: string): RawSub[] {
@@ -924,8 +960,11 @@ export function parseSubtitle(text: string): RawSub[] {
           const textIdx = formatKeys.indexOf('text') >= 0 ? formatKeys.indexOf('text') : 9;
           if (parts.length > textIdx) {
             const ts = `${assClockToSrtTimestamp(parts[startIdx])} --> ${assClockToSrtTimestamp(parts[endIdx])}`;
-            const rawDiag = parts.slice(textIdx).join(',');
+            // Vector drawings ({\\p1} m 0 0 l …) are shapes, not text: drop their coordinates.
+            const fullDiag = parts.slice(textIdx).join(',');
+            const rawDiag = stripAssDrawingCommands(fullDiag);
             const cleanDiag = rawDiag.replace(/\\N/g, '\n').replace(/\{[^}]*\}/g, '').trim();
+            if (!cleanDiag && rawDiag !== fullDiag) return; // drawing-only event: nothing to show
             const cueMeta = classifySubtitleCue(rawDiag, { assStyle: parts[styleIdx] || '' });
             parsed.push({ ts, text: cleanDiag, cueKind: cueMeta.kind, cueMeta, auxiliary: cueMeta.auxiliary });
           }
@@ -1007,6 +1046,7 @@ interface Extraction {
 function extractDialogueAndNotes(text: string): Extraction {
   text = cleanSubtitleContent(text.trim());
   if (!text) return { dialogue: "", notes: "", type: "dialogue" };
+  if (isSentenceLikeDialogue(text)) return { dialogue: text, notes: "", type: "dialogue" };
   const score = analyzeContentType(text);
   if (score >= 40) return { dialogue: "", notes: text, type: "note" };
   if (score >= 20 && score < 40) {
@@ -2405,7 +2445,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       style = "Credit";
     } else if (s.type === "lyrics") {
       style = /[一-龥]/.test(s.text) ? "Lyrics" : "Lyrics_EN";
-    } else if (s.type === "note" || s.type === "commentary" || s.cueKind === 'screen_text' || /[翻译制作合并]/.test(s.text)) {
+    } else if (s.type === "note" || s.type === "commentary" || s.cueKind === 'screen_text' || s.cueKind === 'credit') {
+      // Subtitle credits (翻译/制作…) are detected upstream as cueKind 'credit'. Never match
+      // single characters such as 合/并/作 — they appear in ordinary dialogue（「我们合作吧」）.
       style = "Note";
     } else if (s.type === "merged") {
       style = "Han";
