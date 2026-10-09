@@ -1,5 +1,6 @@
-@import "tailwindcss";
+/* CSS spec: @import must precede all other rules, or the build drops it (font never loads). */
 @import url("/fonts/noto-serif-sc/noto-serif-sc.css");
+@import "tailwindcss";
 
 /*
  * 双字体：
