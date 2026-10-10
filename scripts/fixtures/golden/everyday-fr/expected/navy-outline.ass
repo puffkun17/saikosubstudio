@@ -1,0 +1,26 @@
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+ScriptType: v4.00+
+Title: everyday-fr
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: ZH,Source Han Sans SC Medium,75,&H00FFFFFF,&H000000FF,&H00551B14,&H00000000,0,0,0,0,100,100,0,0,1,5.5,0,2,60,60,97,1
+Style: SEC,Source Han Sans SC,51,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,4.5,0,2,60,60,51,1
+Style: Note,Source Han Sans SC Medium,68,&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,6,0,8,38,38,75,1
+Style: Credit,Source Han Sans SC Medium,68,&H00FFFFFF,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,6,0,5,38,38,75,1
+Style: Lyrics,Source Han Sans SC Medium,60,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,6,0,8,38,38,60,1
+Style: Lyrics_EN,Source Han Sans SC,45,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,4,0,8,38,38,37,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 1,0:00:01.00,0:00:03.00,ZH,,0,0,0,,你能帮我拿一下那个盒子吗
+Dialogue: 0,0:00:01.00,0:00:03.00,SEC,,0,0,0,,Tu peux me passer cette boîte ?
+Dialogue: 1,0:00:03.50,0:00:06.00,ZH,,0,0,0,,当然可以 放在哪里
+Dialogue: 0,0:00:03.50,0:00:06.00,SEC,,0,0,0,,Bien sûr. Je la mets où ?
+Dialogue: 1,0:00:06.50,0:00:10.50,ZH,,0,0,148,,放在门口的桌子上就好\N等一下我下楼的时候顺便带走
+Dialogue: 0,0:00:06.50,0:00:10.50,SEC,,0,0,0,,Pose-la sur la table près de l'entrée, je la\Nprendrai en descendant tout à l'heure, d'accord ?
+Dialogue: 1,0:00:11.00,0:00:13.00,ZH,,0,0,0,,没问题！
+Dialogue: 0,0:00:11.00,0:00:13.00,SEC,,0,0,0,,« Pas de problème ! »

@@ -1,0 +1,40 @@
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+ScriptType: v4.00+
+Title: everyday-hant-big5
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: ZH,Source Han Sans TC Medium,75,&H00FFFFFF,&H000000FF,&H00551B14,&H00000000,0,0,0,0,100,100,0,0,1,5.5,0,2,60,60,97,1
+Style: SEC,Source Han Sans SC,51,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,4.5,0,2,60,60,51,1
+Style: Note,Source Han Sans TC Medium,68,&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,6,0,8,38,38,75,1
+Style: Credit,Source Han Sans TC Medium,68,&H00FFFFFF,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,6,0,5,38,38,75,1
+Style: Lyrics,Source Han Sans TC Medium,60,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,6,0,8,38,38,60,1
+Style: Lyrics_EN,Source Han Sans SC,45,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,4,0,8,38,38,37,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:03.00,Note,,0,0,0,,{\an8}字幕製作：測試樣本組
+Dialogue: 1,0:00:04.00,0:00:06.20,ZH,,0,0,0,,你今天怎麼這麼早就起來了
+Dialogue: 0,0:00:04.00,0:00:06.20,SEC,,0,0,0,,Why are you up so early today?
+Dialogue: 1,0:00:06.50,0:00:09.00,ZH,,0,0,148,,我睡不著 乾脆起來煮點咖啡
+Dialogue: 0,0:00:06.50,0:00:09.00,SEC,,0,0,0,,I couldn't sleep,\Nso I figured I'd make some coffee.
+Dialogue: 1,0:00:09.20,0:00:12.80,ZH,,0,0,148,,你要不要也來一杯 我煮了一大壺\N夠我們兩個人喝一整個上午
+Dialogue: 0,0:00:09.20,0:00:12.80,SEC,,0,0,0,,Do you want a cup too? I made a big pot,\Nenough for both of us to drink all morning.
+Dialogue: 1,0:00:13.00,0:00:15.00,ZH,,0,0,0,,好啊 - 加不加糖
+Dialogue: 0,0:00:13.00,0:00:15.00,SEC,,0,0,0,,- Sure. - Sugar?
+Dialogue: 1,0:00:18.00,0:00:21.50,ZH,,0,0,148,,樓下那家店的手機殼打八折\N我昨天順手買了一個
+Dialogue: 0,0:00:18.00,0:00:21.50,SEC,,0,0,0,,The shop downstairs has phone cases\Nat 20% off, so I grabbed one yesterday.
+Dialogue: 1,0:00:22.00,0:00:25.00,ZH,,0,0,148,,一共是128.50元 比網上便宜了差不多30塊
+Dialogue: 0,0:00:22.00,0:00:25.00,SEC,,0,0,0,,It came to 128.50 in total,\Nabout 30 cheaper than online.
+Dialogue: 1,0:00:31.60,0:00:33.20,ZH,,0,0,0,,其實我一直想跟你說 下個月我\N可能要搬到離公司近一點的地方去住
+Dialogue: 0,0:00:31.60,0:00:33.20,SEC,,0,0,0,,There's something I've been meaning to tell you.
+Dialogue: 1,0:00:33.30,0:00:35.10,ZH,,0,0,0,,其實我一直想跟你說 下個月我\N可能要搬到離公司近一點的地方去住
+Dialogue: 0,0:00:33.30,0:00:35.10,SEC,,0,0,0,,I might move closer to work next month.
+Dialogue: 1,0:00:35.50,0:00:37.00,ZH,,0,0,0,,真的嗎
+Dialogue: 0,0:00:35.50,0:00:37.00,SEC,,0,0,0,,Really?
+Dialogue: 1,0:00:37.20,0:00:40.00,ZH,,0,0,148,,嗯 每天通勤兩個小時 實在是太累了
+Dialogue: 0,0:00:37.20,0:00:40.00,SEC,,0,0,0,,Yeah. Two hours of commuting\Nevery day is just too much.
+Dialogue: 0,0:00:40.60,0:00:43.60,Lyrics_EN,,0,0,0,,♪ The rain keeps falling outside ♪

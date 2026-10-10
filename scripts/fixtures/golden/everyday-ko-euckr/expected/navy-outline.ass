@@ -1,0 +1,26 @@
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+ScriptType: v4.00+
+Title: everyday-ko-euckr
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: ZH,Source Han Sans SC Medium,75,&H00FFFFFF,&H000000FF,&H00551B14,&H00000000,0,0,0,0,100,100,0,0,1,5.5,0,2,60,60,97,1
+Style: SEC,Source Han Sans K,51,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,4.5,0,2,60,60,51,1
+Style: Note,Source Han Sans SC Medium,68,&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,6,0,8,38,38,75,1
+Style: Credit,Source Han Sans SC Medium,68,&H00FFFFFF,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,6,0,5,38,38,75,1
+Style: Lyrics,Source Han Sans SC Medium,60,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,6,0,8,38,38,60,1
+Style: Lyrics_EN,Source Han Sans K,45,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,4,0,8,38,38,37,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 1,0:00:01.00,0:00:03.00,ZH,,0,0,0,,今天下班以后要不要一起去散步
+Dialogue: 0,0:00:01.00,0:00:03.00,SEC,,0,0,0,,오늘 퇴근하고 같이 산책할래?
+Dialogue: 1,0:00:03.50,0:00:06.00,ZH,,0,0,0,,好啊 我也想出去走走
+Dialogue: 0,0:00:03.50,0:00:06.00,SEC,,0,0,0,,좋아, 나도 바람 좀 쐬고 싶었어.
+Dialogue: 1,0:00:06.50,0:00:10.50,ZH,,0,0,148,,公园旁边新开了一家小面包店\N听说他们的牛角包每天下午就卖完了
+Dialogue: 0,0:00:06.50,0:00:10.50,SEC,,0,0,0,,공원 옆에 작은 빵집이 새로 생겼는데\N크루아상이 매일 오후면 다 팔린대.
+Dialogue: 1,0:00:11.00,0:00:13.00,ZH,,0,0,0,,那我们早点出发
+Dialogue: 0,0:00:11.00,0:00:13.00,SEC,,0,0,0,,그럼 우리 일찍 출발하자.

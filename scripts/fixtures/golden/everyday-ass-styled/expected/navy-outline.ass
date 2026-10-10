@@ -1,0 +1,30 @@
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+ScriptType: v4.00+
+Title: everyday-ass-styled
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: ZH,Source Han Sans SC Medium,75,&H00FFFFFF,&H000000FF,&H00551B14,&H00000000,0,0,0,0,100,100,0,0,1,5.5,0,2,60,60,97,1
+Style: SEC,Source Han Sans SC,51,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,4.5,0,2,60,60,51,1
+Style: Note,Source Han Sans SC Medium,68,&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,6,0,8,38,38,75,1
+Style: Credit,Source Han Sans SC Medium,68,&H00FFFFFF,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,6,0,5,38,38,75,1
+Style: Lyrics,Source Han Sans SC Medium,60,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,6,0,8,38,38,60,1
+Style: Lyrics_EN,Source Han Sans SC,45,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,4,0,8,38,38,37,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 1,0:00:01.00,0:00:03.50,ZH,,0,0,0,,早上好 今天天气还不错
+Dialogue: 0,0:00:01.00,0:00:03.50,SEC,,0,0,0,,Good morning. Nice weather today.
+Dialogue: 0,0:00:02.00,0:00:05.00,Note,,0,0,0,,{\an8}便利店 二十四小时营业 欢迎光临
+Dialogue: 1,0:00:04.00,0:00:06.50,ZH,,0,0,0,,我就随便说说 你别当真
+Dialogue: 0,0:00:04.00,0:00:06.50,SEC,,0,0,0,,I'm just saying, don't take it seriously.
+Dialogue: 1,0:00:07.00,0:00:11.00,ZH,,0,0,148,,这个周末如果不下雨的话我们就去河边骑车\N然后在草地上野餐好不好
+Dialogue: 0,0:00:07.00,0:00:11.00,SEC,,0,0,0,,If it doesn't rain this weekend, let's ride\Nalong the river and have a picnic on the grass.
+Dialogue: 1,0:00:11.50,0:00:15.50,ZH,,0,0,148,,我刚刚看了一下 明天早上七点半出发应\N该来得及 不过今晚要早点睡
+Dialogue: 0,0:00:11.50,0:00:15.50,SEC,,0,0,0,,I just checked. If we leave at 7:30 tomorrow morning\Nwe'll make it, but we should sleep early tonight.
+Dialogue: 0,0:00:16.00,0:00:18.00,Note,,0,0,0,,{\an8}第二天早上
+Dialogue: 1,0:00:18.50,0:00:21.00,ZH,,0,0,148,,闹钟响了三次 我才终于爬起来
+Dialogue: 0,0:00:18.50,0:00:21.00,SEC,,0,0,0,,The alarm went off three times\Nbefore I finally got up.
