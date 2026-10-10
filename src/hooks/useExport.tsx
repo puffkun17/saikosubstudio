@@ -27,11 +27,20 @@ import {
   resolvePresetStyle,
   type ExportPresetId,
 } from '@/utils/exportPresets';
+import {
+  DEFAULT_HDR_LEVEL,
+  HDR_BUNDLE_FOLDER,
+  HDR_LEVEL_ORDER,
+  HDR_LEVELS_PROVISIONAL,
+  isHdrLevelId,
+  type HdrLevelId,
+} from '@/utils/hdrPresets';
 import { buildMergeReviewQueue } from '@/utils/timeline/alignmentDiff';
 
 const PRESET_STORAGE_KEY = 'saiko_export_preset';
 const NAMING_STORAGE_KEY = 'saiko_export_naming';
 const SRT_ADDONS_STORAGE_KEY = 'saiko_export_srt_addons';
+const HDR_STORAGE_KEY = 'saiko_export_hdr';
 
 const readStoredChoice = (key: string): string | null => {
   try {
@@ -53,6 +62,8 @@ export interface ExportRequest {
   assPresetId: ExportPresetId;
   srtAddonIds: ExportPresetId[];
   namingId: string;
+  /** 同时生成 HDR 版: level of the extra ASS under HDR/ (null = SDR only). */
+  hdrLevel: HdrLevelId | null;
 }
 
 /**
@@ -63,13 +74,31 @@ export const useExportChoices = () => {
   const [assPresetId, setAssPresetIdState] = useState<ExportPresetId>(DEFAULT_EXPORT_PRESET_ID);
   const [namingId, setNamingIdState] = useState<string>(DEFAULT_NAMING_ID);
   const [srtAddonIds, setSrtAddonIdsState] = useState<ExportPresetId[]>([]);
+  // Stored as "<level>" when on, "off:<level>" when off (keeps the last chosen level).
+  const [hdrEnabled, setHdrEnabledState] = useState(false);
+  const [hdrLevelChoice, setHdrLevelChoiceState] = useState<HdrLevelId>(DEFAULT_HDR_LEVEL);
   useEffect(() => {
     const storedPreset = getExportPreset(readStoredChoice(PRESET_STORAGE_KEY));
     setAssPresetIdState(storedPreset.formats.includes('ass') ? storedPreset.id : DEFAULT_EXPORT_PRESET_ID);
     setNamingIdState(getNamingOption(readStoredChoice(NAMING_STORAGE_KEY)).id);
     const storedAddons = (readStoredChoice(SRT_ADDONS_STORAGE_KEY) || '').split(',');
     setSrtAddonIdsState(SRT_ADDON_IDS.filter((id) => storedAddons.includes(id)));
+    const storedHdr = readStoredChoice(HDR_STORAGE_KEY) || '';
+    const level = storedHdr.replace(/^off:/, '');
+    setHdrEnabledState(Boolean(storedHdr) && !storedHdr.startsWith('off:') && isHdrLevelId(level));
+    if (isHdrLevelId(level)) setHdrLevelChoiceState(level);
   }, []);
+  const persistHdr = (enabled: boolean, level: HdrLevelId) =>
+    writeStoredChoice(HDR_STORAGE_KEY, enabled ? level : `off:${level}`);
+  const setHdrEnabled = (enabled: boolean) => {
+    setHdrEnabledState(enabled);
+    persistHdr(enabled, hdrLevelChoice);
+  };
+  const setHdrLevelChoice = (level: HdrLevelId) => {
+    setHdrLevelChoiceState(level);
+    persistHdr(hdrEnabled, level);
+  };
+  const hdrLevel: HdrLevelId | null = hdrEnabled ? hdrLevelChoice : null;
   const setAssPresetId = (id: ExportPresetId) => {
     setAssPresetIdState(id);
     writeStoredChoice(PRESET_STORAGE_KEY, id);
@@ -85,7 +114,10 @@ export const useExportChoices = () => {
       return next;
     });
   };
-  return { assPresetId, setAssPresetId, namingId, setNamingId, srtAddonIds, toggleSrtAddon };
+  return {
+    assPresetId, setAssPresetId, namingId, setNamingId, srtAddonIds, toggleSrtAddon,
+    hdrEnabled, setHdrEnabled, hdrLevelChoice, setHdrLevelChoice, hdrLevel,
+  };
 };
 
 const triggerDownload = (blob: Blob, filename: string) => {
@@ -167,7 +199,7 @@ export const useExport = () => {
   })));
 
   /** ASS (+ optional SRT add-ons). More than one file → one zip, built locally in the browser. */
-  const handleExport = async ({ assPresetId, srtAddonIds, namingId }: ExportRequest) => {
+  const handleExport = async ({ assPresetId, srtAddonIds, namingId, hdrLevel }: ExportRequest) => {
     if (!processedSubs || processedSubs.length === 0) return;
 
     const taskKey = selectedTaskId || customFilename || '_default';
@@ -202,14 +234,15 @@ export const useExport = () => {
       const auxiliaryMode = customStyle.auxiliaryMode || 'keep';
       const filteredExportSubs = applyAuxiliarySubtitleMode(exportSubs, auxiliaryMode);
       const hiddenAuxiliaryCount = exportSubs.length - filteredExportSubs.length;
-      const plan = planExportBundle(customFilename || 'subtitles', namingId, assPresetId, srtAddonIds, { traditional: isTraditional });
+      const plan = planExportBundle(customFilename || 'subtitles', namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel });
       const report = createWrapReport();
       const scriptMeta = buildAssScriptMeta({ creatorCredit, creditDeclaration, isOfficialSubtitle });
 
       const files = plan.files.map((file) => {
         const preset = EXPORT_PRESETS[file.presetId];
         const exportStyle = { ...resolvePresetStyle(customStyle, preset), auxiliaryMode: 'keep' as const };
-        const runOptions = { profile: preset.profile, report };
+        // The HDR copy re-runs the same export; don't double-count its wrap stats.
+        const runOptions = { profile: preset.profile, report: file.hdr ? undefined : report, hdr: file.hdr ?? null };
         const content = file.format === 'srt'
           ? generateSrtContent(filteredExportSubs, exportStyle, runOptions)
           : generateAssContent(filteredExportSubs, exportStyle, customFilename, scriptMeta, runOptions);
@@ -228,8 +261,10 @@ export const useExport = () => {
         triggerDownload(new Blob([file.content], { type: 'text/x-ass;charset=utf-8' }), file.filename);
       }
 
+      const hdrCount = files.filter((file) => file.hdr).length;
+      const srtCount = files.filter((file) => file.format === 'srt').length;
       const what = plan.zipName
-        ? `打包下载 ${plan.zipName}（ASS + ${files.length - 1} 个 SRT）`
+        ? `打包下载 ${plan.zipName}（${describeBundle(hdrCount, srtCount)}）`
         : `ASS（${EXPORT_PRESETS[plan.files[0].presetId].label}）`;
       addLog(
         hiddenAuxiliaryCount > 0
@@ -249,6 +284,10 @@ export const useExport = () => {
   return { handleExport, isTraditional };
 };
 
+/** 「ASS + HDR 版 + 2 个 SRT」 */
+const describeBundle = (hdrCount: number, srtCount: number): string =>
+  ['ASS', hdrCount > 0 ? 'HDR 版' : '', srtCount > 0 ? `${srtCount} 个 SRT` : ''].filter(Boolean).join(' + ');
+
 const selectClass = 'v4-focus-ring mt-0.5 w-full truncate rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-1.5 py-1 text-xs text-[var(--v4-text)]';
 
 /**
@@ -266,9 +305,14 @@ export const ExportDropdown: React.FC<{
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { handleExport, isTraditional } = useExport();
-  const { assPresetId, setAssPresetId, namingId, setNamingId, srtAddonIds, toggleSrtAddon } = useExportChoices();
+  const {
+    assPresetId, setAssPresetId, namingId, setNamingId, srtAddonIds, toggleSrtAddon,
+    hdrEnabled, setHdrEnabled, hdrLevelChoice, setHdrLevelChoice, hdrLevel,
+  } = useExportChoices();
   const { customFilename } = useStudioStore(useShallow((state) => ({ customFilename: state.customFilename })));
-  const plan = planExportBundle(customFilename || 'subtitles', namingId, assPresetId, srtAddonIds, { traditional: isTraditional });
+  const plan = planExportBundle(customFilename || 'subtitles', namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel });
+  const planHdrCount = plan.files.filter((file) => file.hdr).length;
+  const planSrtCount = plan.files.filter((file) => file.format === 'srt').length;
   const bundled = Boolean(plan.zipName);
 
   useEffect(() => {
@@ -405,6 +449,36 @@ export const ExportDropdown: React.FC<{
                   ))}
                 </div>
               </fieldset>
+              <div className="mt-2">
+                <div className="flex items-center gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-1 text-xs text-[var(--v4-text-muted)]" title={`ASS 的 HDR 版放进 zip 的 ${HDR_BUNDLE_FOLDER}/ 文件夹，文件名不变；SRT 没有颜色，不生成 HDR 版`}>
+                    <input
+                      type="checkbox"
+                      className="v4-focus-ring h-3.5 w-3.5 accent-[var(--v4-accent)]"
+                      checked={hdrEnabled}
+                      onChange={(event) => setHdrEnabled(event.target.checked)}
+                    />
+                    同时生成 HDR 版
+                  </label>
+                  <select
+                    className={`${selectClass} !mt-0 !w-auto`}
+                    value={hdrLevelChoice}
+                    disabled={!hdrEnabled}
+                    onChange={(event) => setHdrLevelChoice(event.target.value as HdrLevelId)}
+                    aria-label="HDR 档位"
+                    title={HDR_LEVELS_PROVISIONAL[hdrLevelChoice].hint}
+                  >
+                    {HDR_LEVEL_ORDER.map((id) => (
+                      <option key={id} value={id}>{HDR_LEVELS_PROVISIONAL[id].label}</option>
+                    ))}
+                  </select>
+                </div>
+                {hdrEnabled && (
+                  <p className="mt-0.5 text-[0.6875rem] leading-4 text-[var(--v4-text-faint)]">
+                    HDR 片 + HDR 屏幕用 HDR 版；觉得刺眼就换更暗一档。SRT 不生成 HDR 版。
+                  </p>
+                )}
+              </div>
             </div>
             <div className="p-1.5">
               <button
@@ -415,7 +489,7 @@ export const ExportDropdown: React.FC<{
                 onClick={async () => {
                   setBusy(true);
                   try {
-                    await handleExport({ assPresetId, srtAddonIds, namingId });
+                    await handleExport({ assPresetId, srtAddonIds, namingId, hdrLevel });
                   } finally {
                     setBusy(false);
                     setOpen(false);
@@ -427,7 +501,7 @@ export const ExportDropdown: React.FC<{
                 </span>
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold text-[var(--v4-text)]">
-                    {bundled ? `打包下载（ASS + ${plan.files.length - 1} 个 SRT）` : '下载 ASS'}
+                    {bundled ? `打包下载（${describeBundle(planHdrCount, planSrtCount)}）` : '下载 ASS'}
                   </span>
                   <span className="mt-0.5 block truncate text-xs leading-4 text-[var(--v4-text-muted)]">
                     {plan.zipName ?? plan.files[0].filename}
