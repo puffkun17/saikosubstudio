@@ -1,14 +1,25 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./cta-elevation.css";
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import { SystemTray } from "@/components/Global/SystemTray";
 import { AppChrome } from "@/components/Global/AppChrome";
+import { ServiceWorkerUpdate } from "@/components/Global/ServiceWorkerUpdate";
 
 export const metadata: Metadata = {
   title: "SaikoSubStudio",
   description: "Tool for aligning, merging and styling bilingual subtitles with cinema preview simulator.",
+  applicationName: "SaikoSubStudio",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "SaikoSub",
+    statusBarStyle: "default",
+  },
+  formatDetection: { telephone: false },
+  // Next emits mobile-web-app-capable; older iOS Safari still keys standalone mode off the apple- prefixed tag.
+  other: { "apple-mobile-web-app-capable": "yes" },
   icons: {
     icon: [
       { url: '/brand-mark.svg', type: 'image/svg+xml' },
@@ -24,6 +35,10 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#1a3d37",
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-CN" className={`${GeistSans.variable} ${GeistMono.variable}`}>
@@ -34,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </div>
         </AppChrome>
+        <ServiceWorkerUpdate />
       </body>
     </html>
   );
