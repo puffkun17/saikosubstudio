@@ -44,3 +44,4 @@ tmp/
 
 # Legacy test:core temp files (runner now vendored; kept so stray copies never get committed)
 scripts/_reg_assembled_*.mjs
+/public/sw.js

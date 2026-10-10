@@ -12,3 +12,13 @@
 # stale worker with old script-src blocks WebAssembly even after HTML CSP updates.
 /libarchive/*
   Cache-Control: public, max-age=0, must-revalidate
+
+# PWA: the service worker must always be revalidated so updates are picked up promptly.
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  Content-Type: application/javascript; charset=utf-8
+  Service-Worker-Allowed: /
+
+/manifest.webmanifest
+  Content-Type: application/manifest+json; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
