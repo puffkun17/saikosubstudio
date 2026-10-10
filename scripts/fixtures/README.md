@@ -21,6 +21,7 @@ byte files and their `.utf8.srt` siblings always match.
 | `golden/everyday-ja-sjis` | `zh.srt` (GBK) + `ja.srt` (Shift-JIS) | zh + ja pair (both CJK, kept as separate blocks), kana kinsoku |
 | `golden/everyday-ko-euckr` | `zh.srt` + `ko.srt` (EUC-KR) | zh + ko pair, Hangul eojeol never split |
 | `golden/everyday-fr` | `zh.srt` + `fr.srt` | French NBSP before `?`/`!`, « guillemets », accents |
+| `detection/zh-inline-latin.{zh,en}.srt` | separate zh / en tracks | Chinese dialogue with inline Latin tokens (iPhone, OK, Wi-Fi, PDF, App and brand/tech words) and bare `OK` / `iPhone` cues must stay a Chinese track (not bilingual) so the English track binds as 原文 |
 | `encoding/*` | `zh-hans.gbk`, `zh-hant.big5`, `zh-hant-in-gbk.gbk`, `ja.shift-jis`, `ko.euc-kr` (+ `.utf8.srt`) | encoding detection, incl. Traditional characters stored as GBK |
 
 Spanish / Portuguese wrapping is covered by unit strings in `scripts/regression-subtitle-core.mjs`.

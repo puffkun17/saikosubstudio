@@ -9,9 +9,10 @@
  * default is a one-line change of DEFAULT_EXPORT_PRESET_ID below.
  */
 import type { StyleSettings } from './subtitleCore';
+import { HDR_BUNDLE_FOLDER, isHdrLevelId, type HdrLevelId } from './hdrPresets';
 
 export type ExportFormat = 'ass' | 'srt';
-export type ExportPresetId = 'current' | 'plex-srt' | 'libass-ass' | 'generic-srt';
+export type ExportPresetId = 'current' | 'plex-srt' | 'libass-ass' | 'navy-outline' | 'generic-srt';
 
 export interface AssWrapPolicy {
   /** Fraction of (PlayResX − MarginL − MarginR) a CJK line may use. */
@@ -42,12 +43,49 @@ export interface SrtRenderPolicy {
   lyricItalic: boolean | 'style';
 }
 
+/**
+ * Stacked two-event layout (「深蓝描边」): the Chinese line and the secondary line are separate
+ * Dialogue events on different layers, so libass collision handling never moves them and the gap
+ * between them is exact. All px values are at the 1080 reference and scale by PlayResY / 1080.
+ */
+export interface StackedAssLayout {
+  referenceResY: number;
+  /** ASS Fontsize of the Chinese line (≈ em × 1.45 for Source Han / Noto CJK metrics). */
+  primaryFontSize: number;
+  /** Secondary Fontsize = primaryFontSize × secondaryScale. */
+  secondaryScale: number;
+  primaryOutline: number;
+  secondaryOutline: number;
+  primaryOutlineColour: string;
+  secondaryOutlineColour: string;
+  fill: string;
+  /** Primary family name (name ID 1 — the Medium weight is its own legacy family). */
+  primaryFont: string;
+  /** Primary family when the Chinese track is Traditional (zh-TW / zh-Hant glyph forms). */
+  primaryFontTraditional: string;
+  /** Secondary family per script of the secondary text. */
+  secondaryFont: { latin: string; ja: string; ko: string };
+  marginH: number;
+  /** Secondary event MarginV: puts its ink bottom ≈ 5.6 % of the frame height above the bottom. */
+  secondaryMarginV: number;
+  /**
+   * Chinese event MarginV = secondaryMarginV + secondaryLines × secondaryFontSize + this. With one
+   * secondary line it gives an ink-to-ink gap of ≈ 1.7 % of the frame height.
+   */
+  interLineAdjust: number;
+  /** Layers: Chinese above the secondary. */
+  primaryLayer: number;
+  secondaryLayer: number;
+}
+
 export interface ExportProfile {
   /** Font used when the style's CSS family list has no concrete family (system-ui, sans-serif…). */
   fallbackZhFont: string;
   fallbackEnFont: string;
   assWrap: AssWrapPolicy;
   srt: SrtRenderPolicy;
+  /** Two-event stacked layout (navy preset). Absent → classic Han/EN single-event layout. */
+  stacked?: StackedAssLayout;
 }
 
 export interface ExportPreset {
@@ -99,6 +137,43 @@ const FIXED_ASS_STYLE: Partial<StyleSettings> = {
   lyricPosition: 'top',
 };
 
+/**
+ * 「深蓝描边」— modelled on the YouTuber 满田's zh/ja hardsubs (/workspace/yt-style/analysis.md,
+ * measured at 1080p and reproduced with libass to within 0–2 px):
+ * zh white fill + navy #141B55 outline 5.5 px, Source Han Sans SC Medium, Fontsize 75 (em ≈ 52 px);
+ * secondary white + black outline 4.5 px, Regular, 0.68 × (51); no shadow; zh on top;
+ * ink gap ≈ 18 px (1.7 % H); secondary ink bottom ≈ 60 px (5.6 % H) above the frame bottom.
+ */
+export const NAVY_OUTLINE_LAYOUT: StackedAssLayout = {
+  referenceResY: 1080,
+  primaryFontSize: 75,
+  secondaryScale: 0.68,
+  primaryOutline: 5.5,
+  secondaryOutline: 4.5,
+  primaryOutlineColour: '#141B55',
+  secondaryOutlineColour: '#000000',
+  fill: '#FFFFFF',
+  primaryFont: 'Source Han Sans SC Medium',
+  primaryFontTraditional: 'Source Han Sans TC Medium',
+  secondaryFont: { latin: 'Source Han Sans SC', ja: 'Source Han Sans JP', ko: 'Source Han Sans K' },
+  marginH: 60,
+  secondaryMarginV: 51,
+  interLineAdjust: -5,
+  primaryLayer: 1,
+  secondaryLayer: 0,
+};
+
+const NAVY_OUTLINE_STYLE: Partial<StyleSettings> = {
+  ...FIXED_ASS_STYLE,
+  zhFontFamily: NAVY_OUTLINE_LAYOUT.primaryFont,
+  enFontFamily: NAVY_OUTLINE_LAYOUT.secondaryFont.latin,
+  zhColor: NAVY_OUTLINE_LAYOUT.fill,
+  enColor: NAVY_OUTLINE_LAYOUT.fill,
+  zhOutline: NAVY_OUTLINE_LAYOUT.primaryOutlineColour,
+  enOutline: NAVY_OUTLINE_LAYOUT.secondaryOutlineColour,
+  enScale: 100,
+};
+
 export const EXPORT_PRESETS: Record<ExportPresetId, ExportPreset> = {
   current: {
     id: 'current',
@@ -132,6 +207,21 @@ export const EXPORT_PRESETS: Record<ExportPresetId, ExportPreset> = {
       srt: { wrap: true, ...NOMINAL_SRT, keepAn8: true, plainText: false, lyricItalic: true },
     },
   },
+  'navy-outline': {
+    id: 'navy-outline',
+    label: '深蓝描边',
+    description: '白字 + 深海军蓝描边，思源黑体 Medium；第二语言小一号、黑描边，中上外下双事件叠放；mpv / IINA / Jellyfin / Infuse',
+    formats: ['ass'],
+    style: NAVY_OUTLINE_STYLE,
+    profile: {
+      fallbackZhFont: NAVY_OUTLINE_LAYOUT.primaryFont,
+      fallbackEnFont: NAVY_OUTLINE_LAYOUT.secondaryFont.latin,
+      // Wrap widths are per language at each line's own size (zh 75, secondary 51 @1080).
+      assWrap: { cjkWidthRatio: 0.82, latinWidthRatio: 0.62, legacyCharCap: false },
+      srt: { wrap: true, ...NOMINAL_SRT, keepAn8: true, plainText: false, lyricItalic: true },
+      stacked: NAVY_OUTLINE_LAYOUT,
+    },
+  },
   'generic-srt': {
     id: 'generic-srt',
     label: '通用 SRT',
@@ -146,7 +236,7 @@ export const EXPORT_PRESETS: Record<ExportPresetId, ExportPreset> = {
   },
 };
 
-export const EXPORT_PRESET_ORDER: ExportPresetId[] = ['current', 'plex-srt', 'libass-ass', 'generic-srt'];
+export const EXPORT_PRESET_ORDER: ExportPresetId[] = ['current', 'plex-srt', 'libass-ass', 'navy-outline', 'generic-srt'];
 
 /**
  * Derek (§E-4, PR #36): the default download is ASS; SRT files are optional add-ons bundled into a
@@ -232,10 +322,42 @@ const splitFamilyList = (value: string): string[] => {
   return out;
 };
 
+/**
+ * Source Han / Noto CJK ship every non-RIBBI weight as its own legacy family (name ID 1), e.g.
+ * 「Source Han Sans SC Medium」. That is the name GDI (VSFilter) and fontconfig (libass) match, so
+ * these weights are kept instead of being stripped like an ordinary style suffix. Regular / Bold
+ * remain styles of the base family (Bold → the Bold flag).
+ */
+const CJK_SUPERFAMILY_WEIGHT = /^(source\s*han\s*(?:sans|serif)|noto\s*(?:sans|serif)\s*cjk|思源黑体|思源宋体)[\s_-]*(sc|tc|hc|jp|k|kr|cn|tw|hk)?[\s_-]+(extralight|light|normal|medium|semibold|heavy|black)$/i;
+const CJK_SUPERFAMILY_BASE: Record<string, string> = {
+  sourcehansans: 'Source Han Sans',
+  sourcehanserif: 'Source Han Serif',
+  notosanscjk: 'Noto Sans CJK',
+  notoserifcjk: 'Noto Serif CJK',
+  '思源黑体': 'Source Han Sans',
+  '思源宋体': 'Source Han Serif',
+};
+const WEIGHT_NAMES: Record<string, string> = {
+  extralight: 'ExtraLight', light: 'Light', normal: 'Normal', medium: 'Medium', semibold: 'SemiBold', heavy: 'Heavy', black: 'Black',
+};
+
+const canonicalCjkWeightedFamily = (name: string): string | null => {
+  const match = name.replace(/([a-z])([A-Z])/g, '$1 $2').match(CJK_SUPERFAMILY_WEIGHT);
+  if (!match) return null;
+  const base = CJK_SUPERFAMILY_BASE[match[1].toLowerCase().replace(/\s+/g, '')];
+  if (!base) return null;
+  const isChineseAlias = /^思源/.test(match[1]);
+  const region = (match[2] || (isChineseAlias ? 'sc' : '')).toUpperCase();
+  if (!region) return null;
+  return `${base} ${region} ${WEIGHT_NAMES[match[3].toLowerCase()]}`;
+};
+
 /** Canonical family name for one CSS family entry, or '' when it is generic / unusable. */
 export function canonicalFontFamily(entry: string): string {
   let name = entry.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/^['"\s]+|['"\s]+$/g, '').replace(/\s+/g, ' ').trim();
   if (!name || /^var\(/i.test(name) || GENERIC_FAMILIES.has(name.toLowerCase())) return '';
+  const weighted = canonicalCjkWeightedFamily(name);
+  if (weighted) return weighted;
   for (let guard = 0; guard < 4 && WEIGHT_SUFFIX.test(name); guard++) name = name.replace(WEIGHT_SUFFIX, '').trim();
   const key = name.toLowerCase().replace(/[\s_-]+/g, '');
   return FAMILY_ALIASES[key] ?? FAMILY_ALIASES[name] ?? name;
@@ -322,6 +444,8 @@ export function buildExportFilename(
 export interface PlannedExportFile {
   presetId: ExportPresetId;
   format: ExportFormat;
+  /** HDR level of an ASS variant (null / absent = SDR). */
+  hdr?: HdrLevelId | null;
   /** Path inside the zip (or the download name when not bundled). */
   filename: string;
 }
@@ -342,13 +466,17 @@ export function planExportBundle(
   namingId: string,
   assPresetId: unknown,
   srtAddonIds: readonly unknown[],
-  options: { traditional?: boolean } = {},
+  options: { traditional?: boolean; hdr?: HdrLevelId | null } = {},
 ): ExportBundlePlan {
   const assPreset = getExportPreset(assPresetId);
   const assId: ExportPresetId = assPreset.formats.includes('ass') ? assPreset.id : DEFAULT_EXPORT_PRESET_ID;
-  const files: PlannedExportFile[] = [
-    { presetId: assId, format: 'ass', filename: buildExportFilename(baseName, 'ass', namingId, options) },
-  ];
+  const assName = buildExportFilename(baseName, 'ass', namingId, options);
+  const files: PlannedExportFile[] = [{ presetId: assId, format: 'ass', filename: assName }];
+  // 同时生成 HDR 版: the same ASS with HDR fills, under HDR/ with the identical filename (guide §三.5 —
+  // `.hdr` tags are not a standard player tag, so the user swaps files instead). SRT has no HDR form.
+  if (isHdrLevelId(options.hdr)) {
+    files.push({ presetId: assId, format: 'ass', hdr: options.hdr, filename: `${HDR_BUNDLE_FOLDER}/${assName}` });
+  }
   const addons = SRT_ADDON_IDS.filter((id) => srtAddonIds.includes(id));
   const srtName = buildExportFilename(baseName, 'srt', namingId, options);
   addons.forEach((id, index) => {

@@ -1,0 +1,56 @@
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+ScriptType: v4.00+
+YCbCr Matrix: None
+Title: everyday-srt (HDR 柔和)
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: ZH,Source Han Sans SC Medium,75,&H00DCE6EB,&H000000FF,&H00551B14,&H00000000,0,0,0,0,100,100,0,0,1,5.5,0,2,60,60,97,1
+Style: SEC,Source Han Sans SC,51,&H00C6CED2,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,4.5,0,2,60,60,51,1
+Style: Note,Source Han Sans SC Medium,68,&H00DCE6EB,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,6,0,8,38,38,75,1
+Style: Credit,Source Han Sans SC Medium,68,&H00DCE6EB,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,6,0,5,38,38,75,1
+Style: Lyrics,Source Han Sans SC Medium,60,&H00E2D0D0,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,6,0,8,38,38,60,1
+Style: Lyrics_EN,Source Han Sans SC,45,&H00CABABA,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,4,0,8,38,38,37,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:03.00,Credit,,0,0,0,,字幕制作：测试样本组
+Dialogue: 1,0:00:04.00,0:00:06.20,ZH,,0,0,0,,你今天怎么这么早就起来了
+Dialogue: 0,0:00:04.00,0:00:06.20,SEC,,0,0,0,,Why are you up so early today?
+Dialogue: 1,0:00:06.50,0:00:09.00,ZH,,0,0,148,,我睡不着 干脆起来煮点咖啡
+Dialogue: 0,0:00:06.50,0:00:09.00,SEC,,0,0,0,,I couldn't sleep,\Nso I figured I'd make some coffee.
+Dialogue: 1,0:00:09.20,0:00:12.80,ZH,,0,0,148,,你要不要也来一杯 我煮了一大壶\N够我们两个人喝一整个上午
+Dialogue: 0,0:00:09.20,0:00:12.80,SEC,,0,0,0,,Do you want a cup too? I made a big pot,\Nenough for both of us to drink all morning.
+Dialogue: 1,0:00:13.00,0:00:15.00,ZH,,0,0,0,,好啊 - 加不加糖
+Dialogue: 0,0:00:13.00,0:00:15.00,SEC,,0,0,0,,- Sure. - Sugar?
+Dialogue: 0,0:00:15.20,0:00:17.50,Note,,0,0,0,,{\an8}（水壶鸣响）
+Dialogue: 0,0:00:15.30,0:00:17.60,Note,,0,0,0,,{\an8}[kettle whistling]
+Dialogue: 1,0:00:18.00,0:00:21.50,ZH,,0,0,148,,楼下那家店的新iPhone壳打八折\N我昨天顺手买了一个
+Dialogue: 0,0:00:18.00,0:00:21.50,SEC,,0,0,0,,The shop downstairs has phone cases\Nat 20% off, so I grabbed one yesterday.
+Dialogue: 1,0:00:22.00,0:00:25.00,ZH,,0,0,148,,一共是128.50元 比网上便宜了差不多30块
+Dialogue: 0,0:00:22.00,0:00:25.00,SEC,,0,0,0,,It came to 128.50 in total,\Nabout 30 cheaper than online.
+Dialogue: 1,0:00:25.50,0:00:29.00,ZH,,0,0,148,,说明书上写着去\Nhttps://example.com/help/setup?step=2 下载App
+Dialogue: 0,0:00:25.50,0:00:29.00,SEC,,0,0,0,,The manual says to go\Nto https://example.com/help/setup?step=2 and get the app.
+Dialogue: 1,0:00:29.50,0:00:31.00,ZH,,0,0,0,,营业时间 9:00-21:00
+Dialogue: 0,0:00:29.60,0:00:31.10,Note,,0,0,0,,{\an8}OPEN 9 AM - 9 PM
+Dialogue: 1,0:00:31.50,0:00:35.00,ZH,,0,0,0,,其实我一直想跟你说 下个月我\N可能要搬到离公司近一点的地方去住
+Dialogue: 0,0:00:31.50,0:00:35.00,SEC,,0,0,0,,I might move closer to work next month.
+Dialogue: 0,0:00:31.60,0:00:33.20,SEC,,0,0,0,,There's something I've been meaning to tell you.
+Dialogue: 1,0:00:35.50,0:00:37.00,ZH,,0,0,0,,真的吗
+Dialogue: 0,0:00:35.50,0:00:37.00,SEC,,0,0,0,,Really?
+Dialogue: 1,0:00:37.20,0:00:40.00,ZH,,0,0,148,,嗯 每天通勤两个小时 实在是太累了
+Dialogue: 0,0:00:37.20,0:00:40.00,SEC,,0,0,0,,Yeah. Two hours of commuting\Nevery day is just too much.
+Dialogue: 0,0:00:40.50,0:00:43.50,Lyrics,,0,0,0,,♪ 窗外的雨一直下 ♪\N{\rLyrics_EN}♪ The rain keeps falling outside ♪
+Dialogue: 1,0:00:44.00,0:00:47.80,ZH,,0,0,148,,那周末我帮你一起看房子吧\N顺便去吃那家我们一直说要去的面馆
+Dialogue: 0,0:00:44.00,0:00:47.80,SEC,,0,0,0,,Then let me help you look at places this weekend,\Nand we can finally try that noodle place we keep talking about.
+Dialogue: 1,0:00:48.00,0:00:50.00,ZH,,0,0,0,,好 就这么说定了！
+Dialogue: 0,0:00:48.00,0:00:50.00,SEC,,0,0,0,,Deal!
+Dialogue: 0,0:00:50.50,0:00:51.50,Note,,0,0,0,,{\an8}[door closes]
+Dialogue: 1,0:00:52.00,0:00:54.00,ZH,,0,0,0,,她走了以后，房间突然安静了下来。
+Dialogue: 1,0:00:54.50,0:00:57.00,ZH,,0,0,0,,喂？我在家 你到楼下了吗
+Dialogue: 0,0:00:54.50,0:00:57.00,SEC,,0,0,0,,Hello? I'm home. Are you downstairs?
+Dialogue: 1,0:00:57.10,0:00:58.50,ZH,,0,0,0,,我马上下来
+Dialogue: 0,0:00:57.10,0:00:58.50,SEC,,0,0,0,,I'll come down.

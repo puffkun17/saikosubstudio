@@ -2,7 +2,8 @@ name: CI (hosted line)
 
 on:
   pull_request:
-    branches: [ cf-pages-hosted ]
+    # Also verify stacked PRs (base = another feat/* branch) so they show CI before retargeting.
+    branches: [ cf-pages-hosted, 'feat/**' ]
   push:
     branches: [ cf-pages-hosted ]
 

@@ -23,6 +23,7 @@ execFileSync('npx', [
   'src/utils/subtitleCore.ts',
   'src/utils/lineWrap.ts',
   'src/utils/exportPresets.ts',
+  'src/utils/hdrPresets.ts',
   'src/utils/mediaIdentity.ts',
   'src/utils/tmdbCandidateFit.ts',
   'src/utils/tmdbSearchRank.ts',
@@ -105,7 +106,17 @@ const {
   normalizeAssFontName,
   resolvePresetStyle,
 } = require(join(outDir, 'utils/exportPresets.js'));
+const { NAVY_OUTLINE_LAYOUT } = require(join(outDir, 'utils/exportPresets.js'));
+const {
+  HDR_LEVELS_PROVISIONAL,
+  HDR_LEVEL_ORDER,
+  DEFAULT_HDR_LEVEL,
+  dimInlineFillTags,
+  hdrFillHex,
+  relativeLuminance,
+} = require(join(outDir, 'utils/hdrPresets.js'));
 const { decodeBuffer: decodeBufferP0 } = require(join(outDir, 'utils/textEncoding.js'));
+const { BILINGUAL_SECONDARY_SHARE, isSentenceLevelLatinLine } = require(join(outDir, 'utils/subtitleCore.js'));
 const { analyzeAlignmentDiff, buildMergeReviewQueue, filterMergeReviewQueue } = require(join(outDir, 'utils/timeline/alignmentDiff.js'));
 const { useStudioStore } = require(join(outDir, 'store/useStudioStore.js'));
 const { CLIENT_IMPORT_LIMITS, getClientFileIssue } = require(join(outDir, 'utils/importSafety.js'));
@@ -2647,7 +2658,7 @@ const { smartLineWrap, stripAssDrawingCommands } = require(join(outDir, 'utils/s
 // P0-7: export presets v1 + naming.
 {
   assert.equal(DEFAULT_EXPORT_PRESET_ID, 'current', 'Default preset stays legacy until Derek decides (§E-4)');
-  assert.deepEqual(EXPORT_PRESET_ORDER, ['current', 'plex-srt', 'libass-ass', 'generic-srt']);
+  assert.deepEqual(EXPORT_PRESET_ORDER, ['current', 'plex-srt', 'libass-ass', 'navy-outline', 'generic-srt']);
   assert.equal(getExportPreset('nope').id, 'current');
   assert.deepEqual(EXPORT_PRESETS['plex-srt'].formats, ['srt']);
   assert.deepEqual(EXPORT_PRESETS['libass-ass'].formats, ['ass']);
@@ -2740,8 +2751,203 @@ const { smartLineWrap, stripAssDrawingCommands } = require(join(outDir, 'utils/s
   assert.equal(bundle.zipName, 'Sample Show S01E02.zh-Hans.zip');
   assert.equal(planExportBundle('Movie', 'jellyfin', 'plex-srt', ['plex-srt'], { traditional: true }).files[0].presetId, 'current', 'SRT-only preset is never used for the ASS');
   assert.equal(planExportBundle('Movie', 'jellyfin', 'current', ['plex-srt'], { traditional: true }).zipName, 'Movie.zh-Hant.zip');
-  assert.deepEqual(ASS_PRESET_IDS, ['current', 'libass-ass']);
+  assert.deepEqual(ASS_PRESET_IDS, ['current', 'libass-ass', 'navy-outline']);
   assert.deepEqual(SRT_ADDON_IDS, ['current', 'plex-srt', 'generic-srt']);
+}
+
+
+// ---------------------------------------------------------------------------------------------
+// Bilingual misdetection: a Chinese track with inline English tokens is NOT a bilingual track.
+{
+  const fixtureDir = join(process.cwd(), 'scripts/fixtures/detection');
+  const zhText = readFileSync(join(fixtureDir, 'zh-inline-latin.zh.srt'), 'utf8');
+  const enText = readFileSync(join(fixtureDir, 'zh-inline-latin.en.srt'), 'utf8');
+  for (const name of ['Weekend.S01E01.zh.srt', 'Weekend.S01E01.srt', 'Weekend.S01E01.chs.srt']) {
+    assert.deepEqual(detectSubtitleLanguage(name, zhText), { lang: 'zh-CN', isBilingual: false }, `${name}: inline iPhone/OK/Wi-Fi must not make a bilingual track`);
+  }
+  assert.equal(detectSubtitleLanguagePair(zhText), undefined);
+  assert.equal(checkIsBilingual(zhText), false, 'checkIsBilingual: inline tokens are not secondary lines');
+  assert.equal(detectSubtitleLanguage('Weekend.S01E01.en.srt', enText).lang, 'en');
+  // Inline token never splits a Chinese sentence.
+  assert.equal(splitSingleBilingualText('家里的Wi-Fi密码是多少？'), '家里的Wi-Fi密码是多少？');
+  assert.equal(splitSingleBilingualText('今晚Netflix有新剧，要一起看吗？'), '今晚Netflix有新剧，要一起看吗？');
+  assert.equal(splitSingleBilingualText('你好 Hello world'), '你好\nHello world', 'real trailing English still splits');
+  assert.equal(isSentenceLevelLatinLine('OK'), false);
+  assert.equal(isSentenceLevelLatinLine('iPhone'), false);
+  assert.equal(isSentenceLevelLatinLine('Wi-Fi'), false);
+  assert.equal(isSentenceLevelLatinLine("What's wrong?"), true);
+  assert.equal(isSentenceLevelLatinLine('Welcome back.'), true);
+
+  // End to end through the store: the English track takes the 原文 slot.
+  resetStoreForTmdb();
+  const mk = (id, name, text) => ({ id, name, text, ...detectSubtitleLanguage(name, text), isCommentary: false, size: text.length });
+  useStudioStore.getState().processFiles([mk('tok-zh', 'Weekend.S01E01.zh.srt', zhText), mk('tok-en', 'Weekend.S01E01.en.srt', enText)]);
+  const task = useStudioStore.getState().tasks[0];
+  assert.equal(task?.zh?.id, 'tok-zh');
+  assert.equal(task?.en?.id, 'tok-en', 'English track must merge as 原文 (was left unbound when zh was misdetected as bilingual)');
+  assert.equal(task?.isBilingualSingle, false);
+  assert.equal(task?.status, 'paired');
+
+  // Real bilingual files still detect: in-cue zh\nEN, and a minority of untranslated English is fine.
+  const cue = (i, text) => `${i + 1}\n00:00:${String(i * 3 + 1).padStart(2, '0')},000 --> 00:00:${String(i * 3 + 3).padStart(2, '0')},000\n${text}\n`;
+  const zhLines = zhText.split(/\n\n/).map((block) => block.split('\n').slice(2).join(' ')).filter(Boolean);
+  const enLines = enText.split(/\n\n/).map((block) => block.split('\n').slice(2).join(' ')).filter(Boolean);
+  const inCue = zhLines.slice(0, 15).map((zh, i) => cue(i, `${zh}\n${enLines[i]}`)).join('\n');
+  assert.deepEqual(detectSubtitleLanguagePair(inCue), { primary: 'zh-CN', secondary: 'en' }, 'in-cue bilingual stays bilingual');
+  // Mostly Chinese with only a couple of full English sentences (a song title, a sign) → Chinese.
+  const fewSentences = zhLines.slice(0, 15).map((zh, i) => cue(i, i === 3 || i === 9 ? enLines[i] : zh)).join('\n');
+  assert.equal(detectSubtitleLanguagePair(fewSentences), undefined, `below ${BILINGUAL_SECONDARY_SHARE} share → not bilingual`);
+  // …unless the filename says bilingual (lower bar), e.g. a 中英 file whose English is partly missing.
+  const halfDone = zhLines.slice(0, 15).map((zh, i) => cue(i, i % 4 === 0 ? `${zh}\n${enLines[i]}` : zh)).join('\n');
+  assert.equal(detectSubtitleLanguagePair(halfDone), undefined);
+  assert.deepEqual(detectSubtitleLanguagePair(halfDone, 'Weekend.S01E01.中英双语.srt'), { primary: 'zh-CN', secondary: 'en' });
+}
+
+// ---------------------------------------------------------------------------------------------
+// 「深蓝描边」 navy-outline preset: two stacked events, PlayResY scaling, wrap per language size.
+{
+  const navyPreset = EXPORT_PRESETS['navy-outline'];
+  assert.ok(ASS_PRESET_IDS.includes('navy-outline'), 'navy preset is offered in the ASS dropdown');
+  assert.ok(!SRT_ADDON_IDS.includes('navy-outline'));
+  const baseStyle = useStudioStore.getState().customStyle;
+  const style = resolvePresetStyle(baseStyle, navyPreset);
+  const rows = [
+    { ts: '00:00:01,000 --> 00:00:03,000', text: '我们明天早上一起去吃早饭吧\nLet\'s get breakfast together tomorrow morning.', type: 'merged', index: 1 },
+    { ts: '00:00:04,000 --> 00:00:06,000', text: '好啊\nSure.', type: 'merged', index: 2 },
+    { ts: '00:00:07,000 --> 00:00:09,000', text: '只有中文的一行', type: 'dialogue', index: 3 },
+    { ts: '00:00:10,000 --> 00:00:12,000', text: 'Only an English line here.', type: 'dialogue', index: 4 },
+    { ts: '00:00:13,000 --> 00:00:16,000', text: '你记得带伞\nRemember to bring an umbrella, the forecast says it will rain all afternoon.', type: 'merged', index: 5 },
+    { ts: '00:00:17,000 --> 00:00:19,000', text: '便利店', type: 'dialogue', cueKind: 'screen_text', index: 6 },
+  ];
+  const ass = generateAssContent(rows, style, 'Navy', undefined, { profile: navyPreset.profile });
+  const styleLine = (content, name) => content.split('\n').find((line) => line.startsWith(`Style: ${name},`)).split(',');
+  const zh = styleLine(ass, 'ZH');
+  const sec = styleLine(ass, 'SEC');
+  // Format: Name0, Fontname1, Fontsize2, Primary3, Secondary4, Outline5, Back6, Bold7, ..., Outline16, Shadow17, Alignment18, L19, R20, V21
+  assert.equal(zh[1], 'Source Han Sans SC Medium', 'zh Medium (legacy family name kept by normalization)');
+  assert.equal(sec[1], 'Source Han Sans SC', 'Latin secondary: Regular family');
+  assert.deepEqual([zh[2], sec[2]], ['75', '51'], 'zh 75 @1080, secondary 0.68×');
+  assert.deepEqual([zh[3], sec[3]], ['&H00FFFFFF', '&H00FFFFFF'], 'white fills');
+  assert.deepEqual([zh[5], sec[5]], ['&H00551B14', '&H00000000'], 'navy #141B55 / black outlines');
+  assert.deepEqual([zh[7], sec[7]], ['0', '0'], 'no faux bold');
+  assert.deepEqual([zh[16], sec[16]], ['5.5', '4.5'], 'outline widths');
+  assert.deepEqual([zh[17], sec[17]], ['0', '0'], 'no shadow');
+  assert.deepEqual([zh[18], sec[18]], ['2', '2']);
+  assert.deepEqual([zh[21], sec[21]], ['97', '51'], 'secondary ink ≈5.6 % above bottom; ink gap ≈1.7 %');
+  assert.match(ass, /^PlayResY: 1080$/m);
+  assert.doesNotMatch(ass, /YCbCr Matrix/, 'SDR export leaves YCbCr Matrix unset');
+  const events = ass.split('\n').filter((line) => line.startsWith('Dialogue:'));
+  assert.equal(events[0], 'Dialogue: 1,0:00:01.00,0:00:03.00,ZH,,0,0,0,,我们明天早上一起去吃早饭吧');
+  assert.equal(events[1], "Dialogue: 0,0:00:01.00,0:00:03.00,SEC,,0,0,0,,Let's get breakfast together tomorrow morning.");
+  assert.equal(events[4], 'Dialogue: 1,0:00:07.00,0:00:09.00,ZH,,0,0,0,,只有中文的一行', 'zh-only keeps the zh line height');
+  assert.equal(events[5], 'Dialogue: 0,0:00:10.00,0:00:12.00,SEC,,0,0,0,,Only an English line here.');
+  // A two-line secondary pushes the Chinese event up by one secondary line (51 px).
+  const longZh = events[6].split(',');
+  const longSec = events[7];
+  assert.equal(longZh[3], 'ZH');
+  assert.equal(longZh[7], '148', '97 + 51');
+  assert.equal((longSec.match(/\\N/g) || []).length, 1, 'secondary wrapped to two lines at its own (smaller) size');
+  for (const line of longSec.split(',').slice(9).join(',').split('\\N')) {
+    assert.ok(estimateTextWidth(line, 51) <= (1920 - 120) * 0.62 + 1, `secondary line fits its width: ${line}`);
+  }
+  assert.match(events[8], /^Dialogue: 0,.*,Note,,0,0,0,,\{\\an8\}便利店$/, 'signs keep the Note style at the top');
+
+  // Scales by PlayResY (4K) and picks the regional family for ja / ko secondaries.
+  const ass4k = generateAssContent(rows, { ...style, resolution: '4K' }, 'Navy', undefined, { profile: navyPreset.profile });
+  const zh4k = styleLine(ass4k, 'ZH');
+  const sec4k = styleLine(ass4k, 'SEC');
+  assert.deepEqual([zh4k[2], sec4k[2], zh4k[16], sec4k[16], zh4k[21], sec4k[21], zh4k[19]], ['150', '102', '11', '9', '194', '102', '120']);
+  const jaRows = [{ ts: '00:00:01,000 --> 00:00:03,000', text: '我们走吧\n行きましょう', type: 'merged', index: 1 }];
+  assert.equal(styleLine(generateAssContent(jaRows, style, 'Navy', undefined, { profile: navyPreset.profile }), 'SEC')[1], 'Source Han Sans JP');
+  const koRows = [{ ts: '00:00:01,000 --> 00:00:03,000', text: '我们走吧\n가자', type: 'merged', index: 1 }];
+  assert.equal(styleLine(generateAssContent(koRows, style, 'Navy', undefined, { profile: navyPreset.profile }), 'SEC')[1], 'Source Han Sans K');
+  assert.equal(NAVY_OUTLINE_LAYOUT.primaryOutlineColour, '#141B55');
+
+  // Font-name normalization keeps legacy weighted CJK families, strips ordinary weight suffixes.
+  assert.equal(canonicalFontFamily('Source Han Sans SC Medium'), 'Source Han Sans SC Medium');
+  assert.equal(canonicalFontFamily('SourceHanSansSC-Medium'), 'Source Han Sans SC Medium');
+  assert.equal(canonicalFontFamily('"Noto Sans CJK SC Medium"'), 'Noto Sans CJK SC Medium');
+  assert.equal(canonicalFontFamily('思源黑体 Medium'), 'Source Han Sans SC Medium');
+  assert.equal(canonicalFontFamily('Source Han Sans SC Bold'), 'Source Han Sans SC', 'Bold is a style → flag, not a family');
+  assert.equal(canonicalFontFamily('Noto Sans CJK SC Regular'), 'Noto Sans CJK SC');
+  assert.equal(canonicalFontFamily('PingFang SC Medium'), 'PingFang SC');
+}
+
+// ---------------------------------------------------------------------------------------------
+// HDR variants (PROVISIONAL levels): warm-grey fills only, outlines unchanged, YCbCr Matrix: None.
+{
+  assert.deepEqual(HDR_LEVEL_ORDER, ['soft', 'dim', 'cinema']);
+  assert.equal(DEFAULT_HDR_LEVEL, 'soft');
+  const toAss = (hex) => `&H00${hex.slice(5, 7)}${hex.slice(3, 5)}${hex.slice(1, 3)}`.toUpperCase();
+  assert.deepEqual(
+    HDR_LEVEL_ORDER.map((id) => [toAss(HDR_LEVELS_PROVISIONAL[id].primaryFill), toAss(HDR_LEVELS_PROVISIONAL[id].secondaryFill)]),
+    [['&H00DCE6EB', '&H00C6CED2'], ['&H00C0C8CC', '&H00AAB1B4'], ['&H009CA3A6', '&H00898F91']],
+    'levels match hdr-subtitle-guide §五',
+  );
+  for (const id of HDR_LEVEL_ORDER) {
+    const { primaryFill, secondaryFill } = HDR_LEVELS_PROVISIONAL[id];
+    for (const fill of [primaryFill, secondaryFill]) {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(fill.slice(i, i + 2), 16));
+      assert.ok(r >= g && g > b, `${id} ${fill}: warm grey R ≥ G > B`);
+      assert.ok((r - b) / 255 <= 0.06, `${id} ${fill}: warm shift ≤ 6 %`);
+    }
+    assert.ok(relativeLuminance(secondaryFill) < relativeLuminance(primaryFill), `${id}: secondary one step darker`);
+  }
+  const soft = HDR_LEVELS_PROVISIONAL.soft;
+  assert.equal(hdrFillHex('#FFFFFF', soft, 'primary'), soft.primaryFill);
+  assert.equal(hdrFillHex('#ffffff', soft, 'secondary'), soft.secondaryFill);
+  const dimmedLavender = hdrFillHex('#E6E6FA', soft, 'primary');
+  assert.ok(relativeLuminance(dimmedLavender) < relativeLuminance('#E6E6FA'), 'non-white fills dim in linear light');
+  assert.ok(parseInt(dimmedLavender.slice(5, 7), 16) > parseInt(dimmedLavender.slice(1, 3), 16), 'hue kept (still bluish)');
+  const dimmedTags = dimInlineFillTags('{\\c&HFFFFFF&\\3c&H000000&\\1c&H00FFFF&}歌', soft);
+  const [, cWhite, c1Yellow] = dimmedTags.match(/^\{\\c&H([0-9A-F]{6})&\\3c&H000000&\\1c&H([0-9A-F]{6})&\}歌$/) || [];
+  assert.ok(cWhite && c1Yellow, `inline fills rewritten, \\3c untouched: ${dimmedTags}`);
+  assert.ok(cWhite !== 'FFFFFF' && cWhite.slice(0, 2) === cWhite.slice(2, 4), 'inline white dimmed (scaled, stays neutral)');
+  assert.ok(c1Yellow.slice(0, 2) === '00' && c1Yellow.slice(2, 4) === c1Yellow.slice(4, 6), 'inline yellow dimmed, hue kept');
+
+  const navyPreset = EXPORT_PRESETS['navy-outline'];
+  const style = resolvePresetStyle(useStudioStore.getState().customStyle, navyPreset);
+  const rows = [
+    { ts: '00:00:01,000 --> 00:00:03,000', text: '今天早点回家\nGo home early today.', type: 'merged', index: 1 },
+    { ts: '00:00:04,000 --> 00:00:06,000', text: '{\\1c&H00FFFF&}黄色的提示', type: 'dialogue', index: 2 },
+  ];
+  const sdr = generateAssContent(rows, style, 'Navy', undefined, { profile: navyPreset.profile });
+  for (const id of HDR_LEVEL_ORDER) {
+    const level = HDR_LEVELS_PROVISIONAL[id];
+    const hdr = generateAssContent(rows, style, 'Navy', undefined, { profile: navyPreset.profile, hdr: id });
+    assert.match(hdr, /^YCbCr Matrix: None$/m, `${id}: YCbCr Matrix: None`);
+    assert.match(hdr, new RegExp(`^Title: Navy \\(HDR ${level.label}\\)$`, 'm'));
+    const fields = (content, name) => content.split('\n').find((line) => line.startsWith(`Style: ${name},`)).split(',');
+    assert.equal(fields(hdr, 'ZH')[3], toAss(level.primaryFill), `${id}: zh fill`);
+    assert.equal(fields(hdr, 'SEC')[3], toAss(level.secondaryFill), `${id}: secondary fill`);
+    for (const name of ['ZH', 'SEC', 'Note', 'Credit', 'Lyrics', 'Lyrics_EN']) {
+      const a = fields(sdr, name);
+      const b = fields(hdr, name);
+      assert.deepEqual([...b.slice(0, 3), ...b.slice(4)], [...a.slice(0, 3), ...a.slice(4)], `${id}/${name}: only PrimaryColour changes (outline, sizes, margins identical)`);
+      assert.ok(b[3].startsWith('&H00'), `${id}/${name}: opaque fill, no transparency`);
+    }
+    const inline = hdr.split('\n').find((line) => line.includes('黄色的提示'));
+    assert.doesNotMatch(inline, /\\1c&H00FFFF&/, `${id}: inline \\1c dimmed`);
+    // Same events otherwise.
+    const strip = (content) => content.split('\n').filter((line) => line.startsWith('Dialogue:') && !line.includes('\\1c'));
+    assert.deepEqual(strip(hdr), strip(sdr));
+  }
+  // HDR also applies to the classic presets.
+  const legacyHdr = generateAssContent(rows, useStudioStore.getState().customStyle, 'Cur', undefined, { hdr: 'dim' });
+  assert.match(legacyHdr, /^YCbCr Matrix: None$/m);
+
+  // Bundle: 同时生成 HDR 版 → HDR/<identical filename> in the zip; SRT gets no HDR copy.
+  const withHdr = planExportBundle('Sample Show S01E02', 'infuse', 'navy-outline', ['plex-srt'], { hdr: 'soft' });
+  assert.deepEqual(withHdr.files.map((file) => [file.format, file.filename, file.hdr ?? null]), [
+    ['ass', 'Sample Show S01E02.zh-Hans.ass', null],
+    ['ass', 'HDR/Sample Show S01E02.zh-Hans.ass', 'soft'],
+    ['srt', 'Sample Show S01E02.zh-Hans.srt', null],
+  ]);
+  assert.equal(withHdr.zipName, 'Sample Show S01E02.zh-Hans.zip');
+  const hdrOnly = planExportBundle('Movie', 'plain', 'current', [], { hdr: 'cinema' });
+  assert.equal(hdrOnly.files.length, 2);
+  assert.equal(hdrOnly.zipName, 'Movie.zip', 'ASS + HDR copy is always a zip');
+  assert.equal(planExportBundle('Movie', 'plain', 'current', [], { hdr: 'nope' }).zipName, null, 'unknown level → SDR only');
 }
 
 // End-to-end golden samples: synthetic everyday tracks → parse → align → export (ASS + SRT, every preset).
@@ -2792,6 +2998,14 @@ const { smartLineWrap, stripAssDrawingCommands } = require(join(outDir, 'utils/s
         outputs[`${presetId}.${format}`] = content;
         summary.presets[`${presetId}.${format}`] = { rewrapped: report.rewrapped, overflow: report.overflow };
       }
+    }
+    if (sample === 'everyday-srt') {
+      // HDR snapshots (PROVISIONAL levels) for one sample: navy at every level + the classic preset.
+      const navy = EXPORT_PRESETS['navy-outline'];
+      for (const level of HDR_LEVEL_ORDER) {
+        outputs[`navy-outline.hdr-${level}.ass`] = generateAssContent(rows, resolvePresetStyle(baseStyle, navy), sample, undefined, { profile: navy.profile, hdr: level });
+      }
+      outputs['current.hdr-soft.ass'] = generateAssContent(rows, baseStyle, sample, undefined, { profile: EXPORT_PRESETS.current.profile, hdr: 'soft' });
     }
     outputs['summary.json'] = `${JSON.stringify(summary, null, 2)}\n`;
     const expectedDir = join(dir, 'expected');
