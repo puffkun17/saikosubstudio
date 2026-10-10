@@ -1,0 +1,106 @@
+1
+00:00:01,000 --> 00:00:03,000
+字幕制作：测试样本组
+
+2
+00:00:04,000 --> 00:00:06,200
+你今天怎么这么早就起来了
+Why are you up so early today?
+
+3
+00:00:06,500 --> 00:00:09,000
+我睡不着 干脆起来煮点咖啡
+I couldn't sleep, so I figured I'd make some coffee.
+
+4
+00:00:09,200 --> 00:00:12,800
+你要不要也来一杯 我煮了一大壶 够我们两个人喝一整个上午
+Do you want a cup too? I made a big pot, enough for both of us to drink all morning.
+
+5
+00:00:13,000 --> 00:00:15,000
+好啊 - 加不加糖
+- Sure. - Sugar?
+
+6
+00:00:15,200 --> 00:00:17,500
+{\an8}（水壶鸣响）
+
+7
+00:00:15,300 --> 00:00:17,600
+{\an8}[kettle whistling]
+
+8
+00:00:18,000 --> 00:00:21,500
+楼下那家店的新iPhone壳打八折 我昨天顺手买了一个
+The shop downstairs has phone cases at 20% off, so I grabbed one yesterday.
+
+9
+00:00:22,000 --> 00:00:25,000
+一共是128.50元 比网上便宜了差不多30块
+It came to 128.50 in total, about 30 cheaper than online.
+
+10
+00:00:25,500 --> 00:00:29,000
+说明书上写着去 https://example.com/help/setup?step=2 下载App
+The manual says to go to https://example.com/help/setup?step=2 and get the app.
+
+11
+00:00:29,500 --> 00:00:31,000
+营业时间 9:00-21:00
+
+12
+00:00:29,600 --> 00:00:31,100
+{\an8}OPEN 9 AM - 9 PM
+
+13
+00:00:31,500 --> 00:00:35,000
+其实我一直想跟你说 下个月我可能要搬到离公司近一点的地方去住
+I might move closer to work next month.
+
+14
+00:00:31,600 --> 00:00:33,200
+There's something I've been meaning to tell you.
+
+15
+00:00:35,500 --> 00:00:37,000
+真的吗
+Really?
+
+16
+00:00:37,200 --> 00:00:40,000
+嗯 每天通勤两个小时 实在是太累了
+Yeah. Two hours of commuting every day is just too much.
+
+17
+00:00:40,500 --> 00:00:43,500
+<i>♪ 窗外的雨一直下 ♪
+♪ The rain keeps falling outside ♪</i>
+
+18
+00:00:44,000 --> 00:00:47,800
+那周末我帮你一起看房子吧 顺便去吃那家我们一直说要去的面馆
+Then let me help you look at places this weekend, and we can finally try that noodle place we keep talking about.
+
+19
+00:00:48,000 --> 00:00:50,000
+好 就这么说定了！
+Deal!
+
+20
+00:00:50,500 --> 00:00:51,500
+{\an8}[door closes]
+
+21
+00:00:52,000 --> 00:00:54,000
+她走了以后，房间突然安静了下来。
+
+22
+00:00:54,500 --> 00:00:57,000
+喂？我在家 你到楼下了吗
+Hello? I'm home. Are you downstairs?
+
+23
+00:00:57,100 --> 00:00:58,500
+我马上下来
+I'll come down.

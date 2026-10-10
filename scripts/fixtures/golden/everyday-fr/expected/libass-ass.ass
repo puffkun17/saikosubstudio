@@ -1,0 +1,22 @@
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+ScriptType: v4.00+
+Title: everyday-fr
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Han,Noto Sans CJK SC,75,&H00FFFFFF,&H00FF9C41,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,6,6,2,38,38,75,1
+Style: EN,Arial,45,&H00D0D0D0,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,4,4,2,38,38,45,1
+Style: Note,Noto Sans CJK SC,68,&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,6,6,8,38,38,75,1
+Style: Credit,Noto Sans CJK SC,68,&H00FFFFFF,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,6,6,5,38,38,75,1
+Style: Lyrics,Noto Sans CJK SC,60,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,6,6,8,38,38,60,1
+Style: Lyrics_EN,Arial,45,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,4,4,8,38,38,37,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:03.00,Han,,0,0,0,,你能帮我拿一下那个盒子吗\N{\rEN}Tu peux me passer cette boîte ?
+Dialogue: 0,0:00:03.50,0:00:06.00,Han,,0,0,0,,当然可以 放在哪里\N{\rEN}Bien sûr. Je la mets où ?
+Dialogue: 0,0:00:06.50,0:00:10.50,Han,,0,0,0,,放在门口的桌子上就好\N等一下我下楼的时候顺便带走\N{\rEN}Pose-la sur la table près de l'entrée,\Nje la prendrai en descendant tout à l'heure, d'accord ?
+Dialogue: 0,0:00:11.00,0:00:13.00,Han,,0,0,0,,没问题！\N{\rEN}« Pas de problème ! »

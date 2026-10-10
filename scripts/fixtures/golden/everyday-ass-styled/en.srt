@@ -1,0 +1,20 @@
+1
+00:00:01,100 --> 00:00:03,600
+Good morning.
+Nice weather today.
+
+2
+00:00:04,100 --> 00:00:06,600
+I'm just saying, don't take it seriously.
+
+3
+00:00:07,100 --> 00:00:11,100
+If it doesn't rain this weekend, let's ride along the river and have a picnic on the grass.
+
+4
+00:00:11,600 --> 00:00:15,600
+I just checked. If we leave at 7:30 tomorrow morning we'll make it, but we should sleep early tonight.
+
+5
+00:00:18,600 --> 00:00:21,100
+The alarm went off three times before I finally got up.

@@ -1,0 +1,82 @@
+1
+00:00:04,100 --> 00:00:06,300
+Why are you up so early today?
+
+2
+00:00:06,600 --> 00:00:09,100
+I couldn't sleep,
+so I figured I'd make some coffee.
+
+3
+00:00:09,300 --> 00:00:12,900
+Do you want a cup too? I made a big pot,
+enough for both of us to drink all morning.
+
+4
+00:00:13,100 --> 00:00:15,100
+- Sure.
+- Sugar?
+
+5
+00:00:15,300 --> 00:00:17,600
+[kettle whistling]
+
+6
+00:00:18,100 --> 00:00:21,600
+The shop downstairs has phone cases at 20% off,
+so I grabbed one yesterday.
+
+7
+00:00:22,100 --> 00:00:25,100
+It came to 128.50 in total,
+about 30 cheaper than online.
+
+8
+00:00:25,600 --> 00:00:29,100
+The manual says to go to
+https://example.com/help/setup?step=2 and get the app.
+
+9
+00:00:29,600 --> 00:00:31,100
+{\an8}OPEN 9 AM - 9 PM
+
+10
+00:00:31,600 --> 00:00:33,200
+There's something I've been meaning to tell you.
+
+11
+00:00:33,300 --> 00:00:35,100
+I might move closer to work next month.
+
+12
+00:00:35,600 --> 00:00:37,100
+Really?
+
+13
+00:00:37,300 --> 00:00:40,100
+Yeah. Two hours of commuting every day
+is just too much.
+
+14
+00:00:40,600 --> 00:00:43,600
+♪ The rain keeps falling outside ♪
+
+15
+00:00:44,100 --> 00:00:47,900
+Then let me help you look at places this weekend, and we can finally try that noodle place we keep talking about.
+
+16
+00:00:48,100 --> 00:00:50,100
+Deal!
+
+17
+00:00:50,500 --> 00:00:51,500
+[door closes]
+
+18
+00:00:54,300 --> 00:00:56,000
+Hello? I'm home. Are you downstairs?
+
+19
+00:00:56,100 --> 00:00:57,400
+I'll come down.

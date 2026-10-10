@@ -1,0 +1,23 @@
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+ScriptType: v4.00+
+Title: everyday-ja-sjis
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Han,PingFang SC,75,&H00FFFFFF,&H00FF9C41,&H0063554B,&H00000000,1,0,0,0,100,100,0,0,1,6,6,2,38,38,75,1
+Style: EN,Helvetica Neue,45,&H00B0B0B0,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,90,90,0,0,1,4,4,2,38,38,45,1
+Style: Note,PingFang SC,68,&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,6,6,8,38,38,75,1
+Style: Credit,PingFang SC,68,&H00FFFFFF,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,6,6,5,38,38,75,1
+Style: Lyrics,PingFang SC,60,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,6,6,8,38,38,60,1
+Style: Lyrics_EN,Helvetica Neue,45,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,4,4,8,38,38,37,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:03.00,Han,,0,0,0,,这家店的咖啡真好喝\N{\rEN}この店のコーヒー、本当においしいね。
+Dialogue: 0,0:00:03.50,0:00:06.00,Han,,0,0,0,,下次我们再来吧\N{\rEN}また今度来よう。
+Dialogue: 0,0:00:06.50,0:00:10.00,Han,,0,0,0,,我们坐在靠窗的位置吧\N那边阳光比较好 也比较安静\N{\rEN}窓際の席に座ろうよ。あっちのほう\Nが日当たりがよくて、静かだから。
+Dialogue: 0,0:00:10.50,0:00:12.00,Han,,0,0,0,,好的\N{\rEN}いいよ。
+Dialogue: 0,0:00:12.50,0:00:15.00,Han,,0,0,0,,你要点什么 我请客\N{\rEN}何にする？おごるよ。

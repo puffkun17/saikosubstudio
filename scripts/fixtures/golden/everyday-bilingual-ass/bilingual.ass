@@ -1,0 +1,22 @@
+[Script Info]
+; Synthetic test script
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Noto Sans CJK SC,64,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,3,1,2,40,40,50,1
+Style: Sign,Noto Sans CJK SC,52,&H00FFFFFF,&H000000FF,&H00202020,&H00000000,1,0,0,0,100,100,0,0,1,2,0,8,40,40,40,1
+Style: EN,Arial,40,&H00D0D0D0,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,2,40,40,50,1
+Style: Note,Noto Sans CJK SC,44,&H00E0E0E0,&H000000FF,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,2,0,7,40,40,40,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:03.00,Default,,0,0,0,,你吃饭了吗\N{\rEN}Have you eaten yet?
+Dialogue: 0,0:00:03.20,0:00:05.50,Default,,0,0,0,,还没 我在等外卖\N{\rEN}Not yet, I'm waiting for a delivery.
+Dialogue: 0,0:00:05.80,0:00:09.50,Default,,0,0,0,,外卖都等了快一个小时了 我觉得他们可能把我的订单给忘了\N{\rEN}It's been almost an hour. I think they might have forgotten my order.
+Dialogue: 0,0:00:10.00,0:00:12.00,Sign,,0,0,0,,{\an8}订单已送达\N{\rEN}{\an8}ORDER DELIVERED
+Dialogue: 0,0:00:12.50,0:00:14.50,Default,,0,0,0,,- 终于来了 - 快开门\N{\rEN}- Finally!\N- Get the door!
+Dialogue: 0,0:00:15.00,0:00:18.00,Default,,0,0,0,,下次我们还是自己做饭吧\N{\rEN}Next time, let's just cook ourselves.

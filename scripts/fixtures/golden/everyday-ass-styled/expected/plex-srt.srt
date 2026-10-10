@@ -1,0 +1,37 @@
+1
+00:00:01,000 --> 00:00:03,500
+早上好 今天天气还不错
+Good morning. Nice weather today.
+
+2
+00:00:02,000 --> 00:00:05,000
+{\an8}便利店 二十四小时营业 欢迎光临
+
+3
+00:00:04,000 --> 00:00:06,500
+我就随便说说 你别当真
+I'm just saying, don't take it seriously.
+
+4
+00:00:07,000 --> 00:00:11,000
+这个周末如果不下雨的话我们就去
+河边骑车然后在草地上野餐好不好
+If it doesn't rain this weekend, let's ride along
+the river and have a picnic on the grass.
+
+5
+00:00:11,500 --> 00:00:15,500
+我刚刚看了一下 明天早上七点半出发应
+该来得及 不过今晚要早点睡
+I just checked. If we leave at 7:30 tomorrow morning
+we'll make it, but we should sleep early tonight.
+
+6
+00:00:16,000 --> 00:00:18,000
+{\an8}第二天早上
+
+7
+00:00:18,500 --> 00:00:21,000
+闹钟响了三次 我才终于爬起来
+The alarm went off three times
+before I finally got up.

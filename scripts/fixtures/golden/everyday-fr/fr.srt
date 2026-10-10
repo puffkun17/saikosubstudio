@@ -1,0 +1,15 @@
+1
+00:00:01,100 --> 00:00:03,100
+Tu peux me passer cette boîte ?
+
+2
+00:00:03,600 --> 00:00:06,100
+Bien sûr. Je la mets où ?
+
+3
+00:00:06,600 --> 00:00:10,600
+Pose-la sur la table près de l'entrée, je la prendrai en descendant tout à l'heure, d'accord ?
+
+4
+00:00:11,100 --> 00:00:13,100
+« Pas de problème ! »

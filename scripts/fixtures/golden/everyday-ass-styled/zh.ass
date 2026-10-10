@@ -1,0 +1,24 @@
+[Script Info]
+; Synthetic test script
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Noto Sans CJK SC,64,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,3,1,2,40,40,50,1
+Style: Sign,Noto Sans CJK SC,52,&H00FFFFFF,&H000000FF,&H00202020,&H00000000,1,0,0,0,100,100,0,0,1,2,0,8,40,40,40,1
+Style: Note,Noto Sans CJK SC,44,&H00E0E0E0,&H000000FF,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,2,0,7,40,40,40,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Comment: 0,0:00:00.00,0:00:01.00,Default,,0,0,0,,这一行是注释 不应该被导入
+Dialogue: 0,0:00:01.00,0:00:03.50,Default,,0,0,0,,早上好\N今天天气还不错
+Dialogue: 0,0:00:02.00,0:00:05.00,Sign,,0,0,0,,{\an8\pos(960,80)\fad(200,200)}便利店\N二十四小时营业\N欢迎光临
+Dialogue: 0,0:00:04.00,0:00:06.50,Default,,0,0,0,,{\i1}我就随便说说{\i0} 你别当真
+Dialogue: 0,0:00:05.00,0:00:06.00,Sign,,0,0,0,,{\an7\pos(40,40)\p1}m 0 0 l 300 0 300 120 0 120{\p0}
+Dialogue: 0,0:00:07.00,0:00:11.00,Default,,0,0,0,,这个周末如果不下雨的话我们就去河边骑车然后在草地上野餐好不好
+Dialogue: 0,0:00:11.50,0:00:15.50,Default,,0,0,0,,我刚刚看了一下\N明天早上七点半出发应该来得及\N不过今晚要早点睡
+Dialogue: 0,0:00:16.00,0:00:18.00,Note,,0,0,0,,{\an7\pos(40,40)}第二天早上
+Dialogue: 0,0:00:18.50,0:00:21.00,Default,,0,0,0,,{\fad(150,150)}闹钟响了三次 我才终于爬起来
