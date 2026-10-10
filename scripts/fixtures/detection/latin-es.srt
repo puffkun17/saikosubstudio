@@ -1,0 +1,15 @@
+1
+00:00:01,000 --> 00:00:03,000
+¿Dónde dejaste las llaves?
+
+2
+00:00:04,000 --> 00:00:06,000
+Están en la mesa, al lado del pan.
+
+3
+00:00:07,000 --> 00:00:09,000
+Gracias. Ahora vuelvo, no tardo nada.
+
+4
+00:00:10,000 --> 00:00:12,000
+¡Qué frío hace hoy!

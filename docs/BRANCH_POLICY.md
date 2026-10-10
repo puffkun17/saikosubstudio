@@ -26,3 +26,10 @@
 - `decision-log.md`：决策记录
 - `docs/ALGORITHM_CORE_DEBT.md`：合并算法债与后续项
 - `docs/ENG_PLATFORM.md`：Next 钉版 / next-on-pages → OpenNext 升级闸门；CI 须保持 `test:core` 绿
+
+## Fork / clone 选分支（Derek，2026-10-11）
+
+- **线上生产版本（dualsubs.quest）对应 `cf-pages-hosted`。** 想改产品、复现线上行为、提 PR：fork / clone 时选 `cf-pages-hosted`（`git clone -b cf-pages-hosted …`，或 fork 时取消勾选「Copy the main branch only」）。
+- `main` 是开源自部署版，GitHub 默认分支暂时仍是 `main`（本次不改默认分支），所以直接 fork / clone 拿到的是 `main`。
+- 两条线没有共同历史；不要在两者之间 merge / rebase。
+

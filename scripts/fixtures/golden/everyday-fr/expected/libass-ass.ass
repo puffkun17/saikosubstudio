@@ -16,7 +16,7 @@ Style: Lyrics_EN,Arial,45,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,10
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-Dialogue: 0,0:00:01.00,0:00:03.00,Han,,0,0,0,,你能帮我拿一下那个盒子吗\N{\rEN}Tu peux me passer cette boîte ?
-Dialogue: 0,0:00:03.50,0:00:06.00,Han,,0,0,0,,当然可以 放在哪里\N{\rEN}Bien sûr. Je la mets où ?
-Dialogue: 0,0:00:06.50,0:00:10.50,Han,,0,0,0,,放在门口的桌子上就好\N等一下我下楼的时候顺便带走\N{\rEN}Pose-la sur la table près de l'entrée,\Nje la prendrai en descendant tout à l'heure, d'accord ?
-Dialogue: 0,0:00:11.00,0:00:13.00,Han,,0,0,0,,没问题！\N{\rEN}« Pas de problème ! »
+Dialogue: 0,0:00:01.00,0:00:03.00,Han,,0,0,0,,你能帮我拿一下那个盒子吗\N{\rEN}Tu peux me passer cette boîte ?
+Dialogue: 0,0:00:03.50,0:00:06.00,Han,,0,0,0,,当然可以 放在哪里\N{\rEN}Bien sûr. Je la mets où ?
+Dialogue: 0,0:00:06.50,0:00:10.50,Han,,0,0,0,,放在门口的桌子上就好\N等一下我下楼的时候顺便带走\N{\rEN}Pose-la sur la table près de l'entrée,\Nje la prendrai en descendant tout à l'heure, d'accord ?
+Dialogue: 0,0:00:11.00,0:00:13.00,Han,,0,0,0,,没问题！\N{\rEN}« Pas de problème ! »

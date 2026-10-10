@@ -181,8 +181,11 @@ const PREFLIGHT_LANGUAGE_LABELS = {
   en: '英语',
   ja: '日语',
   ko: '韩语',
-  fr: '法语',
   es: '西语',
+  fr: '法语',
+  pt: '葡语',
+  de: '德语',
+  it: '意语',
   latin: '拉丁文字',
   bilingual: '双语',
   commentary: '导评',
@@ -310,7 +313,7 @@ const collectEntryFiles = async (
 const describeTrack = (file: Subfile) => {
   if (file.isCommentary || file.lang === 'commentary') return '导评轨';
   if (file.isBilingual || file.lang === 'bilingual') {
-    const labels: Record<string, string> = { 'zh-CN': '简中', 'zh-TW': '繁中', en: '英语', ja: '日语', ko: '韩语', fr: '法语', es: '西语', latin: '拉丁文字' };
+    const labels: Record<string, string> = { 'zh-CN': '简中', 'zh-TW': '繁中', en: '英语', ja: '日语', ko: '韩语', es: '西语', fr: '法语', pt: '葡语', de: '德语', it: '意语', latin: '拉丁文字' };
     const pair = file.languagePair;
     return pair ? `${labels[pair.primary]} / ${labels[pair.secondary]} 双语轨` : '双语轨';
   }
@@ -318,7 +321,8 @@ const describeTrack = (file: Subfile) => {
   if (file.lang === 'en') {
     return isSdhOrCcSubtitleFilename(file.name) ? 'SDH/CC 原文轨' : '原文轨';
   }
-  if (['ja', 'ko', 'fr', 'es', 'latin'].includes(file.lang)) return '其他语种轨';
+  if (['es', 'fr', 'pt', 'de', 'it'].includes(file.lang)) return '第二语言轨';
+  if (['ja', 'ko', 'latin'].includes(file.lang)) return '其他语种轨';
   return '待确认轨';
 };
 

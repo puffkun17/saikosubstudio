@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, Subfile } from '@/store/useStudioStore';
-import { Check, CircleAlert, GripVertical, Paintbrush, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
+import { Check, CircleAlert, GripVertical, Info, Paintbrush, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { parseSrt, decodeBuffer, detectSubtitleLanguage, StyleSettings } from '@/utils/subtitleCore';
 import { motion } from 'framer-motion';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
@@ -379,7 +379,7 @@ export const TaskList: React.FC = () => {
   const secondaryPlaceholder = secondaryLooksEnglish
     ? '选择英语原文（可选）'
     : '选择次语言 / 原文轨（可选）';
-  const secondaryHint = '次语言通常为英语等与主语言不同的对白轨；与主字幕同语种（含简繁互为）不能作为合轴对。';
+  const secondaryHint = '次语言通常为英语，也支持西语、法语、葡语、德语、意语和日语、韩语等与主语言不同的对白轨；与主字幕同语种（含简繁互为）不能作为合轴对。';
 
   const sameScriptPairBound = Boolean(
     activeTask
@@ -409,6 +409,19 @@ export const TaskList: React.FC = () => {
   );
 
   const showSameScriptWarning = sameScriptPairBound || unboundSameScriptOnly;
+
+  /**
+   * Derek (PR #39 #2): Chinese only, no second language bound → a light, non-blocking hint to look for
+   * one. Without it nothing changes: the Chinese line keeps its usual position (no moving down).
+   */
+  const showChineseOnlyHint = Boolean(
+    activeTask
+    && !activeTask.isBilingualSingle
+    && primaryFile
+    && !secondaryFile
+    && !showSameScriptWarning
+    && isChineseFamilyLang(primaryFile.lang, primaryFile.name),
+  );
 
   const edgeLabel = isProcessing
     ? '正在准备…'
@@ -852,6 +865,19 @@ export const TaskList: React.FC = () => {
                 请补上英语等次语言轨再合轴；或取消次轨，按单语整理/导出。简繁中文互为同语种，不能作为合轴对。
               </p>
             </div>
+          )}
+
+          {showChineseOnlyHint && (
+            <p
+              role="note"
+              data-testid="chinese-only-hint"
+              className="inline-flex items-start gap-1.5 px-1 text-xs leading-5 text-[var(--v4-text-faint)]"
+            >
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>
+                目前只有中文。想做双语，可以再找一份同一集的英语、西语或法语等字幕拖进来；没有也可以直接继续，中文保持原来的位置。
+              </span>
+            </p>
           )}
 
           {/* 对齐方式：紧挨字幕序列，全宽双栏说明 */}

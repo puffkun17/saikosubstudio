@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity, isMainPathSecondaryLanguage, isEnglishSecondaryLanguage, mainPathPrimaryRank, mainPathSecondaryRank, estimateSubtitleCueCount, isSparseSecondaryTrack, measureMergeOrphanRate, isSdhOrCcSubtitleFilename } from '../utils/subtitleCore';
+import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity, isMainPathSecondaryLanguage, isEnglishSecondaryLanguage, isLatinSecondaryLanguage, mainPathPrimaryRank, mainPathSecondaryRank, estimateSubtitleCueCount, isSparseSecondaryTrack, measureMergeOrphanRate, isSdhOrCcSubtitleFilename } from '../utils/subtitleCore';
 import { assessTvYearFit, parseSeasonNumber, parseYearToken, shouldDemoteBySeasonSpan } from '../utils/tmdbCandidateFit';
 import { estimateJsonBytes, readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
 import { tmdbFetch } from '../services/tmdb';
@@ -1734,7 +1734,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             }
           } else if (trackKey === 'en') {
             updated.isBilingualSingle = false;
-            // Manual 原文 bind: allow en/ja/ko. Do not silent-empty; explain other languages.
+            // Manual 原文 bind: en, Latin-alphabet es/fr/pt/de/it, ja/ko. Do not silent-empty; explain others.
             if (selectedFile && !isMainPathSecondaryLanguage(selectedFile.lang)) {
               const blockedName = selectedFile.name;
               const blockedLang = selectedFile.lang;
@@ -1743,7 +1743,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
                   id: 'secondary-bind-blocked',
                   tone: 'notice',
                   title: '原文轨未绑定',
-                  message: `「${blockedName}」语种为 ${blockedLang}，自动合轴原文槽支持英语 / 日语 / 韩语。请改选文件，或先纠正语种标签。`,
+                  message: `「${blockedName}」语种为 ${blockedLang}，自动合轴原文槽支持英语、西语、法语、葡语、德语、意语、日语、韩语。请改选文件，或先纠正语种标签。`,
                 });
               }, 0);
               updated.en = null;
@@ -2016,10 +2016,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const normalFiles = files.filter(f => !commentaryFiles.includes(f));
 
         // Main path: primary = 简中优先 / 繁中回退；
-        // secondary = 真实英语对白优先（普通 eng 优于 SDH）；英语缺失或明显非对白时回退 ja/ko。
+        // secondary = 真实英语对白优先（普通 eng 优于 SDH）；英语缺失或明显非对白时回退：
+        // 西语 > 法语 > 葡/德/意 > 日 > 韩（Derek：拉丁字母语言可作第二语言，西语优先）。
         const zhFiles = normalFiles.filter(f => f.lang === 'zh' || f.lang === 'zh-CN' || f.lang === 'zh-TW');
         const enFiles = normalFiles.filter(f => isEnglishSecondaryLanguage(f.lang));
-        const sourceLangFiles = normalFiles.filter(f => f.lang === 'ja' || f.lang === 'ko');
+        const sourceLangFiles = normalFiles.filter(f => f.lang === 'ja' || f.lang === 'ko' || isLatinSecondaryLanguage(f.lang));
         const bilingualFiles = normalFiles.filter(f => f.lang === 'bilingual');
 
         const getBestFile = (list: Subfile[]): Subfile | null => {
@@ -2110,7 +2111,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
               get().setStatusNotice({
                 id: 'secondary-source-fallback',
                 tone: 'notice',
-                title: '原文已回退到源语言轨',
+                title: isLatinSecondaryLanguage(bestSourceFallback.lang) ? '第二语言已绑定' : '原文已回退到源语言轨',
                 message: `未找到可用的英语对白轨（缺失或行数过少），已绑定「${bestSourceFallback.name}」。可手动改绑。`,
               });
             }, 0);
@@ -2129,7 +2130,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
                 id: 'secondary-en-sparse',
                 tone: 'notice',
                 title: '英语轨未自动绑定',
-                message: '检测到的英语文件行数远少于主字幕，更像屏显/稀疏字幕；可手动指定原文，或改用日/韩等源语言轨。',
+                message: '检测到的英语文件行数远少于主字幕，更像屏显/稀疏字幕；可手动指定原文，或改用西语、法语、日语等其他语言轨。',
               });
             }, 0);
           }
@@ -2153,7 +2154,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
               task.en = null;
               task.isBilingualSingle = false;
             } else {
-              // fr/es/latin 等：不自动进原文槽（避免西欧语误判抢槽）；用户可手动绑定 en/ja/ko。
+              // 未识别出具体语种的拉丁文字（'latin'）等：不自动进原文槽；用户可手动绑定。
               task.zh = null;
               task.en = null;
               task.isBilingualSingle = false;

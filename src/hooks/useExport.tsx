@@ -11,6 +11,7 @@ import {
   generateSrtContent,
   generateAssContent,
   createWrapReport,
+  isMainPathSecondaryLanguage,
   type AssScriptMeta,
 } from '@/utils/subtitleCore';
 import {
@@ -179,6 +180,7 @@ export const useExport = () => {
     addLog,
     setStatusNotice,
     isTraditional,
+    secondaryLang,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     customFilename: state.customFilename,
@@ -195,6 +197,12 @@ export const useExport = () => {
     isTraditional: (() => {
       const task = state.tasks.find((item) => item.id === state.selectedTaskId);
       return task?.zh?.lang === 'zh-TW' || task?.zh?.languagePair?.primary === 'zh-TW';
+    })(),
+    /** Second-language tag for the「通用 · .zh-Hans.<lang>」naming (en / es / fr / ja / ko …). */
+    secondaryLang: (() => {
+      const task = state.tasks.find((item) => item.id === state.selectedTaskId);
+      const lang = task?.en?.lang || task?.zh?.languagePair?.secondary || 'en';
+      return isMainPathSecondaryLanguage(lang) ? lang : 'en';
     })(),
   })));
 
@@ -234,7 +242,7 @@ export const useExport = () => {
       const auxiliaryMode = customStyle.auxiliaryMode || 'keep';
       const filteredExportSubs = applyAuxiliarySubtitleMode(exportSubs, auxiliaryMode);
       const hiddenAuxiliaryCount = exportSubs.length - filteredExportSubs.length;
-      const plan = planExportBundle(customFilename || 'subtitles', namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel });
+      const plan = planExportBundle(customFilename || 'subtitles', namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel, secondary: secondaryLang });
       const report = createWrapReport();
       const scriptMeta = buildAssScriptMeta({ creatorCredit, creditDeclaration, isOfficialSubtitle });
 
@@ -281,7 +289,7 @@ export const useExport = () => {
     }
   };
 
-  return { handleExport, isTraditional };
+  return { handleExport, isTraditional, secondaryLang };
 };
 
 /** 「ASS + HDR 版 + 2 个 SRT」 */
@@ -304,13 +312,13 @@ export const ExportDropdown: React.FC<{
   const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { handleExport, isTraditional } = useExport();
+  const { handleExport, isTraditional, secondaryLang } = useExport();
   const {
     assPresetId, setAssPresetId, namingId, setNamingId, srtAddonIds, toggleSrtAddon,
     hdrEnabled, setHdrEnabled, hdrLevelChoice, setHdrLevelChoice, hdrLevel,
   } = useExportChoices();
   const { customFilename } = useStudioStore(useShallow((state) => ({ customFilename: state.customFilename })));
-  const plan = planExportBundle(customFilename || 'subtitles', namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel });
+  const plan = planExportBundle(customFilename || 'subtitles', namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel, secondary: secondaryLang });
   const planHdrCount = plan.files.filter((file) => file.hdr).length;
   const planSrtCount = plan.files.filter((file) => file.format === 'srt').length;
   const bundled = Boolean(plan.zipName);

@@ -22,10 +22,14 @@ import {
   splitLanguageBlocks,
   stripInlineTags,
   wrapSubtitleBlock,
+  applyFrenchSpacing,
+  normalizeNarrowNoBreakSpace,
 } from './lineWrap';
 import {
   LEGACY_EXPORT_PROFILE,
   normalizeAssFontName,
+  needsFullLatinFont,
+  FULL_LATIN_FALLBACK_FONT,
   type ExportProfile,
 } from './exportPresets';
 import {
@@ -113,19 +117,32 @@ export type SubtitleLanguage =
   | 'ko'
   | 'fr'
   | 'es'
+  | 'pt'
+  | 'de'
+  | 'it'
   | 'latin'
   | 'bilingual'
   | 'commentary'
   | 'unknown';
 
+/**
+ * Latin-alphabet languages accepted as the SECOND language (Derek, PR #39 decision 1).
+ * Priority: Spanish first (most common alongside US shows), French second, then pt / de / it.
+ */
+export const LATIN_SECONDARY_LANGUAGES = ['es', 'fr', 'pt', 'de', 'it'] as const;
+export type LatinSecondaryLanguage = (typeof LATIN_SECONDARY_LANGUAGES)[number];
+
+export const isLatinSecondaryLanguage = (language: string): language is LatinSecondaryLanguage =>
+  (LATIN_SECONDARY_LANGUAGES as readonly string[]).includes(language);
+
 export interface SubtitleLanguagePair {
   primary: 'zh-CN' | 'zh-TW';
-  /** Single-file bilingual pair secondary; main-path auto-bind may also use ja/ko when English is missing/sparse. */
-  secondary: 'en';
+  /** Single-file bilingual pair secondary: English, or a Latin-alphabet language (es / fr / pt / de / it). */
+  secondary: 'en' | LatinSecondaryLanguage;
 }
 
-/** Languages allowed in the 原文 slot (auto + manual). Western false positives stay out of auto-bind. */
-export const MAIN_PATH_SECONDARY_LANGUAGES = ['en', 'ja', 'ko'] as const;
+/** Languages allowed in the 原文 slot (auto + manual): English, Latin-alphabet es/fr/pt/de/it, ja / ko. */
+export const MAIN_PATH_SECONDARY_LANGUAGES = ['en', ...LATIN_SECONDARY_LANGUAGES, 'ja', 'ko'] as const;
 export type MainPathSecondaryLanguage = (typeof MAIN_PATH_SECONDARY_LANGUAGES)[number];
 
 /** Cue-count ratio below which an English track is treated as non-dialogue (on-screen/sparse). */
@@ -206,25 +223,43 @@ export function detectLanguageByContent(text: string): SubtitleLanguage {
     }
     return "zh-CN";
   }
+  const scores = latinLanguageScores(text);
+  // 西欧语：停用词 + 重音合计须明显强于英语。禁止「一个 café/señor」或几句夹杂的西语压过整段英文对白。
+  const best = LATIN_SECONDARY_LANGUAGES
+    .map((language) => ({ language, score: scores[language] }))
+    .reduce((a, b) => (b.score > a.score ? b : a)); // ties keep the earlier (es > fr > pt > de > it)
+  if (best.score >= 2 && best.score > scores.en) return best.language;
+  if (scores.en >= 1) return 'en';
+  if (scores.latinLetters >= 2) return 'latin';
+  return 'unknown';
+}
+
+const countMatches = (value: string, re: RegExp): number => (value.match(re) || []).length;
+
+/**
+ * Stop-word + diacritic scores per Latin-alphabet language (whole-word, case-insensitive).
+ * Lexicons avoid words shared with English («no», «a», «me», «son», «come»…) so an English track that
+ * quotes a few Spanish lines stays English: the score is cumulative over the whole text.
+ */
+export function latinLanguageScores(text: string): Record<'en' | LatinSecondaryLanguage | 'latinLetters', number> {
   const clean = text
     .replace(/<[^>]*>|\{[^}]*\}/g, ' ')
     .replace(/[^\p{L}\p{M}'’\s-]/gu, ' ')
     .toLowerCase();
-  const frenchSignals = (clean.match(/\b(le|la|les|des|une|dans|avec|pour|mais|est|pas|nous|vous|qui|que)\b/g) || []).length;
-  const spanishSignals = (clean.match(/\b(el|la|los|las|un|una|unos|unas|de|del|con|por|para|pero|está|esta|que|qué|soy|eres|somos|usted|ustedes|gracias|hola|movimiento|detectado|supervisión|creativa|señor|señora)\b/g) || []).length;
-  const englishSignals = (clean.match(/\b(the|and|you|that|this|with|for|have|not|are|was|what|where|why|hello|yes|no)\b/g) || []).length;
-  const frenchAccents = (clean.match(/[àâçéèêëîïôùûüÿœæ]/g) || []).length;
-  const spanishMarks = (clean.match(/[áíóñ¿¡]/g) || []).length;
-  const latinCount = (clean.match(/[a-z\u00c0-\u024f]/g) || []).length;
-
-  // 西欧语：停用词 + 重音合计须明显强于英语。禁止「一个 café/señor」压过整段英文对白。
-  const frenchScore = frenchSignals + frenchAccents;
-  const spanishScore = spanishSignals + spanishMarks;
-  if (spanishScore >= 2 && spanishScore > englishSignals) return 'es';
-  if (frenchScore >= 2 && frenchScore > englishSignals) return 'fr';
-  if (englishSignals >= 1) return 'en';
-  if (latinCount >= 2) return 'latin';
-  return 'unknown';
+  const words = (list: string) => new RegExp(`(?<![\\p{L}'’])(?:${list})(?![\\p{L}'’])`, 'gu');
+  const es = countMatches(clean, words('el|la|los|las|un|una|unos|unas|de|del|con|por|para|pero|está|esta|que|qué|soy|eres|somos|usted|ustedes|gracias|hola|movimiento|detectado|supervisión|creativa|señor|señora|y|muy|también|ahora|aquí|bueno|vamos|nada|sí|cómo|dónde|cuándo|porque|tengo|tienes|quiero|puedo|estoy|estás|hay|mañana|hoy|mi|tu|su|nosotros|ellos|pues|entonces'))
+    + countMatches(clean, /[áíóúñ¿¡]/g);
+  const fr = countMatches(clean, words('le|la|les|des|une|dans|avec|pour|mais|est|pas|nous|vous|qui|que|je|tu|il|elle|ce|cette|c’est|c\'est|j’ai|j\'ai|oui|merci|bonjour|bien|très|aussi|ici|où|du|au|aux|ne|sur|mon|ton'))
+    + countMatches(clean, /[àâçéèêëîïôùûÿœæ]/g);
+  const pt = countMatches(clean, words('não|você|vocês|obrigado|obrigada|muito|também|então|isso|aqui|está|estou|tenho|vamos|uma|um|com|para|mas|eu|ele|ela|nós|meu|minha|do|da|dos|das|na|em|ao|é'))
+    + countMatches(clean, /[ãõç]/g) * 2;
+  const de = countMatches(clean, words('der|das|und|ist|nicht|ich|du|sie|wir|ihr|ein|eine|mit|auf|aber|danke|bitte|ja|nein|wie|wo|warum|hier|jetzt|auch|noch|schon|mein|dein|haben|habe|bin|sind'))
+    + countMatches(clean, /[äöüß]/g);
+  const it = countMatches(clean, words('il|lo|gli|che|non|sono|sei|per|una|della|questo|questa|perché|grazie|anche|ciao|molto|bene|io|lui|lei|noi|voi|loro|ma|mi|ti|ci|cosa|dove|qui|adesso|allora|è'))
+    + countMatches(clean, /[àèéìòù]/g) * 0.5;
+  const en = countMatches(clean, /\b(the|and|you|that|this|with|for|have|not|are|was|what|where|why|hello|yes|no)\b/g);
+  const latinLetters = countMatches(clean, /[a-z\u00c0-\u024f]/g);
+  return { en, es, fr, pt, de, it, latinLetters };
 }
 
 const hasFilenameToken = (name: string, tokens: string[]): boolean => {
@@ -274,6 +309,10 @@ export function mainPathSecondaryRank(name: string, language = ''): number {
   if (language === 'en' || (!language && !/(^|[._\s-])(ja|jpn|ko|kor)([._\s-]|$)/i.test(name))) {
     return isSdhOrCcSubtitleFilename(name) ? 10 : 20;
   }
+  // Latin-alphabet second languages: Spanish first, French second (Derek), then pt / de / it.
+  if (language === 'es') return 9;
+  if (language === 'fr') return 8;
+  if (language === 'pt' || language === 'de' || language === 'it') return 7;
   if (language === 'ja') return 4;
   if (language === 'ko') return 3;
   return 0;
@@ -294,7 +333,7 @@ export function isSparseSecondaryTrack(primaryCueCount: number, secondaryCueCoun
 export function detectLanguageByFilename(name: string): SubtitleLanguage {
   const normalized = name.toLowerCase();
   if (/(commentary|comment|director|解说|導評|导轨)/i.test(name)) return 'commentary';
-  if (/(双语|雙語|中英|中日|中韩|中韓|中法|中西|bilingual|dual[-_.\s]?sub)/i.test(name)) return 'bilingual';
+  if (/(双语|雙語|中英|中日|中韩|中韓|中法|中西|中葡|中德|中意|bilingual|dual[-_.\s]?sub)/i.test(name)) return 'bilingual';
   if (
     /(chinese[._\s-]*traditional|traditional[._\s-]*chinese|zh[-_.\s]?tw|zh[-_.\s]?hant|繁體|繁体|繁中|big5)/i.test(name)
     || hasFilenameToken(normalized, ['cht', 'tc', 'zh-hant'])
@@ -306,8 +345,8 @@ export function detectLanguageByFilename(name: string): SubtitleLanguage {
   // Bare SDH/CC (no eng token) → English caption track so preflight is not「待识别」; demoted vs plain eng at bind.
   if (
     isSdhOrCcSubtitleFilename(name)
-    && !hasFilenameToken(normalized, ['jpn', 'ja', 'kor', 'ko', 'fre', 'fra', 'fr', 'spa', 'esp', 'es'])
-    && !/(japanese|日本語|日语|日語|korean|한국어|韩语|韓語|french|français|spanish|español|日文|韩文|韓文|法语|法語|西语|西語)/i.test(name)
+    && !hasFilenameToken(normalized, ['jpn', 'ja', 'kor', 'ko', 'fre', 'fra', 'fr', 'spa', 'esp', 'es', 'es-419', 'por', 'pt', 'pt-br', 'ger', 'deu', 'ita'])
+    && !/(japanese|日本語|日语|日語|korean|한국어|韩语|韓語|french|français|spanish|español|portuguese|português|german|deutsch|italian|italiano|日文|韩文|韓文|法语|法語|西语|西語|葡萄牙语|德语|德語|意大利语)/i.test(name)
   ) {
     return 'en';
   }
@@ -315,7 +354,11 @@ export function detectLanguageByFilename(name: string): SubtitleLanguage {
   if (/(japanese|日本語|日语|日語|日文)/i.test(name) || hasFilenameToken(normalized, ['jpn', 'ja'])) return 'ja';
   if (/(korean|한국어|韩语|韓語|韩文|韓文)/i.test(name) || hasFilenameToken(normalized, ['kor', 'ko'])) return 'ko';
   if (/(french|français|francais|法语|法語|法文)/i.test(name) || hasFilenameToken(normalized, ['fre', 'fra', 'fr', 'vff', 'vfq'])) return 'fr';
-  if (/(spanish|español|espanol|castellano|西班牙语|西班牙語|西语|西語)/i.test(name) || hasFilenameToken(normalized, ['spa', 'esp', 'es'])) return 'es';
+  if (/(spanish|español|espanol|castellano|latino|西班牙语|西班牙語|西语|西語)/i.test(name) || hasFilenameToken(normalized, ['spa', 'esp', 'es', 'es-419', 'es-es', 'es-mx'])) return 'es';
+  if (/(portuguese|português|portugues|葡萄牙语|葡萄牙語|葡语|葡語)/i.test(name) || hasFilenameToken(normalized, ['por', 'pt', 'pt-br', 'pt-pt', 'ptbr'])) return 'pt';
+  // No bare 'de' / 'it' tokens: they collide with titles (「…de…」, 「It」).
+  if (/(german|deutsch|德语|德語)/i.test(name) || hasFilenameToken(normalized, ['ger', 'deu', 'de-de'])) return 'de';
+  if (/(italian|italiano|意大利语|意大利語|意语)/i.test(name) || hasFilenameToken(normalized, ['ita', 'it-it'])) return 'it';
   return 'unknown';
 }
 
@@ -451,7 +494,8 @@ export function cleanSubtitleContent(text: string, isEnglish = false): string {
     cleaned = cleaned.replace(/^[A-Z\s]+:\s*/, '');
   }
   
-  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+  // Collapse ordinary whitespace only: no-break spaces (French « », ?, !) are typography, not layout.
+  cleaned = cleaned.replace(/[^\S\u00a0\u202f]+/g, ' ').trim();
   return cleaned;
 }
 
@@ -2292,6 +2336,25 @@ const detectSecondaryScript = (subs: SubRow[]): 'latin' | 'ja' | 'ko' => {
   return 'latin';
 };
 
+/**
+ * Language of the Latin-script second language in an export ('en', 'es', 'fr', …), decided once over
+ * all secondary lines (merged cues' second block, or whole Latin-only cues).
+ */
+export const detectSecondaryLatinLanguage = (subs: SubRow[]): SubtitleLanguage => {
+  const lines: string[] = [];
+  for (const row of subs.slice(0, 400)) {
+    const text = row.text.replace(/^\{\\an8\}/, '');
+    const blocks = splitLanguageBlocks(text);
+    const candidates = blocks.length > 1 ? blocks.slice(1).flat() : (hasCjk(text) ? [] : blocks.flat());
+    for (const line of candidates) if (/[A-Za-z\u00c0-\u024f]/.test(line) && !hasCjk(line)) lines.push(line);
+  }
+  return lines.length ? detectLanguageByContent(lines.join('\n')) : 'unknown';
+};
+
+/** Typography applied to Latin (non-CJK) lines before wrapping: French no-break spaces, U+202F → U+00A0. */
+const latinTypographyFor = (subs: SubRow[]): ((line: string) => string) =>
+  detectSecondaryLatinLanguage(subs) === 'fr' ? applyFrenchSpacing : normalizeNarrowNoBreakSpace;
+
 /** Traditional Chinese primary text (picks the TC regional family). */
 const isTraditionalTrack = (subs: SubRow[]): boolean =>
   detectLanguageByContent(subs.slice(0, 200).map((row) => splitLanguageBlocks(row.text)[0]?.join('') ?? '').join('\n')) === 'zh-TW';
@@ -2318,12 +2381,15 @@ function wrapCueBlocks(
   report: WrapReport | undefined,
   index: number,
   keepSourceLines = false,
+  latinTypography: (line: string) => string = normalizeNarrowNoBreakSpace,
 ): string[][] {
   let changed = false;
   let overflow = false;
   const blocks = splitLanguageBlocks(text).map((block, blockIndex) => {
-    const { fontPx, maxWidth } = params(block.some(hasCjk), blockIndex);
-    const result = wrapSubtitleBlock(block, { fontPx, maxWidth, measure: estimateTextWidth, keepSourceLines });
+    const isCjk = block.some(hasCjk);
+    const { fontPx, maxWidth } = params(isCjk, blockIndex);
+    const lines = isCjk ? block : block.map(latinTypography);
+    const result = wrapSubtitleBlock(lines, { fontPx, maxWidth, measure: estimateTextWidth, keepSourceLines });
     changed = changed || result.changed;
     overflow = overflow || result.overflow;
     return result.lines;
@@ -2343,11 +2409,12 @@ export function generateSrtContent(subs: SubRow[], styleSettings?: StyleSettings
   const srt = (options.profile ?? LEGACY_EXPORT_PROFILE).srt;
   const lyricItalic = srt.lyricItalic === 'style' ? (styleSettings?.lyricItalic ?? true) : srt.lyricItalic;
   const maxWidth = Math.max(1, srt.frameWidth - 2 * srt.marginH);
+  const latinTypography = latinTypographyFor(subs);
   return applyAuxiliarySubtitleMode(subs, auxiliaryMode).map(s => {
     let text = s.text.replace(/\{\\[^}]+\}/g, '');
     if (srt.plainText) text = stripInlineTags(text);
     if (srt.wrap) {
-      text = wrapCueBlocks(text, (isCjk) => ({ fontPx: srt.fontPx, maxWidth: isCjk ? maxWidth * srt.cjkWidthRatio : maxWidth }), options.report, s.index, isTopPlacedCue(s))
+      text = wrapCueBlocks(text, (isCjk) => ({ fontPx: srt.fontPx, maxWidth: isCjk ? maxWidth * srt.cjkWidthRatio : maxWidth }), options.report, s.index, isTopPlacedCue(s), latinTypography)
         .map((lines) => lines.join('\n'))
         .filter(Boolean)
         .join('\n');
@@ -2491,7 +2558,11 @@ export function generateAssContent(
         (stacked.secondaryMarginV + Math.max(1, secondaryLines) * stacked.primaryFontSize * stacked.secondaryScale + stacked.interLineAdjust) * k,
       ),
       primaryFont: normalizeAssFontName(isTraditionalTrack(subs) ? stacked.primaryFontTraditional : stacked.primaryFont, profile.fallbackZhFont),
-      secondaryFont: normalizeAssFontName(stacked.secondaryFont[script], profile.fallbackEnFont),
+      // Source Han Sans covers Latin-1 (es / fr / pt / de / it) but not all of Extended-A (Ÿ, ł, ş…):
+      // when the secondary text needs one of those, the Latin line switches to a full-coverage font.
+      secondaryFont: script === 'latin' && needsFullLatinFont(subs.map((row) => row.text))
+        ? FULL_LATIN_FALLBACK_FONT
+        : normalizeAssFontName(stacked.secondaryFont[script], profile.fallbackEnFont),
       primaryOutline: assNumber(stacked.primaryOutline * k),
       secondaryOutline: assNumber(stacked.secondaryOutline * k),
       primaryOutlineColour: hexToAss(stacked.primaryOutlineColour),
@@ -2540,6 +2611,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     return usable * (isCjk ? profile.assWrap.cjkWidthRatio : profile.assWrap.latinWidthRatio);
   };
   const finishText = (text: string): string => (hdrLevel ? dimInlineFillTags(text, hdrLevel) : text);
+  const latinTypography = latinTypographyFor(subs);
 
   const events = applyAuxiliarySubtitleMode(subs, auxiliaryMode).flatMap((s): string[] => {
     const [start, end] = s.ts.split(" --> ").map(srtToAssTime);
@@ -2572,7 +2644,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         const secondaryBlock = blockIndex > 0 || style === "EN" || !isCjk;
         const fontPx = secondaryBlock ? navy.secondarySize : navy.primarySize;
         return { fontPx, maxWidth: navyLineWidth(fontPx, isCjk) };
-      }, options.report, s.index, false);
+      }, options.report, s.index, false, latinTypography);
       const firstIsPrimary = style === "Han" && blocks.length > 0 && blocks[0].some(hasCjk) && !blocks[0].some((line) => KANA_RE.test(line) || HANGUL_RE.test(line));
       const primaryLines = firstIsPrimary ? blocks[0] : [];
       const secondaryLines = (firstIsPrimary ? blocks.slice(1) : blocks).flat().filter((line) => line.trim());
@@ -2599,7 +2671,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     const blocks = wrapCueBlocks(sourceText, (isCjk, blockIndex) => {
       const fontPx = Math.max(1, isPair && blockIndex > 0 ? secondaryPx : primaryPx);
       return { fontPx, maxWidth: assLineWidth(fontPx, isCjk) };
-    }, options.report, s.index, topPlaced);
+    }, options.report, s.index, topPlaced, latinTypography);
 
     let processedText: string;
     if (isPair && blocks.length === 2) {
@@ -2839,14 +2911,15 @@ export function detectSubtitleLanguagePair(text: string, name = ''): SubtitleLan
   if (rows.length === 0) return undefined;
 
   const filenameLang = name ? detectLanguageByFilename(name) : 'unknown';
-  // Explicit non-English foreign filenames cannot form a main-path language pair.
-  if (filenameLang === 'ja' || filenameLang === 'ko' || filenameLang === 'fr' || filenameLang === 'es') {
+  // Explicit ja / ko filenames cannot form a zh + Latin-script pair.
+  if (filenameLang === 'ja' || filenameLang === 'ko') {
     return undefined;
   }
 
   const counts = new Map<SubtitleLanguage, number>();
   let zhRows = 0; // cues with a Chinese line
   let secondaryRows = 0; // cues with a sentence-level Latin line (inline tokens excluded)
+  const secondaryText: string[] = []; // sentence-level Latin lines → one language decision for the file
   for (const row of rows.slice(0, 160)) {
     const normalized = splitSingleBilingualText(row.text);
     let rowHasZh = false;
@@ -2866,6 +2939,7 @@ export function detectSubtitleLanguagePair(text: string, name = ''): SubtitleLan
       }
       if (!isSentenceLevelLatinLine(line)) continue;
       rowHasSecondary = true;
+      secondaryText.push(line);
       counts.set(language, (counts.get(language) || 0) + 1);
     }
     if (rowHasZh) zhRows += 1;
@@ -2881,21 +2955,20 @@ export function detectSubtitleLanguagePair(text: string, name = ''): SubtitleLan
     ? filenameLang
     : zhCn >= zhTw ? 'zh-CN' : 'zh-TW';
 
-  const enCount = counts.get('en') || 0;
-  const latinCount = counts.get('latin') || 0;
-  const demotedForeignCount = (['ja', 'ko', 'fr', 'es'] as const)
-    .reduce((sum, language) => sum + (counts.get(language) || 0), 0);
-
-  // English only. Latin-script sentences without lexicon hits may count as English when no
-  // demoted foreign language is present (keeps short EN lines like "Lets begin." eligible).
-  const englishLines = enCount + (demotedForeignCount === 0 ? latinCount : 0);
-  if (englishLines === 0) return undefined;
-  if (demotedForeignCount > enCount + latinCount) return undefined;
+  // Secondary = every sentence-level Latin line (English or es / fr / pt / de / it, decided per file
+  // below); kana / Hangul lines only count against the pair (zh + ja / ko is a two-file job).
+  const latinSentenceLines = ['en', 'latin', ...LATIN_SECONDARY_LANGUAGES]
+    .reduce((sum, language) => sum + (counts.get(language as SubtitleLanguage) || 0), 0);
+  if (latinSentenceLines === 0) return undefined;
+  const cjkForeignCount = (counts.get('ja') || 0) + (counts.get('ko') || 0);
+  if (cjkForeignCount > latinSentenceLines) return undefined;
 
   // Substantial share: a real bilingual file carries a secondary sentence for most Chinese cues.
-  const hint = filenameLang === 'bilingual' || /(双语|雙語|中英|bilingual|dual[-_.\s]?sub)/i.test(name);
+  const hint = filenameLang === 'bilingual' || /(双语|雙語|中英|中西|中法|中葡|中德|中意|bilingual|dual[-_.\s]?sub)/i.test(name);
   const threshold = hint ? BILINGUAL_SECONDARY_SHARE_WITH_HINT : BILINGUAL_SECONDARY_SHARE;
   if (secondaryRows < Math.min(2, zhRows) || secondaryRows / Math.max(1, zhRows) < threshold) return undefined;
 
-  return { primary, secondary: 'en' };
+  // One decision over all secondary lines: an English side that quotes a few Spanish lines stays 'en'.
+  const secondaryLanguage = detectLanguageByContent(secondaryText.join('\n'));
+  return { primary, secondary: isLatinSecondaryLanguage(secondaryLanguage) ? secondaryLanguage : 'en' };
 }

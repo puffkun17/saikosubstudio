@@ -212,6 +212,75 @@ FR_G = [
 write("golden/everyday-fr/zh.srt", srt(ZH_G))
 write("golden/everyday-fr/fr.srt", srt(FR_G))
 
+# H. zh-Hans + Spanish (first-priority Latin second language): ñ á é í ó ú ü ¿ ¡ and capitals,
+#    inverted marks mid-cue, a long line that must wrap without leaving ¿ / ¡ at a line end.
+ZH_H = [
+    (1.0, 3.0, "早上好 你睡得怎么样"),
+    (3.5, 6.0, "还不错 就是有点冷"),
+    (6.5, 10.5, "我们先去楼下吃早饭吧 吃完再决定今天要不要去河边走走"),
+    (11.0, 13.0, "好主意！我去拿外套"),
+    (13.5, 16.0, "天哪 今天外面真的好冷"),
+    (16.5, 19.0, "你要不要喝点热巧克力"),
+]
+ES_H = [
+    (1.1, 3.1, "Buenos días. ¿Qué tal dormiste?"),
+    (3.6, 6.1, "Bien, pero tengo un poco de frío."),
+    (6.6, 10.6, "Vamos a desayunar abajo primero y después decidimos si hoy damos un paseo por el río, ¿vale?"),
+    (11.1, 13.1, "¡Buena idea! Voy por el abrigo."),
+    (13.6, 16.1, "¡Ay! ÁNIMO, AÚN ES TEMPRANO. ¿Ñoño, yo? ¡NUNCA!"),
+    (16.6, 19.1, "¿Quieres un chocolate caliente? El pingüino de la taza es mío."),
+]
+write("golden/everyday-es/zh.srt", srt(ZH_H))
+write("golden/everyday-es/es.srt", srt(ES_H))
+
+# I. Detection: an ENGLISH track (US-show style) with embedded Spanish lines and words. It must stay
+#    'en' (not es), keep its Spanish text untouched, and still bind as the 原文 track.
+EN_I = [
+    (1.0, 3.0, "Hey, are you coming to the party tonight?"),
+    (3.5, 6.0, "I don't know. I have to work early tomorrow."),
+    (6.5, 9.0, "(in Spanish) ¿Mamá, dónde están mis llaves?"),
+    (9.5, 12.0, "They're on the table, mijo. ¡Ándale!"),
+    (12.5, 15.0, "Thanks. Okay, what time does it start?"),
+    (15.5, 18.0, "Around eight. Bring something to drink, ¿sí?"),
+    (18.5, 21.0, "Sure. Do you want me to pick you up?"),
+    (21.5, 24.0, "No, I'll walk. It's not that far from here."),
+    (24.5, 27.0, "(speaking Spanish) Sí, señora, ya voy, ya voy."),
+    (27.5, 30.0, "Sorry, that was my neighbor. Where were we?"),
+    (30.5, 33.0, "The party. Eight o'clock. Don't be late this time."),
+    (33.5, 36.0, "I'm never late. Well, almost never."),
+]
+ZH_I = [
+    (1.0, 3.0, "嘿 你今晚来参加聚会吗"),
+    (3.5, 6.0, "我不知道 明天一早还得上班"),
+    (6.5, 9.0, "（西班牙语）妈 我的钥匙在哪"),
+    (9.5, 12.0, "在桌子上 孩子 快去吧"),
+    (12.5, 15.0, "谢谢 好吧 几点开始"),
+    (15.5, 18.0, "八点左右 带点喝的来 好吗"),
+    (18.5, 21.0, "当然 要我去接你吗"),
+    (21.5, 24.0, "不用 我走过去 离这儿不远"),
+    (24.5, 27.0, "（说西班牙语）是 女士 我这就来"),
+    (27.5, 30.0, "抱歉 刚才是我邻居 我们说到哪了"),
+    (30.5, 33.0, "聚会 八点 这次别迟到"),
+    (33.5, 36.0, "我从不迟到 好吧 几乎从不"),
+]
+write("detection/en-with-es.en.srt", srt(EN_I))
+write("detection/en-with-es.zh.srt", srt(ZH_I))
+
+# J. Detection: whole-track Spanish / French / Portuguese / German / Italian (short everyday lines).
+LATIN_J = {
+    "es": ["¿Dónde dejaste las llaves?", "Están en la mesa, al lado del pan.", "Gracias. Ahora vuelvo, no tardo nada.", "¡Qué frío hace hoy!"],
+    "fr": ["Tu as vu mes clés\u00a0?", "Elles sont sur la table, à côté du pain.", "Merci. Je reviens tout de suite.", "Qu'est-ce qu'il fait froid aujourd'hui\u00a0!"],
+    "pt": ["Você viu as minhas chaves?", "Estão na mesa, ao lado do pão.", "Obrigado. Já volto, não demoro.", "Que frio está hoje!"],
+    "de": ["Hast du meine Schlüssel gesehen?", "Sie liegen auf dem Tisch, neben dem Brot.", "Danke. Ich bin gleich zurück.", "Heute ist es aber kalt!"],
+    "it": ["Hai visto le mie chiavi?", "Sono sul tavolo, vicino al pane.", "Grazie. Torno subito, non ci metto molto.", "Che freddo che fa oggi!"],
+}
+for lang, lines in LATIN_J.items():
+    cues = [(1.0 + 3 * i, 3.0 + 3 * i, line.encode().decode("unicode_escape").encode("latin-1").decode("utf-8")) for i, line in enumerate(lines)]
+    write(f"detection/latin-{lang}.srt", srt(cues))
+
+# K. Single-file zh + Spanish bilingual SRT (Chinese line above Spanish line in each cue).
+write("golden/everyday-bilingual-es/bilingual.srt", srt([(z[0], z[1], z[2] + "\n" + e[2]) for z, e in zip(ZH_H, ES_H)]))
+
 # Encoding fixtures: identical text in a legacy encoding + its UTF-8 reference.
 ENC = {
     "zh-hans": (ZH_A[1:9] + ZH_A[10:13], "gbk"),

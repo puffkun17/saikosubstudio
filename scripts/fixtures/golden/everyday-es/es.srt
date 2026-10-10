@@ -1,0 +1,23 @@
+1
+00:00:01,100 --> 00:00:03,100
+Buenos días. ¿Qué tal dormiste?
+
+2
+00:00:03,600 --> 00:00:06,100
+Bien, pero tengo un poco de frío.
+
+3
+00:00:06,600 --> 00:00:10,600
+Vamos a desayunar abajo primero y después decidimos si hoy damos un paseo por el río, ¿vale?
+
+4
+00:00:11,100 --> 00:00:13,100
+¡Buena idea! Voy por el abrigo.
+
+5
+00:00:13,600 --> 00:00:16,100
+¡Ay! ÁNIMO, AÚN ES TEMPRANO. ¿Ñoño, yo? ¡NUNCA!
+
+6
+00:00:16,600 --> 00:00:19,100
+¿Quieres un chocolate caliente? El pingüino de la taza es mío.
