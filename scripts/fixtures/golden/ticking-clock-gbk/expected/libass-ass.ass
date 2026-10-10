@@ -1,0 +1,51 @@
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+ScriptType: v4.00+
+Title: ticking-clock-gbk
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Han,Noto Sans CJK SC,75,&H00FFFFFF,&H00FF9C41,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,6,6,2,38,38,75,1
+Style: EN,Arial,45,&H00D0D0D0,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,4,4,2,38,38,45,1
+Style: Note,Noto Sans CJK SC,68,&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,6,6,8,38,38,75,1
+Style: Credit,Noto Sans CJK SC,68,&H00FFFFFF,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,6,6,5,38,38,75,1
+Style: Lyrics,Noto Sans CJK SC,60,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,6,6,8,38,38,60,1
+Style: Lyrics_EN,Arial,45,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,4,4,8,38,38,37,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:01:09.06,0:01:11.06,Han,,0,0,0,,记时器
+Dialogue: 0,0:01:12.03,0:01:17.13,Han,,0,0,0,,不管你的计算机是否已准备好\N离2000年只剩余318天\N{\rEN}Whether your computers ready or not,\Nthere are only 318 days till the year 2000.
+Dialogue: 0,0:01:17.24,0:01:20.26,EN,,0,0,0,,A group of corporations concerned about the problems
+Dialogue: 0,0:01:17.24,0:01:20.26,Note,,0,0,0,,{\an8}一群担心千年虫计算机危机的公司
+Dialogue: 0,0:01:20.38,0:01:23.54,Han,,0,0,0,,已经召集会议…\N{\rEN}related to the Y2K computer bug have convened...
+Dialogue: 0,0:01:26.38,0:01:30.22,Note,,0,0,0,,{\an8}1999年2月20日
+Dialogue: 0,0:02:57.34,0:02:58.70,Han,,0,0,0,,乖，不要哭\N{\rEN}No. Dont cry.
+Dialogue: 0,0:02:59.94,0:03:02.71,Han,,0,0,0,,别哭，嘿\N{\rEN}Dont cry. Hey.
+Dialogue: 0,0:03:03.95,0:03:05.54,Han,,0,0,0,,没事了\N{\rEN}Everythings gonna be okay.
+Dialogue: 0,0:03:07.98,0:03:11.68,Han,,0,0,0,,嗨，没事了\N{\rEN}Hi. Everythings gonna be okay, pal.
+Dialogue: 0,0:03:13.19,0:03:15.68,Han,,0,0,0,,来，对\N{\rEN}Come here, come here. Yeah.
+Dialogue: 0,0:03:16.46,0:03:19.19,Han,,0,0,0,,乖宝宝，好，不哭了\N{\rEN}Thats a good boy. Okay, dont cry.
+Dialogue: 0,0:03:22.63,0:03:24.66,Han,,0,0,0,,她不会再伤害你了\N{\rEN}She cant hurt you anymore.
+Dialogue: 0,0:03:25.67,0:03:32.60,Han,,0,0,0,,都结束了，来 没有人能够再伤害你了\N{\rEN}Its over. Come here. No ones gonna hurt you ever again.
+Dialogue: 0,0:03:42.92,0:03:46.05,Han,,0,0,0,,乔的酒吧 成立于1948年
+Dialogue: 0,0:03:46.15,0:03:48.02,Note,,0,0,0,,{\an8}2011年4月17日
+Dialogue: 0,0:03:52.89,0:03:56.73,Han,,0,0,0,,我是刘易斯希克斯 我是个采访记者\N{\rEN}My name is Louis Hicks. Im an investigative reporter.
+Dialogue: 0,0:03:57.50,0:04:00.02,Han,,0,0,0,,专门采访杀人犯及罪犯的故事\N{\rEN}I cover stories of killers and criminals.
+Dialogue: 0,0:04:02.27,0:04:04.64,Han,,0,0,0,,他们的人生是黑暗 毫无希望的\N{\rEN}Their lives are dark, without hope.
+Dialogue: 0,0:04:05.94,0:04:09.77,Han,,0,0,0,,我试着不受其影响，但很难\N{\rEN}I try not to let it affect me, but its hard.
+Dialogue: 0,0:04:14.15,0:04:18.28,Han,,0,0,0,,一嘿！高登！暍两杯 一不行！\N{\rEN}-Hey! Gordo! Two shots. -No!
+Dialogue: 0,0:04:18.39,0:04:19.58,Han,,0,0,0,,一好啦 一不行、不行\N{\rEN}-Yes, yes. -No, no, no, no.
+Dialogue: 0,0:04:19.69,0:04:21.09,Han,,0,0,0,,一我一小时后上班 －一杯\N{\rEN}-I got to work in an hour. -Just one, just one.
+Dialogue: 0,0:04:21.19,0:04:22.78,Han,,0,0,0,,一不行 －一杯，传统方式\N{\rEN}-No, no. -One shot, old-school.
+Dialogue: 0,0:04:22.89,0:04:24.41,Han,,0,0,0,,一杯，就一杯 一好啦\N{\rEN}-One. One shot. -There it is.
+Dialogue: 0,0:04:34.04,0:04:35.70,Han,,0,0,0,,一敬刘易斯 一对\N{\rEN}-To Louis. -Yeah.
+Dialogue: 0,0:04:39.57,0:04:41.67,Han,,0,0,0,,好，现在你请了我 换我请你吃早餐\N{\rEN}All right, now you do something for me.\NLet me buy you breakfast.
+Dialogue: 0,0:04:41.78,0:04:45.34,Han,,0,0,0,,太晚了，我已经吃过了 冠军的早餐\N{\rEN}Too late. I already ate. Breakfast of champions.
+Dialogue: 0,0:04:47.82,0:04:53.12,Han,,0,0,0,,工作还好吗？有任何令人注目\N我该知道的真人实事吗？\N{\rEN}Hows work? Any compelling\Nreal-life stories I should know about?
+Dialogue: 0,0:04:53.49,0:04:54.82,Han,,0,0,0,,今天没有\N{\rEN}Not today.
+Dialogue: 0,0:04:56.02,0:04:57.01,Han,,0,0,0,,男砖\N{\rEN}Well
+Dialogue: 0,0:04:57.29,0:04:58.88,Han,,0,0,0,,你呢？ 在写书了吗？\N{\rEN}Hows work for you, huh? You working on the book?
+Dialogue: 0,0:04:58.99,0:05:01.76,Han,,0,0,0,,一直都在写啊，高登\N{\rEN}Always. Always working, Gordo.

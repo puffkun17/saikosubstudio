@@ -1,0 +1,53 @@
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+ScriptType: v4.00+
+Title: lanterns-s01e08
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Han,Noto Sans CJK SC,75,&H00FFFFFF,&H00FF9C41,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,6,6,2,38,38,75,1
+Style: EN,Arial,45,&H00D0D0D0,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,4,4,2,38,38,45,1
+Style: Note,Noto Sans CJK SC,68,&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,6,6,8,38,38,75,1
+Style: Credit,Noto Sans CJK SC,68,&H00FFFFFF,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,6,6,5,38,38,75,1
+Style: Lyrics,Noto Sans CJK SC,60,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,6,6,8,38,38,60,1
+Style: Lyrics_EN,Arial,45,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,4,4,8,38,38,37,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:10.84,0:00:14.18,Note,,0,0,0,,{\an8}（2016年）
+Dialogue: 0,0:00:14.26,0:00:16.55,Note,,0,0,0,,{\an8}（拉什维）
+Dialogue: 0,0:00:16.64,0:00:21.31,Note,,0,0,0,,{\an8}（人口1001人 成立于1885年）
+Dialogue: 0,0:00:32.99,0:00:35.61,Note,,0,0,0,,{\an8}（汽车旅馆）
+Dialogue: 0,0:00:45.33,0:00:46.58,Han,,0,0,0,,都退下\N{\rEN}Stand down!
+Dialogue: 0,0:00:48.13,0:00:50.67,Han,,0,0,0,,都结束了 让他过去吧\N{\rEN}It's over. Let him through.
+Dialogue: 0,0:00:57.89,0:00:59.14,Han,,0,0,0,,哈尔呢\N{\rEN}Where's Hal?
+Dialogue: 0,0:01:03.23,0:01:04.52,Han,,0,0,0,,他在那间汽车旅馆\N{\rEN}He's at the motel.
+Dialogue: 0,0:01:21.87,0:01:23.20,Han,,0,0,0,,你需要医生吗\N{\rEN}Do you need a doctor?
+Dialogue: 0,0:01:24.87,0:01:25.87,Han,,0,0,0,,不用\N{\rEN}No
+Dialogue: 0,0:01:28.50,0:01:29.63,Han,,0,0,0,,你还好吗\N{\rEN}You all right?
+Dialogue: 0,0:01:33.34,0:01:34.55,Han,,0,0,0,,死了多少人\N{\rEN}How many dead?
+Dialogue: 0,0:01:37.05,0:01:38.14,Han,,0,0,0,,我还不清楚\N{\rEN}I don't know yet.
+Dialogue: 0,0:01:39.72,0:01:40.85,Han,,0,0,0,,但情况很糟\N{\rEN}It's bad.
+Dialogue: 0,0:01:45.18,0:01:46.48,Han,,0,0,0,,这么做真的值得吗\N{\rEN}Was it worth it?
+Dialogue: 0,0:01:55.19,0:01:56.19,Han,,0,0,0,,怎么了\N{\rEN}What?
+Dialogue: 0,0:01:58.74,0:02:00.62,Han,,0,0,0,,我也问了约翰同样的问题\N{\rEN}It's the same thing I asked John.
+Dialogue: 0,0:02:04.54,0:02:06.25,Han,,0,0,0,,守护者会怎么说\N{\rEN}What will the Guardians say?
+Dialogue: 0,0:02:06.96,0:02:08.50,EN,,0,0,0,,I failed to notify 'em,
+Dialogue: 0,0:02:06.96,0:02:08.50,Note,,0,0,0,,{\an8}我没通知他们
+Dialogue: 0,0:02:08.58,0:02:11.00,Han,,0,0,0,,还让很多人有生命危险 还是出于…\N{\rEN}and I put a lot of people's lives in danger for...
+Dialogue: 0,0:02:13.75,0:02:15.13,Han,,0,0,0,,那些自私的理由\N{\rEN}selfish reasons.
+Dialogue: 0,0:02:19.26,0:02:22.89,Han,,0,0,0,,到时也不会有人反对任何法庭判我…\N{\rEN}And that there won't be any pushback\Nin any court that convicts me
+Dialogue: 0,0:02:23.39,0:02:25.02,Han,,0,0,0,,犯下鲁莽危害罪\N{\rEN}of reckless endangerment.
+Dialogue: 0,0:02:27.85,0:02:30.56,Han,,0,0,0,,正好能让他们俐落地解决掉烫手山芋\N{\rEN}Kind of a nice, clean solution to their problem...
+Dialogue: 0,0:02:31.86,0:02:32.86,Han,,0,0,0,,也就是我\N{\rEN}of me.
+Dialogue: 0,0:02:36.03,0:02:37.19,Han,,0,0,0,,我很遗憾\N{\rEN}I'm sorry.
+Dialogue: 0,0:02:38.15,0:02:39.28,Han,,0,0,0,,你早就警告过我\N{\rEN}You told me.
+Dialogue: 0,0:02:40.53,0:02:42.70,Han,,0,0,0,,是我坚持不离开 所以接下来无论发生什么事\N{\rEN}I didn't leave town, whatever happened next...
+Dialogue: 0,0:02:45.16,0:02:46.24,Han,,0,0,0,,都算在我头上\N{\rEN}was on me.
+Dialogue: 0,0:02:47.04,0:02:48.25,Han,,0,0,0,,我知道\N{\rEN}I know.
+Dialogue: 0,0:02:48.33,0:02:49.58,Han,,0,0,0,,的确是\N{\rEN}It is.
+Dialogue: 0,0:02:50.96,0:02:53.21,Han,,0,0,0,,但我还是很难过自己说中了\N{\rEN}But I can still feel bad about being right.
+Dialogue: 0,0:03:06.35,0:03:10.27,Note,,0,0,0,,{\an8}（2026年）
+Dialogue: 0,0:03:11.52,0:03:15.48,Note,,0,0,0,,{\an8}（施利茨啤酒）

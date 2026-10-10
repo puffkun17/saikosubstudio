@@ -1,0 +1,76 @@
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+ScriptType: v4.00+
+Title: the-pitt-s02e15
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Han,PingFang SC,75,&H00FFFFFF,&H00FF9C41,&H0063554B,&H00000000,1,0,0,0,100,100,0,0,1,6,6,2,38,38,75,1
+Style: EN,Helvetica Neue,45,&H00B0B0B0,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,90,90,0,0,1,4,4,2,38,38,45,1
+Style: Note,PingFang SC,68,&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,6,6,8,38,38,75,1
+Style: Credit,PingFang SC,68,&H00FFFFFF,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,6,6,5,38,38,75,1
+Style: Lyrics,PingFang SC,60,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,6,6,8,38,38,60,1
+Style: Lyrics_EN,Helvetica Neue,45,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,4,4,8,38,38,37,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:09.88,0:00:12.67,Han,,0,0,0,,本WEB版外挂字幕由\N风吹来的那片云 双语合并
+Dialogue: 0,0:00:09.88,0:00:12.67,Note,,0,0,0,,{\an8}《匹兹堡医魂》 第二季第十五集
+Dialogue: 0,0:00:12.67,0:00:14.80,Han,,0,0,0,,巴兰 这是你吗\N{\rEN}Baran, is this you?
+Dialogue: 0,0:00:20.47,0:00:24.18,Han,,0,0,0,,我五岁那年得了严重的\N病毒性脑膜炎后就开始了\N{\rEN}It began after a bad case of viral meningitis when I was five.
+Dialogue: 0,0:00:25.10,0:00:27.52,Han,,0,0,0,,他们尝试了所有抗癫痫药物\N{\rEN}They tried every anti-seizure medication,
+Dialogue: 0,0:00:27.52,0:00:30.73,Han,,0,0,0,,但我还是每隔几个月就会发作\N{\rEN}but I still had episodes every few months or so.
+Dialogue: 0,0:00:31.27,0:00:33.90,Han,,0,0,0,,以前从没有人注意到\N他们以为我只是在专注思考\N{\rEN}No one's ever noticed before. They just think I'm thoughtful.
+Dialogue: 0,0:00:36.11,0:00:37.49,Han,,0,0,0,,你开车吗\N{\rEN}Are you driving?
+Dialogue: 0,0:00:37.49,0:00:40.62,Han,,0,0,0,,我开不了 直到12年前\N{\rEN}I couldn't until laser ablation
+Dialogue: 0,0:00:40.62,0:00:43.37,Han,,0,0,0,,做了左颞叶激光消融术\N{\rEN}to my left temporal lobe 12 years ago.
+Dialogue: 0,0:00:44.04,0:00:46.62,Han,,0,0,0,,那之后再加上开浦兰 我再没发作过\N{\rEN}Between that and the Keppra, I've been seizure-free,
+Dialogue: 0,0:00:46.62,0:00:49.88,Han,,0,0,0,,精神科医生认为我可以开车 并担任主治医生\N{\rEN}cleared by Neurology to drive and to work as an attending.
+Dialogue: 0,0:00:52.25,0:00:55.55,Han,,0,0,0,,你今天的发作和你上一次发作之间\N间隔了多久\N{\rEN}How long, uh, between the seizure you had today and the last one?
+Dialogue: 0,0:00:56.38,0:00:59.22,Han,,0,0,0,,一年多\N{\rEN}It's been well over a year.
+Dialogue: 0,0:01:01.97,0:01:03.10,Han,,0,0,0,,但我今天发作了两次\N{\rEN}But I had two today.
+Dialogue: 0,0:01:08.14,0:01:09.60,Han,,0,0,0,,我不知道为什么\N{\rEN}I don't know why.
+Dialogue: 0,0:01:09.60,0:01:13.19,Han,,0,0,0,,可能是因为睡眠不足 新工作的压力 我…\N{\rEN}It could be sleep deprivation, new job stress.
+Dialogue: 0,0:01:13.78,0:01:16.95,Han,,0,0,0,,从阿富汗回来后 我就没接触过儿科病例了\N{\rEN}I--I haven't had to deal with Peds cases since Afghanistan.
+Dialogue: 0,0:01:17.45,0:01:19.11,Han,,0,0,0,,你现在有什么治疗方案\N{\rEN}What are your options now?
+Dialogue: 0,0:01:21.45,0:01:23.08,Han,,0,0,0,,加大开浦兰药量\N{\rEN}up my Keppra
+Dialogue: 0,0:01:23.08,0:01:26.45,Han,,0,0,0,,或者试试某种新型抗癫痫药\N{\rEN}or maybe try one of the newer anti-seizure meds.
+Dialogue: 0,0:01:26.45,0:01:29.04,Han,,0,0,0,,但如果不管用的话 我只有两个选择\N{\rEN}But if that doesn't work, I'm left with two choices
+Dialogue: 0,0:01:30.12,0:01:33.75,Han,,0,0,0,,一个是颞叶切除术\N但可能会影响我的语言功能\N{\rEN}um, a temporal lobectomy, which could impair my speech,
+Dialogue: 0,0:01:33.75,0:01:36.21,Han,,0,0,0,,另一个是植入神经调节装置\N{\rEN}or get a neuromodulation device,
+Dialogue: 0,0:01:36.21,0:01:39.80,Han,,0,0,0,,可以感知到癫痫发作并立即阻止\N{\rEN}which can sense and stop the seizures almost immediately.
+Dialogue: 0,0:01:39.80,0:01:41.64,Han,,0,0,0,,你必须公开这件事\N{\rEN}You need to disclose this.
+Dialogue: 0,0:01:41.64,0:01:43.22,Han,,0,0,0,,我知道 我有计划\N{\rEN}I know. I have a plan.
+Dialogue: 0,0:01:43.76,0:01:46.01,Han,,0,0,0,,嘿 罗比 达娜找你 她在儿科\N{\rEN}Hey, Robby, Dana's looking for you. She's in Peds.
+Dialogue: 0,0:01:46.02,0:01:47.31,Han,,0,0,0,,好的 我马上过去\N{\rEN}Yeah, OK, I'll be right there.
+Dialogue: 0,0:01:48.69,0:01:51.44,Han,,0,0,0,,看来儿科需要你 我也有病人要看\N{\rEN}Sounds like you're needed in Peds, and I have patients to see.
+Dialogue: 0,0:01:52.06,0:01:53.98,Han,,0,0,0,,罗比 有一个严重头痛的孕妇\N{\rEN}Robby, pregnant woman with severe headache
+Dialogue: 0,0:01:53.98,0:01:55.73,Han,,0,0,0,,被救护车送来的\N{\rEN}on her way in by ambulance.
+Dialogue: 0,0:01:55.73,0:01:57.61,Han,,0,0,0,,找阿伯特或是夜班住院医生\N{\rEN}Find Abbot or a night shift resident.
+Dialogue: 0,0:02:01.82,0:02:03.62,Note,,0,0,0,,{\an8}（第15小时）
+Dialogue: 0,0:02:03.62,0:02:07.33,Note,,0,0,0,,{\an8}（晚上9点至10点）
+Dialogue: 0,0:02:13.38,0:02:15.21,Han,,0,0,0,,我需要你清空口袋\N{\rEN}Need you to turn out your pockets.
+Dialogue: 0,0:02:21.51,0:02:22.97,Han,,0,0,0,,好的 伸出双手\N{\rEN}OK. Show me your hands.
+Dialogue: 0,0:02:51.00,0:02:52.00,Han,,0,0,0,,经常来这儿吗\N{\rEN}Come here often?
+Dialogue: 0,0:03:01.38,0:03:02.30,Han,,0,0,0,,怎么了\N{\rEN}What's going on?
+Dialogue: 0,0:03:03.34,0:03:05.72,Han,,0,0,0,,抱歉 虚惊一场 我们以为她发烧了\N{\rEN}Oh, sorry--false alarm. We thought she spiked a fever,
+Dialogue: 0,0:03:05.72,0:03:08.35,Han,,0,0,0,,结果是从那一堆纸质病历里拿错了\N{\rEN}but it was the wrong chart from our analog hell.
+Dialogue: 0,0:03:09.43,0:03:11.89,Han,,0,0,0,,你认识愿意接受亲属领养的人吗\N{\rEN}You know anybody who might consider kinship adoption?
+Dialogue: 0,0:03:11.89,0:03:15.02,Han,,0,0,0,,- 医生和护士都符合要求 - 别看我\N{\rEN}- Doctors and nurses qualify. - Don't look at me.
+Dialogue: 0,0:03:15.02,0:03:18.32,Han,,0,0,0,,嘿 你能让你的人盯着点\N阿尔-哈希米医生直到她离开吗\N{\rEN}Hey, can your staff keep an eye on Dr. Al-Hashimi until she leaves?
+Dialogue: 0,0:03:18.32,0:03:19.19,Han,,0,0,0,,为什么\N{\rEN}Why?
+Dialogue: 0,0:03:21.86,0:03:24.78,Han,,0,0,0,,因为她太累了 我不想看到她出错\N{\rEN}Uh, because I think she's tired, and I don't want her to make any mistakes.
+Dialogue: 0,0:03:24.78,0:03:26.95,Han,,0,0,0,,好建议 也许也适用于你\N{\rEN}Oh, great advice. Maybe you should take it.
+Dialogue: 0,0:03:26.95,0:03:28.78,Han,,0,0,0,,是啊 我要出去呼吸下新鲜空气\N{\rEN}Yeah. I'm gonna go get some fresh air.
+Dialogue: 0,0:03:28.79,0:03:30.45,Han,,0,0,0,,顺便把我的那份也吸了\N{\rEN}Grab some for me while you're out there.
+Dialogue: 0,0:03:30.45,0:03:32.20,Han,,0,0,0,,你的肺会手足无措的\N{\rEN}Your lungs wouldn't know what to do with it.
+Dialogue: 0,0:03:32.21,0:03:34.58,Han,,0,0,0,,- 去你的 - 在孩子面前爆粗口 你可真行\N{\rEN}- Screw you! - In front of the baby? Nice.
+Dialogue: 0,0:03:37.67,0:03:38.59,Han,,0,0,0,,乖\N{\rEN}Yeah.
+Dialogue: 0,0:03:39.17,0:03:40.96,Han,,0,0,0,,我们是夜行者\N{\rEN}We are the night crawlers.
+Dialogue: 0,0:03:40.96,0:03:44.01,Han,,0,0,0,,我们处理的是 最奇怪最狂野的病例 因为…\N{\rEN}We deal with the weirdest and the wildest because...
+Dialogue: 0,0:03:44.01,0:03:46.55,Han,,0,0,0,,我们是最奇怪最狂野的医生\N{\rEN}We are the weirdest and the wildest of them all.
+Dialogue: 0,0:03:46.55,0:03:50.31,Han,,0,0,0,,没错 今晚他们必然会满地乱爬 去拿下他们吧\N{\rEN}That is right, and tonight, they are really gonna be crawling. Now go get some!
+Dialogue: 0,0:03:55.81,0:03:56.85,Han,,0,0,0,,抱歉吵醒你了\N{\rEN}Sorry to wake you.
+Dialogue: 0,0:03:57.52,0:03:58.82,Han,,0,0,0,,我…我在思考呢\N{\rEN}I--I was thinking.

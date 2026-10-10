@@ -1,0 +1,26 @@
+{
+  "rows": 33,
+  "merged": 27,
+  "presets": {
+    "current.ass": {
+      "rewrapped": 2,
+      "overflow": 0
+    },
+    "current.srt": {
+      "rewrapped": 0,
+      "overflow": 0
+    },
+    "plex-srt.srt": {
+      "rewrapped": 9,
+      "overflow": 0
+    },
+    "libass-ass.ass": {
+      "rewrapped": 3,
+      "overflow": 0
+    },
+    "generic-srt.srt": {
+      "rewrapped": 9,
+      "overflow": 0
+    }
+  }
+}

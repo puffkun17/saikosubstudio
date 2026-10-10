@@ -1,0 +1,90 @@
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+ScriptType: v4.00+
+Title: only-murders-s05e08
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Han,Noto Sans CJK SC,75,&H00FFFFFF,&H00FF9C41,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,6,6,2,38,38,75,1
+Style: EN,Arial,45,&H00D0D0D0,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,4,4,2,38,38,45,1
+Style: Note,Noto Sans CJK SC,68,&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,6,6,8,38,38,75,1
+Style: Credit,Noto Sans CJK SC,68,&H00FFFFFF,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,6,6,5,38,38,75,1
+Style: Lyrics,Noto Sans CJK SC,60,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,6,6,8,38,38,60,1
+Style: Lyrics_EN,Arial,45,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,4,4,8,38,38,37,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.16,0:00:02.16,Note,,0,0,0,,{\an8}(前情提要)
+Dialogue: 0,0:00:02.16,0:00:03.37,Han,,0,0,0,,有人出价要买我的公寓\N{\rEN}I got an offer on my place.
+Dialogue: 0,0:00:03.37,0:00:04.46,Note,,0,0,0,,{\an8}(最佳与最终出价)
+Dialogue: 0,0:00:04.46,0:00:06.71,Han,,0,0,0,,我们可以重新开始 寻找我们夫妻的风格\N{\rEN}We could start over, find our style as a couple.
+Dialogue: 0,0:00:07.54,0:00:09.50,Han,,0,0,0,,如果我搬走 我在新家会快乐吗\N{\rEN}If I move, how do I know I'll be happy there?
+Dialogue: 0,0:00:09.51,0:00:11.80,Han,,0,0,0,,看来我们的母亲有些共通点\N{\rEN}Sounds like our mothers had a few things in common.
+Dialogue: 0,0:00:11.80,0:00:14.55,Han,,0,0,0,,- 多说一点 - 这么说吧 她伤我很深\N{\rEN}- Tell me more. - Let's just say she did a number on me.
+Dialogue: 0,0:00:14.55,0:00:19.31,Han,,0,0,0,,我先生在亚柯尼亚做过一些生意\N而莱斯特曾经替他工作\N{\rEN}My husband ran a few businesses in the Arconia,\Nand Lester worked for him.
+Dialogue: 0,0:00:19.31,0:00:21.72,Han,,0,0,0,,莱斯特不想明说他做的事\N{\rEN}Lester didn't wanna tell me much about what he did.
+Dialogue: 0,0:00:21.73,0:00:23.64,Han,,0,0,0,,他不是很喜欢那份工作\N{\rEN}He didn't feel good about the job.
+Dialogue: 0,0:00:23.64,0:00:26.40,Han,,0,0,0,,但你们认为有人杀了我丈夫\N{\rEN}But you think somebody killed my husband?
+Dialogue: 0,0:00:27.36,0:00:29.44,Han,,0,0,0,,- 可以请你吃晚餐吗 - 我没有证据\N{\rEN}- Could I take you out to dinner? - I have no evidence
+Dialogue: 0,0:00:29.44,0:00:31.11,Han,,0,0,0,,显示你其实是好人\N{\rEN}that you're actually a good guy.
+Dialogue: 0,0:00:31.11,0:00:33.82,Han,,0,0,0,,我们其实只是一群有钱人 在争论打赌的事\N{\rEN}We're just a bunch of rich people hashing out a bet.
+Dialogue: 0,0:00:33.82,0:00:36.86,Han,,0,0,0,,就是我们上次在赌场想解决的问题\N{\rEN}The same one we were trying to settle\Nthe last time we were in that gaming parlor.
+Dialogue: 0,0:00:36.87,0:00:41.49,Han,,0,0,0,,你们门房死的那晚 我们赌了一笔很大的合约\N{\rEN}The night your doorman died,\Nwe played for a very big contract.
+Dialogue: 0,0:00:41.50,0:00:44.41,Han,,0,0,0,,你们当中有人想盖纽约市第一间赌场\N{\rEN}One of you is planning\Nto build New York City's first casino.
+Dialogue: 0,0:00:44.41,0:00:49.00,Han,,0,0,0,,我想我会先开始翻修奥利佛的公寓\N{\rEN}I think I'll start renovations with... Oliver's apartment.
+Dialogue: 0,0:00:49.00,0:00:50.55,Han,,0,0,0,,你在说什么\N{\rEN}What are you talking about?
+Dialogue: 0,0:00:50.55,0:00:52.92,Han,,0,0,0,,你收到的出价是我的\N{\rEN}That offer on your place was from me.
+Dialogue: 0,0:00:52.92,0:00:54.01,Note,,0,0,0,,{\an8}(卡蜜拉俱乐部)
+Dialogue: 0,0:00:54.01,0:00:55.68,Han,,0,0,0,,是我要买下这里所有的公寓\N{\rEN}I'm the one buying up all the apartments here.
+Dialogue: 0,0:00:55.68,0:00:58.30,Han,,0,0,0,,你要把亚柯尼亚大楼变成赌场\N{\rEN}You're turning The Arconia into a casino? All in.
+Dialogue: 0,0:01:08.77,0:01:13.94,Han,,0,0,0,,数千年来 男人都将运气比喻为女性\N{\rEN}For thousands of years,\Nmen have sung about luck being a lady.
+Dialogue: 0,0:01:16.03,0:01:22.12,Han,,0,0,0,,在《布兰诗歌》中\N卡尔奥福对幸运女神深深着迷\N{\rEN}In Carmina Burana, Carl Orff obsesses over Fortuna,\Nthe goddess of fortune.
+Dialogue: 0,0:01:22.83,0:01:25.91,Han,,0,0,0,,法兰克辛纳屈祈求运气能当个淑女\N{\rEN}Frank Sinatra prayed for luck to be a lady,
+Dialogue: 0,0:01:25.91,0:01:29.46,Han,,0,0,0,,却还是担心她会「对别人的骰子吹气」\N{\rEN}but still worried she'd go "blow on some other guy's dice."
+Dialogue: 0,0:01:30.21,0:01:36.01,Han,,0,0,0,,男人喜欢把生命中\N无法控制的事与厄运都归咎于\N{\rEN}Men love to blame anything in their life\Nthat they can't control... their bad luck,
+Dialogue: 0,0:01:36.88,0:01:38.18,Han,,0,0,0,,女人\N{\rEN}on ladies.
+Dialogue: 0,0:01:39.39,0:01:41.97,Han,,0,0,0,,你们这些禽兽听着 下一轮我请客\N{\rEN}Listen, you animals, next round is on me, alright?
+Dialogue: 0,0:01:43.02,0:01:46.48,Han,,0,0,0,,只要这瓶苏格兰威士忌还没老到\N能跟人亲热或入伍\N{\rEN}As long as the scotch isn't old\Nenough to be kissed, or drafted.
+Dialogue: 0,0:01:46.48,0:01:48.10,Note,,0,0,0,,{\an8}(两年前)
+Dialogue: 0,0:01:48.10,0:01:49.19,Han,,0,0,0,,糟了\N{\rEN}Uh-oh
+Dialogue: 0,0:01:49.98,0:01:52.40,Han,,0,0,0,,装潢女王注意到我的破皮革\N{\rEN}Queen of Decor has noticed my cracked leather.
+Dialogue: 0,0:01:53.03,0:01:54.19,Han,,0,0,0,,我人生的谷底\N{\rEN}Worst day of my life.
+Dialogue: 0,0:01:54.78,0:01:56.07,Han,,0,0,0,,更有个性了\N{\rEN}Adds character.
+Dialogue: 0,0:01:56.78,0:01:57.78,Han,,0,0,0,,你真会说话\N{\rEN}You're just being sweet.
+Dialogue: 0,0:01:59.11,0:02:01.78,Han,,0,0,0,,这个地方曾经风光过 滚开\N{\rEN}Ah, this place has seen better days. Hey, get lost.
+Dialogue: 0,0:02:01.78,0:02:02.99,Han,,0,0,0,,我知道她喜欢什么\N{\rEN}I know what she likes.
+Dialogue: 0,0:02:02.99,0:02:04.45,Han,,0,0,0,,想来场大改造吗\N{\rEN}Interested in a makeover?
+Dialogue: 0,0:02:04.45,0:02:09.46,Han,,0,0,0,,- 你觉得呢 浏海还是狼尾头 - 我是指赌场 傻瓜\N{\rEN}- What are you thinking?\NUh, bangs or a shag? - For the casino, you goof.
+Dialogue: 0,0:02:10.63,0:02:13.55,Han,,0,0,0,,我可以帮忙提供女性的点缀\N{\rEN}I could help. Give it a woman's touch.
+Dialogue: 0,0:02:16.30,0:02:17.55,Han,,0,0,0,,这个点子如何\N{\rEN}Ooh, what about this idea?
+Dialogue: 0,0:02:18.34,0:02:22.35,Han,,0,0,0,,你让我一个月在这里 办一次私人的淑女之夜\N{\rEN}Let me host a private Ladies' Night in here.\NOnce a month.
+Dialogue: 0,0:02:22.85,0:02:29.39,Han,,0,0,0,,一个没有雪茄 或大嗓门的男人来搭讪的夜晚\N{\rEN}A night without cigars... or loud men hitting on us.
+Dialogue: 0,0:02:34.61,0:02:37.53,Han,,0,0,0,,成交 我爱淑女\N{\rEN}Done. I love ladies.
+Dialogue: 0,0:02:38.49,0:02:42.12,Han,,0,0,0,,但别担心 除非她们有兴趣\N否则我绝不会乱搭讪\N{\rEN}But don't worry, I never hit on 'em\Nunless they want me to.
+Dialogue: 0,0:02:43.08,0:02:46.58,Han,,0,0,0,,- 如果她们有兴趣呢 - 那我就帮她们调酒\N{\rEN}- And if they want you to?\N- Well, then, I make 'em a drink.
+Dialogue: 0,0:02:54.50,0:02:57.34,Han,,0,0,0,,我们得因为一间赌场而搬走\N{\rEN}We have to move out because of a casino?!
+Dialogue: 0,0:02:57.92,0:03:01.97,Han,,0,0,0,,你记得我为了保住公寓做出什么事吗\N{\rEN}Do you remember what I had\Nto do to hold onto my apartment?
+Dialogue: 0,0:03:01.97,0:03:03.51,Han,,0,0,0,,我烧了一个人\N{\rEN}I burned a man.
+Dialogue: 0,0:03:03.51,0:03:08.60,Han,,0,0,0,,我放火烧了一个好朋友 还买了一辆健身车\N{\rEN}I set fire to a dear friend! Plus, I bought a Peloton.
+Dialogue: 0,0:03:13.19,0:03:14.36,Han,,0,0,0,,你们好\N{\rEN}- Hey! - Hi!
+Dialogue: 0,0:03:14.86,0:03:17.27,Han,,0,0,0,,看看这个可爱的地方\N{\rEN}Look at this cute place.
+Dialogue: 0,0:03:17.28,0:03:19.28,Han,,0,0,0,,天啊 是THē Oh my gosh, THē!
+Dialogue: 0,0:03:19.28,0:03:21.57,Han,,0,0,0,,我在上有氧舞蹈课\N{\rEN}Oh, I'm taking a dance cardio class,
+Dialogue: 0,0:03:21.57,0:03:24.28,Han,,0,0,0,,我们会用你的歌来搭配动作\N{\rEN}and we're using one of your songs for a routine.
+Dialogue: 0,0:03:24.28,0:03:26.74,Han,,0,0,0,,我很想示范 但有太多臀部动作了\N{\rEN}I would show it to you, but it's got a lot of thrusting.
+Dialogue: 0,0:03:26.74,0:03:29.54,Han,,0,0,0,,- 不适合淑女 - 没这个必要\N{\rEN}- It's not appropriate for a lady. - Unnecessary.
+Dialogue: 0,0:03:29.54,0:03:31.79,Han,,0,0,0,,梅宝贝 我的新老朋友\N{\rEN}Mabitita, my new old friend,
+Dialogue: 0,0:03:31.79,0:03:34.08,Han,,0,0,0,,我帮你弄到今晚派对的门票\N{\rEN}I got you and however many plus-ones you want
+Dialogue: 0,0:03:34.08,0:03:35.42,Han,,0,0,0,,你想带多少人都行\N{\rEN}tickets to a party tonight.
+Dialogue: 0,0:03:35.42,0:03:37.59,Han,,0,0,0,,我很想去 但我们都知道我会喝醉\N{\rEN}I'd totally come with, but we both know I'd just get drunk,
+Dialogue: 0,0:03:37.59,0:03:40.97,EN,,0,0,0,,and tomorrow I'm in a music video\Nwhere I have to operate heavy machinery, so...
+Dialogue: 0,0:03:37.59,0:03:40.97,Han,,0,0,0,,明天我要拍音乐录影带 和操作重型机械 所以
+Dialogue: 0,0:03:40.97,0:03:43.63,Han,,0,0,0,,太感谢你了 我只是...有很多事要调查\N{\rEN}Thank you so much. I just-- I have a lot of case stuff.
+Dialogue: 0,0:03:43.64,0:03:48.10,Han,,0,0,0,,不 女孩 这跟调查有关 这是不可能收到的邀请\N{\rEN}No, chica, this is case stuff.\NIt's an impossible invite to get.
+Dialogue: 0,0:03:48.10,0:03:50.89,Han,,0,0,0,,是为我这种重要女性举办的淑女之夜\N{\rEN}It's a Ladies' Night for important ladies like moi,
+Dialogue: 0,0:03:50.89,0:03:52.89,Han,,0,0,0,,而且就在大楼里\N{\rEN}and it's literally in the building.
+Dialogue: 0,0:03:52.89,0:03:55.69,Han,,0,0,0,,要从衣柜之类的地方进场\N{\rEN}You get in through like-- like a closet or something,
+Dialogue: 0,0:03:55.69,0:03:57.77,Han,,0,0,0,,有点像地下酒吧 不得了\N{\rEN}sort of like a speakeasy. Ooh-la-la.
+Dialogue: 0,0:03:57.77,0:04:01.90,Han,,0,0,0,,什么 尼奇死了耶 等等 派对是谁办的\N{\rEN}What? But Nicky's dead. Wait, who's throwing this party?

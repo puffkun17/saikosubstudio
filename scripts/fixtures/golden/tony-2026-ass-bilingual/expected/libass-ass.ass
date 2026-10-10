@@ -1,0 +1,85 @@
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+ScriptType: v4.00+
+Title: tony-2026-ass-bilingual
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Han,Noto Sans CJK SC,75,&H00FFFFFF,&H00FF9C41,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,6,6,2,38,38,75,1
+Style: EN,Arial,45,&H00D0D0D0,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,4,4,2,38,38,45,1
+Style: Note,Noto Sans CJK SC,68,&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,6,6,8,38,38,75,1
+Style: Credit,Noto Sans CJK SC,68,&H00FFFFFF,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,6,6,5,38,38,75,1
+Style: Lyrics,Noto Sans CJK SC,60,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,6,6,8,38,38,60,1
+Style: Lyrics_EN,Arial,45,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,4,4,8,38,38,37,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:30.73,0:00:40.72,Han,,0,0,0,,本字幕由:Dex7er 使用\NSubsPlayer制作，翻译:Gemini
+Dialogue: 0,0:00:38.94,0:00:53.05,Han,,0,0,0,,"坦白说，我以前就是个被宠坏的、可悲的、自恋的、\N自毁的、没头脑的毛头小子，而且极其欠揍。"
+Dialogue: 0,0:00:40.73,0:00:46.53,Han,,0,0,0,,♪ Well, I'm going up,\Nup on Magic Mountain ♪\N{\rEN}♪ 好了 我要登上 ♪ ♪ 《魔山》 ♪
+Dialogue: 0,0:00:46.53,0:00:51.20,Han,,0,0,0,,♪ Well, I'm going so high,\Nwe're gonna touch the sky ♪\N{\rEN}♪ 好了 我要飞得好高 ♪ ♪ 我们要去触摸天空 ♪
+Dialogue: 0,0:00:47.21,0:00:53.00,Note,,0,0,0,,{\an8}安东尼·波登 厨房机密档案
+Dialogue: 0,0:00:52.41,0:00:58.41,Han,,0,0,0,,♪ Drink a little water,\Nup on Magic Mountain ♪\N{\rEN}♪ 喝点水吧 ♪ ♪ 在《魔山》上 ♪
+Dialogue: 0,0:00:58.41,0:01:02.83,Han,,0,0,0,,♪ Peace and love,\Nlove, love, for you and I ♪\N{\rEN}♪ 爱与和平 爱 爱 ♪ ♪ 属于你和我 ♪
+Dialogue: 0,0:00:58.64,0:01:03.24,Note,,0,0,0,,{\an8}瓦萨学院 1975年
+Dialogue: 0,0:01:04.71,0:01:06.38,Han,,0,0,0,,Okay, so I'm just\Ngonna walk you through\N{\rEN}好吧 我来给你们
+Dialogue: 0,0:01:06.38,0:01:08.22,Han,,0,0,0,,the basic vision of the story,\N{\rEN}简单讲讲这个故事的构想
+Dialogue: 0,0:01:08.22,0:01:09.59,Han,,0,0,0,,and you guys feel free to chime in\N{\rEN}大家随时都可以
+Dialogue: 0,0:01:09.59,0:01:11.09,Han,,0,0,0,,whenever you want, okay?\N{\rEN}发表意见 好吗
+Dialogue: 0,0:01:11.09,0:01:12.97,Han,,0,0,0,,So, what I'm trying to do\N{\rEN}所以 我想做的是
+Dialogue: 0,0:01:12.97,0:01:15.43,Han,,0,0,0,,is create a metaphorical\Nconversation\N{\rEN}在
+Dialogue: 0,0:01:15.43,0:01:17.93,Han,,0,0,0,,between George Orwell\Nand Jack Kerouac,\N{\rEN}乔治·奥威尔和杰克·凯鲁亚克之间
+Dialogue: 0,0:01:17.93,0:01:20.19,Han,,0,0,0,,as if Down and Out\Nin Paris and London\N{\rEN}展开一场隐喻性的对话
+Dialogue: 0,0:01:20.19,0:01:23.15,Han,,0,0,0,,was typed out on\None long piece of paper.\N{\rEN}就好像《巴黎伦敦落魄记》是用一张长纸打出来的
+Dialogue: 0,0:01:23.15,0:01:26.48,Han,,0,0,0,,Snappy. Splenetic. High velocity.\N{\rEN}干练 刻薄 节奏明快
+Dialogue: 0,0:01:26.48,0:01:29.32,Han,,0,0,0,,At its core, it's a building's Roman,\N{\rEN}它的核心
+Dialogue: 0,0:01:29.32,0:01:33.66,Han,,0,0,0,,but not in the sad Salinger,\Nsmoking, woman-hating way.\N{\rEN}是一部成长小说 但不是那种悲伤的、抽着烟的、厌女的塞林格风格
+Dialogue: 0,0:01:33.66,0:01:35.28,Han,,0,0,0,,It's hopeful.\N{\rEN}它是充满希望的
+Dialogue: 0,0:01:35.28,0:01:36.95,Han,,0,0,0,,And I know I put it\Non my application,\N{\rEN}我知道
+Dialogue: 0,0:01:36.95,0:01:38.58,Han,,0,0,0,,but in terms of timeline,\N{\rEN}我在申请表里写了 不过就时间线而言
+Dialogue: 0,0:01:38.58,0:01:41.62,Han,,0,0,0,,I'd want to have the first\Ndraft done by July.\N{\rEN}我希望在七月份前完成初稿
+Dialogue: 0,0:01:41.62,0:01:44.71,Han,,0,0,0,,Then submit for notes\Nfrom this esteemed troika,\N{\rEN}然后交给这三位尊敬的大佬审阅并提意见
+Dialogue: 0,0:01:44.71,0:01:46.67,Han,,0,0,0,,do a quick polish,\N{\rEN}快速润色一下
+Dialogue: 0,0:01:46.67,0:01:48.34,Han,,0,0,0,,and hopefully spend\Nthe rest of my summer\N{\rEN}然后希望我剩下的夏天
+Dialogue: 0,0:01:48.34,0:01:49.84,Han,,0,0,0,,in a state of "boketto."\N{\rEN}都能处于“发呆”的状态
+Dialogue: 0,0:01:52.34,0:01:53.80,Han,,0,0,0,,That's what the Japanese say\N{\rEN}日本人就是这么说的
+Dialogue: 0,0:01:53.80,0:01:55.30,Han,,0,0,0,,when you gaze out in the distance\N{\rEN}当你眺望远方
+Dialogue: 0,0:01:55.30,0:01:57.72,Han,,0,0,0,,without thinking\Nabout anything in particular.\N{\rEN}脑子里什么也不想的时候
+Dialogue: 0,0:02:00.14,0:02:04.44,Han,,0,0,0,,All right.\NVery impressive, Anthony.\N{\rEN}行了 非常令人印象深刻 安东尼
+Dialogue: 0,0:02:04.44,0:02:07.27,Han,,0,0,0,,You know what?\NOnly my mother calls me Anthony.\N{\rEN}你知道吗 只有我妈才叫我安东尼
+Dialogue: 0,0:02:07.90,0:02:08.90,Han,,0,0,0,,Tony.\N{\rEN}叫我托尼
+Dialogue: 0,0:02:10.82,0:02:12.82,Han,,0,0,0,,Okay, then. Tony.\N{\rEN}好吧 托尼
+Dialogue: 0,0:02:13.78,0:02:15.70,Han,,0,0,0,,You'll be hearing from us soon.\N{\rEN}我们很快就会联系你
+Dialogue: 0,0:02:17.28,0:02:19.49,Han,,0,0,0,,And then they just sat there\Nand stared at me.\N{\rEN}然后他们就坐在那儿盯着我看
+Dialogue: 0,0:02:19.49,0:02:20.75,Han,,0,0,0,,- -I'm telling you,\N-
+Dialogue: 0,0:02:20.75,0:02:24.37,Han,,0,0,0,,these people are\Nso fucking stupid it's insane.\N{\rEN}-我跟你说 这些人蠢得要死 简直疯了
+Dialogue: 0,0:02:24.37,0:02:25.71,Han,,0,0,0,,I said I was gonna\Nwrite the whole thing\N{\rEN}我说我要把整本书
+Dialogue: 0,0:02:25.71,0:02:28.46,Han,,0,0,0,,on one piece of paper,\Nand they believed me.\N{\rEN}写在一张纸上 他们居然信了
+Dialogue: 0,0:02:29.38,0:02:30.67,Han,,0,0,0,,They were... They\Nwere just nodding,\N{\rEN}他们当时...
+Dialogue: 0,0:02:30.67,0:02:32.51,Han,,0,0,0,,like I was explaining\Nthe rules of a brothel.\N{\rEN}他们就只是点头 就像我在解释妓院的规矩一样
+Dialogue: 0,0:02:33.59,0:02:35.34,Han,,0,0,0,,EI already found\Nthis Upper West Side place,\N{\rEN}而且我已经在上西区找好地方了
+Dialogue: 0,0:02:35.34,0:02:37.01,Han,,0,0,0,,right where Salinger grew up.\N{\rEN}就在塞林格长大的地方附近
+Dialogue: 0,0:02:37.01,0:02:38.47,Han,,0,0,0,,It's fucking perfect.\N{\rEN}简直完美
+Dialogue: 0,0:02:38.47,0:02:39.64,Han,,0,0,0,,Just gotta tell my parents\N{\rEN}我只要告诉父母
+Dialogue: 0,0:02:39.64,0:02:41.02,Han,,0,0,0,,that the fellowship\Ntakes place in New York,\N{\rEN}这个写作津贴项目在纽约
+Dialogue: 0,0:02:41.02,0:02:42.14,Han,,0,0,0,,and I'm outta here.\N{\rEN}然后我就闪人了
+Dialogue: 0,0:02:43.73,0:02:45.94,Han,,0,0,0,,Okay, but you gotta write a book?\N{\rEN}好吧 但你得写本书啊
+Dialogue: 0,0:02:45.94,0:02:48.98,Han,,0,0,0,,Yeah, but that's what I've\Nbeen trying to do all year.\N{\rEN}对啊 但这正是我一整年都在努力想做的事
+Dialogue: 0,0:02:48.98,0:02:52.19,Han,,0,0,0,,I swear, it's like God is\Nfinally starting to notice me.\N{\rEN}我发誓 感觉上帝终于开始注意到我了
+Dialogue: 0,0:02:53.36,0:02:55.49,Han,,0,0,0,,Word for that is "providence."\N{\rEN}这叫“天意”
+Dialogue: 0,0:02:55.49,0:02:57.66,Han,,0,0,0,,The word... The word for what?\N{\rEN}这个词...什么词
+Dialogue: 0,0:02:59.33,0:03:01.37,Han,,0,0,0,,It's when God fi...\N{\rEN}就是上帝...
+Dialogue: 0,0:11:23.54,0:11:27.04,Note,,0,0,0,,{\an8}托尼
+Dialogue: 0,0:11:27.16,0:11:33.86,Note,,0,0,0,,{\an8}南希·普特科斯基\N“对于有慧眼的人来说，\N共时性是一个无时不在的现实。”\N卡尔·荣格
+Dialogue: 0,0:11:28.54,0:11:32.55,Han,,0,0,0,,♪ I was under\Nthe Calvary Cross ♪\N{\rEN}♪ 我曾站在骷髅地十字架下 ♪
+Dialogue: 0,1:40:26.40,1:40:29.40,Note,,0,0,0,,{\an8}美国烹饪学院\N招生办公室
+Dialogue: 0,1:40:35.89,1:40:38.68,Han,,0,0,0,,So, it seems like...\N{\rEN}所以 看起来...
+Dialogue: 0,1:40:38.68,1:40:40.85,Han,,0,0,0,,your experience is washing dishes\N{\rEN}你的经验就是
+Dialogue: 0,1:41:17.88,1:41:27.14,Han,,0,0,0,,安东尼·波登于1975至2002年间在各大厨\N房工作退休时任纽约莱斯哈雷斯餐厅行政主厨
+Dialogue: 0,1:41:19.55,1:41:22.35,Han,,0,0,0,,♪ You don't have long to go ♪\N{\rEN}♪ 你没剩多少时间了 ♪
+Dialogue: 0,1:41:24.73,1:41:28.19,Han,,0,0,0,,♪ Remember me,\Nremember me ♪\N{\rEN}♪ 记住我 记住我 ♪
+Dialogue: 0,1:41:30.30,1:41:38.80,Han,,0,0,0,,43岁时，他出版了《厨房机密档案：餐饮业\NN 面大公开》该书在全球已售出数百万册
+Dialogue: 0,1:41:30.44,1:41:33.69,Han,,0,0,0,,♪ 'Cause I'm the one\Nwho made you see ♪\N{\rEN}♪ 因为我是那个 让你看清真相的人 ♪
+Dialogue: 0,1:41:36.90,1:41:39.82,Han,,0,0,0,,♪ Remember me ♪\N{\rEN}♪ 记住我 ♪

@@ -10,8 +10,60 @@ import {
   applyAuxiliarySubtitleMode,
   generateSrtContent,
   generateAssContent,
+  createWrapReport,
   type AssScriptMeta,
 } from '@/utils/subtitleCore';
+import {
+  DEFAULT_EXPORT_PRESET_ID,
+  DEFAULT_NAMING_ID,
+  EXPORT_PRESETS,
+  EXPORT_PRESET_ORDER,
+  NAMING_OPTIONS,
+  buildExportFilename,
+  getExportPreset,
+  getNamingOption,
+  resolvePresetStyle,
+  type ExportFormat,
+  type ExportPresetId,
+} from '@/utils/exportPresets';
+
+const PRESET_STORAGE_KEY = 'saiko_export_preset';
+const NAMING_STORAGE_KEY = 'saiko_export_naming';
+
+const readStoredChoice = (key: string): string | null => {
+  try {
+    return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeStoredChoice = (key: string, value: string) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* ignore quota / private mode */
+  }
+};
+
+/** Export preset + filename convention, remembered locally (§B: choose a plan, not parameters). */
+export const useExportChoices = () => {
+  const [presetId, setPresetIdState] = useState<ExportPresetId>(DEFAULT_EXPORT_PRESET_ID);
+  const [namingId, setNamingIdState] = useState<string>(DEFAULT_NAMING_ID);
+  useEffect(() => {
+    setPresetIdState(getExportPreset(readStoredChoice(PRESET_STORAGE_KEY)).id);
+    setNamingIdState(getNamingOption(readStoredChoice(NAMING_STORAGE_KEY)).id);
+  }, []);
+  const setPresetId = (id: ExportPresetId) => {
+    setPresetIdState(id);
+    writeStoredChoice(PRESET_STORAGE_KEY, id);
+  };
+  const setNamingId = (id: string) => {
+    setNamingIdState(id);
+    writeStoredChoice(NAMING_STORAGE_KEY, id);
+  };
+  return { presetId, setPresetId, namingId, setNamingId };
+};
 import { buildMergeReviewQueue } from '@/utils/timeline/alignmentDiff';
 
 const DECLARATION_LABEL: Record<CreditDeclaration, string | null> = {
@@ -61,6 +113,7 @@ export const useExport = () => {
     mergeReviewCheckedByTask,
     addLog,
     setStatusNotice,
+    isTraditional,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     customFilename: state.customFilename,
@@ -74,9 +127,19 @@ export const useExport = () => {
     mergeReviewCheckedByTask: state.mergeReviewCheckedByTask,
     addLog: state.addLog,
     setStatusNotice: state.setStatusNotice,
+    isTraditional: (() => {
+      const task = state.tasks.find((item) => item.id === state.selectedTaskId);
+      return task?.zh?.lang === 'zh-TW' || task?.zh?.languagePair?.primary === 'zh-TW';
+    })(),
   })));
 
-  const handleDownload = (format: 'ass' | 'srt') => {
+  const handleDownload = (
+    format: ExportFormat,
+    presetId: ExportPresetId = DEFAULT_EXPORT_PRESET_ID,
+    namingId: string = DEFAULT_NAMING_ID,
+  ) => {
+    const preset = getExportPreset(presetId);
+    if (!preset.formats.includes(format)) return;
     if (!processedSubs || processedSubs.length === 0) return;
 
     const taskKey = selectedTaskId || customFilename || '_default';
@@ -107,7 +170,6 @@ export const useExport = () => {
     try {
       let content = '';
       let mimeType = 'text/plain';
-      let extension = '';
 
       const exportSubs = appendCreatorCredit
         ? appendCreatorCreditCue(processedSubs, creatorCredit, creditPlacement)
@@ -115,28 +177,28 @@ export const useExport = () => {
       const auxiliaryMode = customStyle.auxiliaryMode || 'keep';
       const filteredExportSubs = applyAuxiliarySubtitleMode(exportSubs, auxiliaryMode);
       const hiddenAuxiliaryCount = exportSubs.length - filteredExportSubs.length;
-      const exportStyle = { ...customStyle, auxiliaryMode: 'keep' as const };
+      const exportStyle = { ...resolvePresetStyle(customStyle, preset), auxiliaryMode: 'keep' as const };
+      const report = createWrapReport();
+      const runOptions = { profile: preset.profile, report };
 
       if (format === 'srt') {
-        content = generateSrtContent(filteredExportSubs, exportStyle);
+        content = generateSrtContent(filteredExportSubs, exportStyle, runOptions);
         mimeType = 'text/srt';
-        extension = 'srt';
       } else {
         const scriptMeta = buildAssScriptMeta({
           creatorCredit,
           creditDeclaration,
           isOfficialSubtitle,
         });
-        content = generateAssContent(filteredExportSubs, exportStyle, customFilename, scriptMeta);
+        content = generateAssContent(filteredExportSubs, exportStyle, customFilename, scriptMeta, runOptions);
         mimeType = 'text/x-ass';
-        extension = 'ass';
       }
 
       const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${customFilename || 'subtitles'}.${extension}`;
+      link.download = buildExportFilename(customFilename || 'subtitles', format, namingId, { traditional: isTraditional });
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -144,17 +206,20 @@ export const useExport = () => {
 
       addLog(
         hiddenAuxiliaryCount > 0
-          ? `导出成功: ${format.toUpperCase()} 格式，已按辅助字幕策略隐藏 ${hiddenAuxiliaryCount} 行`
-          : `导出成功: ${format.toUpperCase()} 格式`,
+          ? `导出成功: ${format.toUpperCase()} 格式（${preset.label}），已按辅助字幕策略隐藏 ${hiddenAuxiliaryCount} 行`
+          : `导出成功: ${format.toUpperCase()} 格式（${preset.label}）`,
         'success',
       );
+      if (report.overflow > 0) {
+        addLog(`智能换行：${report.overflow} 行在预设宽度内仍放不下（如超长网址），未硬塞第三行，建议复核`, 'info');
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       addLog(`导出失败: ${msg}`, 'error');
     }
   };
 
-  return { handleDownload };
+  return { handleDownload, isTraditional };
 };
 
 const EXPORT_OPTIONS = [
@@ -186,7 +251,12 @@ export const ExportDropdown: React.FC<{
   const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { handleDownload } = useExport();
+  const { handleDownload, isTraditional } = useExport();
+  const { presetId, setPresetId, namingId, setNamingId } = useExportChoices();
+  const activePreset = EXPORT_PRESETS[presetId];
+  const visibleOptions = EXPORT_OPTIONS.filter((option) => activePreset.formats.includes(option.format));
+  const { customFilename } = useStudioStore(useShallow((state) => ({ customFilename: state.customFilename })));
+  const filenameHint = buildExportFilename(customFilename || 'subtitles', activePreset.formats[0], namingId, { traditional: isTraditional });
 
   useEffect(() => {
     if (!open) return;
@@ -278,16 +348,47 @@ export const ExportDropdown: React.FC<{
             <div className="border-b border-[var(--v4-line)] px-3.5 py-2.5">
               <p className="text-xs font-semibold tracking-wide text-[var(--v4-text)]">选择格式</p>
               <p className="mt-0.5 text-xs leading-4 text-[var(--v4-text-faint)]">下载到本地，如视频文件所在目录等</p>
+              <div className="mt-2 grid grid-cols-2 gap-1.5">
+                <label className="min-w-0">
+                  <span className="block text-[0.6875rem] leading-4 text-[var(--v4-text-faint)]">预设</span>
+                  <select
+                    className="v4-focus-ring mt-0.5 w-full truncate rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-1.5 py-1 text-xs text-[var(--v4-text)]"
+                    value={presetId}
+                    onChange={(event) => setPresetId(event.target.value as ExportPresetId)}
+                    aria-label="导出预设"
+                  >
+                    {EXPORT_PRESET_ORDER.map((id) => (
+                      <option key={id} value={id}>{EXPORT_PRESETS[id].label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="min-w-0">
+                  <span className="block text-[0.6875rem] leading-4 text-[var(--v4-text-faint)]">命名</span>
+                  <select
+                    className="v4-focus-ring mt-0.5 w-full truncate rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-1.5 py-1 text-xs text-[var(--v4-text)]"
+                    value={namingId}
+                    onChange={(event) => setNamingId(event.target.value)}
+                    aria-label="文件命名"
+                  >
+                    {NAMING_OPTIONS.map((option) => (
+                      <option key={option.id} value={option.id}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <p className="mt-1 truncate text-[0.6875rem] leading-4 text-[var(--v4-text-faint)]" title={`${activePreset.description}\n${filenameHint}`}>
+                {activePreset.description}
+              </p>
             </div>
             <div className="p-1.5">
-              {EXPORT_OPTIONS.map((option) => (
+              {visibleOptions.map((option) => (
                 <button
                   key={option.format}
                   type="button"
                   role="menuitem"
                   className="v4-focus-ring flex w-full cursor-pointer items-start gap-3 rounded-md px-2.5 py-2.5 text-left transition-colors hover:bg-[var(--v4-accent-soft)]"
                   onClick={() => {
-                    handleDownload(option.format);
+                    handleDownload(option.format, presetId, namingId);
                     setOpen(false);
                   }}
                 >
