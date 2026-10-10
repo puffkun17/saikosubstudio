@@ -28,6 +28,14 @@ import {
   normalizeAssFontName,
   type ExportProfile,
 } from './exportPresets';
+import {
+  dimInlineFillTags,
+  getHdrLevel,
+  hdrFillHex,
+  isHdrLevelId,
+  type FillRole,
+  type HdrLevelId,
+} from './hdrPresets';
 
 export type CueKind = 'dialogue' | 'screen_text' | 'sound_caption' | 'narration' | 'lyrics' | 'commentary' | 'credit' | 'unknown';
 export type AuxiliaryCueCategory = 'ambient_sdh' | 'semantic_sdh' | 'screen_text' | 'music' | 'speech_context' | 'unknown';
@@ -2259,7 +2267,40 @@ export interface ExportRunOptions {
   profile?: ExportProfile;
   /** Optional mutable counters filled while exporting. */
   report?: WrapReport;
+  /** ASS only: HDR variant level (warm-grey fills, `YCbCr Matrix: None`). Absent → SDR. */
+  hdr?: HdrLevelId | null;
 }
+
+const KANA_RE = /[\u3040-\u30ff\u31f0-\u31ff]/;
+const HANGUL_RE = /[\uac00-\ud7af\u1100-\u11ff]/;
+
+/** Script of the secondary lines in an export (picks the matching Source Han regional family). */
+const detectSecondaryScript = (subs: SubRow[]): 'latin' | 'ja' | 'ko' => {
+  let ja = 0;
+  let ko = 0;
+  let latin = 0;
+  for (const row of subs) {
+    const blocks = splitLanguageBlocks(row.text.replace(/^\{\\an8\}/, ''));
+    for (const line of blocks.slice(1).flat()) {
+      if (KANA_RE.test(line)) ja += 1;
+      else if (HANGUL_RE.test(line)) ko += 1;
+      else if (/[A-Za-z]/.test(line)) latin += 1;
+    }
+  }
+  if (ja > latin && ja >= ko) return 'ja';
+  if (ko > latin && ko > ja) return 'ko';
+  return 'latin';
+};
+
+/** Traditional Chinese primary text (picks the TC regional family). */
+const isTraditionalTrack = (subs: SubRow[]): boolean =>
+  detectLanguageByContent(subs.slice(0, 200).map((row) => splitLanguageBlocks(row.text)[0]?.join('') ?? '').join('\n')) === 'zh-TW';
+
+/** ASS numbers: integers stay integers, others keep one decimal. */
+const assNumber = (value: number): string => {
+  const rounded = Math.round(value * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+};
 
 /** Average Latin advance (em) used to translate a legacy maxLenEn character budget into px. */
 const LATIN_AVERAGE_EM = 0.5;
@@ -2393,7 +2434,7 @@ export function generateAssContent(
   };
 
   // Convert Hex colors (e.g. #FFFFFF) to ASS Colors (e.g. &H00FFFFFF)
-  const hexToAss = (hex: string): string => {
+  const hexToAssRaw = (hex: string): string => {
     if (!hex) return '&H00FFFFFF';
     let cleanHex = hex.replace('#', '');
     if (cleanHex.length === 3) {
@@ -2408,38 +2449,81 @@ export function generateAssContent(
     }
     return '&H00FFFFFF';
   };
+  const hexToAss = hexToAssRaw;
+  // HDR variant: only fills (PrimaryColour) change — warm grey for white, linear dimming otherwise.
+  const hdrLevel = isHdrLevelId(options.hdr) ? getHdrLevel(options.hdr) : null;
+  const fillAss = (hex: string, role: FillRole): string =>
+    hexToAss(hdrLevel ? hdrFillHex(hex || '#FFFFFF', hdrLevel, role) : hex);
 
-  const assZhColor = hexToAss(zhColor);
-  const assEnColor = hexToAss(enColor);
+  const assZhColor = fillAss(zhColor, 'primary');
+  const assEnColor = fillAss(enColor, 'secondary');
   const assZhOutline = hexToAss(zhOutline);
   const assEnOutline = hexToAss(enOutline);
-  const assLyricColor = hexToAss(lyricColor);
+  const assLyricColor = fillAss(lyricColor, 'primary');
+  const assLyricEnColor = fillAss(lyricColor, 'secondary');
+  const assWhitePrimary = fillAss('#FFFFFF', 'primary');
   // P0-6: English family name, no CSS quotes / generic families / weight suffixes; the fallback
   // (when the style names no concrete family) is driven by the export preset.
   const assZhFont = normalizeAssFontName(zhFontFamily, profile.fallbackZhFont);
   const assEnFont = normalizeAssFontName(enFontFamily, profile.fallbackEnFont);
-  const safeTitle = title.replace(/[\r\n]/g, ' ').trim() || 'Bilingual Subtitles';
+  const baseTitle = title.replace(/[\r\n]/g, ' ').trim() || 'Bilingual Subtitles';
+  const safeTitle = hdrLevel ? `${baseTitle} (HDR ${hdrLevel.label})` : baseTitle;
   const safeOriginal = (scriptMeta?.originalScript || '').replace(/[\r\n]/g, ' ').trim();
   const safeUpdateDetails = (scriptMeta?.updateDetails || '').replace(/[\r\n]/g, ' ').trim();
   const commentLines = (scriptMeta?.comments || [])
     .map((line) => line.replace(/[\r\n]/g, ' ').trim())
     .filter(Boolean);
 
+  // 「深蓝描边」 (stacked two-event layout): every px value scales from the 1080 reference by PlayResY.
+  const stacked = profile.stacked;
+  const k = stacked ? resY / stacked.referenceResY : 1;
+  const navy = stacked ? (() => {
+    const primarySize = Math.round(stacked.primaryFontSize * k);
+    const secondarySize = Math.round(stacked.primaryFontSize * stacked.secondaryScale * k);
+    const script = detectSecondaryScript(subs);
+    return {
+      primarySize,
+      secondarySize,
+      marginH: Math.round(stacked.marginH * k),
+      secondaryMarginV: Math.round(stacked.secondaryMarginV * k),
+      /** Chinese MarginV for a given number of secondary lines (0 → same height as with one). */
+      primaryMarginV: (secondaryLines: number) => Math.round(
+        (stacked.secondaryMarginV + Math.max(1, secondaryLines) * stacked.primaryFontSize * stacked.secondaryScale + stacked.interLineAdjust) * k,
+      ),
+      primaryFont: normalizeAssFontName(isTraditionalTrack(subs) ? stacked.primaryFontTraditional : stacked.primaryFont, profile.fallbackZhFont),
+      secondaryFont: normalizeAssFontName(stacked.secondaryFont[script], profile.fallbackEnFont),
+      primaryOutline: assNumber(stacked.primaryOutline * k),
+      secondaryOutline: assNumber(stacked.secondaryOutline * k),
+      primaryOutlineColour: hexToAss(stacked.primaryOutlineColour),
+      secondaryOutlineColour: hexToAss(stacked.secondaryOutlineColour),
+      primaryFill: fillAss(stacked.fill, 'primary'),
+      secondaryFill: fillAss(stacked.fill, 'secondary'),
+    };
+  })() : null;
+  const shadow = navy ? 0 : mShadow;
+  const auxZhFont = navy ? navy.primaryFont : assZhFont;
+  const auxEnFont = navy ? navy.secondaryFont : assEnFont;
+  const enShadow = navy ? 0 : mEnOutline;
+  const dialogueStyles = navy
+    ? `Style: ZH,${navy.primaryFont},${navy.primarySize},${navy.primaryFill},&H000000FF,${navy.primaryOutlineColour},&H00000000,0,0,0,0,100,100,0,0,1,${navy.primaryOutline},0,2,${navy.marginH},${navy.marginH},${navy.primaryMarginV(1)},1
+Style: SEC,${navy.secondaryFont},${navy.secondarySize},${navy.secondaryFill},&H000000FF,${navy.secondaryOutlineColour},&H00000000,0,0,0,0,100,100,0,0,1,${navy.secondaryOutline},0,2,${navy.marginH},${navy.marginH},${navy.secondaryMarginV},1`
+    : `Style: Han,${assZhFont},${mZhFont},${assZhColor},&H00FF9C41,${assZhOutline},&H00000000,1,0,0,0,100,100,0,0,1,${mOutline},${mShadow},2,${mBaseMargin},${mBaseMargin},${mMarginV},1
+Style: EN,${assEnFont},${mEnFont},${assEnColor},&H00FFFFFF,${assEnOutline},&H00000000,1,0,0,0,${enScale},${enScale},0,0,1,${mEnOutline},${mEnOutline},2,${mBaseMargin},${mBaseMargin},${Math.floor(mMarginV * 0.6)},1`;
+
   const header = `[Script Info]
 PlayResX: ${resX}
 PlayResY: ${resY}
 ScaledBorderAndShadow: yes
 ScriptType: v4.00+
-Title: ${safeTitle}
+${hdrLevel ? 'YCbCr Matrix: None\n' : ''}Title: ${safeTitle}
 ${safeOriginal ? `Original Script: ${safeOriginal}\n` : ''}${commentLines.map((line) => `Comment: ${line}`).join('\n')}${commentLines.length ? '\n' : ''}${safeUpdateDetails ? `Update Details: ${safeUpdateDetails}\n` : ''}
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Han,${assZhFont},${mZhFont},${assZhColor},&H00FF9C41,${assZhOutline},&H00000000,1,0,0,0,100,100,0,0,1,${mOutline},${mShadow},2,${mBaseMargin},${mBaseMargin},${mMarginV},1
-Style: EN,${assEnFont},${mEnFont},${assEnColor},&H00FFFFFF,${assEnOutline},&H00000000,1,0,0,0,${enScale},${enScale},0,0,1,${mEnOutline},${mEnOutline},2,${mBaseMargin},${mBaseMargin},${Math.floor(mMarginV * 0.6)},1
-Style: Note,${assZhFont},${mNoteFont},&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,${mOutline},${mShadow},8,${mBaseMargin},${mBaseMargin},${mMarginV},1
-Style: Credit,${assZhFont},${mNoteFont},${assZhColor},&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,${mOutline},${mShadow},5,${mBaseMargin},${mBaseMargin},${mMarginV},1
-Style: Lyrics,${assZhFont},${mLyricFont},${assLyricColor},&H00000000,&H00000000,&H00000000,0,${lyricItalic ? 1 : 0},0,0,100,100,0,0,1,${mOutline},${mShadow},${lyricPosition === 'top' ? 8 : 2},${mBaseMargin},${mBaseMargin},${lyricPosition === 'top' ? Math.floor(mMarginV * 0.8) : mMarginV},1
-Style: Lyrics_EN,${assEnFont},${mLyricEnFont},${assLyricColor},&H00000000,${assEnOutline},&H00000000,0,${lyricItalic ? 1 : 0},0,0,100,100,0,0,1,${mEnOutline},${mEnOutline},${lyricPosition === 'top' ? 8 : 2},${mBaseMargin},${mBaseMargin},${lyricPosition === 'top' ? Math.floor(mMarginV * 0.5) : Math.floor(mMarginV * 0.6)},1
+${dialogueStyles}
+Style: Note,${auxZhFont},${mNoteFont},${assWhitePrimary},&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,${mOutline},${shadow},8,${mBaseMargin},${mBaseMargin},${mMarginV},1
+Style: Credit,${auxZhFont},${mNoteFont},${assZhColor},&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,${mOutline},${shadow},5,${mBaseMargin},${mBaseMargin},${mMarginV},1
+Style: Lyrics,${auxZhFont},${mLyricFont},${assLyricColor},&H00000000,&H00000000,&H00000000,0,${lyricItalic ? 1 : 0},0,0,100,100,0,0,1,${mOutline},${shadow},${lyricPosition === 'top' ? 8 : 2},${mBaseMargin},${mBaseMargin},${lyricPosition === 'top' ? Math.floor(mMarginV * 0.8) : mMarginV},1
+Style: Lyrics_EN,${auxEnFont},${mLyricEnFont},${assLyricEnColor},&H00000000,${assEnOutline},&H00000000,0,${lyricItalic ? 1 : 0},0,0,100,100,0,0,1,${mEnOutline},${enShadow},${lyricPosition === 'top' ? 8 : 2},${mBaseMargin},${mBaseMargin},${lyricPosition === 'top' ? Math.floor(mMarginV * 0.5) : Math.floor(mMarginV * 0.6)},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -2451,7 +2535,13 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     return `${parseInt(h)}:${m}:${s}.${Math.floor(parseInt(ms) / 10).toString().padStart(2, '0')}`;
   };
 
-  const events = applyAuxiliarySubtitleMode(subs, auxiliaryMode).map(s => {
+  const navyLineWidth = (fontPx: number, isCjk: boolean): number => {
+    const usable = Math.max(1, resX - 2 * (navy?.marginH ?? mBaseMargin));
+    return usable * (isCjk ? profile.assWrap.cjkWidthRatio : profile.assWrap.latinWidthRatio);
+  };
+  const finishText = (text: string): string => (hdrLevel ? dimInlineFillTags(text, hdrLevel) : text);
+
+  const events = applyAuxiliarySubtitleMode(subs, auxiliaryMode).flatMap((s): string[] => {
     const [start, end] = s.ts.split(" --> ").map(srtToAssTime);
     let style = "Han";
     if (s.type === "credit") {
@@ -2475,6 +2565,29 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       topPlaced = true;
     }
 
+    // 「深蓝描边」: ordinary dialogue → Chinese event (upper layer) + secondary event (lower layer),
+    // each wrapped at its own font size. Signs / notes / lyrics / credits keep their own styles.
+    if (navy && !topPlaced && (style === "Han" || style === "EN")) {
+      const blocks = wrapCueBlocks(sourceText, (isCjk, blockIndex) => {
+        const secondaryBlock = blockIndex > 0 || style === "EN" || !isCjk;
+        const fontPx = secondaryBlock ? navy.secondarySize : navy.primarySize;
+        return { fontPx, maxWidth: navyLineWidth(fontPx, isCjk) };
+      }, options.report, s.index, false);
+      const firstIsPrimary = style === "Han" && blocks.length > 0 && blocks[0].some(hasCjk) && !blocks[0].some((line) => KANA_RE.test(line) || HANGUL_RE.test(line));
+      const primaryLines = firstIsPrimary ? blocks[0] : [];
+      const secondaryLines = (firstIsPrimary ? blocks.slice(1) : blocks).flat().filter((line) => line.trim());
+      const out: string[] = [];
+      if (primaryLines.length) {
+        // Default MarginV fits one secondary line; taller secondary blocks push the Chinese line up.
+        const marginV = secondaryLines.length > 1 ? navy.primaryMarginV(secondaryLines.length) : 0;
+        out.push(`Dialogue: ${stacked!.primaryLayer},${start},${end},ZH,,0,0,${marginV},,${finishText(primaryLines.join("\\N"))}`);
+      }
+      if (secondaryLines.length) {
+        out.push(`Dialogue: ${stacked!.secondaryLayer},${start},${end},SEC,,0,0,0,,${finishText(secondaryLines.join("\\N"))}`);
+      }
+      return out;
+    }
+
     // Smart wrap by rendered width: per-style font px against PlayResX − MarginL − MarginR.
     const isPair = (s.type === "lyrics" || s.type === "merged") && sourceText.includes('\n');
     const primaryPx = style === "Note" || style === "Credit" ? mNoteFont
@@ -2496,7 +2609,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     }
     if (topPlaced) processedText = "{\\an8}" + processedText;
 
-    return `Dialogue: 0,${start},${end},${style},,0,0,0,,${processedText}`;
+    return [`Dialogue: 0,${start},${end},${style},,0,0,0,,${finishText(processedText)}`];
   });
 
   return header + events.join("\n") + "\n";
@@ -2505,6 +2618,11 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 /**
  * Check if the text is bilingual.
  */
+/** A line in kana / Hangul, or a sentence-level Latin line (not an inline token like 「OK」). */
+const hasSecondarySentenceLine = (text: string): boolean =>
+  text.split(/\\N|\\n|\r?\n/).some((line) =>
+    /[\u3040-\u30ff\u31f0-\u31ff\uac00-\ud7af\u1100-\u11ff]/.test(line) || isSentenceLevelLatinLine(line));
+
 export function checkIsBilingual(text: string): boolean {
   if (!text) return false;
   
@@ -2520,19 +2638,23 @@ export function checkIsBilingual(text: string): boolean {
   for (let i = 0; i < validRows.length; i += 1) {
     const sub = validRows[i];
     const cleanSubText = cleanSubtitleContent(sub.text);
-    const lang = detectCueLanguage(splitSingleBilingualText(cleanSubText));
+    const splitText = splitSingleBilingualText(cleanSubText);
+    const lang = detectCueLanguage(splitText);
     validCount++;
 
-    if (lang === 'mixed') {
+    // Inline tokens (「我新买的iPhone」) are 'mixed' too; only a separate secondary line counts.
+    if (lang === 'mixed' && hasSecondarySentenceLine(splitText)) {
       bilingualSignals++;
       continue;
     }
 
     const next = validRows[i + 1];
     if (!next) continue;
-    const nextLang = detectCueLanguage(splitSingleBilingualText(next.text));
+    const nextText = splitSingleBilingualText(next.text);
+    const nextLang = detectCueLanguage(nextText);
     const adjacentBilingualPair = areTimeRangesNearEqual(sub.ts, next.ts)
-      && ((lang === 'zh' && nextLang === 'foreign') || (lang === 'foreign' && nextLang === 'zh'));
+      && ((lang === 'zh' && nextLang === 'foreign' && hasSecondarySentenceLine(nextText))
+        || (lang === 'foreign' && nextLang === 'zh' && hasSecondarySentenceLine(splitText)));
 
     if (adjacentBilingualPair) {
       bilingualSignals += 2;
@@ -2595,7 +2717,9 @@ export function splitSingleBilingualText(text: string): string {
   if (zhFirstMatch) {
     const zhPart = zhFirstMatch[1].trim();
     const enPart = zhFirstMatch[2].trim();
-    if (isSubtitleLikeChinese(zhPart) && isSubtitleLikeEnglish(enPart)) {
+    // The trailing part must be Latin-only: 「家里的Wi-Fi密码是多少？」 is one Chinese sentence with an
+    // inline token, not 「家里的」 + an English line.
+    if (isSubtitleLikeChinese(zhPart) && hanChars(enPart) === 0 && isSubtitleLikeEnglish(enPart)) {
       return `${zhPart}\n${enPart}`;
     }
   }
@@ -2687,24 +2811,65 @@ export function normalizeSingleBilingualRows(rows: RawSub[]): SubRow[] {
   return result;
 }
 
+/**
+ * Share of Chinese cues that must carry a sentence-level secondary line (same cue, or a separate
+ * cue) before a file counts as a single-file bilingual track. Inline tokens (iPhone, OK, Wi-Fi,
+ * brand names) and stray one-word Latin cues never count, so an ordinary Chinese track that
+ * mentions a few English words stays a Chinese track and leaves the 原文 slot free.
+ */
+export const BILINGUAL_SECONDARY_SHARE = 0.4;
+/** Lower bar when the filename itself says bilingual (中英 / bilingual / dual-sub). */
+export const BILINGUAL_SECONDARY_SHARE_WITH_HINT = 0.2;
+
+const latinWordCount = (value: string): number =>
+  (value.match(/[A-Za-z\u00c0-\u024f]+(?:['’][A-Za-z]+)?/g) || []).length;
+
+/**
+ * A Latin-script line that reads as a subtitle sentence, not an inline token: no Han/kana/Hangul
+ * and at least two words (「Welcome back.」 yes; 「OK」「iPhone」「Wi-Fi」 no).
+ */
+export function isSentenceLevelLatinLine(line: string): boolean {
+  const clean = cleanSubtitleContent(line).replace(/[♪♫♬]/g, '').trim();
+  if (!clean || /[一-龥\u3040-\u30ff\u31f0-\u31ff\uac00-\ud7af]/.test(clean)) return false;
+  return latinWordCount(clean.replace(/-/g, '')) >= 2;
+}
+
 export function detectSubtitleLanguagePair(text: string, name = ''): SubtitleLanguagePair | undefined {
   const rows = parseSubtitle(text);
   if (rows.length === 0) return undefined;
-
-  const counts = new Map<SubtitleLanguage, number>();
-  for (const row of rows.slice(0, 160)) {
-    const normalized = splitSingleBilingualText(row.text);
-    for (const line of normalized.split(/\\N|\\n|\r?\n/)) {
-      const language = detectLanguageByContent(line);
-      if (language === 'unknown' || language === 'bilingual' || language === 'commentary') continue;
-      counts.set(language, (counts.get(language) || 0) + 1);
-    }
-  }
 
   const filenameLang = name ? detectLanguageByFilename(name) : 'unknown';
   // Explicit non-English foreign filenames cannot form a main-path language pair.
   if (filenameLang === 'ja' || filenameLang === 'ko' || filenameLang === 'fr' || filenameLang === 'es') {
     return undefined;
+  }
+
+  const counts = new Map<SubtitleLanguage, number>();
+  let zhRows = 0; // cues with a Chinese line
+  let secondaryRows = 0; // cues with a sentence-level Latin line (inline tokens excluded)
+  for (const row of rows.slice(0, 160)) {
+    const normalized = splitSingleBilingualText(row.text);
+    let rowHasZh = false;
+    let rowHasSecondary = false;
+    for (const line of normalized.split(/\\N|\\n|\r?\n/)) {
+      const language = detectLanguageByContent(line);
+      if (language === 'unknown' || language === 'bilingual' || language === 'commentary') continue;
+      if (language === 'zh-CN' || language === 'zh-TW') {
+        rowHasZh = true;
+        counts.set(language, (counts.get(language) || 0) + 1);
+        continue;
+      }
+      if (language === 'ja' || language === 'ko') {
+        // Kana / Hangul lines are always sentence-level for the foreign-language demotion check.
+        counts.set(language, (counts.get(language) || 0) + 1);
+        continue;
+      }
+      if (!isSentenceLevelLatinLine(line)) continue;
+      rowHasSecondary = true;
+      counts.set(language, (counts.get(language) || 0) + 1);
+    }
+    if (rowHasZh) zhRows += 1;
+    if (rowHasSecondary) secondaryRows += 1;
   }
 
   const zhCn = counts.get('zh-CN') || 0;
@@ -2721,14 +2886,16 @@ export function detectSubtitleLanguagePair(text: string, name = ''): SubtitleLan
   const demotedForeignCount = (['ja', 'ko', 'fr', 'es'] as const)
     .reduce((sum, language) => sum + (counts.get(language) || 0), 0);
 
-  // English only. Latin-script lines without lexicon hits may count as English when no
+  // English only. Latin-script sentences without lexicon hits may count as English when no
   // demoted foreign language is present (keeps short EN lines like "Lets begin." eligible).
-  const englishEligible = isMainPathSecondaryLanguage(filenameLang)
-    || enCount > 0
-    || (latinCount > 0 && demotedForeignCount === 0);
-
-  if (!englishEligible) return undefined;
+  const englishLines = enCount + (demotedForeignCount === 0 ? latinCount : 0);
+  if (englishLines === 0) return undefined;
   if (demotedForeignCount > enCount + latinCount) return undefined;
+
+  // Substantial share: a real bilingual file carries a secondary sentence for most Chinese cues.
+  const hint = filenameLang === 'bilingual' || /(双语|雙語|中英|bilingual|dual[-_.\s]?sub)/i.test(name);
+  const threshold = hint ? BILINGUAL_SECONDARY_SHARE_WITH_HINT : BILINGUAL_SECONDARY_SHARE;
+  if (secondaryRows < Math.min(2, zhRows) || secondaryRows / Math.max(1, zhRows) < threshold) return undefined;
 
   return { primary, secondary: 'en' };
 }

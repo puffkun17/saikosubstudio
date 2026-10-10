@@ -1,0 +1,29 @@
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+ScriptType: v4.00+
+Title: everyday-bilingual-ass
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: ZH,Source Han Sans SC Medium,75,&H00FFFFFF,&H000000FF,&H00551B14,&H00000000,0,0,0,0,100,100,0,0,1,5.5,0,2,60,60,97,1
+Style: SEC,Source Han Sans SC,51,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,4.5,0,2,60,60,51,1
+Style: Note,Source Han Sans SC Medium,68,&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,6,0,8,38,38,75,1
+Style: Credit,Source Han Sans SC Medium,68,&H00FFFFFF,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,6,0,5,38,38,75,1
+Style: Lyrics,Source Han Sans SC Medium,60,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,6,0,8,38,38,60,1
+Style: Lyrics_EN,Source Han Sans SC,45,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,4,0,8,38,38,37,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 1,0:00:01.00,0:00:03.00,ZH,,0,0,0,,你吃饭了吗
+Dialogue: 0,0:00:01.00,0:00:03.00,SEC,,0,0,0,,Have you eaten yet?
+Dialogue: 1,0:00:03.20,0:00:05.50,ZH,,0,0,0,,还没 我在等外卖
+Dialogue: 0,0:00:03.20,0:00:05.50,SEC,,0,0,0,,Not yet, I'm waiting for a delivery.
+Dialogue: 1,0:00:05.80,0:00:09.50,ZH,,0,0,148,,外卖都等了快一个小时了\N我觉得他们可能把我的订单给忘了
+Dialogue: 0,0:00:05.80,0:00:09.50,SEC,,0,0,0,,It's been almost an hour.\NI think they might have forgotten my order.
+Dialogue: 0,0:00:10.00,0:00:12.00,Note,,0,0,0,,{\an8}订单已送达\N{\rEN}ORDER DELIVERED
+Dialogue: 1,0:00:12.50,0:00:14.50,ZH,,0,0,148,,- 终于来了 - 快开门
+Dialogue: 0,0:00:12.50,0:00:14.50,SEC,,0,0,0,,- Finally!\N- Get the door!
+Dialogue: 1,0:00:15.00,0:00:18.00,ZH,,0,0,0,,下次我们还是自己做饭吧
+Dialogue: 0,0:00:15.00,0:00:18.00,SEC,,0,0,0,,Next time, let's just cook ourselves.
