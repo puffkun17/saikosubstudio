@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import Module from 'node:module';
-import { mkdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -21,6 +21,8 @@ mkdirSync(outDir, { recursive: true });
 execFileSync('npx', [
   'tsc',
   'src/utils/subtitleCore.ts',
+  'src/utils/lineWrap.ts',
+  'src/utils/exportPresets.ts',
   'src/utils/mediaIdentity.ts',
   'src/utils/tmdbCandidateFit.ts',
   'src/utils/tmdbSearchRank.ts',
@@ -80,6 +82,30 @@ const {
   parseSubtitle,
   splitSingleBilingualText,
 } = require(join(outDir, 'utils/subtitleCore.js'));
+const {
+  createWrapReport,
+} = require(join(outDir, 'utils/subtitleCore.js'));
+const {
+  estimateTextWidth,
+  glyphWidthEm,
+  splitLanguageBlocks,
+  wrapSingleLine,
+  wrapSubtitleBlock,
+} = require(join(outDir, 'utils/lineWrap.js'));
+const {
+  ASS_PRESET_IDS,
+  DEFAULT_EXPORT_PRESET_ID,
+  SRT_ADDON_IDS,
+  planExportBundle,
+  EXPORT_PRESETS,
+  EXPORT_PRESET_ORDER,
+  buildExportFilename,
+  canonicalFontFamily,
+  getExportPreset,
+  normalizeAssFontName,
+  resolvePresetStyle,
+} = require(join(outDir, 'utils/exportPresets.js'));
+const { decodeBuffer: decodeBufferP0 } = require(join(outDir, 'utils/textEncoding.js'));
 const { analyzeAlignmentDiff, buildMergeReviewQueue, filterMergeReviewQueue } = require(join(outDir, 'utils/timeline/alignmentDiff.js'));
 const { useStudioStore } = require(join(outDir, 'store/useStudioStore.js'));
 const { CLIENT_IMPORT_LIMITS, getClientFileIssue } = require(join(outDir, 'utils/importSafety.js'));
@@ -299,7 +325,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
     { index: 2, ts: '00:00:04,000 --> 00:00:06,000', text: 'Sing along', type: 'lyrics' },
   ];
   const srt = generateSrtContent(rows, { lyricItalic: true });
-  assert.doesNotMatch(srt, /\{\\an\d\}/, 'SRT export must not leak ASS-only positioning overrides.');
+  // '当前样式' SRT keeps a single {\an8} for top-placed text (Derek, PR #36 review); the generic preset strips it.
+  assert.match(srt, /^\{\\an8\}画面文字$/m, 'Current-style SRT keeps exactly one {\\an8} on top-placed text.');
+  assert.doesNotMatch(generateSrtContent(rows, { lyricItalic: true }, { profile: EXPORT_PRESETS['generic-srt'].profile }), /\{\\an\d\}/, 'Generic SRT never carries ASS-only positioning overrides.');
   assert.match(srt, /<i>Sing along<\/i>/, 'Portable SRT italics should remain available for lyrics.');
 
   const ass = generateAssContent(rows, {
@@ -1050,7 +1078,8 @@ Dialogue: 0,0:00:04.00,0:00:06.00,Default,,0,0,0,,Hello
   assert.equal(merged[0].cueKind, 'screen_text');
   const exported = generateSrtContent(merged);
   assert.ok(exported.includes('EXIT'), 'Screen text content should survive SRT export.');
-  assert.doesNotMatch(exported, /\{\\an8\}/, 'SRT cannot portably preserve ASS positioning overrides.');
+  // Derek (PR #36 review): the '当前样式' SRT keeps {\an8} so top-placed signs stay on top in players that honour it.
+  assert.match(exported, /^\{\\an8\}EXIT$/m, 'Current-style SRT keeps {\\an8} for top-placed screen text.');
 }
 
 const resetStoreForTmdb = () => {
@@ -2313,7 +2342,6 @@ const createTmdbImages = () => ({
 // ---------------------------------------------------------------------------
 // P0 correctness (2026-10-10)
 // ---------------------------------------------------------------------------
-const { decodeBuffer: decodeBufferP0 } = require(join(outDir, 'utils/textEncoding.js'));
 const { smartLineWrap, stripAssDrawingCommands } = require(join(outDir, 'utils/subtitleCore.js'));
 
 // P0-1b: a plain zh sentence overlapping its en line ~95% must pair (not become a note / screen text).
@@ -2341,8 +2369,10 @@ const { smartLineWrap, stripAssDrawingCommands } = require(join(outDir, 'utils/s
   const rows = [
     { index: 1, ts: '00:00:01,000 --> 00:00:03,000', text: '我们合作吧，这并不是你想的那样。\nLet us work together, it is not what you think.', type: 'merged', cueKind: 'dialogue' },
     { index: 2, ts: '00:00:04,000 --> 00:00:05,500', text: '（门铃响）', type: 'note', cueKind: 'sound_caption' },
-    { index: 3, ts: '00:00:06,000 --> 00:00:08,000', text: '♪ 月亮代表我的心 ♪\nThe moon represents my heart', type: 'lyrics', cueKind: 'lyrics' },
-    { index: 4, ts: '00:00:09,000 --> 00:00:10,000', text: '翻译：字幕组', type: 'dialogue', cueKind: 'credit' },
+    { index: 3, ts: '00:00:06,000 --> 00:00:08,000', text: '♪ 晚风轻轻吹过窗台 ♪\nThe evening breeze drifts past the window', type: 'lyrics', cueKind: 'lyrics' },
+    // Real pipeline shape: mergeSubtitles / alignSubtitlesIndustrial set BOTH type and cueKind to 'credit'
+    // for credit cues (the old fixture used type 'dialogue', which the pipeline never produces).
+    { index: 4, ts: '00:00:09,000 --> 00:00:10,000', text: '翻译：字幕组', type: 'credit', cueKind: 'credit' },
     { index: 5, ts: '00:00:11,000 --> 00:00:12,000', text: 'EXIT', type: 'dialogue', cueKind: 'screen_text' },
     { index: 6, ts: '00:00:13,000 --> 00:00:14,000', text: '并不是这样合作的。', type: 'dialogue', cueKind: 'dialogue' },
   ];
@@ -2351,7 +2381,7 @@ const { smartLineWrap, stripAssDrawingCommands } = require(join(outDir, 'utils/s
     '[Script Info]',
     'PlayResX: 1920',
     'PlayResY: 1080',
-    'ScaledBorderAndShadow: no',
+    'ScaledBorderAndShadow: yes',
     'ScriptType: v4.00+',
     'Title: Golden',
     '',
@@ -2366,10 +2396,10 @@ const { smartLineWrap, stripAssDrawingCommands } = require(join(outDir, 'utils/s
     '',
     '[Events]',
     'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
-    'Dialogue: 0,0:00:01.00,0:00:03.00,Han,,0,0,0,,我们合作吧，这并不是你想的那样。\\N{\\rEN}Let us work together, it is not what you\\Nthink.',
+    'Dialogue: 0,0:00:01.00,0:00:03.00,Han,,0,0,0,,我们合作吧，这并不是你想的那样。\\N{\\rEN}Let us work together, it is not what you think.',
     'Dialogue: 0,0:00:04.00,0:00:05.50,Note,,0,0,0,,{\\an8}（门铃响）',
-    'Dialogue: 0,0:00:06.00,0:00:08.00,Lyrics,,0,0,0,,♪ 月亮代表我的心 ♪\\N{\\rLyrics_EN}The moon represents my heart',
-    'Dialogue: 0,0:00:09.00,0:00:10.00,Note,,0,0,0,,翻译：字幕组',
+    'Dialogue: 0,0:00:06.00,0:00:08.00,Lyrics,,0,0,0,,♪ 晚风轻轻吹过窗台 ♪\\N{\\rLyrics_EN}The evening breeze drifts past the window',
+    'Dialogue: 0,0:00:09.00,0:00:10.00,Credit,,0,0,0,,翻译：字幕组',
     'Dialogue: 0,0:00:11.00,0:00:12.00,Note,,0,0,0,,{\\an8}EXIT',
     'Dialogue: 0,0:00:13.00,0:00:14.00,Han,,0,0,0,,并不是这样合作的。',
     '',
@@ -2377,10 +2407,10 @@ const { smartLineWrap, stripAssDrawingCommands } = require(join(outDir, 'utils/s
   assert.equal(generateAssContent(rows, style, 'Golden'), expectedAss, 'ASS golden sample');
   const expectedSrt = [
     '1', '00:00:01,000 --> 00:00:03,000', '我们合作吧，这并不是你想的那样。', 'Let us work together, it is not what you think.', '',
-    '2', '00:00:04,000 --> 00:00:05,500', '（门铃响）', '',
-    '3', '00:00:06,000 --> 00:00:08,000', '<i>♪ 月亮代表我的心 ♪', 'The moon represents my heart</i>', '',
+    '2', '00:00:04,000 --> 00:00:05,500', '{\\an8}（门铃响）', '',
+    '3', '00:00:06,000 --> 00:00:08,000', '<i>♪ 晚风轻轻吹过窗台 ♪', 'The evening breeze drifts past the window</i>', '',
     '4', '00:00:09,000 --> 00:00:10,000', '翻译：字幕组', '',
-    '5', '00:00:11,000 --> 00:00:12,000', 'EXIT', '',
+    '5', '00:00:11,000 --> 00:00:12,000', '{\\an8}EXIT', '',
     '6', '00:00:13,000 --> 00:00:14,000', '并不是这样合作的。', '',
   ].join('\n');
   assert.equal(generateSrtContent(rows, {}), expectedSrt, 'SRT golden sample');
@@ -2440,6 +2470,356 @@ const { smartLineWrap, stripAssDrawingCommands } = require(join(outDir, 'utils/s
     const out = smartLineWrap(line, true, 12);
     assert.ok(out.includes('\\N'), `${line} should wrap`);
     assert.ok(out.replace('\\N', '').includes(word) && out.split('\\N').some((part) => part.includes(word)), `${word} must not be split: ${out}`);
+  }
+}
+
+// §G smart line-wrapping by rendered width (src/utils/lineWrap.ts).
+{
+  const px = 100; // 1 CJK glyph = 100 px
+  const W = (glyphs) => glyphs * px;
+  const wrap = (text, glyphs) => wrapSingleLine(text, { fontPx: px, maxWidth: W(glyphs) });
+  const noSpace = (value) => value.replace(/\s+/g, '');
+  const words = (value) => value.split(/\s+/).filter(Boolean);
+
+  // Width table: CJK / full-width = 1em, Latin proportional, tags are zero width.
+  assert.equal(glyphWidthEm('中'.codePointAt(0)), 1);
+  assert.equal(glyphWidthEm('，'.codePointAt(0)), 1);
+  assert.equal(glyphWidthEm('あ'.codePointAt(0)), 1);
+  assert.equal(glyphWidthEm('한'.codePointAt(0)), 1);
+  assert.ok(glyphWidthEm('i'.codePointAt(0)) < glyphWidthEm('W'.codePointAt(0)), 'Latin is proportional');
+  assert.equal(estimateTextWidth('{\\an8}<i>你好</i>', px), 200, 'ASS override blocks and SRT tags have no width');
+  assert.ok(estimateTextWidth('iPhone', px) < 4 * px, 'Latin word narrower than the same count of CJK glyphs');
+
+  // Lines that fit are never touched.
+  const short = wrap('我们合作吧，这并不是你想的那样。', 18);
+  assert.deepEqual(short.lines, ['我们合作吧，这并不是你想的那样。']);
+  assert.equal(short.changed, false);
+  assert.equal(short.overflow, false);
+  // Mixed: 17 characters by count, ~14.1em by width → fits in 15 glyphs.
+  assert.equal(wrap('我昨天买了一台新的iPhone手机', 15).lines.length, 1, 'Latin measured by width, not char count');
+
+  // Chinese: punctuation preferred over the exact middle; ≤2 lines; content preserved.
+  const zh1 = wrap('我们合作吧，这并不是你想的那样，你明白吗我的朋友。', 18);
+  assert.equal(zh1.lines.length, 2);
+  assert.ok(zh1.lines[0].endsWith('，'), `break after a comma: ${zh1.lines}`);
+  assert.equal(noSpace(zh1.lines.join('')), '我们合作吧，这并不是你想的那样，你明白吗我的朋友。');
+  // Chinese pause space（官方字幕常用空格代替逗号 / 原字幕换行被拼成空格）is a preferred break; the space is dropped.
+  assert.deepEqual(wrap('我今天早上出门的时候 发现钥匙忘在家里了', 18).lines, ['我今天早上出门的时候', '发现钥匙忘在家里了']);
+  assert.deepEqual(wrap('我不知道 你在说什么 但是我会一直等你回来的', 16).lines, ['我不知道 你在说什么', '但是我会一直等你回来的']);
+  // Never split Latin words / numbers inside Chinese.
+  for (const [line, token] of [
+    ['我昨天在商店里买了一台新的iPhone手机给妈妈当生日礼物', 'iPhone'],
+    ['他们说这部电影是在2026年拍完的最后一部作品真的很可惜', '2026'],
+    ['这个价格是1,234.56元，比上个月涨了不少你知道吗朋友', '1,234.56'],
+  ]) {
+    const out = wrap(line, 15);
+    assert.equal(out.lines.length, 2, `${line} wraps`);
+    assert.ok(out.lines.some((part) => part.includes(token)), `${token} must stay whole: ${out.lines}`);
+  }
+  // Kinsoku: no closing punctuation at line start, no opening bracket at line end.
+  for (const line of [
+    '「你到底在说什么？」他问道，然后转身离开了房间去找别人。',
+    '他说（其实我早就知道了）这件事情根本就不是他做的吧。',
+    '这真的是太好了！！我们终于成功了！！大家辛苦了！！',
+    '我觉得……这样做不太好吧……你再想想看好不好……',
+  ]) {
+    const out = wrap(line, 15);
+    for (const part of out.lines.slice(1)) assert.ok(!/^[，。！？、；：」』）】》…]/.test(part), `no forbidden line start: ${out.lines}`);
+    for (const part of out.lines.slice(0, -1)) assert.ok(!/[「『（【《]$/.test(part), `no forbidden line end: ${out.lines}`);
+    assert.equal(noSpace(out.lines.join('')), noSpace(line));
+  }
+  // No single-glyph orphan line.
+  const orphanCase = wrap('我们这次一定要成功不然一切都完了啊', 16);
+  assert.ok(orphanCase.lines.every((part) => [...part].length > 1), `no orphan: ${orphanCase.lines}`);
+  // Balanced, pyramid-leaning.
+  const balanced = wrap('这是一句没有任何标点符号但是非常非常长的中文字幕台词', 16);
+  const [b1, b2] = balanced.lines.map((part) => [...part].length);
+  assert.ok(Math.abs(b1 - b2) <= 2 && b1 <= b2, `balanced: ${balanced.lines}`);
+
+  // English: clause > conjunction > plain gap; words never split; balanced; dangling article avoided.
+  const enLine = 'I told you that we should have left before the storm came in, but nobody listened to me.';
+  const en1 = wrapSingleLine(enLine, { fontPx: 50, maxWidth: 1460 });
+  assert.equal(en1.lines.length, 2);
+  assert.deepEqual(words(en1.lines.join(' ')), words(enLine), 'English words preserved');
+  assert.ok(en1.lines.every((part) => estimateTextWidth(part, 50) <= 1460));
+  const en2 = wrapSingleLine('We need to leave right now, before they find out where we are hiding.', { fontPx: 50, maxWidth: 1100 });
+  assert.deepEqual(en2.lines, ['We need to leave right now,', 'before they find out where we are hiding.']);
+  const en3 = wrapSingleLine('She said she would meet us at the old train station after the concert ends tonight.', { fontPx: 50, maxWidth: 1100 });
+  assert.ok(!/\b(the|a|an|to|of|my|your)$/i.test(en3.lines[0]), `no dangling function word: ${en3.lines}`);
+  const mr = wrapSingleLine('I already gave the documents to Mr. Smith yesterday afternoon at the office.', { fontPx: 50, maxWidth: 1000 });
+  assert.ok(!mr.lines[0].endsWith('Mr.'), `never break after an honorific: ${mr.lines}`);
+
+  // Long URLs / numbers are atomic: overflow is reported, never split, never a third line.
+  const url = 'Go to https://www.example.com/a/very/long/url/that/never/ends/at/all/ok now';
+  const urlOut = wrapSingleLine(url, { fontPx: 50, maxWidth: 900 });
+  assert.ok(urlOut.lines.length <= 2);
+  assert.ok(urlOut.lines.some((part) => part.includes('https://www.example.com/a/very/long/url/that/never/ends/at/all/ok')));
+  assert.equal(urlOut.overflow, true);
+  const zhUrl = wrap('请访问 https://example.com/very/long/path?query=1234567890 获取更多信息和下载地址', 14);
+  assert.ok(zhUrl.lines.some((part) => part.includes('https://example.com/very/long/path?query=1234567890')));
+  assert.equal(zhUrl.lines.length, 2);
+  const digits = wrapSingleLine('Account 12345678901234567890123456789012345678901234567890', { fontPx: 50, maxWidth: 600 });
+  assert.ok(digits.lines.some((part) => part === '12345678901234567890123456789012345678901234567890'));
+  assert.ok(digits.overflow);
+  const tooLong = wrap('这是一句真的非常非常非常非常非常非常非常非常非常非常非常非常长的台词，长到两行也放不下。', 12);
+  assert.equal(tooLong.lines.length, 2, 'never more than two lines');
+  assert.equal(tooLong.overflow, true, 'overflow flagged for review instead of a third line');
+
+  // Japanese / Korean.
+  const ja = wrap('これは日本語の字幕です。ちょっと長いですが、ちゃんと折り返されますか。', 22);
+  assert.equal(ja.lines.length, 2);
+  assert.ok(!/^[ゃゅょっー、。]/.test(ja.lines[1]), `ja kinsoku: ${ja.lines}`);
+  const ko = wrap('안녕하세요 저는 학생입니다 만나서 정말 반갑습니다 오늘 날씨가 정말 좋네요', 20);
+  assert.equal(ko.lines.length, 2);
+  assert.deepEqual(words(ko.lines.join(' ')), words('안녕하세요 저는 학생입니다 만나서 정말 반갑습니다 오늘 날씨가 정말 좋네요'), 'Korean eojeol never split');
+
+  // Latin languages: accents measured, NBSP before French punctuation never broken, ¿¡« stay attached.
+  for (const line of [
+    'No sé si vamos a llegar a tiempo, pero ¿por qué no lo intentamos de todas formas?',
+    'Eu não sei se vamos chegar a tempo, mas podemos tentar mesmo assim, não é?',
+    'Je ne sais pas si on arrivera à l\u2019heure, mais pourquoi ne pas essayer quand même\u00a0?',
+  ]) {
+    const out = wrapSingleLine(line, { fontPx: 50, maxWidth: 1100 });
+    assert.equal(out.lines.length, 2, `${line} wraps`);
+    assert.deepEqual(words(out.lines.join(' ')), words(line), 'Latin words never split');
+    assert.ok(!/^[?!:;\u00a0]/.test(out.lines[1]), `no line starts with detached punctuation: ${out.lines}`);
+    assert.ok(!/[¿¡«]$/.test(out.lines[0]), `no opening mark left dangling: ${out.lines}`);
+  }
+
+  // Inline tags stay attached and never count toward width.
+  const tagged = wrapSingleLine('{\\fnArial\\fs14}I left my keys at home this morning, so I waited outside.', { fontPx: 50, maxWidth: 900 });
+  assert.ok(tagged.lines[0].startsWith('{\\fnArial\\fs14}'));
+  assert.equal(tagged.lines.length, 2);
+
+  // Source line breaks: kept when they fit; re-flowed into ≤2 balanced lines when they overflow.
+  assert.deepEqual(wrapSubtitleBlock(['你好', '世界'], { fontPx: px, maxWidth: W(16) }), { lines: ['你好', '世界'], changed: false, overflow: false });
+  assert.deepEqual(wrapSubtitleBlock(['I know.', 'You told me.'], { fontPx: 50, maxWidth: 1400 }).lines, ['I know.', 'You told me.']);
+  const reflow = wrapSubtitleBlock(['这是一个非常非常长的第一行字幕内容需要', '重新排版'], { fontPx: px, maxWidth: W(16) });
+  assert.equal(reflow.lines.length, 2);
+  assert.equal(reflow.lines.join(''), '这是一个非常非常长的第一行字幕内容需要重新排版', 'CJK source break joins without a space');
+  const three = wrapSubtitleBlock(['So I said', 'to him, look,', 'it is fine.'], { fontPx: 50, maxWidth: 1400 });
+  assert.ok(three.lines.length <= 2, '3 source lines → ≤2');
+  assert.deepEqual(words(three.lines.join(' ')), words('So I said to him, look, it is fine.'));
+  const dash = wrapSubtitleBlock(['- Where are you going this late at night? Tell me now.', '- Out.'], { fontPx: 50, maxWidth: 900 });
+  assert.deepEqual(dash.lines, ['- Where are you going this late at night? Tell me now.', '- Out.'], 'two-speaker dash lines never merged');
+  assert.equal(dash.overflow, true);
+
+  // Language blocks of a bilingual cue keep their own source breaks.
+  assert.deepEqual(splitLanguageBlocks('你好\n世界\nHello\nworld'), [['你好', '世界'], ['Hello', 'world']]);
+  assert.deepEqual(splitLanguageBlocks('你好世界\n{\\fs14}Hello world'), [['你好世界'], ['{\\fs14}Hello world']]);
+  assert.deepEqual(splitLanguageBlocks('Hello\nworld'), [['Hello', 'world']]);
+  assert.deepEqual(splitLanguageBlocks('我们坐窗边吧\n窓際に座ろうよ。'), [['我们坐窗边吧'], ['窓際に座ろうよ。']], 'zh + ja never glued into one CJK block');
+  assert.deepEqual(splitLanguageBlocks('那我们早点出发\n그럼 우리 일찍 출발하자.'), [['那我们早点出发'], ['그럼 우리 일찍 출발하자.']], 'zh + ko split by script');
+  assert.deepEqual(splitLanguageBlocks('早上好\n今天天气还不错'), [['早上好', '今天天气还不错']]);
+}
+
+// P0-6: font names, ScaledBorderAndShadow, preset-driven default font.
+{
+  assert.equal(canonicalFontFamily('"Noto Sans SC"'), 'Noto Sans SC');
+  assert.equal(canonicalFontFamily("'PingFang SC'"), 'PingFang SC');
+  assert.equal(canonicalFontFamily('PingFangSC-Regular'), 'PingFang SC');
+  assert.equal(canonicalFontFamily('HelveticaNeue-Bold'), 'Helvetica Neue');
+  assert.equal(canonicalFontFamily('Noto Sans CJK SC Bold'), 'Noto Sans CJK SC');
+  assert.equal(canonicalFontFamily('微软雅黑'), 'Microsoft YaHei');
+  assert.equal(canonicalFontFamily('Times New Roman'), 'Times New Roman');
+  assert.equal(canonicalFontFamily('Arial Black'), 'Arial Black');
+  assert.equal(canonicalFontFamily('system-ui'), '');
+  assert.equal(canonicalFontFamily('var(--font-geist)'), '');
+  assert.equal(normalizeAssFontName('system-ui, sans-serif', 'PingFang SC'), 'PingFang SC');
+  assert.equal(normalizeAssFontName('-apple-system, BlinkMacSystemFont, "Noto Sans SC", sans-serif', 'X'), 'Noto Sans SC', 'skip generic entries, take the first concrete family');
+  assert.equal(normalizeAssFontName('"Helvetica Neue", Arial, sans-serif', 'Arial'), 'Helvetica Neue');
+  assert.equal(normalizeAssFontName(undefined, 'Noto Sans CJK SC'), 'Noto Sans CJK SC');
+  assert.equal(normalizeAssFontName('Evil,Name\r\nStyle: x', 'Arial'), 'Evil', 'no comma / newline injection into the Style line');
+
+  const rows = [{ index: 1, ts: '00:00:01,000 --> 00:00:02,000', text: '你好\nHello', type: 'merged', cueKind: 'dialogue' }];
+  const legacy = generateAssContent(rows, { zhFontSize: 20, enFontSize: 12, zhFontFamily: 'system-ui, sans-serif', enFontFamily: 'system-ui' });
+  assert.match(legacy, /^ScaledBorderAndShadow: yes$/m);
+  assert.match(legacy, /^Style: Han,PingFang SC,/m, 'legacy default zh font');
+  assert.match(legacy, /^Style: EN,Arial,/m, 'legacy default en font');
+  const libass = getExportPreset('libass-ass');
+  const libassAss = generateAssContent(rows, resolvePresetStyle({ zhFontSize: 30, enFontSize: 20, zhFontFamily: '"Noto Sans SC"' }, libass), 'T', undefined, { profile: libass.profile });
+  assert.match(libassAss, /^Style: Han,Noto Sans CJK SC,75,/m, 'libass preset fixes font + size');
+  assert.match(libassAss, /^Style: EN,Arial,45,/m);
+  const noFamily = generateAssContent(rows, { zhFontSize: 20, enFontSize: 12 }, 'T', undefined, { profile: libass.profile });
+  assert.match(noFamily, /^Style: Han,Noto Sans CJK SC,/m, 'default font driven by preset profile');
+}
+
+// P0-7: export presets v1 + naming.
+{
+  assert.equal(DEFAULT_EXPORT_PRESET_ID, 'current', 'Default preset stays legacy until Derek decides (§E-4)');
+  assert.deepEqual(EXPORT_PRESET_ORDER, ['current', 'plex-srt', 'libass-ass', 'generic-srt']);
+  assert.equal(getExportPreset('nope').id, 'current');
+  assert.deepEqual(EXPORT_PRESETS['plex-srt'].formats, ['srt']);
+  assert.deepEqual(EXPORT_PRESETS['libass-ass'].formats, ['ass']);
+  assert.deepEqual(EXPORT_PRESETS['generic-srt'].formats, ['srt']);
+  assert.deepEqual(EXPORT_PRESETS.current.formats, ['ass', 'srt']);
+
+  const rows = [
+    { index: 1, ts: '00:00:01,000 --> 00:00:03,000', text: '我今天早上出门的时候 发现钥匙忘在家里了\nI left my keys at home this morning, so I waited outside for an hour.', type: 'merged', cueKind: 'dialogue' },
+    { index: 2, ts: '00:00:04,000 --> 00:00:05,000', text: 'EXIT', type: 'dialogue', cueKind: 'screen_text' },
+    { index: 3, ts: '00:00:06,000 --> 00:00:08,000', text: '♪ 晚风轻轻吹过窗台 ♪\n<i>The evening breeze drifts past the window</i>', type: 'lyrics', cueKind: 'lyrics' },
+  ];
+  // Legacy ('当前样式') SRT: no rewrap; keeps {\an8} for top-placed cues (Derek, PR #36 review).
+  assert.equal(generateSrtContent(rows, {}), [
+    '1', '00:00:01,000 --> 00:00:03,000', '我今天早上出门的时候 发现钥匙忘在家里了', 'I left my keys at home this morning, so I waited outside for an hour.', '',
+    '2', '00:00:04,000 --> 00:00:05,000', '{\\an8}EXIT', '',
+    '3', '00:00:06,000 --> 00:00:08,000', '<i>♪ 晚风轻轻吹过窗台 ♪', 'The evening breeze drifts past the window</i>', '',
+  ].join('\n'));
+  const report = createWrapReport();
+  const plex = generateSrtContent(rows, {}, { profile: EXPORT_PRESETS['plex-srt'].profile, report });
+  assert.equal(plex, [
+    '1', '00:00:01,000 --> 00:00:03,000', '我今天早上出门的时候', '发现钥匙忘在家里了', 'I left my keys at home this morning,', 'so I waited outside for an hour.', '',
+    '2', '00:00:04,000 --> 00:00:05,000', '{\\an8}EXIT', '',
+    '3', '00:00:06,000 --> 00:00:08,000', '<i>♪ 晚风轻轻吹过窗台 ♪', 'The evening breeze drifts past the window</i>', '',
+  ].join('\n'), 'Plex SRT: wrap by width, keep {\\an8}');
+  assert.equal(report.rewrapped, 1);
+  assert.equal(report.overflow, 0);
+  const generic = generateSrtContent(rows, {}, { profile: EXPORT_PRESETS['generic-srt'].profile });
+  assert.ok(!/[{<]/.test(generic), 'Generic SRT carries no tags at all');
+  assert.match(generic, /^♪ 晚风轻轻吹过窗台 ♪$/m);
+
+  // Filenames.
+  assert.equal(buildExportFilename('Sample Show S01E02', 'srt', 'plain'), 'Sample Show S01E02.srt');
+  assert.equal(buildExportFilename('Sample Show S01E02', 'srt', 'plex'), 'Sample Show S01E02.zh.srt');
+  assert.equal(buildExportFilename('Sample Show S01E02', 'srt', 'plex-sdh'), 'Sample Show S01E02.zh.sdh.srt');
+  assert.equal(buildExportFilename('Sample Show S01E02', 'ass', 'plex-forced'), 'Sample Show S01E02.zh.forced.ass');
+  assert.equal(buildExportFilename('Movie (2010)', 'ass', 'jellyfin'), 'Movie (2010).zh-Hans.ass');
+  assert.equal(buildExportFilename('Movie (2010)', 'ass', 'jellyfin', { traditional: true }), 'Movie (2010).zh-Hant.ass');
+  assert.equal(buildExportFilename('Movie (2010)', 'srt', 'infuse-sdh'), 'Movie (2010).zh-Hans.sdh.srt');
+  assert.equal(buildExportFilename('Movie', 'ass', 'generic'), 'Movie.zh-Hans.en.ass');
+  assert.equal(buildExportFilename('a/b:c?', 'srt', 'unknown-id'), 'a b c.srt', 'unsafe characters stripped; unknown naming → plain');
+  assert.equal(buildExportFilename('', 'srt', 'plex'), 'subtitles.zh.srt');
+}
+
+// Synthetic edge packs (scripts/fixtures/encoding, golden/everyday-ass-styled) — generated by
+// scripts/fixtures/build-fixtures.py; everyday dialogue only, no real subtitle excerpts.
+{
+  const fx = (name) => join(process.cwd(), 'scripts/fixtures', name);
+  for (const [file, encoding, note] of [
+    ['zh-hans.gbk.srt', 'gbk', 'ANSI (GBK) Simplified Chinese'],
+    ['zh-hant.big5.srt', 'big5', 'Big5 Traditional Chinese'],
+    ['zh-hant-in-gbk.gbk.srt', 'gbk', 'Traditional characters stored as GBK must not be read as Big5'],
+    ['ja.shift-jis.srt', 'shift_jis', 'Shift-JIS Japanese'],
+    ['ko.euc-kr.srt', 'euc-kr', 'EUC-KR Korean'],
+  ]) {
+    const decoded = decodeBufferP0(readFileSync(fx(`encoding/${file}`)));
+    assert.equal(decoded.encoding, encoding, `${file}: ${note}`);
+    const sibling = fx(`encoding/${file.replace(/\.[^.]+\.srt$/, '.utf8.srt')}`);
+    assert.equal(decoded.text.replace(/\r\n/g, '\n'), readFileSync(sibling, 'utf8').replace(/\r\n/g, '\n'), `${file}: decode equals the UTF-8 sibling`);
+    assert.ok(parseSubtitle(decoded.text).length >= 4, `${file}: parses into cues`);
+  }
+
+  const ass = parseSubtitle(readFileSync(fx('golden/everyday-ass-styled/zh.ass'), 'utf8'));
+  assert.ok(!ass.some((row) => row.text.includes('注释')), 'Comment events are not imported');
+  assert.ok(ass.every((row) => !/\{\\|\\pos|\\fad|\\p1|^m \d/.test(row.text)), 'override tags / drawings never leak into text');
+  const sign = ass.find((row) => row.text.startsWith('便利店'));
+  assert.ok(sign, 'styled sign parsed');
+  assert.equal(sign.text.split('\n').length, 3, 'ASS \\N source breaks preserved through parse');
+  assert.equal(sign.cueKind, 'screen_text', '\\an8 sign classified as screen text');
+  const preset = EXPORT_PRESETS['libass-ass'];
+  const exported = generateAssContent(ass.map((row, idx) => ({ ...row, index: idx + 1, type: row.cueKind === 'screen_text' ? 'note' : 'dialogue' })), resolvePresetStyle(useStudioStore.getState().customStyle, preset), 'Styled', undefined, { profile: preset.profile });
+  const signLine = exported.split('\n').find((line) => line.includes('便利店'));
+  assert.ok(signLine.includes('{\\an8}'), 'sign stays top-placed');
+  assert.equal(signLine.split('\\N').length, 3, `3-line sign keeps its layout (signs are never squeezed to 2 lines): ${signLine}`);
+  const longLine = exported.split('\n').find((line) => line.includes('河边骑车'));
+  assert.ok(longLine && longLine.split('\\N').length === 2, `long unpunctuated line wraps to 2 lines: ${longLine}`);
+  const threeLine = exported.split('\n').find((line) => line.includes('七点半'));
+  assert.ok(threeLine && threeLine.split('\\N').length <= 2, `3-line dialogue re-flows to ≤2 lines: ${threeLine}`);
+}
+
+// P0-7 bundle download: ASS always, SRT add-ons optional, >1 file → one zip named from the same rule.
+{
+  const single = planExportBundle('Sample Show S01E02', 'plex', 'current', []);
+  assert.deepEqual(single, { files: [{ presetId: 'current', format: 'ass', filename: 'Sample Show S01E02.zh.ass' }], zipName: null });
+  const bundle = planExportBundle('Sample Show S01E02', 'infuse', 'libass-ass', ['generic-srt', 'current', 'nope']);
+  assert.deepEqual(bundle.files, [
+    { presetId: 'libass-ass', format: 'ass', filename: 'Sample Show S01E02.zh-Hans.ass' },
+    { presetId: 'current', format: 'srt', filename: 'Sample Show S01E02.zh-Hans.srt' },
+    { presetId: 'generic-srt', format: 'srt', filename: '通用 SRT/Sample Show S01E02.zh-Hans.srt' },
+  ], 'addon order fixed; first SRT sits next to the ASS, extra variants go into labelled folders');
+  assert.equal(bundle.zipName, 'Sample Show S01E02.zh-Hans.zip');
+  assert.equal(planExportBundle('Movie', 'jellyfin', 'plex-srt', ['plex-srt'], { traditional: true }).files[0].presetId, 'current', 'SRT-only preset is never used for the ASS');
+  assert.equal(planExportBundle('Movie', 'jellyfin', 'current', ['plex-srt'], { traditional: true }).zipName, 'Movie.zh-Hant.zip');
+  assert.deepEqual(ASS_PRESET_IDS, ['current', 'libass-ass']);
+  assert.deepEqual(SRT_ADDON_IDS, ['current', 'plex-srt', 'generic-srt']);
+}
+
+// End-to-end golden samples: synthetic everyday tracks → parse → align → export (ASS + SRT, every preset).
+// Fixtures: scripts/fixtures/golden/<sample>/{zh + en|ja|ko|fr|es|pt}.(srt|ass) or bilingual.(srt|ass),
+// generated by scripts/fixtures/build-fixtures.py (no real subtitle excerpts). Add a <sample> directory
+// and run with UPDATE_GOLDEN=1 to record its snapshots; review the diff before committing.
+{
+  const goldenRoot = join(process.cwd(), 'scripts/fixtures/golden');
+  const update = process.env.UPDATE_GOLDEN === '1';
+  const baseStyle = useStudioStore.getState().customStyle;
+  const pickTrack = (dir, lang) => ['srt', 'ass'].map((ext) => join(dir, `${lang}.${ext}`)).find((file) => existsSync(file));
+  const samples = readdirSync(goldenRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+  assert.ok(samples.length >= 3, 'at least three golden samples');
+  const firstDiff = (actual, expected) => {
+    const a = actual.split('\n');
+    const e = expected.split('\n');
+    for (let i = 0; i < Math.max(a.length, e.length); i++) {
+      if (a[i] !== e[i]) return `line ${i + 1}\n  expected: ${e[i]}\n  actual:   ${a[i]}`;
+    }
+    return 'identical';
+  };
+  for (const sample of samples) {
+    const dir = join(goldenRoot, sample);
+    // Tracks are decoded exactly like the app does (decodeBuffer: UTF-8/16, GBK, Big5, SJIS, EUC-KR).
+    const readTrack = (file) => decodeBufferP0(readFileSync(file)).text;
+    const zhFile = pickTrack(dir, 'zh');
+    const enFile = ['en', 'ja', 'ko', 'fr', 'es', 'pt'].map((lang) => pickTrack(dir, lang)).find(Boolean);
+    const bilingualFile = pickTrack(dir, 'bilingual');
+    let rows;
+    if (zhFile && enFile) {
+      rows = alignSubtitlesIndustrial(parseSubtitle(readTrack(zhFile)), parseSubtitle(readTrack(enFile)));
+    } else if (bilingualFile) {
+      rows = normalizeSingleBilingualRows(parseSubtitle(readTrack(bilingualFile))); // single bilingual file path
+    } else {
+      continue;
+    }
+    assert.ok(rows.length >= 4, `${sample}: produced rows (${rows.length})`);
+    const summary = { rows: rows.length, merged: rows.filter((row) => row.type === 'merged').length, presets: {} };
+    const outputs = {};
+    for (const presetId of EXPORT_PRESET_ORDER) {
+      const preset = EXPORT_PRESETS[presetId];
+      const style = resolvePresetStyle(baseStyle, preset);
+      for (const format of preset.formats) {
+        const report = createWrapReport();
+        const content = format === 'ass'
+          ? generateAssContent(rows, style, sample, undefined, { profile: preset.profile, report })
+          : generateSrtContent(rows, style, { profile: preset.profile, report });
+        outputs[`${presetId}.${format}`] = content;
+        summary.presets[`${presetId}.${format}`] = { rewrapped: report.rewrapped, overflow: report.overflow };
+      }
+    }
+    outputs['summary.json'] = `${JSON.stringify(summary, null, 2)}\n`;
+    const expectedDir = join(dir, 'expected');
+    if (update) mkdirSync(expectedDir, { recursive: true });
+    for (const [name, content] of Object.entries(outputs)) {
+      const file = join(expectedDir, name);
+      if (update) {
+        writeFileSync(file, content);
+        continue;
+      }
+      assert.ok(existsSync(file), `${sample}/expected/${name} missing — run UPDATE_GOLDEN=1 npm run test:core`);
+      const expected = readFileSync(file, 'utf8');
+      assert.ok(content === expected, `${sample}/${name} golden mismatch at ${firstDiff(content, expected)}`);
+    }
+
+    // Invariants, independent of the snapshots.
+    const plexSrt = outputs['plex-srt.srt'];
+    for (const block of plexSrt.trim().split(/\n\n/)) {
+      const lines = block.split('\n').slice(2);
+      if (lines[0]?.startsWith('{\\an8}')) continue; // signs keep their deliberate multi-line layout
+      for (const part of splitLanguageBlocks(lines.join('\n'))) assert.ok(part.length <= 2, `${sample}: ≤2 lines per language\n${block}`);
+      for (const line of lines) assert.ok(!/^[，。！？、；：」』）]/.test(line), `${sample}: kinsoku\n${block}`);
+    }
+    const strip = (value) => value.replace(/\{[^}]*\}|<\/?i>/g, '').replace(/\s+/g, '');
+    const wordsOf = (content) => content.split('\n').filter((line) => !/-->|^\d+$/.test(line)).join(' ').replace(/\{[^}]*\}|<\/?i>/g, ' ').split(/\s+/).filter(Boolean);
+    assert.equal(strip(outputs['plex-srt.srt'].replace(/^\d+\n.*-->.*$/gm, '')), strip(outputs['current.srt'].replace(/^\d+\n.*-->.*$/gm, '')), `${sample}: wrapping never drops or alters characters`);
+    assert.deepEqual(wordsOf(outputs['plex-srt.srt']).filter((w) => /^[A-Za-z]/.test(w)), wordsOf(outputs['current.srt']).filter((w) => /^[A-Za-z]/.test(w)), `${sample}: Latin words never split`);
+    assert.equal(summary.presets['current.srt'].rewrapped, 0, `${sample}: legacy SRT never rewraps`);
   }
 }
 

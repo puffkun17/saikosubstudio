@@ -1,0 +1,19 @@
+1
+00:00:01,000 --> 00:00:03,000
+你能帮我拿一下那个盒子吗
+Tu peux me passer cette boîte ?
+
+2
+00:00:03,500 --> 00:00:06,000
+当然可以 放在哪里
+Bien sûr. Je la mets où ?
+
+3
+00:00:06,500 --> 00:00:10,500
+放在门口的桌子上就好 等一下我下楼的时候顺便带走
+Pose-la sur la table près de l'entrée, je la prendrai en descendant tout à l'heure, d'accord ?
+
+4
+00:00:11,000 --> 00:00:13,000
+没问题！
+« Pas de problème ! »

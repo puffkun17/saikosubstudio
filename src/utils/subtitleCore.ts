@@ -16,6 +16,18 @@ export {
   smartDetectTitle,
 } from './mediaIdentity';
 export { OFFSET_DIAGNOSIS_POLICY, type GlobalOffsetDiagnosis } from './timeline/offsetDiagnosis';
+import {
+  estimateTextWidth,
+  hasCjk,
+  splitLanguageBlocks,
+  stripInlineTags,
+  wrapSubtitleBlock,
+} from './lineWrap';
+import {
+  LEGACY_EXPORT_PROFILE,
+  normalizeAssFontName,
+  type ExportProfile,
+} from './exportPresets';
 
 export type CueKind = 'dialogue' | 'screen_text' | 'sound_caption' | 'narration' | 'lyrics' | 'commentary' | 'credit' | 'unknown';
 export type AuxiliaryCueCategory = 'ambient_sdh' | 'semantic_sdh' | 'screen_text' | 'music' | 'speech_context' | 'unknown';
@@ -327,90 +339,21 @@ export function detectSubtitleLanguage(name: string, text: string): SubtitleLang
     : { lang, isBilingual };
 }
 
-const isLatinOrDigit = (ch: string | undefined): boolean => Boolean(ch && /[A-Za-z0-9]/.test(ch));
-
 /**
- * Middle cut for a Chinese line without punctuation: never split inside a Latin word or
- * number (e.g.「iPhone」「2026」); move to the nearest word boundary within 25%–75%.
- */
-function findChineseFallbackBreak(line: string): number {
-  const middle = Math.ceil(line.length / 2);
-  const isInsideWord = (i: number) => isLatinOrDigit(line[i - 1]) && isLatinOrDigit(line[i]);
-  if (!isInsideWord(middle)) return middle;
-  const min = Math.ceil(line.length * 0.25);
-  const max = Math.floor(line.length * 0.75);
-  for (let delta = 1; delta <= line.length; delta++) {
-    for (const candidate of [middle - delta, middle + delta]) {
-      if (candidate >= min && candidate <= max && !isInsideWord(candidate)) return candidate;
-    }
-    if (middle - delta < min && middle + delta > max) break;
-  }
-  return middle;
-}
-
-/**
- * Line wrap text intelligently.
+ * Character-count line wrap (legacy API; kept for callers/tests that think in characters).
+ * Delegates to the width-based engine in ./lineWrap with a 1-unit-per-character measure, so it
+ * gets the same break rules: ≤2 balanced lines, punctuation first, kinsoku, never splitting
+ * Latin words / numbers / URLs. Exports use the rendered-width path (see generateAssContent).
  */
 export function smartLineWrap(text: string, isChinese = true, maxChars = 20): string {
   if (!text) return "";
-  const lines = text.split('\n');
-  const wrappedLines = lines.map(line => {
-    if (isChinese) {
-      if (line.length <= maxChars) return line;
-      
-      const breakRegex = /[，。！？；、\s]/g;
-      let match;
-      const breakPoints: number[] = [];
-      while ((match = breakRegex.exec(line)) !== null) {
-        breakPoints.push(match.index);
-      }
-      
-      const center = line.length / 2;
-      let bestBreakPoint = -1;
-      let minDistance = Infinity;
-      
-      for (const bp of breakPoints) {
-        const ratio = bp / line.length;
-        if (ratio >= 0.25 && ratio <= 0.75) {
-          const distance = Math.abs(bp - center);
-          if (distance < minDistance) {
-            minDistance = distance;
-            bestBreakPoint = bp;
-          }
-        }
-      }
-      
-      if (bestBreakPoint !== -1) {
-        const breakIndex = bestBreakPoint + 1;
-        return line.slice(0, breakIndex) + "\\N" + line.slice(breakIndex).trim();
-      }
-      
-      const breakIndex = findChineseFallbackBreak(line);
-      return line.slice(0, breakIndex) + "\\N" + line.slice(breakIndex).trim();
-    } else {
-      // maxChars is a per-line character budget (maxLenEn). It used to be multiplied by 3,
-      // so English effectively never wrapped below ~240 characters.
-      const limit = Math.max(1, maxChars);
-      if (line.length <= limit) return line;
-      const words = line.split(/\s+/).filter(Boolean);
-      const result: string[] = [];
-      let currentLine = '';
-
-      for (const word of words) {
-        if (!currentLine) {
-          currentLine = word;
-        } else if (currentLine.length + 1 + word.length > limit) {
-          result.push(currentLine);
-          currentLine = word;
-        } else {
-          currentLine += ' ' + word;
-        }
-      }
-      if (currentLine) result.push(currentLine);
-      return result.join('\\N');
-    }
-  });
-  return wrappedLines.join('\\N');
+  void isChinese; // script is detected per character by the engine
+  const measure = (value: string) => [...stripInlineTags(value)].length;
+  const limit = Math.max(1, maxChars);
+  return text
+    .split('\n')
+    .map((line) => wrapSubtitleBlock([line], { fontPx: 1, maxWidth: limit, measure }).lines.join('\\N'))
+    .join('\\N');
 }
 
 /**
@@ -2301,16 +2244,78 @@ export function applyAuxiliarySubtitleMode(subs: SubRow[], mode: AuxiliarySubtit
     .map((sub, index) => ({ ...sub, index: index + 1 }));
 }
 
-export function generateSrtContent(subs: SubRow[], styleSettings?: StyleSettings): string {
-  const { lyricItalic = true, auxiliaryMode = 'keep' } = styleSettings || {};
+export interface WrapReport {
+  /** Cues whose line structure was changed by smart wrapping. */
+  rewrapped: number;
+  /** Cues that still overflow two lines at the preset width (surface for review). */
+  overflow: number;
+  overflowIndexes: number[];
+}
+
+export const createWrapReport = (): WrapReport => ({ rewrapped: 0, overflow: 0, overflowIndexes: [] });
+
+export interface ExportRunOptions {
+  /** Export preset profile (fonts fallback, wrap policy, SRT rules). Defaults to legacy behaviour. */
+  profile?: ExportProfile;
+  /** Optional mutable counters filled while exporting. */
+  report?: WrapReport;
+}
+
+/** Average Latin advance (em) used to translate a legacy maxLenEn character budget into px. */
+const LATIN_AVERAGE_EM = 0.5;
+
+const isTopPlacedCue = (s: SubRow): boolean =>
+  s.type === "note" || s.type === "commentary" || s.cueKind === 'screen_text';
+
+/**
+ * Wrap each language block of a cue by rendered width. Returns the blocks' output lines.
+ * `params(isCjk, blockIndex)` supplies font px and available width for that block.
+ */
+function wrapCueBlocks(
+  text: string,
+  params: (isCjk: boolean, blockIndex: number) => { fontPx: number; maxWidth: number },
+  report: WrapReport | undefined,
+  index: number,
+  keepSourceLines = false,
+): string[][] {
+  let changed = false;
+  let overflow = false;
+  const blocks = splitLanguageBlocks(text).map((block, blockIndex) => {
+    const { fontPx, maxWidth } = params(block.some(hasCjk), blockIndex);
+    const result = wrapSubtitleBlock(block, { fontPx, maxWidth, measure: estimateTextWidth, keepSourceLines });
+    changed = changed || result.changed;
+    overflow = overflow || result.overflow;
+    return result.lines;
+  });
+  if (report) {
+    if (changed) report.rewrapped += 1;
+    if (overflow) {
+      report.overflow += 1;
+      report.overflowIndexes.push(index);
+    }
+  }
+  return blocks;
+}
+
+export function generateSrtContent(subs: SubRow[], styleSettings?: StyleSettings, options: ExportRunOptions = {}): string {
+  const { auxiliaryMode = 'keep' } = styleSettings || {};
+  const srt = (options.profile ?? LEGACY_EXPORT_PROFILE).srt;
+  const lyricItalic = srt.lyricItalic === 'style' ? (styleSettings?.lyricItalic ?? true) : srt.lyricItalic;
+  const maxWidth = Math.max(1, srt.frameWidth - 2 * srt.marginH);
   return applyAuxiliarySubtitleMode(subs, auxiliaryMode).map(s => {
     let text = s.text.replace(/\{\\[^}]+\}/g, '');
-    if (s.type === 'lyrics') {
-      if (lyricItalic) {
-        const cleanText = text.replace(/<\/?i>/g, '');
-        text = `<i>${cleanText}</i>`;
-      }
+    if (srt.plainText) text = stripInlineTags(text);
+    if (srt.wrap) {
+      text = wrapCueBlocks(text, (isCjk) => ({ fontPx: srt.fontPx, maxWidth: isCjk ? maxWidth * srt.cjkWidthRatio : maxWidth }), options.report, s.index, isTopPlacedCue(s))
+        .map((lines) => lines.join('\n'))
+        .filter(Boolean)
+        .join('\n');
     }
+    if (s.type === 'lyrics' && lyricItalic) {
+      const cleanText = text.replace(/<\/?i>/g, '');
+      text = `<i>${cleanText}</i>`;
+    }
+    if (srt.keepAn8 && isTopPlacedCue(s)) text = `{\\an8}${text}`;
     return `${s.index}\n${s.ts}\n${text}`;
   }).join("\n\n") + "\n";
 }
@@ -2320,7 +2325,9 @@ export function generateAssContent(
   styleSettings: StyleSettings,
   title = "Bilingual Subtitles",
   scriptMeta?: AssScriptMeta,
+  options: ExportRunOptions = {},
 ): string {
+  const profile = options.profile ?? LEGACY_EXPORT_PROFILE;
   const {
     zhFontSize = 22,
     enFontSize = 12,
@@ -2340,8 +2347,8 @@ export function generateAssContent(
     lyricItalic = true,
     lyricPosition = 'top',
     auxiliaryMode = 'keep',
-    zhFontFamily = 'PingFang SC',
-    enFontFamily = 'Helvetica Neue',
+    zhFontFamily,
+    enFontFamily,
   } = styleSettings || {};
 
   let resY = 1080;
@@ -2375,6 +2382,15 @@ export function generateAssContent(
   const mBaseMargin = Math.round(10 * m);
   const mLyricFont = Math.round(lyricFontSize * m);
   const mLyricEnFont = Math.round(Math.max(10, lyricFontSize * 0.75) * m);
+  const usableLineWidth = Math.max(1, resX - 2 * mBaseMargin);
+  const assLineWidth = (fontPx: number, isCjk: boolean): number => {
+    const { cjkWidthRatio, latinWidthRatio, legacyCharCap } = profile.assWrap;
+    let width = usableLineWidth * (isCjk ? cjkWidthRatio : latinWidthRatio);
+    if (legacyCharCap) {
+      width = Math.min(width, isCjk ? maxLenZh * fontPx : maxLenEn * fontPx * LATIN_AVERAGE_EM);
+    }
+    return width;
+  };
 
   // Convert Hex colors (e.g. #FFFFFF) to ASS Colors (e.g. &H00FFFFFF)
   const hexToAss = (hex: string): string => {
@@ -2398,13 +2414,10 @@ export function generateAssContent(
   const assZhOutline = hexToAss(zhOutline);
   const assEnOutline = hexToAss(enOutline);
   const assLyricColor = hexToAss(lyricColor);
-  const toAssFontName = (fontFamily: string, fallback: string): string => {
-    const firstFamily = fontFamily.split(',')[0]?.trim().replace(/^['"]|['"]$/g, '');
-    if (!firstFamily || /^(system-ui|sans-serif|serif|monospace)$/i.test(firstFamily)) return fallback;
-    return firstFamily.replace(/[\r\n,]/g, ' ').trim() || fallback;
-  };
-  const assZhFont = toAssFontName(zhFontFamily, 'PingFang SC');
-  const assEnFont = toAssFontName(enFontFamily, 'Arial');
+  // P0-6: English family name, no CSS quotes / generic families / weight suffixes; the fallback
+  // (when the style names no concrete family) is driven by the export preset.
+  const assZhFont = normalizeAssFontName(zhFontFamily, profile.fallbackZhFont);
+  const assEnFont = normalizeAssFontName(enFontFamily, profile.fallbackEnFont);
   const safeTitle = title.replace(/[\r\n]/g, ' ').trim() || 'Bilingual Subtitles';
   const safeOriginal = (scriptMeta?.originalScript || '').replace(/[\r\n]/g, ' ').trim();
   const safeUpdateDetails = (scriptMeta?.updateDetails || '').replace(/[\r\n]/g, ' ').trim();
@@ -2415,7 +2428,7 @@ export function generateAssContent(
   const header = `[Script Info]
 PlayResX: ${resX}
 PlayResY: ${resY}
-ScaledBorderAndShadow: no
+ScaledBorderAndShadow: yes
 ScriptType: v4.00+
 Title: ${safeTitle}
 ${safeOriginal ? `Original Script: ${safeOriginal}\n` : ''}${commentLines.map((line) => `Comment: ${line}`).join('\n')}${commentLines.length ? '\n' : ''}${safeUpdateDetails ? `Update Details: ${safeUpdateDetails}\n` : ''}
@@ -2455,27 +2468,33 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       style = /[一-龥]/.test(s.text) ? "Han" : "EN";
     }
 
-    let processedText = s.text;
-    if (s.type === "note" || s.type === "commentary" || s.cueKind === 'screen_text') {
-      if (!processedText.startsWith("{\\an8}")) {
-        processedText = "{\\an8}" + processedText;
-      }
+    let sourceText = s.text;
+    let topPlaced = isTopPlacedCue(s);
+    if (sourceText.startsWith("{\\an8}")) {
+      sourceText = sourceText.slice(6);
+      topPlaced = true;
     }
 
-    if (s.type === "lyrics" && s.text.includes('\n')) {
-      const [zh, en] = s.text.split('\n');
-      processedText = smartLineWrap(zh, true, maxLenZh) + "\\N{\\rLyrics_EN}" + smartLineWrap(en, false, maxLenEn);
-    } else if (s.type === "merged" && s.text.includes('\n')) {
-      const [zh, en] = s.text.split('\n');
-      processedText = smartLineWrap(zh, true, maxLenZh) + "\\N{\\rEN}" + smartLineWrap(en, false, maxLenEn);
+    // Smart wrap by rendered width: per-style font px against PlayResX − MarginL − MarginR.
+    const isPair = (s.type === "lyrics" || s.type === "merged") && sourceText.includes('\n');
+    const primaryPx = style === "Note" || style === "Credit" ? mNoteFont
+      : style === "Lyrics" ? mLyricFont
+      : style === "Lyrics_EN" ? mLyricEnFont
+      : style === "EN" ? mEnFont * enScale / 100
+      : mZhFont;
+    const secondaryPx = s.type === "lyrics" ? mLyricEnFont : mEnFont * enScale / 100;
+    const blocks = wrapCueBlocks(sourceText, (isCjk, blockIndex) => {
+      const fontPx = Math.max(1, isPair && blockIndex > 0 ? secondaryPx : primaryPx);
+      return { fontPx, maxWidth: assLineWidth(fontPx, isCjk) };
+    }, options.report, s.index, topPlaced);
+
+    let processedText: string;
+    if (isPair && blocks.length === 2) {
+      processedText = blocks[0].join("\\N") + `\\N{\\r${s.type === "lyrics" ? "Lyrics_EN" : "EN"}}` + blocks[1].join("\\N");
     } else {
-      if (processedText.startsWith("{\\an8}")) {
-        const actualText = processedText.slice(6);
-        processedText = "{\\an8}" + smartLineWrap(actualText, /[一-龥]/.test(actualText), maxLenZh);
-      } else {
-        processedText = smartLineWrap(processedText, /[一-龥]/.test(processedText), (style === "Han" || style === "Lyrics") ? maxLenZh : maxLenEn);
-      }
+      processedText = blocks.flat().join("\\N");
     }
+    if (topPlaced) processedText = "{\\an8}" + processedText;
 
     return `Dialogue: 0,${start},${end},${style},,0,0,0,,${processedText}`;
   });
