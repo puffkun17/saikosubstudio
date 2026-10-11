@@ -2,6 +2,19 @@
 
 Standalone bilingual subtitle alignment, merging, styling, and preview tool.
 
+> [!IMPORTANT]
+> **Which branch is which (read this before forking or opening a PR)**
+>
+> | Branch | What it is |
+> | --- | --- |
+> | **`cf-pages-hosted`** | **Production.** The live site [dualsubs.quest](https://dualsubs.quest) is built from this branch (Cloudflare Pages). All product work and PRs target it. |
+> | `main` | **Open-source self-host line.** A trimmed snapshot of `cf-pages-hosted` without private APIs / keys. It has no shared history with `cf-pages-hosted` and lags behind it. |
+>
+> GitHub's default branch is still `main`, so a fork or clone checks out `main` unless you pick otherwise.
+> **To work on or reproduce the live product, fork/clone `cf-pages-hosted`** (`git clone -b cf-pages-hosted …`,
+> or untick "Copy the main branch only" when forking). Fork `main` only if you want the self-hosted build.
+> 生产线上版本对应 `cf-pages-hosted` 分支；`main` 是开源自部署版。fork 时请选对分支。
+
 SaikoSubStudio focuses on three steps:
 
 - **Ingest**: load SRT / ASS files or ZIP / 7Z / RAR packages, classify tracks, and bind subtitle sources.
@@ -10,8 +23,8 @@ SaikoSubStudio focuses on three steps:
 
 ## Branches
 
-- `cf-pages-hosted` — public beta / hosted source of truth (product + merge algorithms).
-- `main` — open-source self-host line; derive behavior from hosted, then strip private APIs.
+- `cf-pages-hosted` — **production** (dualsubs.quest) / hosted source of truth (product + merge algorithms). PR base for product work.
+- `main` — open-source self-host line (default branch on GitHub); derive behavior from hosted, then strip private APIs.
 
 See [`docs/BRANCH_POLICY.md`](docs/BRANCH_POLICY.md). Current product scope: intelligent dual-track merge and human review assist — not translation.
 
@@ -20,6 +33,7 @@ See [`docs/BRANCH_POLICY.md`](docs/BRANCH_POLICY.md). Current product scope: int
 - Drag and drop SRT / ASS, folders, and locally extracted ZIP / 7Z / RAR archives.
 - Preflight hints for single-language subtitles, existing bilingual subtitles, supported formats, and unsafe or oversized imports.
 - Automatic language detection, bilingual track handling, commentary track support, and ASS style extraction.
+- Second language: English, Spanish, French (then Portuguese / German / Italian), Japanese or Korean next to Chinese; Latin diacritics (ñ ¿ ¡ é ç œ ß…) are covered by every preset's fonts (`python3 scripts/check-font-coverage.py`).
 - TMDB metadata lookup through the server proxy route.
 - Timeline controls, line preview, style presets, custom templates, and local project history.
 - Theater preview with fixed scene assets, TMDB backdrops, TV bezels, aspect ratio switching, lyrics mode, and guide overlays.

@@ -174,6 +174,70 @@ const NAVY_OUTLINE_STYLE: Partial<StyleSettings> = {
   enScale: 100,
 };
 
+/**
+ * Characters every second-language (Latin) font of every preset must render (Derek, PR #39 decision 1):
+ * Spanish first (ñ á é í ó ú ü ¿ ¡ and capitals), French (é è ê ë ç à â î ï ô û ù ÿ œ æ « » and capitals
+ * except the very rare Ÿ, which Source Han lacks — exports containing it switch font, see below),
+ * Portuguese ã õ, German ä ö ß, plus U+00A0 (French no-break space). U+202F is deliberately NOT here:
+ * Source Han Sans / Noto Sans CJK lack it, so exports convert it to U+00A0 (lineWrap.applyFrenchSpacing).
+ *
+ * Verified against the real font files' cmap with fontTools (`python3 scripts/check-font-coverage.py`):
+ * Noto Sans CJK SC/TC/JP/KR Regular + Bold (= Source Han Sans, same glyph set; Latin from Source Sans)
+ * and Liberation Sans (metric-compatible Arial stand-in) cover all of them. Source Han does NOT cover
+ * all of Latin Extended-A (see SOURCE_HAN_LATIN_GAPS), so the navy preset falls back to Arial for the
+ * Latin line whenever the text needs one of those letters. The app never subsets
+ * subtitle fonts (ASS output names system fonts; nothing is embedded) — if a subsetting path is ever
+ * added it must keep this set (regression test asserts the set and the families below).
+ */
+export const SECOND_LANGUAGE_REQUIRED_CHARS =
+  'ñáéíóúü¿¡ÑÁÉÍÓÚÜ' // es
+  + 'éèêëçàâîïôûùÿœæ«»ÉÈÊËÇÀÂÎÏÔÛÙŒÆ' // fr (Ÿ U+0178 is missing from Source Han → FULL_LATIN_FALLBACK_FONT)
+  + 'ãõÃÕ' // pt
+  + 'äöüßÄÖÜ' // de
+  + '\u00a0';
+
+/**
+ * Families the fixed presets use for Latin second-language lines. Noto Sans CJK SC / Source Han Sans SC
+ * are cmap-verified directly; Arial via Liberation Sans (its metric clone) and Arial's WGL4 charset,
+ * which includes Latin-1 + Latin Extended-A. (The「当前样式」preset follows the user's sidebar font.)
+ */
+export const LATIN_COVERAGE_VERIFIED_FAMILIES = ['Arial', 'Source Han Sans SC', 'Noto Sans CJK SC'] as const;
+
+/**
+ * Latin Extended-A/-B code points that Source Han Sans / Noto Sans CJK (all regions, Regular = Bold)
+ * do NOT contain — cmap of Noto Sans CJK 2.004, checked with fontTools. Latin-1 Supplement and
+ * œ Œ are complete; the gaps are mostly Central European (ą č ę ğ ı ł ő ş ž…) plus Ÿ (U+0178).
+ */
+const SOURCE_HAN_LATIN_GAPS: ReadonlyArray<readonly [number, number]> = [
+  [0x104, 0x10f], [0x114, 0x119], [0x11c, 0x127], [0x12c, 0x142], [0x145, 0x146], [0x149, 0x14b],
+  [0x150, 0x151], [0x154, 0x167], [0x16e, 0x17f],
+];
+/** Latin Extended-B code points Source Han Sans does contain (everything else in 0x180–0x24F is missing). */
+const SOURCE_HAN_LATIN_EXT_B = new Set([0x192, 0x1a0, 0x1a1, 0x1af, 0x1b0, ...Array.from({ length: 0x1dc - 0x1cd + 1 }, (_, i) => 0x1cd + i), 0x1f8, 0x1f9]);
+
+/** True when Source Han Sans / Noto Sans CJK has no glyph for this code point in the Latin ranges. */
+export function isMissingFromSourceHanLatin(cp: number): boolean {
+  if (cp === 0x202f) return true;
+  if (cp >= 0x100 && cp <= 0x17f) return SOURCE_HAN_LATIN_GAPS.some(([from, to]) => cp >= from && cp <= to);
+  if (cp >= 0x180 && cp <= 0x24f) return !SOURCE_HAN_LATIN_EXT_B.has(cp);
+  return false;
+}
+
+/**
+ * Font for Latin second-language lines when the preset's CJK family would miss a glyph (Ÿ, or a
+ * Central European letter in a name). Arial covers Latin-1 + Extended-A completely (WGL4; checked
+ * on its metric clone Liberation Sans); libass maps it to Liberation Sans on Linux.
+ */
+export const FULL_LATIN_FALLBACK_FONT = 'Arial';
+
+/** Does any Latin line of the export contain a character the CJK family cannot draw? */
+export const needsFullLatinFont = (texts: Iterable<string>): boolean => {
+  for (const text of texts) {
+    for (const ch of text) if (isMissingFromSourceHanLatin(ch.codePointAt(0) ?? 0)) return true;
+  }
+  return false;
+};
+
 export const EXPORT_PRESETS: Record<ExportPresetId, ExportPreset> = {
   current: {
     id: 'current',
@@ -395,7 +459,7 @@ export const NAMING_OPTIONS: NamingOption[] = [
   { id: 'jellyfin-forced', scheme: 'jellyfin', flag: 'forced', label: 'Jellyfin · .zh-Hans.forced' },
   { id: 'infuse', scheme: 'infuse', flag: 'none', label: 'Infuse · .zh-Hans' },
   { id: 'infuse-sdh', scheme: 'infuse', flag: 'sdh', label: 'Infuse · .zh-Hans.sdh' },
-  { id: 'generic', scheme: 'generic', flag: 'none', label: '通用 · .zh-Hans.en' },
+  { id: 'generic', scheme: 'generic', flag: 'none', label: '通用 · .zh-Hans.en（随次语言：.es / .fr…）' },
 ];
 
 export const DEFAULT_NAMING_ID = 'plain';
@@ -414,7 +478,7 @@ export function buildExportFilename(
   baseName: string,
   extension: ExportFormat | 'zip',
   namingId: string,
-  options: { traditional?: boolean } = {},
+  options: { traditional?: boolean; secondary?: string } = {},
 ): string {
   const base = sanitizeBaseName(baseName).replace(new RegExp(`\\.${extension}$`, 'i'), '');
   const option = getNamingOption(namingId);
@@ -431,7 +495,8 @@ export function buildExportFilename(
       parts.push(script);
       break;
     case 'generic':
-      parts.push(script, 'en');
+      // Second-language tag: en by default; es / fr / pt / de / it / ja / ko when that is the 原文 track.
+      parts.push(script, /^[a-z]{2}$/.test(options.secondary || '') ? options.secondary! : 'en');
       break;
   }
   if (option.scheme !== 'plain' && option.flag !== 'none') parts.push(option.flag);
@@ -466,7 +531,7 @@ export function planExportBundle(
   namingId: string,
   assPresetId: unknown,
   srtAddonIds: readonly unknown[],
-  options: { traditional?: boolean; hdr?: HdrLevelId | null } = {},
+  options: { traditional?: boolean; hdr?: HdrLevelId | null; secondary?: string } = {},
 ): ExportBundlePlan {
   const assPreset = getExportPreset(assPresetId);
   const assId: ExportPresetId = assPreset.formats.includes('ass') ? assPreset.id : DEFAULT_EXPORT_PRESET_ID;

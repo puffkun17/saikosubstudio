@@ -1,0 +1,47 @@
+1
+00:00:01,000 --> 00:00:03,000
+Hey, are you coming to the party tonight?
+
+2
+00:00:03,500 --> 00:00:06,000
+I don't know. I have to work early tomorrow.
+
+3
+00:00:06,500 --> 00:00:09,000
+(in Spanish) ¿Mamá, dónde están mis llaves?
+
+4
+00:00:09,500 --> 00:00:12,000
+They're on the table, mijo. ¡Ándale!
+
+5
+00:00:12,500 --> 00:00:15,000
+Thanks. Okay, what time does it start?
+
+6
+00:00:15,500 --> 00:00:18,000
+Around eight. Bring something to drink, ¿sí?
+
+7
+00:00:18,500 --> 00:00:21,000
+Sure. Do you want me to pick you up?
+
+8
+00:00:21,500 --> 00:00:24,000
+No, I'll walk. It's not that far from here.
+
+9
+00:00:24,500 --> 00:00:27,000
+(speaking Spanish) Sí, señora, ya voy, ya voy.
+
+10
+00:00:27,500 --> 00:00:30,000
+Sorry, that was my neighbor. Where were we?
+
+11
+00:00:30,500 --> 00:00:33,000
+The party. Eight o'clock. Don't be late this time.
+
+12
+00:00:33,500 --> 00:00:36,000
+I'm never late. Well, almost never.

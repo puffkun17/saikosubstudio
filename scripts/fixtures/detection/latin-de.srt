@@ -1,0 +1,15 @@
+1
+00:00:01,000 --> 00:00:03,000
+Hast du meine Schlüssel gesehen?
+
+2
+00:00:04,000 --> 00:00:06,000
+Sie liegen auf dem Tisch, neben dem Brot.
+
+3
+00:00:07,000 --> 00:00:09,000
+Danke. Ich bin gleich zurück.
+
+4
+00:00:10,000 --> 00:00:12,000
+Heute ist es aber kalt!

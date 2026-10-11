@@ -106,7 +106,9 @@ const {
   normalizeAssFontName,
   resolvePresetStyle,
 } = require(join(outDir, 'utils/exportPresets.js'));
-const { NAVY_OUTLINE_LAYOUT } = require(join(outDir, 'utils/exportPresets.js'));
+const { NAVY_OUTLINE_LAYOUT, SECOND_LANGUAGE_REQUIRED_CHARS, LATIN_COVERAGE_VERIFIED_FAMILIES, isMissingFromSourceHanLatin, needsFullLatinFont, FULL_LATIN_FALLBACK_FONT } = require(join(outDir, 'utils/exportPresets.js'));
+const { applyFrenchSpacing } = require(join(outDir, 'utils/lineWrap.js'));
+const { detectSecondaryLatinLanguage, latinLanguageScores, isLatinSecondaryLanguage, LATIN_SECONDARY_LANGUAGES, cleanSubtitleContent: cleanSubtitleContentP0 } = require(join(outDir, 'utils/subtitleCore.js'));
 const {
   HDR_LEVELS_PROVISIONAL,
   HDR_LEVEL_ORDER,
@@ -918,7 +920,10 @@ Lets begin.`;
   assert.equal(isMainPathSecondaryLanguage('en'), true);
   assert.equal(isMainPathSecondaryLanguage('ja'), true, 'Japanese may occupy 原文 when English is missing/sparse.');
   assert.equal(isMainPathSecondaryLanguage('ko'), true);
-  assert.equal(isMainPathSecondaryLanguage('fr'), false, 'Western false positives must stay out of auto 原文.');
+  // Derek (PR #39): Latin-alphabet languages are supported second languages; unidentified Latin text is not.
+  assert.equal(isMainPathSecondaryLanguage('fr'), true, 'French is a supported second language.');
+  assert.equal(isMainPathSecondaryLanguage('es'), true, 'Spanish is a supported second language.');
+  assert.equal(isMainPathSecondaryLanguage('latin'), false, 'Unidentified Latin text stays out of auto 原文.');
   assert.equal(isEnglishSecondaryLanguage('en'), true);
   assert.equal(isEnglishSecondaryLanguage('ja'), false);
   assert.ok(mainPathPrimaryRank('zh-CN') > mainPathPrimaryRank('zh-TW'), 'Simplified Chinese ranks above Traditional.');
@@ -1172,7 +1177,11 @@ const resetStoreForTmdb = () => {
   };
   useStudioStore.setState({ uploadedFiles: [...useStudioStore.getState().uploadedFiles, fr] });
   useStudioStore.getState().bindTrack(task.id, 'en', 'f-fr');
-  assert.equal(useStudioStore.getState().tasks[0]?.en, null, 'French must not silent-bind into 原文; user gets a notice instead.');
+  assert.equal(useStudioStore.getState().tasks[0]?.en?.id, 'f-fr', 'Derek (PR #39): French is a supported second language; manual 原文 bind must accept it.');
+  const unknownLatin = { ...fr, id: 'f-latin', name: 'Sample.Movie.2024.xx.ass', lang: 'latin' };
+  useStudioStore.setState({ uploadedFiles: [...useStudioStore.getState().uploadedFiles, unknownLatin] });
+  useStudioStore.getState().bindTrack(task.id, 'en', 'f-latin');
+  assert.equal(useStudioStore.getState().tasks[0]?.en, null, 'Unidentified Latin text must not silent-bind into 原文; user gets a notice instead.');
 }
 
 {
@@ -2948,6 +2957,141 @@ const { smartLineWrap, stripAssDrawingCommands } = require(join(outDir, 'utils/s
   assert.equal(hdrOnly.files.length, 2);
   assert.equal(hdrOnly.zipName, 'Movie.zip', 'ASS + HDR copy is always a zip');
   assert.equal(planExportBundle('Movie', 'plain', 'current', [], { hdr: 'nope' }).zipName, null, 'unknown level → SDR only');
+}
+
+// ---------------------------------------------------------------------------------------------
+// Latin-alphabet second languages (Derek, PR #39 decision 1): Spanish first, French second, then pt/de/it.
+{
+  const fixtureDir = join(process.cwd(), 'scripts/fixtures/detection');
+  const read = (name) => readFileSync(join(fixtureDir, name), 'utf8');
+  assert.deepEqual([...LATIN_SECONDARY_LANGUAGES], ['es', 'fr', 'pt', 'de', 'it'], 'priority order: es first, fr second');
+  for (const lang of LATIN_SECONDARY_LANGUAGES) {
+    const text = read(`latin-${lang}.srt`);
+    assert.equal(detectLanguageByContent(text), lang, `whole ${lang} track detected by content`);
+    assert.equal(detectSubtitleLanguage(`Weekend.S01E01.srt`, text).lang, lang, `${lang}: unlabelled file`);
+    assert.ok(isMainPathSecondaryLanguage(lang), `${lang} accepted in the 原文 slot`);
+  }
+  // Filename tags.
+  assert.equal(detectLanguageByFilename('Weekend.S01E01.spa.srt'), 'es');
+  assert.equal(detectLanguageByFilename('Weekend.S01E01.es-419.srt'), 'es');
+  assert.equal(detectLanguageByFilename('Weekend.S01E01.Spanish (Latin America).srt'), 'es');
+  assert.equal(detectLanguageByFilename('Weekend.S01E01.fre.srt'), 'fr');
+  assert.equal(detectLanguageByFilename('Weekend.S01E01.pt-BR.srt'), 'pt');
+  assert.equal(detectLanguageByFilename('Weekend.S01E01.ger.srt'), 'de');
+  assert.equal(detectLanguageByFilename('Weekend.S01E01.ita.srt'), 'it');
+  assert.equal(detectLanguageByFilename('It.Follows.2014.srt'), 'unknown', 'bare "It" title is not Italian');
+  assert.equal(detectLanguageByFilename('Casa.de.Papel.S01E01.srt'), 'unknown', 'bare "de" is not German');
+  assert.equal(detectLanguageByFilename('Weekend.S01E01.spa.SDH.srt'), 'es', 'Spanish SDH stays Spanish, not English');
+
+  // English track (US show) with embedded Spanish lines / words: stays English, text untouched.
+  const enEs = read('en-with-es.en.srt');
+  const zhEs = read('en-with-es.zh.srt');
+  assert.equal(detectLanguageByContent(enEs), 'en', 'English with embedded Spanish lines stays en');
+  assert.equal(detectSubtitleLanguage('Party.S01E02.srt', enEs).lang, 'en');
+  assert.equal(detectSubtitleLanguage('Party.S01E02.en.srt', enEs).lang, 'en');
+  assert.equal(detectSubtitleLanguage('Party.S01E02.zh.srt', zhEs).isBilingual, false);
+  const scores = latinLanguageScores(enEs);
+  assert.ok(scores.en > scores.es, `en ${scores.en} > es ${scores.es}`);
+  assert.equal(detectLanguageByContent("Y'all ready? You know it, y'know."), 'en', "y'all / y'know are not Spanish «y»");
+  {
+    resetStoreForTmdb();
+    const mk = (id, name, text) => ({ id, name, text, ...detectSubtitleLanguage(name, text), isCommentary: false, size: text.length });
+    useStudioStore.getState().processFiles([mk('p-zh', 'Party.S01E02.zh.srt', zhEs), mk('p-en', 'Party.S01E02.en.srt', enEs), mk('p-es', 'Party.S01E02.spa.srt', read('latin-es.srt'))]);
+    const t = useStudioStore.getState().tasks[0];
+    assert.equal(t?.en?.id, 'p-en', 'English dialogue still wins the 原文 slot over a Spanish track');
+    const rows = alignSubtitlesIndustrial(parseSubtitle(zhEs), parseSubtitle(enEs));
+    const srt = generateSrtContent(rows, useStudioStore.getState().customStyle, { profile: EXPORT_PRESETS['plex-srt'].profile });
+    for (const phrase of ['¿Mamá, dónde están mis llaves?', '¡Ándale!', 'Sí, señora, ya voy, ya voy.', '¿sí?']) {
+      assert.ok(srt.replace(/\n/g, ' ').includes(phrase), `embedded Spanish kept verbatim: ${phrase}`);
+    }
+  }
+
+  // Auto-bind: no English → Spanish first, then French; both over ja/ko.
+  {
+    resetStoreForTmdb();
+    const zh = { id: 'a-zh', name: 'Walk.S01E03.chs.srt', text: readFileSync(join(process.cwd(), 'scripts/fixtures/golden/everyday-es/zh.srt'), 'utf8'), lang: 'zh-CN', isBilingual: false, isCommentary: false, size: 900 };
+    const es = { id: 'a-es', name: 'Walk.S01E03.spa.srt', text: readFileSync(join(process.cwd(), 'scripts/fixtures/golden/everyday-es/es.srt'), 'utf8'), lang: 'es', isBilingual: false, isCommentary: false, size: 700 };
+    const fr = { ...es, id: 'a-fr', name: 'Walk.S01E03.fre.srt', lang: 'fr', size: 2000 };
+    const ja = { ...es, id: 'a-ja', name: 'Walk.S01E03.jpn.srt', lang: 'ja', size: 3000 };
+    useStudioStore.getState().processFiles([zh, ja, fr, es]);
+    let t = useStudioStore.getState().tasks[0];
+    assert.equal(t?.en?.id, 'a-es', 'Spanish is the first Latin second language');
+    assert.equal(t?.status, 'paired');
+    resetStoreForTmdb();
+    useStudioStore.getState().processFiles([zh, ja, fr]);
+    t = useStudioStore.getState().tasks[0];
+    assert.equal(t?.en?.id, 'a-fr', 'French second');
+    assert.ok(mainPathSecondaryRank('x.spa.srt', 'es') > mainPathSecondaryRank('x.fre.srt', 'fr'));
+    assert.ok(mainPathSecondaryRank('x.fre.srt', 'fr') > mainPathSecondaryRank('x.jpn.srt', 'ja'));
+    assert.ok(mainPathSecondaryRank('x.eng.srt', 'en') > mainPathSecondaryRank('x.spa.srt', 'es'), 'English still first');
+  }
+
+  // Single-file zh + Spanish bilingual.
+  const biEs = readFileSync(join(process.cwd(), 'scripts/fixtures/golden/everyday-bilingual-es/bilingual.srt'), 'utf8');
+  assert.deepEqual(detectSubtitleLanguagePair(biEs, 'Walk.S01E03.srt'), { primary: 'zh-CN', secondary: 'es' });
+  assert.equal(detectSubtitleLanguage('Walk.S01E03.srt', biEs).lang, 'bilingual');
+  assert.equal(detectSubtitleLanguagePair(biEs, 'Walk.S01E03.中西.srt')?.secondary, 'es');
+
+  // Wrapping: ¿ / ¡ / « never end a line; » ? ! never start one; NBSP survives cleaning and wrapping.
+  for (const line of [
+    'Vamos a desayunar abajo primero y después decidimos si hoy damos un paseo, ¿vale?',
+    'Ya te lo dije mil veces, pero nunca me escuchas: ¡Ñoño, no toques el pingüino de la abuela!',
+    '«\u00a0Pas de problème\u00a0», m\u2019a-t-il dit en riant, puis il est reparti sans rien ajouter\u00a0!',
+  ]) {
+    for (const maxWidth of [600, 750, 900, 1100]) {
+      const out = wrapSingleLine(line, { fontPx: 50, maxWidth });
+      if (out.lines.length < 2) continue;
+      assert.ok(!/[¿¡«‹]\s*$/.test(out.lines[0]), `opening mark kept with its word (${maxWidth}): ${out.lines}`);
+      assert.ok(!/^[?!:;»›\u00a0]/.test(out.lines[1]), `closing mark never starts a line (${maxWidth}): ${out.lines}`);
+      assert.equal(out.lines.join(' ').replace(/\s+/g, ' '), line.replace(/[ ]+/g, ' ').replace(/\s+/g, ' '), 'no characters lost');
+    }
+  }
+  assert.ok(glyphWidthEm('é'.codePointAt(0)) === glyphWidthEm('e'.codePointAt(0)), 'accented letters measured like their base');
+  assert.ok(glyphWidthEm('ñ'.codePointAt(0)) === glyphWidthEm('n'.codePointAt(0)));
+  assert.ok(glyphWidthEm(0x00a0) < 0.3, 'NBSP is space-wide');
+  assert.equal(cleanSubtitleContentP0('Tu viens\u00a0?'), 'Tu viens\u00a0?', 'cleaning keeps the no-break space');
+
+  // French typography: spaces before ? ! : ; » and after « become U+00A0; U+202F → U+00A0; nothing inserted.
+  assert.equal(applyFrenchSpacing('Tu viens ? « Oui » ; enfin : non !'), 'Tu viens\u00a0? «\u00a0Oui\u00a0»\u00a0; enfin\u00a0: non\u00a0!');
+  assert.equal(applyFrenchSpacing('Quoi\u202f?'), 'Quoi\u00a0?');
+  assert.equal(applyFrenchSpacing('Quoi?'), 'Quoi?', 'no space inserted');
+  assert.equal(applyFrenchSpacing('Il est 10:30.'), 'Il est 10:30.');
+  const frRows = [{ index: 1, ts: '00:00:01,000 --> 00:00:03,000', text: '你来吗\nTu viens ce soir ? « Oui » !', type: 'merged' }, { index: 2, ts: '00:00:04,000 --> 00:00:06,000', text: '好的\nD\u2019accord, je suis là dans une heure avec les autres.', type: 'merged' }];
+  assert.equal(detectSecondaryLatinLanguage(frRows), 'fr');
+  const frAss = generateAssContent(frRows, resolvePresetStyle(useStudioStore.getState().customStyle, EXPORT_PRESETS['navy-outline']), 'fr', undefined, { profile: EXPORT_PRESETS['navy-outline'].profile });
+  assert.ok(frAss.includes('Tu viens ce soir\u00a0? «\u00a0Oui\u00a0»\u00a0!'), 'French NBSP in navy ASS');
+  const esRows = [{ index: 1, ts: '00:00:01,000 --> 00:00:03,000', text: '你来吗\n¿Vienes esta noche? ¡Claro que sí!', type: 'merged' }];
+  assert.equal(detectSecondaryLatinLanguage(esRows), 'es');
+  const esAss = generateAssContent(esRows, resolvePresetStyle(useStudioStore.getState().customStyle, EXPORT_PRESETS['navy-outline']), 'es', undefined, { profile: EXPORT_PRESETS['navy-outline'].profile });
+  assert.ok(esAss.includes('SEC,,0,0,0,,¿Vienes esta noche? ¡Claro que sí!'), 'Spanish untouched in navy ASS (no French spacing)');
+
+  // Font coverage: the required set (Spanish first) is complete and the presets' Latin fonts cover it.
+  for (const ch of 'ñáéíóúü¿¡ÑÁÉÍÓÚÜ') assert.ok(SECOND_LANGUAGE_REQUIRED_CHARS.includes(ch), `Spanish ${ch} in required set`);
+  for (const ch of 'éèêëçàâîïôûùœæ«»ÉÈÊÇÀŒ') assert.ok(SECOND_LANGUAGE_REQUIRED_CHARS.includes(ch), `French ${ch} in required set`);
+  for (const ch of 'ãõßäöÄÖ\u00a0') assert.ok(SECOND_LANGUAGE_REQUIRED_CHARS.includes(ch), `pt/de ${JSON.stringify(ch)} in required set`);
+  for (const ch of SECOND_LANGUAGE_REQUIRED_CHARS) {
+    assert.equal(isMissingFromSourceHanLatin(ch.codePointAt(0)), false, `Source Han / Noto Sans CJK draws ${ch} (cmap-verified)`);
+  }
+  for (const id of ['libass-ass', 'navy-outline']) {
+    const preset = EXPORT_PRESETS[id];
+    const fonts = [preset.profile.fallbackEnFont, preset.style?.enFontFamily, preset.profile.stacked?.secondaryFont.latin].filter(Boolean);
+    for (const font of fonts) assert.ok(LATIN_COVERAGE_VERIFIED_FAMILIES.includes(normalizeAssFontName(font, '')), `${id}: Latin font ${font} is coverage-verified`);
+  }
+  // Ÿ / Central European letters are NOT in Source Han → navy switches the Latin line to a full-coverage font.
+  assert.equal(isMissingFromSourceHanLatin(0x178), true, 'Ÿ missing from Source Han');
+  assert.equal(isMissingFromSourceHanLatin('ł'.codePointAt(0)), true);
+  assert.equal(isMissingFromSourceHanLatin('œ'.codePointAt(0)), false);
+  assert.equal(needsFullLatinFont(['¿Vienes?', 'Ça va ?']), false);
+  assert.equal(needsFullLatinFont(['L\u2019HAŸ-LES-ROSES']), true);
+  const navyStyle = resolvePresetStyle(useStudioStore.getState().customStyle, EXPORT_PRESETS['navy-outline']);
+  assert.match(esAss, /^Style: SEC,Source Han Sans SC,/m, 'navy keeps Source Han for es');
+  const yAss = generateAssContent([{ index: 1, ts: '00:00:01,000 --> 00:00:03,000', text: '我们到了\nNous voilà à L\u2019Haÿ, enfin à L\u2019HAŸ !', type: 'merged' }], navyStyle, 'y', undefined, { profile: EXPORT_PRESETS['navy-outline'].profile });
+  assert.match(yAss, new RegExp(`^Style: SEC,${FULL_LATIN_FALLBACK_FONT},`, 'm'), 'Ÿ → full-coverage Latin font');
+
+  // Naming: generic scheme tags the real second language.
+  assert.equal(buildExportFilename('Walk.S01E03', 'srt', 'generic', { secondary: 'es' }), 'Walk.S01E03.zh-Hans.es.srt');
+  assert.equal(buildExportFilename('Walk.S01E03', 'srt', 'generic'), 'Walk.S01E03.zh-Hans.en.srt');
+  assert.ok(isLatinSecondaryLanguage('es') && !isLatinSecondaryLanguage('en'));
 }
 
 // End-to-end golden samples: synthetic everyday tracks → parse → align → export (ASS + SRT, every preset).

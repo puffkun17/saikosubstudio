@@ -1,0 +1,24 @@
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+ScriptType: v4.00+
+Title: everyday-es
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Han,PingFang SC,75,&H00FFFFFF,&H00FF9C41,&H0063554B,&H00000000,1,0,0,0,100,100,0,0,1,6,6,2,38,38,75,1
+Style: EN,Helvetica Neue,45,&H00B0B0B0,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,90,90,0,0,1,4,4,2,38,38,45,1
+Style: Note,PingFang SC,68,&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,6,6,8,38,38,75,1
+Style: Credit,PingFang SC,68,&H00FFFFFF,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,6,6,5,38,38,75,1
+Style: Lyrics,PingFang SC,60,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,6,6,8,38,38,60,1
+Style: Lyrics_EN,Helvetica Neue,45,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,4,4,8,38,38,37,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:03.00,Han,,0,0,0,,早上好 你睡得怎么样\N{\rEN}Buenos días. ¿Qué tal dormiste?
+Dialogue: 0,0:00:03.50,0:00:06.00,Han,,0,0,0,,还不错 就是有点冷\N{\rEN}Bien, pero tengo un poco de frío.
+Dialogue: 0,0:00:06.50,0:00:10.50,Han,,0,0,0,,我们先去楼下吃早饭吧\N吃完再决定今天要不要去河边走走\N{\rEN}Vamos a desayunar abajo primero y después decidimos\Nsi hoy damos un paseo por el río, ¿vale?
+Dialogue: 0,0:00:11.00,0:00:13.00,Han,,0,0,0,,好主意！我去拿外套\N{\rEN}¡Buena idea! Voy por el abrigo.
+Dialogue: 0,0:00:13.50,0:00:16.00,Han,,0,0,0,,天哪 今天外面真的好冷\N{\rEN}¡Ay! ÁNIMO, AÚN ES TEMPRANO. ¿Ñoño, yo? ¡NUNCA!
+Dialogue: 0,0:00:16.50,0:00:19.00,Han,,0,0,0,,你要不要喝点热巧克力\N{\rEN}¿Quieres un chocolate caliente? El pingüino de la taza es mío.

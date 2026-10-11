@@ -51,6 +51,16 @@ const ASCII_ADVANCE = [
   556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584,      // p-z { | } ~
 ];
 
+/** Latin letters without an ASCII base (Arial advances, 1/1000 em → em), plus ¿ ¡ « ». */
+const LATIN_WIDE_EM: Record<number, number> = {
+  0x00df: 0.611, // ß
+  0x00e6: 0.889, 0x00c6: 1, // æ Æ
+  0x0153: 0.944, 0x0152: 1, // œ Œ
+  0x00f8: 0.611, 0x00d8: 0.778, // ø Ø
+  0x00bf: 0.611, 0x00a1: 0.333, // ¿ ¡
+  0x00ab: 0.556, 0x00bb: 0.556, // « »
+};
+
 const isWideCodePoint = (cp: number): boolean => (
   (cp >= 0x1100 && cp <= 0x115f)
   || (cp >= 0x2e80 && cp <= 0x303e)
@@ -73,6 +83,15 @@ const isHangul = (cp: number): boolean => (cp >= 0xac00 && cp <= 0xd7a3) || (cp 
 /** Width of one code point in em. */
 export function glyphWidthEm(cp: number): number {
   if (cp >= 0x20 && cp <= 0x7e) return ASCII_ADVANCE[cp - 0x20] / 1000;
+  if (cp === 0x00a0) return 0.278; // no-break space = a space
+  if (cp === 0x202f) return 0.2; // narrow no-break space
+  const latinWide = LATIN_WIDE_EM[cp];
+  if (latinWide !== undefined) return latinWide;
+  if (cp >= 0x00c0 && cp <= 0x024f) {
+    // Accented Latin letters (é, ñ, ü, ç…) take the advance of their base letter.
+    const base = String.fromCodePoint(cp).normalize('NFD').codePointAt(0) ?? 0;
+    if (base >= 0x20 && base <= 0x7e) return ASCII_ADVANCE[base - 0x20] / 1000;
+  }
   if ((cp >= 0x0300 && cp <= 0x036f) || (cp >= 0x200b && cp <= 0x200d) || (cp >= 0xfe00 && cp <= 0xfe0f) || cp === 0x2028) return 0;
   if (isWideCodePoint(cp)) return 1;
   if (cp >= 0xff61 && cp <= 0xff9f) return 0.5; // half-width katakana
@@ -97,9 +116,9 @@ export const estimateTextWidth: TextMeasure = (text, fontPx) => {
 };
 
 /** Characters that must not start a line (避头). */
-const NO_LINE_START = new Set([...'，。！？、；：,.!?;:)]}）】》〉」』〕〗〙〛’”"\'…‥ー〜～・·%％ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ々〻ゝゞヽヾ']);
+const NO_LINE_START = new Set([...'，。！？、；：,.!?;:)]}）】》〉」』〕〗〙〛’”"\'…‥ー〜～・·%％»›ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ々〻ゝゞヽヾ']);
 /** Characters that must not end a line (避尾). */
-const NO_LINE_END = new Set([...'([{（【《〈「『〔〖〘〚‘“$￥¥£€#＃']);
+const NO_LINE_END = new Set([...'([{（【《〈「『〔〖〘〚‘“$￥¥£€#＃¿¡«‹']);
 
 const SENTENCE_END = /[。！？!?…‥]$/;
 const CLAUSE_END = /[，、；：,;:—–]$/;
@@ -107,6 +126,18 @@ const TRAILING_CLOSERS = /[)\]}）】》〉」』〕’”"']+$/;
 const LATIN_ABBREVIATION = /^(?:mr|mrs|ms|dr|st|jr|sr|vs|mt|no|prof|gen|col|lt|sgt|capt|e\.g|i\.e|etc)\.$/i;
 const EN_CONJUNCTIONS = new Set(['and', 'but', 'or', 'nor', 'so', 'yet', 'because', 'that', 'which', 'who', 'whom', 'whose', 'when', 'where', 'while', 'if', 'unless', 'until', 'although', 'though', 'since', 'than', 'whether', 'before', 'after']);
 const EN_PREPOSITIONS = new Set(['to', 'for', 'with', 'of', 'in', 'on', 'at', 'from', 'about', 'into', 'like', 'over', 'without', 'as', 'by']);
+/**
+ * Spanish (first) / French / Portuguese function words that should not end a line (article,
+ * preposition, possessive) — same role as EN_DANGLING, for the Latin second languages.
+ */
+const ROMANCE_DANGLING = new Set([
+  'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'del', 'al', 'mi', 'tu', 'su', 'mis', 'tus', 'sus', 'de', 'en', 'con', 'por', 'para', 'sin',
+  'le', 'les', 'une', 'des', 'du', 'au', 'aux', 'mon', 'ton', 'ma', 'ta', 'sa', 'ce', 'cet', 'cette', 'à', 'dans', 'sur', 'avec', 'pour',
+  // Portuguese: only words that are not also English ('do', 'no', 'as', 'a' are left out).
+  'um', 'uma', 'dos', 'das', 'meu', 'minha', 'em',
+]);
+/** Conjunctions a Spanish / French / Portuguese line may start with (break before them). */
+const ROMANCE_CONJUNCTIONS = new Set(['y', 'e', 'pero', 'porque', 'aunque', 'cuando', 'si', 'que', 'mientras', 'et', 'mais', 'parce', 'quand', 'puis', 'donc', 'alors', 'mas', 'quando']);
 const EN_DANGLING = new Set(['a', 'an', 'the', 'my', 'your', 'his', 'her', 'its', 'our', 'their', 'this', 'these', 'those', 'to', 'of', 'mr.', 'mrs.', 'ms.', 'dr.', 'i']);
 /** Ideographs that bind to the NEXT one (determiners / numerals before a measure word). */
 const CJK_BIND_NEXT = new Set([...'一二两几这那每某各该本此哪第']);
@@ -118,6 +149,10 @@ type AtomKind = 'cjk' | 'word' | 'space';
 interface Atom { text: string; kind: AtomKind; soft?: boolean }
 
 const SOFT_BREAK = '\u2028';
+/** No-break spaces (French typography): never a break opportunity, never collapsed. */
+const NO_BREAK_SPACE = /[\u00a0\u202f\u2007\u2060]/;
+/** Ordinary whitespace runs (excludes the no-break spaces above). */
+const COLLAPSIBLE_SPACE = /[^\S\u00a0\u202f\u2007]+/g;
 
 function tokenize(text: string): Atom[] {
   const atoms: Atom[] = [];
@@ -151,6 +186,7 @@ function tokenize(text: string): Atom[] {
     const ch = String.fromCodePoint(cp);
     i += ch.length;
     if (ch === SOFT_BREAK) pushAtom({ text: '', kind: 'space', soft: true });
+    else if (NO_BREAK_SPACE.test(ch)) pushAtom({ text: ch, kind: 'word' }); // glues «·mot·» / mot·? (· = U+00A0)
     else if (/\s/.test(ch)) pushAtom({ text: ch, kind: 'space' });
     else if (isWideCodePoint(cp) && !isHangul(cp)) pushAtom({ text: ch, kind: 'cjk' });
     else pushAtom({ text: ch, kind: 'word' });
@@ -202,10 +238,10 @@ function breakQuality(atoms: Atom[], k: number): number {
   if (SENTENCE_END.test(prevCore) || (prev.kind === 'word' && /[A-Za-z\u00c0-\u024f)\]'"’”]\.$/.test(visible(prev.text)) && !/\d\.$/.test(prevCore))) return 0;
   if (CLAUSE_END.test(prevCore)) return 0.15;
   if (gap && prev.kind === 'cjk' && next.kind === 'cjk') return 0.1; // 中文空格 = 停顿或原字幕换行
-  const nextWord = visible(next.text).toLowerCase().replace(/[^a-z']/g, '');
+  const nextWord = visible(next.text).toLowerCase().replace(/[^\p{L}']/gu, '');
   const prevWord = visible(prev.text).toLowerCase();
-  if (next.kind === 'word' && EN_DANGLING.has(prevWord)) return 1.2;
-  if (next.kind === 'word' && EN_CONJUNCTIONS.has(nextWord)) return 0.3;
+  if (next.kind === 'word' && (EN_DANGLING.has(prevWord) || ROMANCE_DANGLING.has(prevWord))) return 1.2;
+  if (next.kind === 'word' && (EN_CONJUNCTIONS.has(nextWord) || ROMANCE_CONJUNCTIONS.has(nextWord))) return 0.3;
   if (next.kind === 'word' && EN_PREPOSITIONS.has(nextWord)) return 0.4;
   if (next.kind === 'cjk') {
     const rest = atoms.slice(right, right + 3).map((atom) => visible(atom.text)).join('');
@@ -272,7 +308,7 @@ const startsCjk = (s: string) => { const c = firstChar(s).codePointAt(0) ?? 0; r
  */
 export function wrapSubtitleBlock(sourceLines: string[], options: WrapOptions): WrapResult {
   const measure = options.measure ?? estimateTextWidth;
-  const lines = sourceLines.map((line) => line.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const lines = sourceLines.map((line) => line.replace(COLLAPSIBLE_SPACE, ' ').replace(/^ +| +$/g, '')).filter(Boolean);
   if (lines.length === 0) return { lines: [], changed: sourceLines.length > 0, overflow: false };
   const fits = (line: string) => measure(line, options.fontPx) <= options.maxWidth;
   const normalizedChanged = lines.length !== sourceLines.length || lines.some((line, idx) => line !== sourceLines[idx]);
@@ -334,3 +370,21 @@ export function splitLanguageBlocks(text: string): string[][] {
   if (idx === lines.length) return [lines];
   return [lines.slice(0, idx), lines.slice(idx)];
 }
+
+/**
+ * French typography for export (Derek, PR #39 decision 1): the space before ? ! : ; » › and after
+ * « ‹ becomes a no-break space so neither our wrapper nor the player's own wrapping can leave the
+ * mark alone at a line edge. Only existing spaces are converted — nothing is inserted.
+ * U+202F (narrow NBSP, the strict French form) becomes U+00A0: Source Han Sans / Noto Sans CJK —
+ * the second-language font of the CJK presets — has no U+202F glyph (cmap-checked), so it would
+ * render as tofu or fall back to another font.
+ */
+export function applyFrenchSpacing(text: string): string {
+  return text
+    .replace(/\u202f/g, '\u00a0')
+    .replace(/(?<=\S)[ \u00a0]+(?=[?!:;»›])/g, '\u00a0')
+    .replace(/([«‹])[ \u00a0]+(?=\S)/g, '$1\u00a0');
+}
+
+/** Any language: U+202F → U+00A0 (the CJK presets' Latin font lacks U+202F; see applyFrenchSpacing). */
+export const normalizeNarrowNoBreakSpace = (text: string): string => text.replace(/\u202f/g, '\u00a0');

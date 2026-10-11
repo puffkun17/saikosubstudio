@@ -1,0 +1,30 @@
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+ScriptType: v4.00+
+Title: everyday-es
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: ZH,Source Han Sans SC Medium,75,&H00FFFFFF,&H000000FF,&H00551B14,&H00000000,0,0,0,0,100,100,0,0,1,5.5,0,2,60,60,97,1
+Style: SEC,Source Han Sans SC,51,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,4.5,0,2,60,60,51,1
+Style: Note,Source Han Sans SC Medium,68,&H00FFFFFF,&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,6,0,8,38,38,75,1
+Style: Credit,Source Han Sans SC Medium,68,&H00FFFFFF,&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,6,0,5,38,38,75,1
+Style: Lyrics,Source Han Sans SC Medium,60,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,6,0,8,38,38,60,1
+Style: Lyrics_EN,Source Han Sans SC,45,&H00FAE6E6,&H00000000,&H00000000,&H00000000,0,1,0,0,100,100,0,0,1,4,0,8,38,38,37,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 1,0:00:01.00,0:00:03.00,ZH,,0,0,0,,早上好 你睡得怎么样
+Dialogue: 0,0:00:01.00,0:00:03.00,SEC,,0,0,0,,Buenos días. ¿Qué tal dormiste?
+Dialogue: 1,0:00:03.50,0:00:06.00,ZH,,0,0,0,,还不错 就是有点冷
+Dialogue: 0,0:00:03.50,0:00:06.00,SEC,,0,0,0,,Bien, pero tengo un poco de frío.
+Dialogue: 1,0:00:06.50,0:00:10.50,ZH,,0,0,148,,我们先去楼下吃早饭吧\N吃完再决定今天要不要去河边走走
+Dialogue: 0,0:00:06.50,0:00:10.50,SEC,,0,0,0,,Vamos a desayunar abajo primero y después decidimos\Nsi hoy damos un paseo por el río, ¿vale?
+Dialogue: 1,0:00:11.00,0:00:13.00,ZH,,0,0,0,,好主意！我去拿外套
+Dialogue: 0,0:00:11.00,0:00:13.00,SEC,,0,0,0,,¡Buena idea! Voy por el abrigo.
+Dialogue: 1,0:00:13.50,0:00:16.00,ZH,,0,0,148,,天哪 今天外面真的好冷
+Dialogue: 0,0:00:13.50,0:00:16.00,SEC,,0,0,0,,¡Ay! ÁNIMO, AÚN ES TEMPRANO.\N¿Ñoño, yo? ¡NUNCA!
+Dialogue: 1,0:00:16.50,0:00:19.00,ZH,,0,0,148,,你要不要喝点热巧克力
+Dialogue: 0,0:00:16.50,0:00:19.00,SEC,,0,0,0,,¿Quieres un chocolate caliente?\NEl pingüino de la taza es mío.

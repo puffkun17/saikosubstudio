@@ -1,0 +1,29 @@
+1
+00:00:01,000 --> 00:00:03,000
+早上好 你睡得怎么样
+Buenos días. ¿Qué tal dormiste?
+
+2
+00:00:03,500 --> 00:00:06,000
+还不错 就是有点冷
+Bien, pero tengo un poco de frío.
+
+3
+00:00:06,500 --> 00:00:10,500
+我们先去楼下吃早饭吧 吃完再决定今天要不要去河边走走
+Vamos a desayunar abajo primero y después decidimos si hoy damos un paseo por el río, ¿vale?
+
+4
+00:00:11,000 --> 00:00:13,000
+好主意！我去拿外套
+¡Buena idea! Voy por el abrigo.
+
+5
+00:00:13,500 --> 00:00:16,000
+天哪 今天外面真的好冷
+¡Ay! ÁNIMO, AÚN ES TEMPRANO. ¿Ñoño, yo? ¡NUNCA!
+
+6
+00:00:16,500 --> 00:00:19,000
+你要不要喝点热巧克力
+¿Quieres un chocolate caliente? El pingüino de la taza es mío.

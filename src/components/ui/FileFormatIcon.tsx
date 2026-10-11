@@ -251,6 +251,11 @@ const resolveLangKey = (lang?: string, label?: string): string => {
     法语: 'fr',
     西语: 'es',
     西班牙语: 'es',
+    葡语: 'pt',
+    葡萄牙语: 'pt',
+    德语: 'de',
+    意语: 'it',
+    意大利语: 'it',
     拉丁: 'latin',
     拉丁文字: 'latin',
     双语: 'bilingual',
@@ -267,6 +272,9 @@ const resolveLangKey = (lang?: string, label?: string): string => {
   if (lower === 'ko' || lower === 'kr' || lower === 'kor' || lower === 'korean') return 'ko';
   if (lower === 'fr' || lower === 'fra' || lower === 'french') return 'fr';
   if (lower === 'es' || lower === 'spa' || lower === 'spanish') return 'es';
+  if (lower === 'pt' || lower === 'por' || lower === 'portuguese') return 'pt';
+  if (lower === 'de' || lower === 'ger' || lower === 'deu' || lower === 'german') return 'de';
+  if (lower === 'it' || lower === 'ita' || lower === 'italian') return 'it';
   if (lower === 'latin') return 'latin';
   if (lower === 'bilingual') return 'bilingual';
   if (lower === 'commentary') return 'commentary';
@@ -295,6 +303,9 @@ const LANG_VISUAL: Record<string, LangVisual> = {
   ko: { label: '韩语', face: 'var(--lang-ko-face)', ink: 'var(--lang-ko-ink)', mark: '한' },
   fr: { label: '法语', face: 'var(--lang-fr-face)', ink: 'var(--lang-fr-ink)', mark: 'Fr' },
   es: { label: '西语', face: 'var(--lang-es-face)', ink: 'var(--lang-es-ink)', mark: 'Ñ' },
+  pt: { label: '葡语', face: 'var(--lang-latin-face)', ink: 'var(--lang-latin-ink)', mark: 'Pt' },
+  de: { label: '德语', face: 'var(--lang-latin-face)', ink: 'var(--lang-latin-ink)', mark: 'De' },
+  it: { label: '意语', face: 'var(--lang-latin-face)', ink: 'var(--lang-latin-ink)', mark: 'It' },
   latin: { label: '拉丁', face: 'var(--lang-latin-face)', ink: 'var(--lang-latin-ink)', mark: 'L' },
   bilingual: { label: '双语', face: 'var(--lang-bilingual-face)', ink: 'var(--lang-bilingual-ink)', mark: '双' },
   commentary: { label: '导评', face: 'var(--lang-commentary-face)', ink: 'var(--lang-commentary-ink)', mark: '评' },
