@@ -52,7 +52,7 @@ export const HistoryPanel: React.FC = () => {
             <header className="flex items-center justify-between gap-3 border-b border-[var(--surface-line)] px-4 py-3">
               <div className="min-w-0">
                 <h2 id="history-title" className="ds-head">历史</h2>
-                <p className="ds-meta">只存在这台设备上，{RETENTION_DAYS_DEFAULT} 天后自动清理</p>
+                <p className="ds-meta">仅保存在本设备，{RETENTION_DAYS_DEFAULT} 天后自动清除</p>
               </div>
               <button type="button" className="ui-action ui-action--quiet ui-action--icon ui-action--icon-sm" onClick={close} aria-label="关闭历史" title="关闭">
                 <X className="h-4 w-4" aria-hidden="true" />
@@ -88,8 +88,8 @@ export const HistoryPanel: React.FC = () => {
                 </ul>
               ) : (
                 <div className="px-4 py-10 text-center">
-                  <p className="ds-body font-semibold">还没有历史</p>
-                  <p className="ds-meta mt-1">合并完成后会自动保存到这里</p>
+                  <p className="ds-body font-semibold">暂无历史记录</p>
+                  <p className="ds-meta mt-1">合并完成后自动保存</p>
                 </div>
               )}
             </div>
@@ -98,7 +98,7 @@ export const HistoryPanel: React.FC = () => {
               <span className="ds-meta">{libraryList.length} 条</span>
               {confirmClear ? (
                 <span className="flex items-center gap-2">
-                  <span className="ds-meta">删除全部历史和源字幕？</span>
+                  <span className="ds-meta">删除全部历史记录与源字幕？</span>
                   <button type="button" className="ds-entry" onClick={() => setConfirmClear(false)}>取消</button>
                   <button
                     type="button"
@@ -111,7 +111,7 @@ export const HistoryPanel: React.FC = () => {
               ) : (
                 <button type="button" className="ds-entry" disabled={libraryList.length === 0} onClick={() => setConfirmClear(true)}>
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
-                  一键清空本机数据
+                  清除本地数据
                 </button>
               )}
             </footer>

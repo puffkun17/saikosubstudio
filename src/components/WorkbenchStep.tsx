@@ -179,12 +179,12 @@ export const WorkbenchStep: React.FC = () => {
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[var(--v4-canvas)]">
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
-        <div className="flex-1 px-3 py-2 md:px-4 md:py-3 min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
-          <div className="max-w-[1280px] w-full flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
+        <div className="flex-1 p-[var(--ds-gap-group)] min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
+          <div className="max-w-[1280px] w-full flex-1 min-h-0 flex flex-col gap-[var(--ds-gap-group)] overflow-hidden">
             <EpisodeTabs />
             {processedSubs && processedSubs.length > 0 && (
               <section className="v4-panel flex-shrink-0 overflow-hidden">
-                <div className="workbench-overview flex flex-col gap-2 px-4 py-2 md:flex-row md:items-center md:justify-between md:gap-4">
+                <div className="workbench-overview flex flex-col gap-[var(--ds-gap-item)] px-4 py-3 md:flex-row md:items-center md:justify-between md:gap-4">
                   <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                     <div className="flex items-center gap-2">
                                             <h2 className="ds-label">概览</h2>
@@ -227,7 +227,7 @@ export const WorkbenchStep: React.FC = () => {
                           <AnimatedCounter value={structureCount} separator="" className="text-sm font-semibold text-[var(--v4-warning)]" />
                         </span>
                       ) : (
-                        <span className="text-xs font-medium text-[var(--v4-text-faint)]">无需复核</span>
+                        <span className="text-xs font-medium text-[var(--v4-text-faint)]">无待复核项</span>
                       )}
                     </div>
 
@@ -364,7 +364,7 @@ export const WorkbenchStep: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
+              className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-4"
               onClick={(event) => {
                 if (event.target === event.currentTarget) setShowBackConfirm(false);
               }}

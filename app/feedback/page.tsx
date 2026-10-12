@@ -17,9 +17,9 @@ import { Bug, CheckCircle2, Lightbulb, LoaderCircle, MessageSquareText, Send, Th
 type FeedbackCategory = 'issue' | 'idea' | 'other';
 
 const categories: Array<{ id: FeedbackCategory; label: string; description: string; icon: typeof Bug }> = [
-  { id: 'issue', label: '问题反馈', description: '功能异常或结果不符合预期', icon: Bug },
-  { id: 'idea', label: '功能建议', description: '希望新增或改进的体验', icon: Lightbulb },
-  { id: 'other', label: '其他意见', description: '任何想告诉我们的事情', icon: MessageSquareText },
+  { id: 'issue', label: '问题反馈', description: '功能异常或结果与预期不符', icon: Bug },
+  { id: 'idea', label: '功能建议', description: '新功能或改进建议', icon: Lightbulb },
+  { id: 'other', label: '其他意见', description: '其他意见与建议', icon: MessageSquareText },
 ];
 
 const subscribeToLocalSupport = (onStoreChange: () => void) => {
@@ -78,29 +78,29 @@ export default function FeedbackPage() {
   };
 
   return (
-    <main className="flex-1 overflow-y-auto bg-[var(--v4-canvas)] px-5 py-8 md:px-10 md:py-12 xl:px-16">
-      <div className="mx-auto w-full max-w-2xl pb-12 pt-3">
+    <main className="flex-1 overflow-y-auto bg-[var(--v4-canvas)] px-[var(--ds-page-x)] py-[var(--ds-gap-section)] md:py-8">
+      <div className="mx-auto w-full max-w-3xl pb-[var(--ds-gap-section)]">
         <header className="mt-3">
           <div className="flex items-center gap-3 text-[var(--v4-accent-strong)]">
             <MessageSquareText className="h-7 w-7 stroke-[2]" aria-hidden="true" />
             <span className="text-xs font-semibold tracking-[0.12em]">SAIKOSUBSTUDIO / FEEDBACK</span>
           </div>
-          <h1 className="mt-5 text-3xl font-bold tracking-tight text-[var(--v4-text)] md:text-[2rem]">提交反馈</h1>
+          <h1 className="ds-title !text-[24px] mt-[var(--ds-gap-item)]">提交反馈</h1>
           <p className="mt-1 text-sm font-medium tracking-[0.04em] text-[var(--v4-text-faint)]">Send feedback</p>
-          <p className="mt-4 text-[15px] font-medium leading-7 text-[var(--v4-text-muted)] md:text-base">
-            反馈内容会直接送达开发者。本页面仅提交表单中主动填写的文字。
+          <p className="ds-body mt-[var(--ds-gap-group)] max-w-[68ch] text-[var(--v4-text-muted)]">
+            反馈将直接发送给开发者。仅提交表单中填写的内容。
           </p>
           <p className="mt-1 text-sm leading-6 text-[var(--v4-text-faint)]">
             Submitted text is delivered directly to the developer. Only form content is transmitted.
           </p>
         </header>
 
-        <form onSubmit={submitFeedback} className="mt-10 space-y-8">
+        <form onSubmit={submitFeedback} className="mt-[var(--ds-gap-section)] space-y-[var(--ds-gap-section)]">
           <fieldset>
             <legend className="text-base font-semibold text-[var(--v4-text)]">
               反馈类型 <span className="ml-2 text-sm font-medium text-[var(--v4-text-faint)]">Category</span>
             </legend>
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <div className="mt-[var(--ds-gap-item)] grid gap-[var(--ds-gap-item)] sm:grid-cols-3">
               {categories.map((item) => {
                 const Icon = item.icon;
                 const selected = category === item.id;
@@ -143,7 +143,7 @@ export default function FeedbackPage() {
               required
               rows={9}
               placeholder="请描述遇到的情况，或希望改进的方向。"
-              className="mt-3 w-full resize-y rounded-xl border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] px-4 py-3.5 text-base font-medium leading-7 text-[var(--v4-text)] outline-none transition-colors placeholder:text-[var(--v4-text-faint)] focus:border-[var(--v4-accent)]/55 focus:bg-[var(--v4-accent-soft)]/40"
+              className="mt-[var(--ds-gap-item)] w-full resize-y rounded-xl border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] px-4 py-3.5 text-base font-medium leading-7 text-[var(--v4-text)] outline-none transition-colors placeholder:text-[var(--v4-text-faint)] focus:border-[var(--v4-accent)]/55 focus:bg-[var(--v4-accent-soft)]/40"
             />
             <p className="mt-2 text-sm font-medium text-[var(--v4-text-faint)]">{message.length} / 3000</p>
             {lastErrorCode && (
@@ -157,7 +157,7 @@ export default function FeedbackPage() {
           {showSupportPrompt && (
             <div
               ref={supportPromptRef}
-              className="flex flex-col gap-4 rounded-xl border border-[var(--v4-accent)]/25 bg-[var(--v4-accent-soft)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+              className="ds-well flex flex-col gap-[var(--ds-gap-group)] border border-[var(--v4-accent)]/25 bg-[var(--v4-accent-soft)] sm:flex-row sm:items-center sm:justify-between"
               role="status"
             >
               <div>
@@ -176,7 +176,7 @@ export default function FeedbackPage() {
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-4 border-t border-[var(--v4-line)] pt-6">
+          <div className="flex flex-wrap items-center gap-[var(--ds-gap-group)] border-t border-[var(--v4-line)] pt-[var(--ds-gap-section)]">
             <button
               type="submit"
               disabled={state === 'sending' || message.trim().length === 0}

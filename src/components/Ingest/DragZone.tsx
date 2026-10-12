@@ -920,7 +920,7 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
 
       setIsParsing(false);
       setIngestClearing(false);
-      addLog('字幕已整理完成', 'success');
+      addLog('整理完成', 'success');
     } else {
       setIsParsing(false);
       setIngestClearing(false);
@@ -1024,7 +1024,7 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
         <div className="flex flex-col items-center gap-2.5 text-center">
           <span className="ingest-local-spinner" aria-hidden="true" />
           <p className="text-base font-semibold tracking-tight text-[var(--v4-text)]">
-            文件仅在本机处理
+            文件仅在本地处理
           </p>
         </div>
       </div>
@@ -1276,24 +1276,24 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
                 <p className="ingest-local-add__hint">
                   {tapFirst ? (
                     <>
-                      <span className="ingest-local-add__hint-tap">点选下方添加</span>
+                      <span className="ingest-local-add__hint-tap">从下方选择文件</span>
                       <span className="ingest-local-add__dot" aria-hidden="true">·</span>
-                      <span className="ingest-local-add__privacy">仅在本机读取</span>
+                      <span className="ingest-local-add__privacy">仅在本地读取</span>
                     </>
                   ) : isDragging ? (
                     <>
                       文件会留在本机
                       <span className="ingest-local-add__dot" aria-hidden="true">·</span>
-                      <span className="ingest-local-add__privacy">仅在本机读取</span>
+                      <span className="ingest-local-add__privacy">仅在本地读取</span>
                     </>
                   ) : (
                     <>
                       <span className="ingest-local-add__hint-lead">
-                        <span className="ingest-local-add__hint-drag">拖到此处</span>
-                        <span className="ingest-local-add__hint-click">，或点选下方</span>
+                        <span className="ingest-local-add__hint-drag">拖入此处</span>
+                        <span className="ingest-local-add__hint-click">，或从下方选择</span>
                       </span>
                       <span className="ingest-local-add__dot" aria-hidden="true">·</span>
-                      <span className="ingest-local-add__privacy">仅在本机读取</span>
+                      <span className="ingest-local-add__privacy">仅在本地读取</span>
                     </>
                   )}
                 </p>
@@ -1576,7 +1576,7 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--v4-text-muted)] md:text-[15px]">
                     <HardDrive className="h-4 w-4" aria-hidden="true" />
-                    仅在本机读取，不会上传
+                    仅在本地读取，不上传
                   </span>
                   <WorkflowContinueInFlow className="min-w-[8.5rem] justify-center" />
                 </div>
