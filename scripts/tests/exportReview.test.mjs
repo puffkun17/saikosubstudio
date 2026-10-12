@@ -12,3 +12,11 @@ test('export review: R-xx derived, not blocking data', () => {
   assert.deepEqual(single, ['R-02', 'R-10']);
   assert.ok(er.REVIEW_CODE_TABLE.length >= 11);
 });
+
+test('error codes: keyword rules attach E-xx once', () => {
+  const ec = loadCore()('core/errorCodes');
+  assert.equal(ec.codeErrorMessage('导出失败: boom'), '[E-04] 导出失败: boom');
+  assert.equal(ec.codeErrorMessage('[E-03] 合并失败'), '[E-03] 合并失败');
+  assert.equal(ec.codeErrorMessage('有 2 个分卷压缩包需先在本地完整解压').slice(0, 6), '[E-02]');
+  assert.equal(ec.errorCodeOf('nothing'), null);
+});

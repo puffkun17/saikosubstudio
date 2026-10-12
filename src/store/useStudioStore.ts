@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { parseEpisodeRef, episodeKeyOf } from '../core/episode';
 import { cueTimesFromRows } from '../core/timelineAgreement';
 import type { Task } from '../core/taskModel';
+import { ERROR_CODES, codeErrorMessage, rememberErrorCode } from '../core/errorCodes';
 import { DEFAULT_EXPORT_PRESET_ID, getExportPreset, type ExportPresetId } from '../utils/exportPresets';
 import { DEFAULT_HDR_LEVEL, isHdrLevelId, type HdrLevelId } from '../utils/hdrPresets';
 import { clearAllLocalData, deleteTask, listMerged, listTasks, migrateLegacyLibrary, purgeExpiredSources, purgeExpiredTasks, putHistoryEntry } from '../core/taskStore';
@@ -557,7 +558,18 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setWorkflowStep: (step) => set({ workflowStep: step }),
   setIngestClearing: (isIngestClearing) => set({ isIngestClearing }),
   setLang: (lang) => set({ lang }),
-  addLog: (msg, type = 'info') => {
+  addLog: (rawMsg, type = 'info') => {
+    const msg = type === 'error' ? codeErrorMessage(rawMsg) : rawMsg;
+    if (type === 'error') {
+      // Errors stay until closed (decided A9): what happened + what to do + E-xx for feedback.
+      const code = rememberErrorCode(msg);
+      get().setStatusNotice({
+        id: `error-${code ?? 'x'}`,
+        tone: 'alert',
+        title: code ? `${ERROR_CODES[code]}（${code}）` : '出错了',
+        message: `${msg.replace(/^\[E-\d{2}\]\s*/, '')}${code ? ' · 反馈时可附上这个代码' : ''}`,
+      });
+    }
     const id = Date.now() + Math.random();
     const time = new Date().toLocaleTimeString();
     set(state => ({
