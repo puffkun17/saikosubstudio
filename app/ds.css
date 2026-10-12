@@ -235,3 +235,38 @@
 [data-surface="forest"] .ds-segmented__item { color: var(--ds-ink-2); }
 [data-surface="forest"] .ds-segmented__item[aria-checked="true"] { background: color-mix(in srgb, var(--v5-cream) 20%, transparent); color: var(--ds-ink); box-shadow: none; }
 [data-surface="forest"] .export-menu__download:hover { background: color-mix(in srgb, var(--v5-cream) 8%, transparent); }
+
+/* ===== v1.3 Control padding tokens (Derek: every text-to-edge distance is a token) =====
+   Text is vertically centred by flex + a fixed line box; height comes from the control height token,
+   never from vertical padding, so top/bottom space is always equal. */
+:root {
+  --ds-ctl-h: 36px;        /* buttons, selects, inputs */
+  --ds-ctl-h-sm: 32px;     /* segmented option, compact button */
+  --ds-ctl-h-xs: 28px;     /* chips, pager, inline tags */
+  --ds-ctl-px: 12px;       /* text ↔ left/right edge, buttons/selects/inputs */
+  --ds-ctl-px-sm: 10px;    /* segmented options, chips */
+  --ds-ctl-lh: 20px;       /* single-line line box inside controls */
+  --ds-ctl-gap: 6px;       /* icon ↔ label */
+  --ds-panel-pad: var(--ds-pad-card); /* panel/dock/modal/menu/toast inner padding (16 / 12) */
+}
+.ui-action { min-height: var(--ds-ctl-h); padding: 0 var(--ds-ctl-px); line-height: var(--ds-ctl-lh); gap: var(--ds-ctl-gap); }
+.ui-action--lg { padding: 0 16px; }
+.ui-action--icon, .ui-action--icon-sm { padding: 0; }
+.ui-choice-group { padding: 2px; }
+.ui-choice { min-height: var(--ds-ctl-h-sm); padding: 0 var(--ds-ctl-px-sm); line-height: var(--ds-ctl-lh); gap: var(--ds-ctl-gap); }
+.ds-chip, .episode-tabs > * { height: var(--ds-ctl-h-xs); padding: 0 var(--ds-ctl-px-sm); line-height: var(--ds-ctl-lh); }
+.ds-segmented > * { padding: 0 var(--ds-ctl-px-sm); }
+/* Selects and text inputs: text always starts at the left padding (no right-aligned values). */
+select, .ds-select { text-align: left; text-align-last: left; padding-left: var(--ds-ctl-px); line-height: var(--ds-ctl-lh); }
+input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]), textarea {
+  padding-left: var(--ds-ctl-px); padding-right: var(--ds-ctl-px); text-align: left; }
+.ds-dock__head { padding: var(--ds-panel-pad); }
+.ui-menu, .export-menu, .ds-popover { --ds-menu-row-px: var(--ds-ctl-px); }
+/* 样式参数 sliders: 8 inside a control, 12 between controls, 16 between sections */
+.ds-slider { display: flex; flex-direction: column; gap: var(--ds-gap-item); }
+.ds-slider__head { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-gap-group);
+  min-height: var(--ds-ctl-lh); font-size: 0.875rem; font-weight: 500; line-height: var(--ds-ctl-lh); color: var(--v4-text-muted); }
+.ds-slider__value { min-width: 48px; text-align: right; font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.75rem; font-weight: 600;
+  font-variant-numeric: tabular-nums; color: var(--v4-text); }
+.ds-slider__track { display: block; width: 100%; margin: 0; }
+.ds-slider__hint { font-size: 0.75rem; line-height: 1.4; color: var(--v4-text-muted); }

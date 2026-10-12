@@ -75,17 +75,17 @@ const MenuItem = ({
     type="button"
     disabled={disabled}
     aria-pressed={active ? true : undefined}
-    className={`v4-focus-ring flex w-full cursor-pointer items-start gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors disabled:cursor-default disabled:opacity-40
+    className={`v4-focus-ring flex w-full cursor-pointer items-start gap-2.5 rounded-md px-2.5 py-[var(--ds-gap-item)] text-left transition-colors disabled:cursor-default disabled:opacity-40
       ${active ? 'ds-dock__item--active' : ''} ds-dock__item`}
     onClick={onClick}
   >
-    <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center opacity-90" aria-hidden="true">
+    <span className="grid h-5 w-5 shrink-0 place-items-center opacity-90" aria-hidden="true">
       {icon}
     </span>
     <span className="min-w-0 flex-1">
       <span className="block text-sm font-semibold leading-5">{title}</span>
       {description ? (
-        <span className="mt-0.5 block ds-meta">{description}</span>
+        <span className="mt-0.5 block ds-meta !leading-4">{description}</span>
       ) : null}
     </span>
     {active ? <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> : <span className="w-4 shrink-0" aria-hidden="true" />}
