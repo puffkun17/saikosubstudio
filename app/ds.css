@@ -141,3 +141,11 @@
   .source-identity-rail__overview { display: none; }
   .source-identity-rail__tmdb { margin-top: var(--ds-space-1); justify-content: flex-start; }
 }
+
+/* Custom properties resolve where declared: re-derive ink inside each surface scope so
+   ds-* text follows the local surface (forest theater = light ink, cream panels = dark ink). */
+[data-surface] {
+  --ds-ink: var(--surface-text, var(--v4-text));
+  --ds-ink-2: color-mix(in srgb, var(--ds-ink) 82%, transparent);
+  --ds-ink-3: color-mix(in srgb, var(--ds-ink) 62%, transparent);
+}
