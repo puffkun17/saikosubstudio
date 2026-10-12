@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Generates public/sw.js after `next build` (runs inside `npm run build`, so it also runs
- * inside `npx @cloudflare/next-on-pages` → `vercel build`, before public/ is collected).
+ * Generates dist/client/sw.js after `vite build` (vinext). Runs inside `npm run build`.
+ * public/ has already been copied into dist/client, so sw.js is written there directly.
  *
- * Precache list = app shell + every file in .next/static (all hashed chunks, including the
+ * Precache list = app shell + every file in dist/client/_next/static (all hashed chunks, including the
  * ones only loaded lazily, e.g. libarchive.js) + the local assets the
  * import → merge/align → review → export flow needs offline.
  */
@@ -13,12 +13,12 @@ import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
-const nextDir = join(root, '.next');
-const staticDir = join(nextDir, 'static');
+const outDir = join(root, 'dist/client');
+const staticDir = join(outDir, '_next/static');
 const publicDir = join(root, 'public');
 
 if (!existsSync(staticDir)) {
-  console.error('[build-sw] .next/static not found — run `next build` first.');
+  console.error('[build-sw] dist/client/_next/static not found — run `vite build` first.');
   process.exit(1);
 }
 
@@ -87,7 +87,8 @@ if (missing.length) {
 }
 
 const template = readFileSync(join(root, 'scripts/pwa/sw.template.js'), 'utf8');
-const buildId = readFileSync(join(nextDir, 'BUILD_ID'), 'utf8').trim();
+// vinext has no BUILD_ID file; the hashed chunk list identifies the build.
+const buildId = nextStatic.join('\n');
 const version = createHash('sha256')
   .update(buildId)
   .update(JSON.stringify([required, optional]))
@@ -100,6 +101,6 @@ const out = template
   .replace('__PRECACHE_REQUIRED__', JSON.stringify(required, null, 0))
   .replace('__PRECACHE_OPTIONAL__', JSON.stringify(optional, null, 0));
 
-writeFileSync(join(publicDir, 'sw.js'), out);
+writeFileSync(join(outDir, 'sw.js'), out);
 const bytes = nextStatic.reduce((n, u) => n + statSync(join(staticDir, u.slice('/_next/static/'.length))).size, 0);
-console.log(`[build-sw] public/sw.js version ${version}: ${required.length} required (${nextStatic.length} Next static, ${(bytes / 1024 / 1024).toFixed(2)} MB) + ${optional.length} optional`);
+console.log(`[build-sw] dist/client/sw.js version ${version}: ${required.length} required (${nextStatic.length} Next static, ${(bytes / 1024 / 1024).toFixed(2)} MB) + ${optional.length} optional`);

@@ -13,6 +13,7 @@ import {
   createWrapReport,
   isMainPathSecondaryLanguage,
   type AssScriptMeta,
+  type SubtitleAttribution,
 } from '@/utils/subtitleCore';
 import {
   ASS_PRESET_IDS,
@@ -139,24 +140,37 @@ const DECLARATION_LABEL: Record<CreditDeclaration, string | null> = {
   translated: '翻译或二次整理',
 };
 
+const joinAttribution = (list: SubtitleAttribution[], roles: SubtitleAttribution['role'][]) =>
+  [...new Set(list.filter((item) => roles.includes(item.role)).map((item) => item.value.trim()).filter(Boolean))].join('; ') || undefined;
+
 const buildAssScriptMeta = ({
   creatorCredit,
   creditDeclaration,
   isOfficialSubtitle,
+  attributions = [],
 }: {
   creatorCredit: string;
   creditDeclaration: CreditDeclaration;
   isOfficialSubtitle: boolean;
+  attributions?: SubtitleAttribution[];
 }): AssScriptMeta | undefined => {
   const comments: string[] = [];
   const declaration = DECLARATION_LABEL[creditDeclaration];
   if (declaration) comments.push(`声明：${declaration}`);
   if (isOfficialSubtitle) comments.push('来源：官方字幕');
-  const originalScript = creatorCredit.trim() || undefined;
+  // The merging user goes to Script Updated By; original credits keep their own fields
+  // (core/credits rules). Never write the user's name into Original Script.
+  const scriptUpdatedBy = creatorCredit.trim() || undefined;
+  const originalTranslation = joinAttribution(attributions, ['translator', 'publisher']);
+  const originalEditing = joinAttribution(attributions, ['editor', 'proofreader']);
+  const originalTiming = joinAttribution(attributions, ['timing']);
   const updateDetails = comments.length > 0 ? comments.join('；') : undefined;
-  if (!originalScript && comments.length === 0) return undefined;
+  if (!scriptUpdatedBy && !originalTranslation && !originalEditing && !originalTiming && comments.length === 0) return undefined;
   return {
-    originalScript,
+    originalTranslation,
+    originalEditing,
+    originalTiming,
+    scriptUpdatedBy,
     comments,
     updateDetails,
   };
@@ -171,6 +185,7 @@ export const useExport = () => {
     customFilename,
     customStyle,
     creatorCredit,
+    detectedAttributions,
     appendCreatorCredit,
     creditDeclaration,
     creditPlacement,
@@ -186,6 +201,7 @@ export const useExport = () => {
     customFilename: state.customFilename,
     customStyle: state.customStyle,
     creatorCredit: state.creatorCredit,
+    detectedAttributions: state.detectedAttributions,
     appendCreatorCredit: state.appendCreatorCredit,
     creditDeclaration: state.creditDeclaration,
     creditPlacement: state.creditPlacement,
@@ -244,7 +260,7 @@ export const useExport = () => {
       const hiddenAuxiliaryCount = exportSubs.length - filteredExportSubs.length;
       const plan = planExportBundle(customFilename || 'subtitles', namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel, secondary: secondaryLang });
       const report = createWrapReport();
-      const scriptMeta = buildAssScriptMeta({ creatorCredit, creditDeclaration, isOfficialSubtitle });
+      const scriptMeta = buildAssScriptMeta({ creatorCredit, creditDeclaration, isOfficialSubtitle, attributions: detectedAttributions });
 
       const files = plan.files.map((file) => {
         const preset = EXPORT_PRESETS[file.presetId];

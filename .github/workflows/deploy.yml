@@ -1,135 +1,44 @@
-name: Deploy SaikoSubStudio to Cloudflare Pages
+name: Deploy Worker (Cloudflare Workers via vinext)
+
+# Push to cf-pages-hosted -> build -> wrangler deploy to Worker "saikosubstudio"
+# (custom domains dualsubs.quest + www.dualsubs.quest, switched 2026-10-13).
+# Needs repo secret CLOUDFLARE_API_TOKEN (Workers Scripts:Edit). Without it the job builds and
+# skips the deploy with a warning. Worker secret TMDB_API_KEY lives on the Worker, not here.
+# The legacy Pages project "saikosubstudio" is kept (no custom domain) as rollback.
 
 on:
   push:
     branches: [ cf-pages-hosted ]
-  workflow_dispatch:   # Allow manual trigger from GitHub UI
-
-# Node.js 20 deprecation handling (GitHub Actions runner).
-# GitHub is deprecating Node 20 for action execution.
-# We opt into Node 24 for the actions themselves using FORCE_JAVASCRIPT_ACTIONS_TO_NODE24.
-# The actual build still uses Node 20 (via setup-node) because the project pins
-# Next.js 15.5.2 + @cloudflare/next-on-pages ^1.13.5 for Cloudflare compatibility.
-# See: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
-#
-# Long term: upgrade the CF adapter + Next.js so we can use modern Node for everything.
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      deployments: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Install dependencies
-        # --legacy-peer-deps is required for compatibility with current
-        # @cloudflare/next-on-pages + Next 15.5.2 pin.
-        run: npm ci --legacy-peer-deps
-
-      - name: Build for Cloudflare Pages
-        run: npm run pages:build
-
-      - name: Verify Cloudflare build output
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build Worker (vite build + sw.js)
+        run: npm run build
+      - name: Verify output
         run: |
-          echo "Checking for .vercel/output/static ..."
-          if [ ! -d ".vercel/output/static" ]; then
-            echo "❌ ERROR: .vercel/output/static directory not found after pages:build"
-            echo "Contents of .vercel/output (if any):"
-            ls -la .vercel/output/ 2>/dev/null || echo "(no .vercel/output dir)"
-            echo "This usually means the @cloudflare/next-on-pages build failed."
-            echo "Check the 'Build for Cloudflare Pages' step logs above for the real error."
-            exit 1
-          fi
-          echo "✅ Build output directory exists"
-          echo "Top level contents:"
-          ls -la .vercel/output/static | head -30
+          test -f dist/server/wrangler.json
+          test -f dist/client/sw.js
+          test -f dist/client/libarchive/libarchive.wasm
+          npx wrangler deploy --config dist/server/wrangler.json --dry-run
 
-      # Use direct wrangler (from devDependencies) instead of wrangler-action
-      # for better error logs and to avoid action-internal npx issues.
-      # This also makes the command use the Node version we just set up.
-      # Direct wrangler deploy is DISABLED.
-      # For the hosted cf-pages-hosted branch we now rely 100% on Cloudflare's native Git integration
-      # (Production branch = cf-pages-hosted). This avoids polluting the project with direct-upload
-      # deployments that don't reliably activate the custom domain / root.
-      #
-      # The "Build for Cloudflare Pages" + verify steps below still run on every push for safety
-      # (they will fail the CI if the @cloudflare/next-on-pages artifact is broken).
-      #
-      # If you ever need to do a manual direct upload from CI, set the two CLOUDFLARE_* secrets
-      # and temporarily change the if condition or re-enable the step.
-        #
-        # Optional but highly recommended:
-        # - Also create a secret named CLOUDFLARE_ACCOUNT_ID (find it in the Cloudflare dashboard sidebar)
-        #   This makes authentication more reliable and avoids some membership queries.
-
-      - name: Deployment info
+      - name: Deploy to Workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: e4817f5651bb4a362691fcbe72054f54
         run: |
-          echo "✅ Deployment step completed."
-          echo "Check the Cloudflare Pages dashboard for the live URL."
-          echo "Project: saikosubstudio"
-          echo "Recent direct-upload deployments (cf-pages-hosted) should now contain the fixed build (Edge TMDB proxy, scenes, no client key prompts, version banner)."
-
-      - name: Promote to production (so dualsubs.quest and saikosubstudio.pages.dev serve the new deployment)
-        if: success()
-        run: |
-          echo "Attempting auto-promote of the latest deployment to Production environment."
-          echo "This makes the custom domain https://dualsubs.quest/ and the project root serve the freshly uploaded build (with server-side TMDB via proxy + pre-configured assets)."
-          echo ""
-          ACCOUNT="${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
-          TOKEN="${{ secrets.CLOUDFLARE_API_TOKEN }}"
-
-          if [ -z "$ACCOUNT" ] || [ -z "$TOKEN" ]; then
-            echo "⚠️  CLOUDFLARE_ACCOUNT_ID and/or CLOUDFLARE_API_TOKEN not set as GitHub repository secrets."
-            echo "   Direct uploads (this workflow) created good deployments, but without the secrets the promote step cannot auto-update the production pointer."
-            echo "   One-time manual action required (only once):"
-            echo "     1. Open Cloudflare Pages > saikosubstudio > Deployments"
-            echo "     2. Find a recent successful deployment from branch cf-pages-hosted (look for commit 1e32a35 or later, or the f1d3f543 / 713edd24 style links)"
-            echo "     3. Click the '...' menu on that deployment > 'Publish to production' (or 'Set as production deployment')."
-            echo "   After this, the custom domain will serve the full app (no more root 404, TMDB searches work via the built-in key you already put in the Pages env vars, version v1.2.0-hosted visible)."
-            echo "   Future pushes will then keep it updated if you also add the two secrets (ACCOUNT_ID = e4817f5651bb4a362691fcbe72054f54 from your dashboard sidebar)."
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::warning::CLOUDFLARE_API_TOKEN repo secret not set; skipped deploy (run wrangler deploy manually)."
             exit 0
           fi
-
-          # Best-effort: list latest deployment for the project and promote it.
-          # The wrangler deploy above already uploaded the correct _worker.js (Edge /api/tmdb + static with scenes).
-          LATEST_ID=$(curl -s -H "Authorization: Bearer $TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT/pages/projects/saikosubstudio/deployments?per_page=1" \
-            | python3 -c '
-              import sys, json
-              try:
-                data = json.load(sys.stdin)
-                if data.get("success") and data.get("result"):
-                  print(data["result"][0]["id"])
-              except:
-                pass
-            ' 2>/dev/null || echo "")
-
-          if [ -z "$LATEST_ID" ]; then
-            echo "Could not auto-detect latest deployment ID (check token permissions: Account > Pages > Edit)."
-            echo "Please promote manually from the dashboard as described above (one time)."
-            exit 0
-          fi
-
-          echo "Promoting deployment ID: $LATEST_ID ..."
-          PROMOTE_RES=$(curl -s -X POST \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "Content-Type: application/json" \
-            "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT/pages/projects/saikosubstudio/deployments/$LATEST_ID/promote" || echo '{"success":false}')
-
-          if echo "$PROMOTE_RES" | grep -q '"success": *true'; then
-            echo "✅ Promote succeeded. https://dualsubs.quest/ and https://saikosubstudio.pages.dev should now serve the new build within a minute."
-          else
-            echo "Promote response: $PROMOTE_RES"
-            echo "If it did not succeed, use the dashboard one-time promote on the latest cf-pages-hosted deployment as fallback."
-          fi
+          npx wrangler deploy --config dist/server/wrangler.json

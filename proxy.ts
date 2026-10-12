@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 /**
- * Security headers for next-on-pages.
+ * Security headers (Next 16 proxy; runs in the vinext Worker).
  * public/_headers only applies to static assets; HTML / Function responses
  * need headers set here (or in next.config) or CSP never updates for the app shell.
  */
@@ -30,7 +30,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
 };
 
-export function middleware() {
+export function proxy() {
   const response = NextResponse.next();
   for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
     response.headers.set(key, value);

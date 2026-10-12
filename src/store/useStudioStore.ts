@@ -1,4 +1,12 @@
 import { create } from 'zustand';
+import { parseEpisodeRef, episodeKeyOf } from '../core/episode';
+import { cueTimesFromRows } from '../core/timelineAgreement';
+import { decideSameEpisode, type EpisodeCandidate } from '../core/sameEpisode';
+import { detectSdhByContent, splitAssByLanguageStyles, titleKeyOf } from '../core/recognition';
+import { detectLanguageByContent } from '../utils/subtitleCore';
+import { mergeWorkerAvailable, runMergeJob, runMergeJobInThread } from '../core/mergeClient';
+import type { MergeJobEvent, MergeJobInput, MergeJobResult } from '../core/mergeJob';
+import type { AlignmentFallbackInfo } from '../utils/subtitleCore';
 import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity, isMainPathSecondaryLanguage, isEnglishSecondaryLanguage, isLatinSecondaryLanguage, mainPathPrimaryRank, mainPathSecondaryRank, estimateSubtitleCueCount, isSparseSecondaryTrack, measureMergeOrphanRate, isSdhOrCcSubtitleFilename } from '../utils/subtitleCore';
 import { assessTvYearFit, parseSeasonNumber, parseYearToken, shouldDemoteBySeasonSpan } from '../utils/tmdbCandidateFit';
 import { estimateJsonBytes, readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
@@ -49,6 +57,10 @@ export interface Subfile {
   size: number;
   /** 导入来源：松散文件 / ZIP / RAR·7Z / 文件夹 */
   importSource?: 'file' | 'zip' | 'archive' | 'folder';
+  /** SDH detected from content ([sound] cues / SPEAKER: labels), not just the filename. */
+  isSdh?: boolean;
+  /** Virtual track split out of one bilingual ASS by style names (Dial_CH / Dial_JP). */
+  derivedFrom?: { name: string; styles: string[] };
 }
 
 export interface TaskPair {
@@ -64,6 +76,8 @@ export interface TaskPair {
   tmdbData?: TmdbMetadata | null;
   tmdbBackdrop?: string | null;
   tmdbBackdropList?: string[];
+  /** Same-episode suggestion the user should confirm (core/sameEpisode). UI in PR #2. */
+  mergeSuggestion?: { otherTaskId: string; score: number; reason: string };
 }
 
 export interface LibraryItem {
@@ -341,6 +355,41 @@ const formatTmdbOutputName = (meta: TmdbMetadata, episodeKey?: string) => {
   if (episodeKey) parts.push(episodeKey.toUpperCase());
   return parts.join('.');
 };
+
+const episodeCandidateCache = new WeakMap<Subfile, EpisodeCandidate>();
+/** Reuses the parsed timeline per file (first few dozen cues only). */
+const episodeCandidateOf = (file: Subfile): EpisodeCandidate => {
+  const hit = episodeCandidateCache.get(file);
+  if (hit) return hit;
+  const cand: EpisodeCandidate = {
+    ep: parseEpisodeRef(file.name),
+    titleKey: titleKeyOf(file.name),
+    times: cueTimesFromRows(parseSubtitle(file.text).slice(0, 160)),
+  };
+  episodeCandidateCache.set(file, cand);
+  return cand;
+};
+
+const expandRecognizedFiles = (files: Subfile[]): Subfile[] => files.flatMap((file) => {
+  const base = { ...file };
+  if (/\.(ass|ssa)$/i.test(file.name) && !file.derivedFrom) {
+    const split = splitAssByLanguageStyles(file.text);
+    // en pairs are already handled by the bilingual-single path; ja/ko were misread as pure Japanese.
+    if (split && split.secondary.lang !== 'en') {
+      const stem = file.name.replace(/\.(ass|ssa)$/i, '');
+      const secondaryLang = split.secondary.lang;
+      const zhLang = detectLanguageByContent(parseSubtitle(split.primary.text).slice(0, 80).map((r) => r.text).join('\n'));
+      return [
+        { ...base, id: `${file.id}#zh`, name: `${stem}.简中.ass`, text: split.primary.text, lang: zhLang === 'zh-TW' ? 'zh-TW' : 'zh-CN', isBilingual: false, languagePair: undefined, derivedFrom: { name: file.name, styles: split.primary.styles } },
+        { ...base, id: `${file.id}#${secondaryLang}`, name: `${stem}.${secondaryLang === 'ja' ? '日文' : 'kor'}.ass`, text: split.secondary.text, lang: secondaryLang, isBilingual: false, languagePair: undefined, derivedFrom: { name: file.name, styles: split.secondary.styles } },
+      ];
+    }
+  }
+  if (isEnglishSecondaryLanguage(file.lang) && !isSdhOrCcSubtitleFilename(file.name) && detectSdhByContent(parseSubtitle(file.text)).isSdh) {
+    return [{ ...base, isSdh: true }];
+  }
+  return [base];
+});
 
 export const useStudioStore = create<StudioState>((set, get) => ({
   workflowStep: 1,
@@ -1675,6 +1724,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         } else {
             const sMatch = task.epKey.match(/S(\d+)/i);
             if (sMatch) season = parseInt(sMatch[1]).toString();
+            // E-only keys (#02 anime releases) must keep their episode, never default to E01.
+            const eMatch = task.epKey.match(/E(\d+)/i);
+            if (eMatch) episode = parseInt(eMatch[1]).toString();
         }
     }
     set(state => ({
@@ -1938,7 +1990,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     get().addLog(`已载入字幕库项目: ${item.name}`, "success");
   },
 
-  processFiles: (newFiles) => {
+  processFiles: (incomingFiles) => {
+    // Recognition pre-pass (core/recognition): split zh+ja/ko style-paired ASS into two virtual
+    // tracks, flag SDH by content. Runs after decode/parse, before grouping.
+    const newFiles = expandRecognizedFiles(incomingFiles);
     set(state => {
       // 1. Add new files to uploadedFiles list, checking for duplicates
       const updatedUploadedFiles = [...state.uploadedFiles];
@@ -1957,7 +2012,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         .filter(item => item.shouldAutoSearchTmdb)
         .sort((a, b) => b.title.length - a.title.length)[0]?.title || '';
 
-      const parseEpisodeKey = (name: string): string | undefined => parsedByName.get(name)?.episodeKey || parseMediaFilename(name).episodeKey;
+      const parseEpisodeKey = (name: string): string | undefined => {
+        const legacy = parsedByName.get(name)?.episodeKey || parseMediaFilename(name).episodeKey;
+        // Legacy parser misses #02 / 1x01; E-only keys get season 1 so naming never falls back to S01E01.
+        if (legacy && /^S\d+E\d+$/i.test(legacy)) return legacy;
+        return episodeKeyOf(parseEpisodeRef(name), 1) || legacy;
+      };
       const getBaseTitle = (name: string): string => {
         // Prefer cleanFilename so trailing lang tags (简中/繁中/eng) do not split one episode into multiple tasks.
         const cleaned = cleanFilename(name);
@@ -1974,13 +2034,22 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const fileEpKey = parseEpisodeKey(file.name);
         const fileBase = getBaseTitle(file.name).toLowerCase();
 
+        // Same-episode grouping (core/sameEpisode): episode number + timeline agreement.
+        // Never merges differing episodes; uncertain pairs become a suggestion, not a merge.
+        let suggestion: TaskPair['mergeSuggestion'];
+        const fileCand = episodeCandidateOf(file);
         const matchedTask = currentTasks.find(t => {
           const sameBase = fileBase
             ? t.files.some(f => getBaseTitle(f.name).toLowerCase() === fileBase)
             : true;
-          if (!sameBase) return false;
-          if (fileEpKey || t.epKey) return fileEpKey === t.epKey;
-          return true;
+          if (sameBase && (fileEpKey || t.epKey) && fileEpKey === t.epKey) return true;
+          if (sameBase && !fileEpKey && !t.epKey) return true;
+          const decisions = t.files.map(f => decideSameEpisode(fileCand, episodeCandidateOf(f)));
+          if (decisions.some(d => d.kind === 'separate' && d.reason === 'episode-different')) return false;
+          if (decisions.some(d => d.kind === 'merge')) return true;
+          const hint = decisions.find(d => d.kind === 'suggest');
+          if (hint && !suggestion) suggestion = { otherTaskId: t.id, score: hint.score, reason: hint.reason };
+          return false;
         });
 
         if (matchedTask) {
@@ -2000,7 +2069,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             en: null,
             commentary: null,
             files: [file],
-            status: "unpaired"
+            status: "unpaired",
+            ...(suggestion ? { mergeSuggestion: suggestion } : {}),
           };
           currentTasks.push(newTask);
         }
@@ -2060,7 +2130,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             return b.size - a.size;
           });
           // Prefer a non-SDH English track whose cue count looks like dialogue vs primary.
-          const nonSdh = ranked.filter((file) => !isSdhOrCcSubtitleFilename(file.name));
+          const nonSdh = ranked.filter((file) => !isSdhOrCcSubtitleFilename(file.name) && !file.isSdh);
           const dialoguePool = (nonSdh.length > 0 ? nonSdh : ranked).filter((file) => {
             if (primaryCueCount <= 0) return true;
             return !isSparseSecondaryTrack(primaryCueCount, estimateSubtitleCueCount(file.text));
@@ -2193,78 +2263,64 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     get().clearMergeReviewChecked(taskKey);
     set({ isProcessing: true, processedSubs: null });
     
-    try {
-      if (currentTask?.isBilingualSingle && files.zh) {
-        // Single bilingual srt/ass parsing
-        const rawParsed = parseSubtitle(files.zh.text);
-        const parsed: SubRow[] = normalizeSingleBilingualRows(rawParsed);
-        
-        set({ processedSubs: parsed, previewIndex: 0, workflowStep: 2, editHistory: [], editFuture: [] });
-        get().addLog(`已成功加载原生双语字幕，共包含 ${parsed.length} 行流数据，并自动完成双语拆轨`, 'success');
-      } else {
-        // Standard double merge
-        const zhParsed = parseSubtitle(files.zh?.text || '');
-        const enParsed = parseSubtitle(files.en?.text || '');
-        const commParsed = parseSubtitle(files.commentary?.text || '');
-
-        const { alignmentMode } = get();
-        let usedMode: 'standard' | 'industrial' = alignmentMode;
-        let merged = alignmentMode === 'industrial'
-          ? alignSubtitlesIndustrial(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t), {
-              onFallback: (info) => {
-                if (info.reason === 'banded') {
-                  get().setStatusNotice({
-                    id: 'alignment-banded',
-                    tone: 'notice',
-                    title: '已启用带状对齐',
-                    message: `字幕体量较大（约 ${Math.round(info.cells / 1_000_000)}M 对齐单元），使用带宽 ${((info.bandHalfWidth ?? 0) * 2) + 1} 的工业对齐以控制内存。`,
-                  });
-                  return;
-                }
-                get().setStatusNotice({
-                  id: 'alignment-fallback',
-                  tone: 'notice',
-                  title: '已切换快速对齐',
-                  message: `字幕体量较大（约 ${Math.round(info.cells / 1_000_000)}M 对齐单元），已用低内存快速合并，建议人工复核时间轴。`,
-                });
-              },
-            })
-          : mergeSubtitles(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t));
-
-        // 智能 orphans 爆炸时自动升级精校；不清理 uploadedFiles / 任务绑定。
-        if (alignmentMode === 'standard' && measureMergeOrphanRate(merged) >= 0.22) {
-          get().addLog('[合并] 智能对齐孤立行偏多，自动改用精校对齐', 'info');
-          usedMode = 'industrial';
-          merged = alignSubtitlesIndustrial(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t), {
-            onFallback: (info) => {
-              if (info.reason === 'banded') {
-                get().setStatusNotice({
-                  id: 'alignment-banded',
-                  tone: 'notice',
-                  title: '已启用带状对齐',
-                  message: `字幕体量较大（约 ${Math.round(info.cells / 1_000_000)}M 对齐单元），使用带宽 ${((info.bandHalfWidth ?? 0) * 2) + 1} 的工业对齐以控制内存。`,
-                });
-              }
-            },
-          });
-          get().setStatusNotice({
-            id: 'alignment-auto-industrial',
-            tone: 'notice',
-            title: '已自动改用精校',
-            message: '智能对齐出现较多未配对行，已在不重新导入的前提下改用精校对齐。',
-          });
-        }
-        void usedMode;
-        set({ processedSubs: merged, previewIndex: 0, workflowStep: 2, editHistory: [], editFuture: [] });
+    const notice = (info: AlignmentFallbackInfo, phase: 'primary' | 'auto-upgrade') => {
+      if (info.reason === 'banded') {
+        get().setStatusNotice({
+          id: 'alignment-banded',
+          tone: 'notice',
+          title: '已启用带状对齐',
+          message: `字幕体量较大（约 ${Math.round(info.cells / 1_000_000)}M 对齐单元），使用带宽 ${((info.bandHalfWidth ?? 0) * 2) + 1} 的工业对齐以控制内存。`,
+        });
+        return;
       }
+      if (phase === 'primary') {
+        get().setStatusNotice({
+          id: 'alignment-fallback',
+          tone: 'notice',
+          title: '已切换快速对齐',
+          message: `字幕体量较大（约 ${Math.round(info.cells / 1_000_000)}M 对齐单元），已用低内存快速合并，建议人工复核时间轴。`,
+        });
+      }
+    };
+    // Parse + merge/alignment run in a native Web Worker (src/workers/merge.worker.ts);
+    // the main thread only applies the result. In-thread (synchronous) when Workers are unavailable.
+    const input: MergeJobInput = {
+      zhText: files.zh?.text || '',
+      enText: files.en?.text || '',
+      commentaryText: files.commentary?.text || '',
+      mode: get().alignmentMode,
+      bilingualSingle: Boolean(currentTask?.isBilingualSingle && files.zh),
+    };
+    const onEvent = (event: MergeJobEvent) => {
+      if (event.type === 'log') get().addLog(event.msg, event.tone);
+      else if (event.type === 'fallback') notice(event.info, event.phase);
+      else if (event.type === 'auto-industrial') {
+        get().setStatusNotice({
+          id: 'alignment-auto-industrial',
+          tone: 'notice',
+          title: '已自动改用精校',
+          message: '智能对齐出现较多未配对行，已在不重新导入的前提下改用精校对齐。',
+        });
+      }
+    };
+    const apply = (result: MergeJobResult) => {
+      // Ignore stale results if the user switched task while the worker ran.
+      if (get().selectedTaskId !== selectedTaskId) return;
+      set({ processedSubs: result.rows, previewIndex: 0, workflowStep: 2, editHistory: [], editFuture: [] });
       // Clear save point: a finished merge is restorable from 存档 after reload / leaving /.
       get().saveToLibrary();
-    } catch (err: unknown) {
+    };
+    const fail = (err: unknown) => {
       const msg = err instanceof Error ? err.message : String(err);
       get().addLog(`[异常] 合并失败: ${msg}`, 'error');
-    } finally {
-      set({ isProcessing: false });
+    };
+    if (!mergeWorkerAvailable()) {
+      try { apply(runMergeJobInThread(input, onEvent)); } catch (err) { fail(err); } finally { set({ isProcessing: false }); }
+      return;
     }
+    void runMergeJob(input, onEvent).then(apply).catch(fail).finally(() => {
+      set({ isProcessing: false });
+    });
   },
 
   restartSystem: () => {

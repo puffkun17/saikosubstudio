@@ -42,6 +42,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-CN" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+      <head>
+        {/* eslint-disable-next-line @next/next/no-css-tags -- self-hosted font CSS in public/ (CSP font-src 'self') */}
+        <link rel="stylesheet" href="/fonts/noto-serif-sc/noto-serif-sc.css" />
+      </head>
       <body className="app-canvas font-sans h-dvh overflow-hidden">
         <AppChrome>
           <SystemTray />
