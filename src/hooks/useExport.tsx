@@ -17,33 +17,27 @@ import {
 } from '@/utils/subtitleCore';
 import {
   ASS_PRESET_IDS,
-  DEFAULT_EXPORT_PRESET_ID,
   DEFAULT_NAMING_ID,
   EXPORT_PRESETS,
   NAMING_OPTIONS,
   SRT_ADDON_IDS,
   SRT_ADDON_LABELS,
-  getExportPreset,
   getNamingOption,
   planExportBundle,
   resolvePresetStyle,
   type ExportPresetId,
 } from '@/utils/exportPresets';
 import {
-  DEFAULT_HDR_LEVEL,
   HDR_BUNDLE_FOLDER,
   HDR_LEVEL_ORDER,
   HDR_LEVELS_PROVISIONAL,
-  isHdrLevelId,
   type HdrLevelId,
 } from '@/utils/hdrPresets';
 import { buildMergeReviewQueue } from '@/utils/timeline/alignmentDiff';
 import { buildExportBaseFromMeta, type NamingMode } from '@/core/taskModel';
 
-const PRESET_STORAGE_KEY = 'saiko_export_preset';
 const NAMING_STORAGE_KEY = 'saiko_export_naming';
 const SRT_ADDONS_STORAGE_KEY = 'saiko_export_srt_addons';
-const HDR_STORAGE_KEY = 'saiko_export_hdr';
 const NAME_MODE_STORAGE_KEY = 'saiko_export_name_mode';
 
 export const NAME_MODE_OPTIONS: { id: NamingMode; label: string }[] = [
@@ -94,41 +88,27 @@ export interface ExportRequest {
  * Default = one ASS file; SRT variants are opt-in add-ons that turn the download into a zip.
  */
 export const useExportChoices = () => {
-  const [assPresetId, setAssPresetIdState] = useState<ExportPresetId>(DEFAULT_EXPORT_PRESET_ID);
+  // Preset + HDR live in the store so the preview toolbar and this menu stay in sync (preview == export).
+  const { assPresetId, setAssPresetId, hdrEnabled, hdrLevelChoice, setHdr } = useStudioStore(useShallow((s) => ({
+    assPresetId: s.exportPresetId,
+    setAssPresetId: s.setExportPresetId,
+    hdrEnabled: s.hdrEnabled,
+    hdrLevelChoice: s.hdrLevel,
+    setHdr: s.setHdr,
+  })));
   const [namingId, setNamingIdState] = useState<string>(DEFAULT_NAMING_ID);
   const [srtAddonIds, setSrtAddonIdsState] = useState<ExportPresetId[]>([]);
-  // Stored as "<level>" when on, "off:<level>" when off (keeps the last chosen level).
-  const [hdrEnabled, setHdrEnabledState] = useState(false);
   const [nameMode, setNameModeState] = useState<NamingMode>('original');
-  const [hdrLevelChoice, setHdrLevelChoiceState] = useState<HdrLevelId>(DEFAULT_HDR_LEVEL);
   useEffect(() => {
-    const storedPreset = getExportPreset(readStoredChoice(PRESET_STORAGE_KEY));
-    setAssPresetIdState(storedPreset.formats.includes('ass') ? storedPreset.id : DEFAULT_EXPORT_PRESET_ID);
     setNamingIdState(getNamingOption(readStoredChoice(NAMING_STORAGE_KEY)).id);
     const storedAddons = (readStoredChoice(SRT_ADDONS_STORAGE_KEY) || '').split(',');
     setSrtAddonIdsState(SRT_ADDON_IDS.filter((id) => storedAddons.includes(id)));
     const storedMode = readStoredChoice(NAME_MODE_STORAGE_KEY);
     if (isNameMode(storedMode)) setNameModeState(storedMode);
-    const storedHdr = readStoredChoice(HDR_STORAGE_KEY) || '';
-    const level = storedHdr.replace(/^off:/, '');
-    setHdrEnabledState(Boolean(storedHdr) && !storedHdr.startsWith('off:') && isHdrLevelId(level));
-    if (isHdrLevelId(level)) setHdrLevelChoiceState(level);
   }, []);
-  const persistHdr = (enabled: boolean, level: HdrLevelId) =>
-    writeStoredChoice(HDR_STORAGE_KEY, enabled ? level : `off:${level}`);
-  const setHdrEnabled = (enabled: boolean) => {
-    setHdrEnabledState(enabled);
-    persistHdr(enabled, hdrLevelChoice);
-  };
-  const setHdrLevelChoice = (level: HdrLevelId) => {
-    setHdrLevelChoiceState(level);
-    persistHdr(hdrEnabled, level);
-  };
+  const setHdrEnabled = (enabled: boolean) => setHdr(enabled);
+  const setHdrLevelChoice = (level: HdrLevelId) => setHdr(hdrEnabled, level);
   const hdrLevel: HdrLevelId | null = hdrEnabled ? hdrLevelChoice : null;
-  const setAssPresetId = (id: ExportPresetId) => {
-    setAssPresetIdState(id);
-    writeStoredChoice(PRESET_STORAGE_KEY, id);
-  };
   const setNamingId = (id: string) => {
     setNamingIdState(id);
     writeStoredChoice(NAMING_STORAGE_KEY, id);

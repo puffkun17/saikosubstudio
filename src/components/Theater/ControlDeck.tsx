@@ -7,7 +7,6 @@ import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import {
   Check,
   ChevronDown,
-  Clapperboard,
   Image as ImageIcon,
   ImageOff,
   LampCeiling,
@@ -17,41 +16,9 @@ import {
   Square,
   StretchHorizontal,
   Shuffle,
-  Tv,
 } from 'lucide-react';
-import type { StyleSettings } from '@/utils/subtitleCore';
-
-type Preset = {
-  id: string;
-  name: string;
-  desc: string;
-  styles: Partial<StyleSettings>;
-  icon: React.ReactNode;
-};
-
-const PRESETS: Preset[] = [
-  {
-    id: 'netflix',
-    name: 'Netflix',
-    desc: '轻阴影',
-    styles: { zhFontSize: 22, enFontSize: 13, zhColor: '#FFFFFF', enColor: '#FFFFFF', zhOutline: '#000000', marginV: 25 },
-    icon: <Tv className="h-4 w-4 stroke-[2]" aria-hidden="true" />,
-  },
-  {
-    id: 'classic',
-    name: '大银幕',
-    desc: '黄白配',
-    styles: { zhFontSize: 20, enFontSize: 12, zhColor: '#FFFFFF', enColor: '#B0B0B0', zhOutline: '#4B5563', marginV: 20 },
-    icon: <Clapperboard className="h-4 w-4 stroke-[2]" aria-hidden="true" />,
-  },
-  {
-    id: 'anime',
-    name: '动漫',
-    desc: '深描边',
-    styles: { zhFontSize: 24, enFontSize: 14, zhColor: '#FFFFFF', enColor: '#FFFFFF', zhOutline: '#6D4438', marginV: 30 },
-    icon: <Sparkles className="h-4 w-4 stroke-[2]" aria-hidden="true" />,
-  },
-];
+import { ASS_PRESET_IDS, EXPORT_PRESETS } from '@/utils/exportPresets';
+import { HDR_LEVEL_ORDER, HDR_LEVELS_PROVISIONAL } from '@/utils/hdrPresets';
 
 const ASPECT_RATIOS = [
   { id: '4:3', label: '4:3', description: '标准画幅', icon: <Square className="h-4 w-4 stroke-[2]" aria-hidden="true" /> },
@@ -208,45 +175,42 @@ export const TheaterSystemChrome: React.FC = () => {
   const {
     theaterAspect,
     setTheaterAspect,
-    activePreset,
-    setActivePreset,
-    customStyle,
-    setCustomStyle,
     tmdbBackdrop,
     tmdbBackdropList,
     setTmdbBackdrop,
     shuffleBackdrop,
     isLightsOff,
     setLightsOff,
+    exportPresetId,
+    setExportPresetId,
+    hdrEnabled,
+    hdrLevel,
+    setHdr,
   } = useStudioStore(useShallow((state) => ({
     theaterAspect: state.theaterAspect,
     setTheaterAspect: state.setTheaterAspect,
-    activePreset: state.activePreset,
-    setActivePreset: state.setActivePreset,
-    customStyle: state.customStyle,
-    setCustomStyle: state.setCustomStyle,
     tmdbBackdrop: state.tmdbBackdrop,
     tmdbBackdropList: state.tmdbBackdropList,
     setTmdbBackdrop: state.setTmdbBackdrop,
     shuffleBackdrop: state.shuffleBackdrop,
     isLightsOff: state.isLightsOff,
     setLightsOff: state.setLightsOff,
+    exportPresetId: state.exportPresetId,
+    setExportPresetId: state.setExportPresetId,
+    hdrEnabled: state.hdrEnabled,
+    hdrLevel: state.hdrLevel,
+    setHdr: state.setHdr,
   })));
 
-  const applyPreset = (preset: Preset) => {
-    setActivePreset(preset.id);
-    setCustomStyle({ ...customStyle, ...preset.styles });
-  };
 
   const hasBackdropPool = tmdbBackdropList.length > 0;
   const canShuffleBackdrop = tmdbBackdropList.length > 1;
   const activeAspect = ASPECT_RATIOS.find((item) => item.id === theaterAspect) ?? ASPECT_RATIOS[2];
-  const activePresetMeta = PRESETS.find((preset) => preset.id === activePreset);
 
   return (
     <div className="theater-system-chrome flex flex-wrap items-center gap-2">
       <TheaterHeaderMenu
-        label="切换比例"
+        label="画幅"
         menuLabel="切换预览比例"
         icon={activeAspect.icon}
       >
@@ -270,7 +234,7 @@ export const TheaterSystemChrome: React.FC = () => {
       </TheaterHeaderMenu>
 
       <TheaterHeaderMenu
-        label="更换预览剧照"
+        label="剧照"
         menuLabel="更换预览剧照"
         icon={tmdbBackdrop
           ? <ImageIcon className="h-4 w-4 stroke-[2]" aria-hidden="true" />
@@ -318,23 +282,38 @@ export const TheaterSystemChrome: React.FC = () => {
       </TheaterHeaderMenu>
 
       <TheaterHeaderMenu
-        label="快速套用模版"
-        menuLabel="快速套用模版"
-        icon={activePresetMeta?.icon ?? <Sparkles className="h-4 w-4 stroke-[2]" aria-hidden="true" />}
+        label="样式预设"
+        menuLabel="样式预设（预览即导出）"
+        icon={<Sparkles className="h-4 w-4 stroke-[2]" aria-hidden="true" />}
       >
         {(close) => (
           <div className="p-1.5">
-            {PRESETS.map((preset) => (
+            {ASS_PRESET_IDS.map((id) => (
               <MenuItem
-                key={preset.id}
-                active={activePreset === preset.id}
-                icon={preset.icon}
-                title={preset.name}
-                description={preset.desc}
+                key={id}
+                active={exportPresetId === id}
+                icon={<Sparkles className="h-4 w-4 stroke-[2]" aria-hidden="true" />}
+                title={EXPORT_PRESETS[id].label}
                 onClick={() => {
-                  applyPreset(preset);
+                  setExportPresetId(id);
                   close();
                 }}
+              />
+            ))}
+            <div className="my-1 border-t border-[var(--v4-line)]" role="separator" />
+            <MenuItem
+              active={!hdrEnabled}
+              icon={<span className="text-xs font-semibold">SDR</span>}
+              title="SDR（普通屏幕）"
+              onClick={() => { setHdr(false); close(); }}
+            />
+            {HDR_LEVEL_ORDER.map((id) => (
+              <MenuItem
+                key={id}
+                active={hdrEnabled && hdrLevel === id}
+                icon={<span className="text-xs font-semibold">HDR</span>}
+                title={`HDR · ${HDR_LEVELS_PROVISIONAL[id].label}`}
+                onClick={() => { setHdr(true, id); close(); }}
               />
             ))}
           </div>
@@ -347,10 +326,9 @@ export const TheaterSystemChrome: React.FC = () => {
         aria-pressed={isLightsOff}
         title="关灯观影（L）· 再点空白处 / Esc / L 退出"
         aria-label={isLightsOff ? '开灯' : '关灯观影'}
-        className={`theater-lights-action v4-focus-ring inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-md)] border px-3.5 py-2 text-sm font-bold tracking-wide transition-[color,background,border-color,box-shadow,filter] duration-200
-          ${isLightsOff ? 'theater-lights-action--on' : ''}`}
+        className={`ui-action ui-action--secondary ${isLightsOff ? 'theater-lights-action--on' : ''}`}
       >
-        <LampCeiling className="h-5 w-5 stroke-[2.25]" aria-hidden="true" />
+        <LampCeiling className="h-4 w-4 stroke-[2]" aria-hidden="true" />
         {isLightsOff ? '开灯' : '关灯'}
       </button>
     </div>

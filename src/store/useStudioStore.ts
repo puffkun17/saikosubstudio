@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { parseEpisodeRef, episodeKeyOf } from '../core/episode';
 import { cueTimesFromRows } from '../core/timelineAgreement';
 import type { Task } from '../core/taskModel';
+import { DEFAULT_EXPORT_PRESET_ID, getExportPreset, type ExportPresetId } from '../utils/exportPresets';
+import { DEFAULT_HDR_LEVEL, isHdrLevelId, type HdrLevelId } from '../utils/hdrPresets';
 import { clearAllLocalData, deleteTask, listMerged, listTasks, migrateLegacyLibrary, purgeExpiredSources, purgeExpiredTasks, putHistoryEntry } from '../core/taskStore';
 import { decideSameEpisode, type EpisodeCandidate } from '../core/sameEpisode';
 import { detectSdhByContent, splitAssByLanguageStyles, titleKeyOf } from '../core/recognition';
@@ -343,6 +345,13 @@ export interface StudioState {
   saveToLibrary: () => void;
   clearHistory: () => Promise<void>;
   historyReady: boolean;
+  /** Unified preset (spec: preview == export). Shared by the preview toolbar and the export menu. */
+  exportPresetId: ExportPresetId;
+  setExportPresetId: (id: ExportPresetId) => void;
+  /** HDR copy: on/off + level; the preview dims fills the same way the HDR export does. */
+  hdrEnabled: boolean;
+  hdrLevel: HdrLevelId;
+  setHdr: (enabled: boolean, level?: HdrLevelId) => void;
   deleteFromLibrary: (id: string) => void;
   loadFromLibrary: (item: LibraryItem) => void;
   processFiles: (files: Subfile[]) => void;
@@ -457,6 +466,18 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   filenameEpKey: '',
   borrowedVideoName: null,
   historyReady: false,
+  exportPresetId: DEFAULT_EXPORT_PRESET_ID,
+  setExportPresetId: (exportPresetId) => {
+    set({ exportPresetId });
+    try { localStorage.setItem('saiko_export_preset', exportPresetId); } catch { /* ignore */ }
+  },
+  hdrEnabled: false,
+  hdrLevel: DEFAULT_HDR_LEVEL,
+  setHdr: (hdrEnabled, level) => {
+    const hdrLevel = level ?? get().hdrLevel;
+    set({ hdrEnabled, hdrLevel });
+    try { localStorage.setItem('saiko_export_hdr', hdrEnabled ? hdrLevel : `off:${hdrLevel}`); } catch { /* ignore */ }
+  },
   setBorrowedVideoName: (borrowedVideoName) => set({ borrowedVideoName }),
   uploadedFiles: [],
   tasks: [],
@@ -1687,6 +1708,16 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     if (typeof window === 'undefined') return;
     const savedLibrary = readJsonStorage<unknown>(LIBRARY_STORAGE_KEY, []);
     if (Array.isArray(savedLibrary)) set({ libraryList: fitLibraryToStorageBudget(savedLibrary as LibraryItem[]) });
+    try {
+      const storedPreset = getExportPreset(localStorage.getItem('saiko_export_preset'));
+      const storedHdr = localStorage.getItem('saiko_export_hdr') || '';
+      const level = storedHdr.replace(/^off:/, '');
+      set({
+        exportPresetId: storedPreset.formats.includes('ass') ? storedPreset.id : DEFAULT_EXPORT_PRESET_ID,
+        hdrEnabled: Boolean(storedHdr) && !storedHdr.startsWith('off:') && isHdrLevelId(level),
+        ...(isHdrLevelId(level) ? { hdrLevel: level } : {}),
+      });
+    } catch { /* ignore */ }
     // History lives in IndexedDB (taskStore). Migrate the old localStorage archive once, then drop it.
     void loadHistoryFromIdb().then((list) => {
       if (list) set({ libraryList: list, historyReady: true });
