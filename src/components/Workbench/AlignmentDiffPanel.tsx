@@ -451,7 +451,7 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
       {items.length === 0 ? (
         <div className="px-4 py-6 text-center text-xs text-[var(--v4-text-faint)]">
           {surfaceTab === 'aux'
-            ? '没有列出的辅助内容（画面字 / 声音描述 / 歌词 / 署名）'
+            ? '没有列出的辅助内容（标题告示 / SDH / 歌词 / 署名）'
             : reviewFilter === 'all'
               ? '没有需要合轴复核的结构项'
               : '当前筛选下暂无待复核项'}

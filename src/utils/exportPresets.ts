@@ -249,7 +249,7 @@ export const EXPORT_PRESETS: Record<ExportPresetId, ExportPreset> = {
   'plex-srt': {
     id: 'plex-srt',
     label: 'Plex 稳妥 SRT',
-    description: '中上英下两行，画面文字保留 {\\an8} 顶置；Apple TV / 电视直接播放',
+    description: '中上英下两行，标题告示保留 {\\an8} 顶置；Apple TV / 电视直接播放',
     formats: ['srt'],
     profile: {
       fallbackZhFont: 'PingFang SC',

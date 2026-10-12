@@ -607,7 +607,7 @@ export function describeAuxiliaryReason(reason: string): string {
     case 'sign-like-uppercase':
       return '全大写标牌形态';
     case 'bracket-screen-text':
-      return '括号内容默认按画面文字保留（非明确音效）';
+      return '括号内容默认按标题告示保留（非明确音效）';
     case 'semantic-speech-context':
       return '括号内为发言语境说明';
     case 'lyric-symbol':

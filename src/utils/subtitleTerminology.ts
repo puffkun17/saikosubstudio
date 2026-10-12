@@ -25,17 +25,17 @@ export const SUBTITLE_CUE_TYPE_DICTIONARY: Record<SubtitleCueTerm, {
   forced_narrative: {
     zh: '强制字幕',
     en: 'Forced Narrative',
-    description: '用于翻译非主要语言对白、重要外语片段或必须理解的画面文字，通常应保留。',
+    description: '用于翻译非主要语言对白、重要外语片段或必须理解的标题告示，通常应保留。',
     exportDefault: true,
   },
   screen_text: {
-    zh: '画面文字',
+    zh: '标题告示',
     en: 'On-screen Text',
     description: '片名、地点、招牌、短信、文件、屏幕内容等画面中出现的文字。',
     exportDefault: true,
   },
   sound_caption: {
-    zh: '声音描述',
+    zh: 'SDH',
     en: 'Sound Caption / SDH Cue',
     description: '风声、门响、音乐、笑声等非对白声音提示，常见于 SDH/CC 字幕。',
     exportDefault: true,

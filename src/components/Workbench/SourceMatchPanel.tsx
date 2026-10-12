@@ -335,7 +335,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
           </button>
           <span className="mt-0.5 shrink-0">
             <InfoHint label="字幕分布图说明">
-              上方曲线表示字幕疏密；下方标记轨表示分类（结构差异、画面文字、声音描述、歌词、署名信息），点击可定位到对应行。
+              上方曲线表示字幕疏密；下方标记轨表示分类（结构差异、标题告示、SDH、歌词、署名信息），点击可定位到对应行。
             </InfoHint>
           </span>
         </div>
@@ -520,7 +520,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
           <div className="min-w-0">
             <p className="text-xs font-medium text-[var(--v4-text-muted)]">片源时长辅助（本地）</p>
             <p className="mt-0.5 text-[11px] leading-4 text-[var(--v4-text-faint)]">
-              可手填时·分覆盖对比基准；仅本机计算，不上传片源或字幕。
+              可手动输入时长作为对比基准；仅在本地计算，不上传文件。
             </p>
           </div>
           <DurationPicker
@@ -541,7 +541,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
             <span className="truncate">
               {videoName
                 ? `${videoName}${videoDurationMs ? ` · ${formatMsClock(videoDurationMs)}` : ''}`
-                : '仅用于查询元数据信息，不关联任何用户'}
+                : '仅用于查询影片元数据，不关联用户身份'}
             </span>
           </span>
           <span className="tabular-nums">

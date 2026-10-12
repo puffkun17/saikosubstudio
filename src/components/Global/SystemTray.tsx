@@ -25,7 +25,7 @@ const WORKFLOW_STEPS = [
 const NARROW_CHROME_MQ = '(max-width: 843px)';
 
 const trayChrome =
-  'flex h-[var(--tray-h)] w-full items-center gap-2.5 border-[var(--v4-line)] px-3 backdrop-blur-md transition-colors duration-300 sm:px-4 md:px-5';
+  'flex h-[var(--tray-h)] w-full items-center gap-2.5 border-[var(--v4-line)] px-3 transition-colors duration-300 sm:px-4 md:px-5';
 
 /** Icon+label control: never squash copy — hide label via container query instead. */
 const trayCtrl =
@@ -257,7 +257,7 @@ export const SystemTray = () => {
           id: 'workflow-gated',
           tone: 'notice',
           title: '请先添加字幕',
-          message: '加入文件并整理后，即可进入工作台。',
+          message: '添加并整理文件后可进入工作台。',
           meta: '2',
         });
         focusIngestDropZone();
@@ -383,7 +383,7 @@ export const SystemTray = () => {
                 : 'bottom-[calc(100%+0.45rem)] left-1/2 w-[min(22rem,calc(100vw-1.5rem))] -translate-x-1/2'
             }`}
           >
-            <div className="rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--v5-green)_22%,var(--v4-line-strong))] bg-[color-mix(in_srgb,var(--v5-panel)_97%,transparent)] px-3 py-2.5 shadow-[var(--elevation-2)] backdrop-blur-md">
+            <div className="rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--v5-green)_22%,var(--v4-line-strong))] bg-[color-mix(in_srgb,var(--v5-panel)_97%,transparent)] px-3 py-2.5 shadow-[var(--elevation-2)]">
               <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold leading-5 text-[var(--v4-text)]">{gateNotice.title}</p>
@@ -530,7 +530,7 @@ export const SystemTray = () => {
             className="system-tray__local hidden items-center px-2 text-[length:var(--ds-fs-meta)] font-medium text-[var(--tray-ink-muted)] sm:inline-flex"
             title="字幕只在这台设备上读取和处理，不会上传"
           >
-            仅本机处理
+            仅本地处理
           </span>
         </div>
       </nav>
@@ -559,7 +559,7 @@ export const SystemTray = () => {
       {opsMenuOpen && showBottomWorkflow && (
         <OverlayPortal>
           <div
-            className="ui-modal-layer fixed inset-0 z-[var(--z-modal)] bg-black/55 backdrop-blur-sm"
+            className="ui-modal-layer fixed inset-0 z-[var(--z-modal)] bg-black/55"
             onClick={(event) => {
               if (event.target === event.currentTarget) setOpsMenuOpen(false);
             }}
@@ -629,7 +629,7 @@ export const SystemTray = () => {
       {pendingReset && (
         <OverlayPortal>
           <div
-            className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
+            className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-4"
             onClick={(event) => {
               if (event.target === event.currentTarget) setPendingReset(false);
             }}
