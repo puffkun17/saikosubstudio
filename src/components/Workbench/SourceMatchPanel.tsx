@@ -317,7 +317,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
 
   return (
     <section className="w-full overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-[var(--ds-pad-card)] py-2">
         <div className="flex min-w-0 flex-1 items-start gap-2">
           <button
             type="button"

@@ -184,7 +184,7 @@ export const WorkbenchStep: React.FC = () => {
             <EpisodeTabs />
             {processedSubs && processedSubs.length > 0 && (
               <section className="v4-panel flex-shrink-0 overflow-hidden">
-                <div className="workbench-overview flex flex-col gap-[var(--ds-gap-item)] px-4 py-3 md:flex-row md:items-center md:justify-between md:gap-4">
+                <div className="workbench-overview flex flex-col gap-[var(--ds-gap-item)] p-[var(--ds-pad-card)] md:flex-row md:items-center md:justify-between md:gap-4">
                   <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                     <div className="flex items-center gap-2">
                                             <h2 className="ds-label">概览</h2>
@@ -364,7 +364,7 @@ export const WorkbenchStep: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-4"
+              className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
               onClick={(event) => {
                 if (event.target === event.currentTarget) setShowBackConfirm(false);
               }}

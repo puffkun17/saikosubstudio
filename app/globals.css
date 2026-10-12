@@ -745,8 +745,8 @@ body {
   z-index: calc(var(--z-nav) - 1);
   height: var(--info-bar-h);
   border-bottom: 1px solid var(--v4-line);
-  background: var(--v4-canvas-raised);
-  backdrop-filter: none;
+  background: color-mix(in srgb, var(--v4-canvas-raised) 94%, transparent);
+  backdrop-filter: blur(10px);
 }
 
 .workflow-info-bar__inner {
@@ -1519,7 +1519,7 @@ body {
   border-radius: var(--radius-md);
   border: 1px solid var(--v4-line-strong);
   background: var(--v4-panel-raised);
-  padding: 1.25rem;
+  padding: var(--ds-pad-card);
   text-align: left;
   box-shadow: var(--elevation-3);
 }
@@ -1850,8 +1850,9 @@ button {
 }
 
 .theater-chrome-bar {
-  background: #17332e;
-  backdrop-filter: none;
+  background: color-mix(in srgb, #142e29 72%, transparent);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
   box-shadow: var(--elevation-2-dim);
 }
 
@@ -1888,8 +1889,9 @@ button {
 /* 放映厅样式抽屉：深绿毛玻璃；关灯时更深、更透，夜光 LCD 感 */
 .theater-style-shell {
   border: 1px solid color-mix(in srgb, var(--v5-cream) 14%, transparent);
-  background: #142e29;
-  backdrop-filter: none;
+  background: color-mix(in srgb, #142e29 78%, transparent);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
   box-shadow: var(--elevation-3-dim);
 }
 
@@ -1906,7 +1908,7 @@ button {
 
 .lights-off-stage .theater-style-shell {
   border-color: color-mix(in srgb, var(--v5-orange) 20%, transparent);
-  background: #0a0e0d;
+  background: color-mix(in srgb, #0a0e0d 82%, transparent);
   box-shadow:
     0 0 36px 2px color-mix(in srgb, var(--v5-orange) 6%, transparent),
     var(--elevation-3-dim);

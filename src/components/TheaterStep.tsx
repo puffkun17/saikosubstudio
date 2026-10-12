@@ -332,7 +332,7 @@ export const TheaterStep: React.FC = () => {
 
         {/* 停靠面板：文档流内的兄弟节点（不是浮层），预览随之缩小、保持比例、不被遮挡。 */}
         {dock && (
-          <aside id="theater-dock" data-surface="cream" className="ds-dock" aria-label={DOCK_TITLES[dock]}>
+          <aside id="theater-dock" data-surface="forest" className="theater-style-shell ds-dock" aria-label={DOCK_TITLES[dock]}>
             <header className="ds-dock__head">
               <h3 className="ds-head">{DOCK_TITLES[dock]}</h3>
               <button type="button" className="ui-action ui-action--secondary ui-action--icon" aria-label="关闭面板" onClick={() => { setDock(null); setIsSettingsOpen(false); }}>
@@ -340,7 +340,7 @@ export const TheaterStep: React.FC = () => {
               </button>
             </header>
             <div className="ds-dock__body">
-              {dock === 'style' && <StyleSidebar tone="cream" embedded />}
+              {dock === 'style' && <StyleSidebar tone="theater" embedded />}
               {dock === 'export' && <ExportPanel />}
               {(dock === 'aspect' || dock === 'backdrop' || dock === 'preset') && <TheaterDockOptions panel={dock} />}
               {dock === 'backdrop' && tmdbBackdropList.length > 1 && (
@@ -383,7 +383,7 @@ export const TheaterStep: React.FC = () => {
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="lights-off-exit-tip pointer-events-none fixed bottom-8 left-1/2 z-[calc(var(--z-dim)+1)] w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 text-center"
             >
-              <span className="inline-flex items-center rounded-[var(--radius-md)] border border-white/10 bg-black/70 px-3 py-1.5 text-xs font-medium tracking-wide text-white/90 shadow-[var(--elevation-2)]">
+              <span className="inline-flex items-center rounded-[var(--radius-md)] border border-white/10 bg-black/70 px-3 py-1.5 text-xs font-medium tracking-wide text-white/90 shadow-[var(--elevation-2)] backdrop-blur-sm">
                 点击空白处、按 Esc 或 L 退出关灯
               </span>
             </motion.div>

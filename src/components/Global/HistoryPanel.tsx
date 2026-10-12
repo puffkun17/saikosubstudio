@@ -49,7 +49,7 @@ export const HistoryPanel: React.FC = () => {
             aria-labelledby="history-title"
             tabIndex={-1}
           >
-            <header className="flex items-center justify-between gap-3 border-b border-[var(--surface-line)] px-4 py-3">
+            <header className="flex items-center justify-between gap-3 border-b border-[var(--surface-line)] p-[var(--ds-pad-card)]">
               <div className="min-w-0">
                 <h2 id="history-title" className="ds-head">历史</h2>
                 <p className="ds-meta">仅保存在本设备，{RETENTION_DAYS_DEFAULT} 天后自动清除</p>
@@ -63,7 +63,7 @@ export const HistoryPanel: React.FC = () => {
               {libraryList.length > 0 ? (
                 <ul className="divide-y divide-[var(--surface-line)]">
                   {libraryList.map((item) => (
-                    <li key={item.id} className="flex items-center gap-2 px-4 py-2">
+                    <li key={item.id} className="flex items-center gap-2 px-[var(--ds-pad-card)] py-2">
                       <button
                         type="button"
                         className="v4-focus-ring min-w-0 flex-1 rounded-md py-1 text-left hover:text-[var(--v5-accent-strong)]"
@@ -87,14 +87,14 @@ export const HistoryPanel: React.FC = () => {
                   ))}
                 </ul>
               ) : (
-                <div className="px-4 py-10 text-center">
+                <div className="px-[var(--ds-pad-card)] py-10 text-center">
                   <p className="ds-body font-semibold">暂无历史记录</p>
                   <p className="ds-meta mt-1">合并完成后自动保存</p>
                 </div>
               )}
             </div>
 
-            <footer className="flex items-center justify-between gap-2 border-t border-[var(--surface-line)] px-4 py-2">
+            <footer className="flex items-center justify-between gap-2 border-t border-[var(--surface-line)] p-[var(--ds-pad-card)]">
               <span className="ds-meta">{libraryList.length} 条</span>
               {confirmClear ? (
                 <span className="flex items-center gap-2">

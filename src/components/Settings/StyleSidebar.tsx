@@ -304,8 +304,8 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
       data-surface={tone === 'theater' ? 'forest' : 'cream'}
       className={
         tone === 'theater'
-          ? 'theater-style-drawer flex h-full w-full flex-col overflow-y-auto p-5 text-left text-[var(--v4-text)] scrollbar-thin'
-          : `flex h-full w-full flex-col overflow-y-auto text-left text-[var(--v4-text)] scrollbar-thin ${embedded ? 'px-[var(--ds-pad-well)] py-[var(--ds-gap-group)]' : 'bg-[var(--v5-cream)] p-5'}`
+          ? `theater-style-drawer flex h-full w-full flex-col overflow-y-auto text-left text-[var(--v4-text)] scrollbar-thin ${embedded ? 'p-[var(--ds-pad-card)]' : 'p-[var(--ds-pad-card)]'}`
+          : `flex h-full w-full flex-col overflow-y-auto text-left text-[var(--v4-text)] scrollbar-thin ${embedded ? 'p-[var(--ds-pad-card)]' : 'bg-[var(--v5-cream)] p-[var(--ds-pad-card)]'}`
       }
     >
       {/* 停靠面板已有标题与关闭；辅助线开关在画面下方 */}

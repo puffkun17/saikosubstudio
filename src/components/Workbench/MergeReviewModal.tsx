@@ -33,7 +33,7 @@ export const MergeReviewModal: React.FC<MergeReviewModalProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-3 sm:p-4"
+            className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-3 backdrop-blur-sm sm:p-4"
             onClick={(event) => {
               if (event.target === event.currentTarget) onClose();
             }}
@@ -50,7 +50,7 @@ export const MergeReviewModal: React.FC<MergeReviewModalProps> = ({
               className="ui-modal ui-modal--wide flex max-h-[min(85vh,52rem)] w-full flex-col overflow-hidden !p-0"
               tabIndex={-1}
             >
-              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--v4-line)] px-4 py-3">
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--v4-line)] p-[var(--ds-pad-card)]">
                 <div className="min-w-0">
                   <h2 id="workbench-review-title" className="text-base font-bold tracking-wide text-[var(--v4-text)]">
                     合轴待复核

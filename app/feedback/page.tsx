@@ -109,7 +109,7 @@ export default function FeedbackPage() {
                     key={item.id}
                     type="button"
                     onClick={() => { setCategory(item.id); setState('idle'); setError(''); }}
-                    className={`flex min-h-28 cursor-pointer flex-col items-start gap-3 rounded-xl border px-4 py-4 text-left transition-colors
+                    className={`flex min-h-28 cursor-pointer flex-col items-start gap-3 rounded-xl border p-[var(--ds-pad-card)] text-left transition-colors
                       ${selected
                         ? 'border-[var(--v4-accent)]/45 bg-[var(--v4-accent-soft)] text-[var(--v4-text)]'
                         : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)]'}`}

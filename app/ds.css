@@ -15,8 +15,9 @@
   --ds-gap-item: 8px;      /* heading → its content; rows inside a group */
   --ds-gap-group: 12px;    /* groups inside a card; form rows */
   --ds-gap-section: 24px;  /* cards/sections; page edge → first card */
-  --ds-pad-card: 24px;     /* every card (left film card = right column) */
-  --ds-pad-well: 12px;     /* inset wells inside a card */
+  --ds-pad-card: 16px;     /* ONE inner padding for every card, well, panel, modal (v1.2) */
+  --ds-pad-well: var(--ds-pad-card); /* alias: wells use the same token */
+
   --ds-page-x: 32px;
 
   /* Type: 5 sizes · 3 weights · 3 line-heights */
@@ -44,7 +45,7 @@
 }
 
 @media (max-width: 640px) {
-  :root { --ds-fs-title: 18px; --ds-bar-h: 44px; --ds-gap-section: 16px; --ds-pad-card: 16px; --ds-page-x: 12px; }
+  :root { --ds-fs-title: 18px; --ds-bar-h: 44px; --ds-gap-section: 16px; --ds-pad-card: 12px; --ds-page-x: 12px; }
 }
 
 .ds-title { font-size: var(--ds-fs-title); font-weight: var(--ds-fw-strong); line-height: var(--ds-lh-tight); color: var(--ds-ink); }
@@ -85,14 +86,14 @@
 
 /* Export menu */
 .export-menu { max-width: calc(100vw - 16px); color: var(--ds-ink); background: var(--v5-panel-raised); }
-.export-menu__body { display: grid; gap: var(--ds-space-3); padding: var(--ds-space-4); border-bottom: 1px solid var(--surface-line); }
+.export-menu__body { display: grid; gap: var(--ds-gap-group); padding: var(--ds-pad-card); border-bottom: 1px solid var(--surface-line); }
 .export-menu__row { display: grid; gap: var(--ds-space-1); min-width: 0; border: 0; padding: 0; margin: 0; }
 .export-menu__row.flex { display: flex; }
 .export-menu__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ds-space-2); }
 .export-menu__grid .ds-label { margin-bottom: var(--ds-space-1); }
 .export-menu__download {
   display: flex; width: 100%; align-items: flex-start; gap: var(--ds-space-3);
-  padding: var(--ds-space-3) var(--ds-space-4); text-align: left; cursor: pointer;
+  padding: var(--ds-pad-card); text-align: left; cursor: pointer;
   transition: background-color .15s;
 }
 .export-menu__download:hover { background: var(--v5-accent-soft); }
@@ -118,7 +119,7 @@
 
 /* 对齐方式: compact two-option choice, one line each */
 .align-choice__item {
-  display: flex; flex-direction: column; gap: 2px; padding: var(--ds-space-2) var(--ds-space-3);
+  display: flex; flex-direction: column; gap: 2px; padding: var(--ds-pad-card);
   text-align: left; border-radius: var(--radius-md); border: 1px solid var(--surface-line);
   background: var(--v5-panel-muted); cursor: pointer; transition: border-color .15s, background-color .15s;
 }
@@ -127,7 +128,7 @@
 .align-choice__item[aria-checked="true"] .ds-body { color: var(--v5-accent-strong); }
 @media (max-width: 640px) { .align-choice { grid-template-columns: 1fr 1fr; } }
 
-.export-menu__review { padding: var(--ds-space-3) var(--ds-space-4); border-bottom: 1px solid var(--surface-line); max-height: 160px; overflow-y: auto; }
+.export-menu__review { padding: var(--ds-pad-card); border-bottom: 1px solid var(--surface-line); max-height: 160px; overflow-y: auto; }
 
 /* Episode tabs (workbench) */
 .episode-tabs { display: flex; gap: var(--ds-space-1); overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
@@ -145,7 +146,7 @@
 @media (max-width: 1023px) {
   .source-identity-rail { flex-direction: row; height: auto; align-items: stretch; }
   .source-identity-rail .source-identity-rail__poster { width: 72px; flex-shrink: 0; border-bottom: 0; border-right: 1px solid var(--surface-line); }
-  .source-identity-rail > div:last-child { padding: var(--ds-space-3); gap: var(--ds-space-2); min-width: 0; }
+  .source-identity-rail > div:last-child { padding: var(--ds-pad-card); gap: var(--ds-gap-item); min-width: 0; }
   .source-identity-rail__overview { display: none; }
   .source-identity-rail__tmdb { margin-top: var(--ds-space-1); justify-content: flex-start; }
 }
@@ -162,7 +163,7 @@
 /* ── v1.1 rhythm primitives ─────────────────────────────────────────────── */
 .ds-card { padding: var(--ds-pad-card); }
 .ds-section { display: flex; flex-direction: column; gap: var(--ds-gap-item); }
-.ds-well { padding: var(--ds-pad-well); border-radius: var(--radius-lg); }
+.ds-well { padding: var(--ds-pad-well); border-radius: var(--radius-sm); } /* inside an 8px card: inner ≤ outer (concentric-safe) */
 
 /* ── Popovers: solid surface + elevation, never glass (spec §6.2) ─────────── */
 .ui-menu, .export-menu, .ds-popover {
@@ -175,30 +176,31 @@
 
 /* ── Theater dock: one right panel for every preview option (spec §6.1) ──── */
 .ds-dock {
+  /* surface = original 样式参数 drawer (.theater-style-shell: forest glass) — Derek liked it */
   display: flex; flex-direction: column; min-height: 0; flex-shrink: 0;
-  background: var(--v5-panel-raised); color: var(--ds-ink);
-  border-left: 1px solid var(--surface-line);
-  box-shadow: -8px 0 24px rgba(0,0,0,.18);
+  color: var(--ds-ink); border-radius: 0; border-width: 0 0 0 1px;
   position: relative; z-index: var(--z-theater-style);
 }
 @media (min-width: 1024px) { .ds-dock { width: 360px; height: 100%; } }
 @media (max-width: 1023px) {
   /* bottom sheet in flow: the stage above shrinks and the frame stays fully visible */
-  .ds-dock { width: 100%; max-height: 48%; border-left: 0; border-top: 1px solid var(--surface-line);
-    border-radius: 16px 16px 0 0; box-shadow: 0 -8px 24px rgba(0,0,0,.22); }
+  .ds-dock { width: 100%; max-height: 48%; border-width: 1px 0 0 0; border-radius: 16px 16px 0 0; }
 }
 .ds-dock__head { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-gap-item);
-  padding: var(--ds-gap-group) var(--ds-pad-card) var(--ds-gap-group); border-bottom: 1px solid var(--surface-line); }
+  padding: var(--ds-pad-card); border-bottom: 1px solid var(--surface-line); }
 .ds-dock__body { flex: 1; min-height: 0; overflow-y: auto; }
-.ds-dock__body > .ds-dock__list, .ds-dock__body > .ds-check { margin: var(--ds-gap-group) var(--ds-pad-well); }
+.ds-dock__body > .ds-dock__list { margin: 0; padding: var(--ds-gap-item) 0; }
+.ds-dock__body > .ds-check { margin: 0; padding: var(--ds-gap-group) var(--ds-pad-card); }
+.ds-dock__list > .ds-dock__item { padding-left: var(--ds-pad-card) !important; padding-right: var(--ds-pad-card) !important; border-radius: 0 !important; }
+.ds-dock__list > .ds-dock__group { padding: 0 var(--ds-pad-card); }
 .ds-dock__list { display: grid; gap: 2px; }
 .ds-dock__group { margin-top: var(--ds-gap-group); padding: 0 10px; }
 .ds-dock__list > .ds-dock__group:first-child { margin-top: 0; }
 .ds-dock__item { color: var(--ds-ink); }
-.ds-dock__item:hover { background: var(--v5-panel-muted); }
-.ds-dock__item--active { background: var(--v4-accent-soft); color: var(--v5-accent-strong); }
+.ds-dock__item:hover { background: color-mix(in srgb, var(--v5-cream) 8%, transparent); }
+.ds-dock__item--active { background: color-mix(in srgb, var(--v5-orange) 18%, transparent); color: var(--v5-orange); }
 .ds-dock .export-menu { border: 0 !important; box-shadow: none !important; background: transparent !important; max-width: none; }
-.ds-dock .theater-style-shell, .ds-dock [data-surface] { background: transparent; }
+.ds-dock [data-surface] { background: transparent; }
 
 /* ── Special-line navigation (spec §6.3) ─────────────────────────────────── */
 .ds-chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px;
@@ -220,3 +222,16 @@
   border-radius: 50%; border: 2px solid var(--v5-accent); animation: tlPulse 1.1s ease-out forwards; }
 @keyframes tlPulse { 0% { opacity: 1; transform: translateY(-50%) scale(.5); } 100% { opacity: 0; transform: translateY(-50%) scale(1.8); } }
 @media (prefers-reduced-motion: reduce) { .timeline-marks__pulse { animation-duration: .01s; } }
+
+
+/* Controls on the forest dock (original 样式参数 surface): keep AA contrast */
+[data-surface="forest"] .ds-select,
+[data-surface="forest"] .ds-segmented {
+  background: color-mix(in srgb, var(--v5-cream) 10%, transparent);
+  border-color: color-mix(in srgb, var(--v5-cream) 22%, transparent);
+  color: var(--ds-ink);
+}
+[data-surface="forest"] .ds-select option { color: #1a3d37; background: #fff; }
+[data-surface="forest"] .ds-segmented__item { color: var(--ds-ink-2); }
+[data-surface="forest"] .ds-segmented__item[aria-checked="true"] { background: color-mix(in srgb, var(--v5-cream) 20%, transparent); color: var(--ds-ink); box-shadow: none; }
+[data-surface="forest"] .export-menu__download:hover { background: color-mix(in srgb, var(--v5-cream) 8%, transparent); }

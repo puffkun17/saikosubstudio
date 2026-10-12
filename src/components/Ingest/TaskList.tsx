@@ -832,7 +832,7 @@ export const TaskList: React.FC = () => {
                             initial={{ opacity: 0.85, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1.03 }}
                             transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
-                            className="flex items-center gap-2 rounded-[var(--radius-xl)] border border-[var(--v4-accent)]/40 bg-[var(--v4-panel-raised)] px-3 py-2.5 shadow-[var(--elevation-2)]"
+                            className="flex items-center gap-2 rounded-[var(--radius-xl)] border border-[var(--v4-accent)]/40 bg-[var(--v4-panel-raised)] px-3 py-2.5 shadow-[var(--elevation-2)] backdrop-blur-md"
                             style={{ height: dragCardSize.h }}
                           >
                             <FileFormatIcon name={dragFile.name} size="md" />
@@ -991,7 +991,7 @@ export const TaskList: React.FC = () => {
 
           {/* Configuration & Process Dock — sticky when ASS style decision is present */}
           {foundAssStyle && (
-          <div className="sticky bottom-0 z-10 flex flex-col gap-[var(--ds-gap-item)] overflow-visible border-t border-[var(--v4-line)] bg-[var(--v4-panel)] pt-[var(--ds-gap-group)]">
+          <div className="sticky bottom-0 z-10 flex flex-col gap-[var(--ds-gap-item)] overflow-visible border-t border-[var(--v4-line)] bg-[var(--v4-panel)]/95 pt-[var(--ds-gap-group)] backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -999,7 +999,7 @@ export const TaskList: React.FC = () => {
             >
               <div className="grid gap-0 md:grid-cols-[minmax(220px,0.72fr)_minmax(0,1fr)]">
                 <AssStylePreview style={foundAssStyle} className="min-h-36 rounded-none border-0 border-b border-[var(--v4-line)] md:border-b-0 md:border-r" />
-                <div className="flex min-w-0 flex-col justify-between gap-4 p-4 md:p-5">
+                <div className="flex min-w-0 flex-col justify-between gap-[var(--ds-gap-group)] p-[var(--ds-pad-card)]">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Paintbrush className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />

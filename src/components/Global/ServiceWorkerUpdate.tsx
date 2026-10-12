@@ -87,7 +87,7 @@ export const ServiceWorkerUpdate: React.FC = () => {
 
   return (
     <div className="sw-update-notice" role="status" aria-live="polite" data-testid="sw-update-notice">
-      <div className="ui-toast pointer-events-auto flex items-center gap-2.5 border px-3.5 py-2.5 text-sm">
+      <div className="ui-toast pointer-events-auto flex items-center gap-2.5 border px-[var(--ds-pad-card)] py-[var(--ds-gap-item)] text-sm">
         <span className="min-w-0 flex-1 font-medium leading-5">新版本可用</span>
         <button
           type="button"
