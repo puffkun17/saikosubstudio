@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BadgeCheck, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, type CreditDeclaration } from '@/store/useStudioStore';
 
@@ -56,8 +56,8 @@ export const CreditTool: React.FC = () => {
         onClick={() => setExpanded((value) => !value)}
         aria-expanded={expanded}
       >
-        <h4 className="text-base font-semibold text-[var(--v4-text)]">属性信息</h4>
-        <span className="text-xs font-medium text-[var(--v4-text-muted)]">可选</span>
+        <h4 className="ds-head">属性信息</h4>
+        <span className="ds-meta">可选</span>
         {summaryBits.length > 0 && !expanded ? (
           <span className="ml-1 min-w-0 truncate text-xs font-medium text-[var(--v4-text-faint)]">
             · {summaryBits.join(' · ')}
@@ -70,10 +70,10 @@ export const CreditTool: React.FC = () => {
       </button>
 
       {expanded ? (
-        <div className="grid gap-3 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2.5">
-          <div className="min-w-0">
-            <div className="text-xs font-medium text-[var(--v4-text-muted)]">制作声明</div>
-            <div className="ui-choice-group mt-2" role="radiogroup" aria-label="制作声明">
+        <div className="ds-form rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-4 py-3">
+          <div className="ds-form__label">制作声明</div>
+          <div className="ds-form__control">
+            <div className="ui-choice-group" role="radiogroup" aria-label="制作声明">
               {DECLARATION_OPTIONS.map((option) => {
                 const active = creditDeclaration === option.value;
                 return (
@@ -91,19 +91,16 @@ export const CreditTool: React.FC = () => {
                 );
               })}
             </div>
-            <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-faint)]">
+            <p className="ds-meta mt-1">
               {isOfficialSubtitle ? '已标记官方字幕 · ' : ''}
-              导出 ASS 时写入 Script Info（Original Script / Comment）
+              会写进字幕文件信息
             </p>
           </div>
 
-          <div>
-            <div className="flex items-center gap-2 text-xs font-medium text-[var(--v4-text-muted)]">
-              <BadgeCheck className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />
-              署名【可选】
-            </div>
+          <div className="ds-form__label">原署名</div>
+          <div className="ds-form__control">
             {detectedAttributions.length > 0 ? (
-              <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 {detectedAttributions.map((item) => (
                   <span
                     key={`${item.role}-${item.value}`}
@@ -116,21 +113,19 @@ export const CreditTool: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="mt-2 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
-                未在当前字幕中发现明确署名行。
-              </p>
+              <p className="ds-meta">未发现署名行</p>
             )}
           </div>
 
-          <div className="min-w-0">
-            <label className="flex cursor-pointer items-start gap-2 text-xs leading-relaxed text-[var(--v4-text-muted)]">
+          <div className="ds-form__label">我的署名</div>
+          <div className="ds-form__control">
+            <label className="ds-check">
               <input
                 type="checkbox"
                 checked={appendCreatorCredit}
                 onChange={(event) => setAppendCreatorCredit(event.target.checked)}
-                className="mt-0.5 h-3.5 w-3.5 accent-[var(--v4-accent)]"
               />
-              <span>字幕后署名</span>
+              <span>片尾加一行「双语合并：…」</span>
             </label>
 
             {appendCreatorCredit ? (

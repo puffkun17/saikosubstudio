@@ -9,13 +9,12 @@ import { InspectionMarkGlyph, MARK_FILTERS, MARK_LABEL } from '@/components/Work
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
 import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
-import { GitCompareArrows, SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import { MergeReviewModal } from '@/components/Workbench/MergeReviewModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { analyzeAlignmentDiff, buildMergeReviewQueue } from '@/utils/timeline/alignmentDiff';
 import { createSourceMatchReport } from '@/utils/timeline/sourceMatch';
 import { formatMsClock } from '@/utils/timeline/timecode';
-import { InfoHint } from '@/components/ui/InfoHint';
 import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import { useUiModalFocus } from '@/hooks/useUiModalFocus';
@@ -162,17 +161,6 @@ export const WorkbenchStep: React.FC = () => {
       disabledReason: '还没有可预览的字幕时间轴，请先完成合轴或分配。',
       onClick: () => {
         if (reviewRemaining > 0) {
-          const skipConfirm = typeof sessionStorage !== 'undefined'
-            && sessionStorage.getItem('saiko_skip_review_confirm') === '1';
-          if (!skipConfirm) {
-            const ok = window.confirm(`还有 ${reviewRemaining} 项未核对，仍要继续？`);
-            if (!ok) return;
-            try {
-              sessionStorage.setItem('saiko_skip_review_confirm', '1');
-            } catch {
-              /* ignore */
-            }
-          }
           setStatusNotice({
             id: 'merge-review-unchecked',
             tone: 'notice',
@@ -189,15 +177,14 @@ export const WorkbenchStep: React.FC = () => {
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[var(--v4-canvas)]">
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
-        <div className="flex-1 p-4 min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
-          <div className="max-w-[1280px] w-full flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
+        <div className="flex-1 px-3 py-2 md:px-4 md:py-3 min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
+          <div className="max-w-[1280px] w-full flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
             {processedSubs && processedSubs.length > 0 && (
               <section className="v4-panel flex-shrink-0 overflow-hidden">
-                <div className="flex flex-col gap-2.5 px-4 py-3 md:flex-row md:items-center md:justify-between md:gap-4">
+                <div className="workbench-overview flex flex-col gap-2 px-4 py-2 md:flex-row md:items-center md:justify-between md:gap-4">
                   <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                     <div className="flex items-center gap-2">
-                      <GitCompareArrows className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
-                      <h2 className="text-sm font-semibold text-[var(--v4-text)]">字幕信息概览</h2>
+                                            <h2 className="ds-label">概览</h2>
                       {reviewTotal > 0 && reviewRemaining > 0 ? (
                         <button
                           type="button"
@@ -257,13 +244,11 @@ export const WorkbenchStep: React.FC = () => {
                         </span>
                         <span className="text-[var(--v4-line-strong)]">·</span>
                         <span className="inline-flex items-center gap-1">
-                          密度
-                          <InfoHint label="字幕密度说明">
-                            每分钟字幕行数。声音描述、歌词和画面文字也会影响该指标。
-                          </InfoHint>
-                          <strong className="font-semibold tabular-nums text-[var(--v4-accent-strong)]">
+                          每分钟
+                          <strong className="font-semibold tabular-nums text-[var(--v4-text)]">
                             {profileStats.densityPerMinute}
                           </strong>
+                          行
                         </span>
                         {(screenCount > 0 || soundCount > 0 || lyricsCount > 0 || creditCount > 0) && (
                           <>
@@ -319,7 +304,7 @@ export const WorkbenchStep: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-3 border-t border-[var(--v4-line)] p-3 md:p-4">
+                <div className="border-t border-[var(--v4-line)]">
                   <SourceMatchPanel
                     rows={processedSubs}
                     onTimelineDurationChange={setSourceDurationMs}
@@ -328,7 +313,7 @@ export const WorkbenchStep: React.FC = () => {
                 </div>
               </section>
             )}
-            <div className="flex min-h-[40vh] flex-1 flex-col overflow-hidden">
+            <div className="flex min-h-[50vh] flex-1 flex-col overflow-hidden">
               <SequenceList key={selectedTaskId || customFilename} timelineDurationMs={sourceDurationMs} />
             </div>
           </div>

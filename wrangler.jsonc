@@ -5,7 +5,8 @@
   "name": "saikosubstudio",
   "compatibility_date": "2026-10-12",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "vinext/server/fetch-handler",
+  // Thin wrapper over vinext/server/fetch-handler: www→apex 301 + HTML Cache-Control: no-cache.
+  "main": "./workers/app/entry.ts",
   "assets": {
     "directory": "dist/client",
     "not_found_handling": "none",

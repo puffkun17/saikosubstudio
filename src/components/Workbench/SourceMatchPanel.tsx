@@ -309,15 +309,15 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
   };
 
   const collapsedSummary = [
-    isMatchMode ? meta.label : '时间分布',
+    isMatchMode ? meta.label : null,
     report.stats.distributionLabel,
     `${formatCount(report.stats.lineCount)} 行`,
     videoDurationMs ? `片源 ${formatMsClock(videoDurationMs)}` : null,
   ].filter(Boolean).join(' · ');
 
   return (
-    <section className="v4-panel w-full overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+    <section className="w-full overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2">
         <div className="flex min-w-0 flex-1 items-start gap-2">
           <button
             type="button"
@@ -328,14 +328,9 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
             <span className="mt-0.5 shrink-0 text-[var(--v4-text-muted)]" aria-hidden="true">
               {detailsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </span>
-            <span className="min-w-0">
-              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--v4-text)]">
-                {isMatchMode ? '片源覆盖分布' : '字幕时间分布'}
-              </span>
-              <span className="mt-0.5 block truncate text-xs text-[var(--v4-text-faint)]">
-                {collapsedSummary}
-                {!detailsOpen ? ' · 展开分布图' : ''}
-              </span>
+            <span className="flex min-w-0 items-baseline">
+              <span className="ds-label">{isMatchMode ? '片源覆盖分布' : '时间分布'}</span>
+              <span className="ds-meta ml-2 truncate">{collapsedSummary}</span>
             </span>
           </button>
           <span className="mt-0.5 shrink-0">
@@ -355,21 +350,6 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
               ))}
             </div>
           )}
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="ui-action ui-action--secondary shrink-0"
-          >
-            <MonitorPlay className="h-4 w-4" />
-            {isMatchMode ? '更换视频文件' : '视频文件对比'}
-          </button>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="video/*,.mkv"
-            className="hidden"
-            onChange={(event) => handleVideoFile(event.target.files?.[0])}
-          />
         </div>
       </div>
 

@@ -398,7 +398,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
   }
 
   return (
-    <div className="v9-dial-slider-container flex w-full flex-col gap-2 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+    <div className="v9-dial-slider-container flex w-full min-w-0 flex-row items-center justify-between gap-3">
       <div className="v9-dial-slider-wrapper flex min-w-0 flex-1 items-center gap-2.5">
         {playButton}
         <input

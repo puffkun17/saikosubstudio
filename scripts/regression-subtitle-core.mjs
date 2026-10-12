@@ -308,9 +308,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
     { index: 1, ts: '00:01:00,000 --> 00:01:02,000', text: 'The end.' },
   ], 'Nexus Studio');
   assert.equal(withCredit.length, 2, 'Creator credit should append a new subtitle row without mutating the source count.');
-  assert.equal(withCredit[1].text, '字幕制作：Nexus Studio');
+  assert.equal(withCredit[1].text, '双语合并：Nexus Studio');
   assert.equal(withCredit[1].ts, '00:01:03,500 --> 00:01:08,500');
-  assert.match(generateSrtContent(withCredit), /字幕制作：Nexus Studio/, 'Creator credit should be included in exported SRT content.');
+  assert.match(generateSrtContent(withCredit), /双语合并：Nexus Studio/, 'Creator credit should be included in exported SRT content.');
   const beforeEnd = appendCreatorCredit([
     { index: 1, ts: '00:01:00,000 --> 00:01:10,000', text: 'The end.' },
   ], 'Nexus Studio', 'before-end');

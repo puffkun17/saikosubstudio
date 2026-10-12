@@ -884,62 +884,28 @@ export const TaskList: React.FC = () => {
           {!activeTask.isBilingualSingle && (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-1.5">
-                <h4 className="text-base font-semibold text-[var(--v4-text)]">对齐方式</h4>
+                <h4 className="ds-head">对齐方式</h4>
                 <InfoHint label="对齐方式说明">
-                  仅在主字幕与次语言分轨时生效。双语单文件无需选择。同语种（含简繁）不能作为合轴对。
+                  智能：按时间就近配对，孤立行多时自动改用精校。精校：完整对齐搜索，处理插入、删减与断句不一致，耗时更长。仅在两条分轨时生效。
                 </InfoHint>
               </div>
-              <div
-                className="grid gap-2 sm:grid-cols-2"
-                role="radiogroup"
-                aria-label="对齐方式"
-              >
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={alignmentMode === 'standard'}
-                  onClick={() => setAlignmentMode('standard')}
-                  className={`rounded-lg border px-3.5 py-3 text-left transition-colors ${
-                    alignmentMode === 'standard'
-                      ? 'border-[var(--v4-accent)]/45 bg-[var(--v4-accent-soft)]'
-                      : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] hover:border-[var(--v4-line-strong)]'
-                  }`}
-                >
-                  <div className={`text-sm font-semibold ${
-                    alignmentMode === 'standard' ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text)]'
-                  }`}>
-                    智能
-                  </div>
-                  <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
-                    按时间轴就近配对，并识别一侧覆盖多句的断句；速度快、占用低。适合对白节奏接近的常规双语。
-                  </p>
-                  <p className="mt-1 text-xs leading-relaxed text-[var(--v4-text-faint)]">
-                    插入/删减较多时可能漏配；孤立行偏多时会自动改用精校，不会清空已导入文件。
-                  </p>
-                </button>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={alignmentMode === 'industrial'}
-                  onClick={() => setAlignmentMode('industrial')}
-                  className={`rounded-lg border px-3.5 py-3 text-left transition-colors ${
-                    alignmentMode === 'industrial'
-                      ? 'border-[var(--v4-accent)]/45 bg-[var(--v4-accent-soft)]'
-                      : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] hover:border-[var(--v4-line-strong)]'
-                  }`}
-                >
-                  <div className={`text-sm font-semibold ${
-                    alignmentMode === 'industrial' ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text)]'
-                  }`}>
-                    精校
-                  </div>
-                  <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
-                    用更完整的对齐搜索处理插入、删减与断句不一致，准确度更高。适合翻译节奏不同、一侧多句或少句的片子。
-                  </p>
-                  <p className="mt-1 text-xs leading-relaxed text-[var(--v4-text-faint)]">
-                    耗时与内存更高；超大体量时启用带状搜索，仅极端情况才降级。
-                  </p>
-                </button>
+              <div className="align-choice grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="对齐方式">
+                {([
+                  { id: 'standard', label: '智能', hint: '快，适合大多数双语字幕' },
+                  { id: 'industrial', label: '精校', hint: '慢一些，适合断句差异大的片子' },
+                ] as const).map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={alignmentMode === option.id}
+                    onClick={() => setAlignmentMode(option.id)}
+                    className="align-choice__item v4-focus-ring"
+                  >
+                    <span className="ds-body font-semibold">{option.label}</span>
+                    <span className="ds-meta">{option.hint}</span>
+                  </button>
+                ))}
               </div>
             </div>
           )}

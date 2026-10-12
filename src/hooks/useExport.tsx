@@ -38,11 +38,31 @@ import {
   type HdrLevelId,
 } from '@/utils/hdrPresets';
 import { buildMergeReviewQueue } from '@/utils/timeline/alignmentDiff';
+import { buildExportBaseFromMeta, type NamingMode } from '@/core/taskModel';
 
 const PRESET_STORAGE_KEY = 'saiko_export_preset';
 const NAMING_STORAGE_KEY = 'saiko_export_naming';
 const SRT_ADDONS_STORAGE_KEY = 'saiko_export_srt_addons';
 const HDR_STORAGE_KEY = 'saiko_export_hdr';
+const NAME_MODE_STORAGE_KEY = 'saiko_export_name_mode';
+
+export const NAME_MODE_OPTIONS: { id: NamingMode; label: string }[] = [
+  { id: 'original', label: '原文名' },
+  { id: 'zh+original', label: '中文 + 原文名' },
+];
+const isNameMode = (v: unknown): v is NamingMode => v === 'original' || v === 'zh+original';
+
+/**
+ * Export base name: manual title > borrowed video filename > TMDB 原文名(.年份.SxxEyy) > task title.
+ */
+export const useExportBaseName = (mode: NamingMode): string =>
+  useStudioStore((state) => {
+    if (state.filenameSource === 'manual' && state.customFilename.trim()) return state.customFilename;
+    return buildExportBaseFromMeta(state.tmdbData, state.filenameEpKey, mode, {
+      videoName: state.borrowedVideoName,
+      fallback: state.customFilename || 'subtitles',
+    });
+  });
 
 const readStoredChoice = (key: string): string | null => {
   try {
@@ -64,6 +84,7 @@ export interface ExportRequest {
   assPresetId: ExportPresetId;
   srtAddonIds: ExportPresetId[];
   namingId: string;
+  nameMode: NamingMode;
   /** 同时生成 HDR 版: level of the extra ASS under HDR/ (null = SDR only). */
   hdrLevel: HdrLevelId | null;
 }
@@ -78,6 +99,7 @@ export const useExportChoices = () => {
   const [srtAddonIds, setSrtAddonIdsState] = useState<ExportPresetId[]>([]);
   // Stored as "<level>" when on, "off:<level>" when off (keeps the last chosen level).
   const [hdrEnabled, setHdrEnabledState] = useState(false);
+  const [nameMode, setNameModeState] = useState<NamingMode>('original');
   const [hdrLevelChoice, setHdrLevelChoiceState] = useState<HdrLevelId>(DEFAULT_HDR_LEVEL);
   useEffect(() => {
     const storedPreset = getExportPreset(readStoredChoice(PRESET_STORAGE_KEY));
@@ -85,6 +107,8 @@ export const useExportChoices = () => {
     setNamingIdState(getNamingOption(readStoredChoice(NAMING_STORAGE_KEY)).id);
     const storedAddons = (readStoredChoice(SRT_ADDONS_STORAGE_KEY) || '').split(',');
     setSrtAddonIdsState(SRT_ADDON_IDS.filter((id) => storedAddons.includes(id)));
+    const storedMode = readStoredChoice(NAME_MODE_STORAGE_KEY);
+    if (isNameMode(storedMode)) setNameModeState(storedMode);
     const storedHdr = readStoredChoice(HDR_STORAGE_KEY) || '';
     const level = storedHdr.replace(/^off:/, '');
     setHdrEnabledState(Boolean(storedHdr) && !storedHdr.startsWith('off:') && isHdrLevelId(level));
@@ -109,6 +133,10 @@ export const useExportChoices = () => {
     setNamingIdState(id);
     writeStoredChoice(NAMING_STORAGE_KEY, id);
   };
+  const setNameMode = (mode: NamingMode) => {
+    setNameModeState(mode);
+    writeStoredChoice(NAME_MODE_STORAGE_KEY, mode);
+  };
   const toggleSrtAddon = (id: ExportPresetId) => {
     setSrtAddonIdsState((prev) => {
       const next = SRT_ADDON_IDS.filter((item) => (item === id ? !prev.includes(id) : prev.includes(item)));
@@ -118,7 +146,7 @@ export const useExportChoices = () => {
   };
   return {
     assPresetId, setAssPresetId, namingId, setNamingId, srtAddonIds, toggleSrtAddon,
-    hdrEnabled, setHdrEnabled, hdrLevelChoice, setHdrLevelChoice, hdrLevel,
+    hdrEnabled, setHdrEnabled, hdrLevelChoice, setHdrLevelChoice, hdrLevel, nameMode, setNameMode,
   };
 };
 
@@ -183,6 +211,10 @@ export const useExport = () => {
   const {
     processedSubs,
     customFilename,
+    filenameSource,
+    filenameEpKey,
+    borrowedVideoName,
+    tmdbData,
     customStyle,
     creatorCredit,
     detectedAttributions,
@@ -199,6 +231,10 @@ export const useExport = () => {
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     customFilename: state.customFilename,
+    filenameSource: state.filenameSource,
+    filenameEpKey: state.filenameEpKey,
+    borrowedVideoName: state.borrowedVideoName,
+    tmdbData: state.tmdbData,
     customStyle: state.customStyle,
     creatorCredit: state.creatorCredit,
     detectedAttributions: state.detectedAttributions,
@@ -223,7 +259,7 @@ export const useExport = () => {
   })));
 
   /** ASS (+ optional SRT add-ons). More than one file → one zip, built locally in the browser. */
-  const handleExport = async ({ assPresetId, srtAddonIds, namingId, hdrLevel }: ExportRequest) => {
+  const handleExport = async ({ assPresetId, srtAddonIds, namingId, hdrLevel, nameMode }: ExportRequest) => {
     if (!processedSubs || processedSubs.length === 0) return;
 
     const taskKey = selectedTaskId || customFilename || '_default';
@@ -232,17 +268,6 @@ export const useExport = () => {
     const checkedCount = queue.items.reduce((count, item) => count + (checked.has(item.id) ? 1 : 0), 0);
     const remaining = Math.max(0, queue.total - checkedCount);
     if (remaining > 0) {
-      const skipConfirm = typeof sessionStorage !== 'undefined'
-        && sessionStorage.getItem('saiko_skip_review_confirm') === '1';
-      if (!skipConfirm) {
-        const ok = window.confirm(`还有 ${remaining} 项未核对，仍要继续？`);
-        if (!ok) return;
-        try {
-          sessionStorage.setItem('saiko_skip_review_confirm', '1');
-        } catch {
-          /* ignore quota / private mode */
-        }
-      }
       setStatusNotice({
         id: 'merge-review-unchecked',
         tone: 'notice',
@@ -258,7 +283,10 @@ export const useExport = () => {
       const auxiliaryMode = customStyle.auxiliaryMode || 'keep';
       const filteredExportSubs = applyAuxiliarySubtitleMode(exportSubs, auxiliaryMode);
       const hiddenAuxiliaryCount = exportSubs.length - filteredExportSubs.length;
-      const plan = planExportBundle(customFilename || 'subtitles', namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel, secondary: secondaryLang });
+      const baseName = filenameSource === 'manual' && customFilename.trim()
+        ? customFilename
+        : buildExportBaseFromMeta(tmdbData, filenameEpKey, nameMode, { videoName: borrowedVideoName, fallback: customFilename || 'subtitles' });
+      const plan = planExportBundle(baseName, namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel, secondary: secondaryLang });
       const report = createWrapReport();
       const scriptMeta = buildAssScriptMeta({ creatorCredit, creditDeclaration, isOfficialSubtitle, attributions: detectedAttributions });
 
@@ -312,7 +340,6 @@ export const useExport = () => {
 const describeBundle = (hdrCount: number, srtCount: number): string =>
   ['ASS', hdrCount > 0 ? 'HDR 版' : '', srtCount > 0 ? `${srtCount} 个 SRT` : ''].filter(Boolean).join(' + ');
 
-const selectClass = 'v4-focus-ring mt-0.5 w-full truncate rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-1.5 py-1 text-xs text-[var(--v4-text)]';
 
 /**
  * #9 — Export dropdown：菜单走 OverlayPortal + fixed，避免被放映厅样式壳压住。
@@ -331,10 +358,10 @@ export const ExportDropdown: React.FC<{
   const { handleExport, isTraditional, secondaryLang } = useExport();
   const {
     assPresetId, setAssPresetId, namingId, setNamingId, srtAddonIds, toggleSrtAddon,
-    hdrEnabled, setHdrEnabled, hdrLevelChoice, setHdrLevelChoice, hdrLevel,
+    hdrEnabled, setHdrEnabled, hdrLevelChoice, setHdrLevelChoice, hdrLevel, nameMode, setNameMode,
   } = useExportChoices();
-  const { customFilename } = useStudioStore(useShallow((state) => ({ customFilename: state.customFilename })));
-  const plan = planExportBundle(customFilename || 'subtitles', namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel, secondary: secondaryLang });
+  const exportBaseName = useExportBaseName(nameMode);
+  const plan = planExportBundle(exportBaseName, namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel, secondary: secondaryLang });
   const planHdrCount = plan.files.filter((file) => file.hdr).length;
   const planSrtCount = plan.files.filter((file) => file.format === 'srt').length;
   const bundled = Boolean(plan.zipName);
@@ -345,10 +372,10 @@ export const ExportDropdown: React.FC<{
     const updatePosition = () => {
       const rect = buttonRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const width = Math.min(18.5 * 16, window.innerWidth - 32);
+      const width = Math.min(21.25 * 16, window.innerWidth - 16);
       const left = Math.min(
-        window.innerWidth - width - 16,
-        Math.max(16, rect.right - width),
+        window.innerWidth - width - 8,
+        Math.max(8, rect.right - width),
       );
       setMenuPos({
         top: rect.bottom + 8,
@@ -390,9 +417,8 @@ export const ExportDropdown: React.FC<{
   const primaryClass = 'ui-action ui-action--lg export-next-cta';
   const ghostClass = 'ui-action ui-action--secondary ui-action--lg';
   const menuClass =
-    menuShell === 'theater'
-      ? 'theater-style-shell dropdown-pop z-[var(--z-dropdown)] min-w-[12rem] overflow-hidden rounded-lg'
-      : 'ui-menu dropdown-pop z-[var(--z-dropdown)]';
+    // Always the opaque light panel (also on the dark theater): fixes dark-on-dark labels.
+    `ui-menu export-menu dropdown-pop z-[var(--z-dropdown)]${menuShell === 'theater' ? ' export-menu--on-dark' : ''}`;
 
   return (
     <div className="relative">
@@ -418,6 +444,7 @@ export const ExportDropdown: React.FC<{
             ref={menuRef}
             role="dialog"
             aria-label="导出字幕"
+            data-surface="cream"
             style={{
               position: 'fixed',
               top: menuPos.top,
@@ -426,17 +453,36 @@ export const ExportDropdown: React.FC<{
             }}
             className={menuClass}
           >
-            <div className="border-b border-[var(--v4-line)] px-3.5 py-2.5">
-              <p className="text-xs font-semibold tracking-wide text-[var(--v4-text)]">导出字幕</p>
-              <p className="mt-0.5 text-xs leading-4 text-[var(--v4-text-faint)]">下载到本地，如视频文件所在目录等</p>
-              <div className="mt-2 grid grid-cols-2 gap-1.5">
+            <div className="export-menu__body">
+              <p className="ds-title">导出字幕</p>
+              <div className="export-menu__row">
+                <span className="ds-label">
+                  文件名
+                  <span className="ds-info" title="默认用片子的原文名（和片源文件名一致），也可在前面加上中文片名。" aria-label="文件名说明">ⓘ</span>
+                </span>
+                <div className="ds-segmented" role="radiogroup" aria-label="文件名">
+                  {NAME_MODE_OPTIONS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={nameMode === option.id}
+                      className="ds-segmented__item"
+                      onClick={() => setNameMode(option.id)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="export-menu__grid">
                 <label className="min-w-0">
-                  <span className="block text-[0.6875rem] leading-4 text-[var(--v4-text-faint)]">ASS 预设</span>
+                  <span className="ds-label">样式</span>
                   <select
-                    className={selectClass}
+                    className="ds-select"
                     value={assPresetId}
                     onChange={(event) => setAssPresetId(event.target.value as ExportPresetId)}
-                    aria-label="ASS 预设"
+                    aria-label="ASS 样式"
                   >
                     {ASS_PRESET_IDS.map((id) => (
                       <option key={id} value={id}>{EXPORT_PRESETS[id].label}</option>
@@ -444,27 +490,26 @@ export const ExportDropdown: React.FC<{
                   </select>
                 </label>
                 <label className="min-w-0">
-                  <span className="block text-[0.6875rem] leading-4 text-[var(--v4-text-faint)]">命名</span>
+                  <span className="ds-label">语言后缀</span>
                   <select
-                    className={selectClass}
+                    className="ds-select"
                     value={namingId}
                     onChange={(event) => setNamingId(event.target.value)}
-                    aria-label="文件命名"
+                    aria-label="语言后缀"
                   >
                     {NAMING_OPTIONS.map((option) => (
-                      <option key={option.id} value={option.id}>{option.label}</option>
+                      <option key={option.id} value={option.id}>{option.id === 'plain' ? '不加' : option.label}</option>
                     ))}
                   </select>
                 </label>
               </div>
-              <fieldset className="mt-2">
-                <legend className="text-[0.6875rem] leading-4 text-[var(--v4-text-faint)]">附带 SRT（可选，勾选后打包下载）</legend>
-                <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-1">
+              <fieldset className="export-menu__row">
+                <legend className="ds-label">另附 SRT（可选）</legend>
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
                   {SRT_ADDON_IDS.map((id) => (
-                    <label key={id} className="inline-flex cursor-pointer items-center gap-1 text-xs text-[var(--v4-text-muted)]" title={EXPORT_PRESETS[id].description}>
+                    <label key={id} className="ds-check" title={EXPORT_PRESETS[id].description}>
                       <input
                         type="checkbox"
-                        className="v4-focus-ring h-3.5 w-3.5 accent-[var(--v4-accent)]"
                         checked={srtAddonIds.includes(id)}
                         onChange={() => toggleSrtAddon(id)}
                       />
@@ -473,47 +518,39 @@ export const ExportDropdown: React.FC<{
                   ))}
                 </div>
               </fieldset>
-              <div className="mt-2">
-                <div className="flex items-center gap-2">
-                  <label className="inline-flex cursor-pointer items-center gap-1 text-xs text-[var(--v4-text-muted)]" title={`ASS 的 HDR 版放进 zip 的 ${HDR_BUNDLE_FOLDER}/ 文件夹，文件名不变；SRT 没有颜色，不生成 HDR 版`}>
-                    <input
-                      type="checkbox"
-                      className="v4-focus-ring h-3.5 w-3.5 accent-[var(--v4-accent)]"
-                      checked={hdrEnabled}
-                      onChange={(event) => setHdrEnabled(event.target.checked)}
-                    />
-                    同时生成 HDR 版
-                  </label>
-                  <select
-                    className={`${selectClass} !mt-0 !w-auto`}
-                    value={hdrLevelChoice}
-                    disabled={!hdrEnabled}
-                    onChange={(event) => setHdrLevelChoice(event.target.value as HdrLevelId)}
-                    aria-label="HDR 档位"
-                    title={HDR_LEVELS_PROVISIONAL[hdrLevelChoice].hint}
-                  >
-                    {HDR_LEVEL_ORDER.map((id) => (
-                      <option key={id} value={id}>{HDR_LEVELS_PROVISIONAL[id].label}</option>
-                    ))}
-                  </select>
-                </div>
-                {hdrEnabled && (
-                  <p className="mt-0.5 text-[0.6875rem] leading-4 text-[var(--v4-text-faint)]">
-                    HDR 片 + HDR 屏幕用 HDR 版；觉得刺眼就换更暗一档。SRT 不生成 HDR 版。
-                  </p>
-                )}
+              <div className="export-menu__row flex items-center gap-2">
+                <label className="ds-check" title={`HDR 版放在 zip 的 ${HDR_BUNDLE_FOLDER}/ 文件夹；SRT 不生成 HDR 版`}>
+                  <input
+                    type="checkbox"
+                    checked={hdrEnabled}
+                    onChange={(event) => setHdrEnabled(event.target.checked)}
+                  />
+                  另附 HDR 版
+                </label>
+                <select
+                  className="ds-select !w-auto"
+                  value={hdrLevelChoice}
+                  disabled={!hdrEnabled}
+                  onChange={(event) => setHdrLevelChoice(event.target.value as HdrLevelId)}
+                  aria-label="HDR 档位"
+                  title={HDR_LEVELS_PROVISIONAL[hdrLevelChoice].hint}
+                >
+                  {HDR_LEVEL_ORDER.map((id) => (
+                    <option key={id} value={id}>{HDR_LEVELS_PROVISIONAL[id].label}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="p-1.5">
               <button
                 type="button"
                 disabled={busy}
-                className="v4-focus-ring flex w-full cursor-pointer items-start gap-3 rounded-md px-2.5 py-2.5 text-left transition-colors hover:bg-[var(--v4-accent-soft)] disabled:cursor-wait disabled:opacity-60"
+                className="export-menu__download v4-focus-ring"
                 title={plan.files.map((file) => file.filename).join('\n')}
                 onClick={async () => {
                   setBusy(true);
                   try {
-                    await handleExport({ assPresetId, srtAddonIds, namingId, hdrLevel });
+                    await handleExport({ assPresetId, srtAddonIds, namingId, hdrLevel, nameMode });
                   } finally {
                     setBusy(false);
                     setOpen(false);
@@ -524,10 +561,10 @@ export const ExportDropdown: React.FC<{
                   {bundled ? 'ZIP' : 'ASS'}
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-[var(--v4-text)]">
+                  <span className="ds-body block font-semibold">
                     {bundled ? `打包下载（${describeBundle(planHdrCount, planSrtCount)}）` : '下载 ASS'}
                   </span>
-                  <span className="mt-0.5 block truncate text-xs leading-4 text-[var(--v4-text-muted)]">
+                  <span className="ds-meta ds-mono block truncate">
                     {plan.zipName ?? plan.files[0].filename}
                   </span>
                 </span>

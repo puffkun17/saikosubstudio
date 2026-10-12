@@ -77,3 +77,11 @@ test('review reasons: stable codes, de-duplicated', () => {
   assert.deepEqual(list[0].cues, [1, 2]);
   assert.ok(rr.REVIEW_REASONS['R-04'].includes('Dial_CH'));
 });
+
+test('legacy store naming (buildExportBaseFromMeta): 原文名 default, 中文 + 原文名, video filename wins', () => {
+  const meta = { title: '熊家餐馆', originalTitle: 'The Bear', year: '2022' };
+  assert.equal(tm.buildExportBaseFromMeta(meta, 's01e01', 'original'), 'The.Bear.2022.S01E01');
+  assert.equal(tm.buildExportBaseFromMeta(meta, 'S01E01', 'zh+original'), '熊家餐馆.The.Bear.2022.S01E01');
+  assert.equal(tm.buildExportBaseFromMeta(meta, '', 'original', { videoName: 'The.Bear.S01E01.1080p.WEB.mkv' }), 'The.Bear.S01E01.1080p.WEB');
+  assert.equal(tm.buildExportBaseFromMeta(null, '', 'original', { fallback: '熊家餐馆 S01E01' }), '熊家餐馆 S01E01');
+});
