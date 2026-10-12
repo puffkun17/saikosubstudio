@@ -120,3 +120,15 @@
 @media (max-width: 640px) { .align-choice { grid-template-columns: 1fr 1fr; } }
 
 .export-menu__review { padding: var(--ds-space-3) var(--ds-space-4); border-bottom: 1px solid var(--surface-line); max-height: 160px; overflow-y: auto; }
+
+/* Episode tabs (workbench) */
+.episode-tabs { display: flex; gap: var(--ds-space-1); overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.episode-tabs__tab {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 var(--ds-space-3); flex-shrink: 0;
+  border-radius: var(--radius-md); border: 1px solid var(--surface-line); background: var(--v5-panel);
+  font-size: var(--ds-fs-meta); font-weight: var(--ds-fw-medium); color: var(--ds-ink-2); cursor: pointer;
+}
+.episode-tabs__tab[aria-selected="true"] { border-color: color-mix(in srgb, var(--v5-accent) 55%, transparent); background: var(--v5-accent-soft); color: var(--ds-ink); font-weight: var(--ds-fw-strong); }
+.episode-tabs__tab:disabled { opacity: .6; cursor: wait; }
+.episode-tabs__dot { width: 6px; height: 6px; border-radius: 999px; background: var(--surface-line-strong); }
+.episode-tabs__dot.is-done { background: var(--v5-accent-strong); }

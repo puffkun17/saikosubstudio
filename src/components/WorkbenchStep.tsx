@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { SequenceList } from '@/components/Workbench/SequenceList';
+import { EpisodeTabs } from '@/components/Workbench/EpisodeTabs';
 import { SourceMatchPanel, type InspectionMarkFilter } from '@/components/Workbench/SourceMatchPanel';
 import { InspectionMarkGlyph, MARK_FILTERS, MARK_LABEL } from '@/components/Workbench/inspectionMarks';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
@@ -181,6 +182,7 @@ export const WorkbenchStep: React.FC = () => {
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         <div className="flex-1 px-3 py-2 md:px-4 md:py-3 min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
           <div className="max-w-[1280px] w-full flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
+            <EpisodeTabs />
             {processedSubs && processedSubs.length > 0 && (
               <section className="v4-panel flex-shrink-0 overflow-hidden">
                 <div className="workbench-overview flex flex-col gap-2 px-4 py-2 md:flex-row md:items-center md:justify-between md:gap-4">

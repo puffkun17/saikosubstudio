@@ -359,6 +359,8 @@ export interface StudioState {
   loadFromLibrary: (item: LibraryItem) => void;
   processFiles: (files: Subfile[]) => void;
   runSubtitleMerge: () => void;
+  /** Workbench episode tabs: keep this episode's result, open the other one (saved result or fresh merge). */
+  switchEpisode: (taskId: string) => void;
   restartSystem: () => void;
 }
 
@@ -370,6 +372,9 @@ const TMDB_CLIENT_CACHE_TTL_MS = 5 * 60_000;
 const tmdbClientCache = new Map<string, { expiresAt: number; results: TmdbSuggestion[] }>();
 
 const normalizeMediaIdentityTitle = (value: string) => cleanFilename(value).toLowerCase().replace(/\s+/g, ' ').trim();
+
+/** One history entry per task id (episode). */
+const historyIdFor = (key: string) => `hist_${key.replace(/[^\w\u4e00-\u9fff.-]+/g, '_')}`;
 
 const libraryItemToTask = (item: LibraryItem): Task => {
   const now = Date.now();
@@ -2055,7 +2060,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       || (tmdbData ? [tmdbData.title, tmdbData.year].filter(Boolean).join('.') : '')
       || '未命名字幕';
     // One entry per task (re-merging the same task replaces it instead of piling up duplicates).
-    const historyId = `hist_${(selectedTaskId || name).replace(/[^\w\u4e00-\u9fff.-]+/g, '_')}`;
+    const historyId = historyIdFor(selectedTaskId || name);
     const newItem: LibraryItem = {
       id: historyId,
       name: name,
@@ -2358,6 +2363,19 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       get().addLog(`已加载/更新 ${newFiles.length} 个文件。当前文件总数: ${updatedUploadedFiles.length}`, 'success');
       return { uploadedFiles: updatedUploadedFiles, tasks: currentTasks };
     });
+  },
+
+  switchEpisode: (taskId) => {
+    const state = get();
+    if (taskId === state.selectedTaskId) return;
+    if (state.processedSubs && state.processedSubs.length > 0) state.saveToLibrary();
+    state.selectTask(taskId);
+    const saved = get().libraryList.find((item) => item.id === historyIdFor(taskId));
+    if (saved) {
+      set({ processedSubs: saved.subs, previewIndex: 0, workflowStep: 2, editHistory: [], editFuture: [] });
+      return;
+    }
+    get().runSubtitleMerge();
   },
 
   runSubtitleMerge: () => {
