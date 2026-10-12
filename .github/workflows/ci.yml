@@ -31,6 +31,9 @@ jobs:
       - name: Core regression (merge algorithm)
         run: npm run test:core
 
+      - name: Unit tests (task model / recognition / credits / worker job)
+        run: npm run test:unit
+
       - name: Typecheck
         run: npx tsc --noEmit
 
