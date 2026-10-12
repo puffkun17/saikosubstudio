@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { applyOverridesToProfile } from '@/utils/previewStyle';
 import { useStudioStore, type CreditDeclaration } from '@/store/useStudioStore';
 import {
   appendCreatorCredit as appendCreatorCreditCue,
@@ -313,9 +314,11 @@ export const useExport = () => {
 
       const files = plan.files.map((file) => {
         const preset = EXPORT_PRESETS[file.presetId];
-        const exportStyle = { ...resolvePresetStyle(customStyle, preset), auxiliaryMode: 'keep' as const };
+        // Chosen ASS preset carries the user's 样式参数 overrides (preview == export); add-on SRT presets stay fixed.
+        const overrides = file.presetId === assPresetId ? useStudioStore.getState().styleOverrides : {};
+        const exportStyle = { ...resolvePresetStyle(customStyle, preset), ...overrides, auxiliaryMode: 'keep' as const };
         // The HDR copy re-runs the same export; don't double-count its wrap stats.
-        const runOptions = { profile: preset.profile, report: file.hdr ? undefined : report, hdr: file.hdr ?? null };
+        const runOptions = { profile: applyOverridesToProfile(preset, overrides), report: file.hdr ? undefined : report, hdr: file.hdr ?? null };
         const content = file.format === 'srt'
           ? generateSrtContent(filteredExportSubs, exportStyle, runOptions)
           : generateAssContent(filteredExportSubs, exportStyle, customFilename, scriptMeta, runOptions);

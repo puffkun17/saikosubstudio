@@ -64,6 +64,7 @@ export const TheaterStep: React.FC = () => {
     exportPresetId,
     hdrEnabled,
     hdrLevel,
+    styleOverrides,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     previewIndex: state.previewIndex,
@@ -88,11 +89,12 @@ export const TheaterStep: React.FC = () => {
     exportPresetId: state.exportPresetId,
     hdrEnabled: state.hdrEnabled,
     hdrLevel: state.hdrLevel,
+    styleOverrides: state.styleOverrides,
   })));
   // Preview == export: render with the chosen ASS preset, and dim fills like the HDR copy when it is on.
   const previewStyle = React.useMemo(
-    () => resolvePreviewStyle(customStyle, exportPresetId, hdrEnabled ? hdrLevel : null),
-    [customStyle, exportPresetId, hdrEnabled, hdrLevel],
+    () => resolvePreviewStyle(customStyle, exportPresetId, hdrEnabled ? hdrLevel : null, styleOverrides),
+    [customStyle, exportPresetId, hdrEnabled, hdrLevel, styleOverrides],
   );
 
   const safePreviewIndex = processedSubs && processedSubs.length > 0

@@ -12,6 +12,7 @@ import { detectLanguageByContent } from '../utils/subtitleCore';
 import { mergeWorkerAvailable, runMergeJob, runMergeJobInThread } from '../core/mergeClient';
 import type { MergeJobEvent, MergeJobInput, MergeJobResult } from '../core/mergeJob';
 import type { AlignmentFallbackInfo } from '../utils/subtitleCore';
+import { resolveEffectiveStyle } from '../utils/previewStyle';
 import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity, isMainPathSecondaryLanguage, isEnglishSecondaryLanguage, isLatinSecondaryLanguage, mainPathPrimaryRank, mainPathSecondaryRank, estimateSubtitleCueCount, isSparseSecondaryTrack, measureMergeOrphanRate, isSdhOrCcSubtitleFilename } from '../utils/subtitleCore';
 import { assessTvYearFit, parseSeasonNumber, parseYearToken, shouldDemoteBySeasonSpan } from '../utils/tmdbCandidateFit';
 import { estimateJsonBytes, readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
@@ -352,6 +353,12 @@ export interface StudioState {
   /** Unified preset (spec: preview == export). Shared by the preview toolbar and the export menu. */
   exportPresetId: ExportPresetId;
   setExportPresetId: (id: ExportPresetId) => void;
+  /**
+   * Edits made in 样式参数 while a fixed preset (libass / 深蓝描边) is selected. Layered on top of the
+   * preset so sliders always take effect, in preview AND export. Cleared when another preset is picked.
+   */
+  styleOverrides: Partial<StyleSettings>;
+  setStyleOverrides: (patch: Partial<StyleSettings>) => void;
   /** HDR copy: on/off + level; the preview dims fills the same way the HDR export does. */
   hdrEnabled: boolean;
   hdrLevel: HdrLevelId;
@@ -477,8 +484,17 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   historyReady: false,
   exportPresetId: DEFAULT_EXPORT_PRESET_ID,
   setExportPresetId: (exportPresetId) => {
-    set({ exportPresetId });
-    try { localStorage.setItem('saiko_export_preset', exportPresetId); } catch { /* ignore */ }
+    set({ exportPresetId, styleOverrides: {} });
+    try {
+      localStorage.setItem('saiko_export_preset', exportPresetId);
+      localStorage.removeItem('saiko_style_overrides');
+    } catch { /* ignore */ }
+  },
+  styleOverrides: {},
+  setStyleOverrides: (patch) => {
+    const styleOverrides = { ...get().styleOverrides, ...patch };
+    set({ styleOverrides });
+    try { localStorage.setItem('saiko_style_overrides', JSON.stringify(styleOverrides)); } catch { /* ignore */ }
   },
   hdrEnabled: false,
   hdrLevel: DEFAULT_HDR_LEVEL,
@@ -631,7 +647,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   },
   saveCustomTemplate: (name) => {
     set((state) => {
-      const newTemplate = { id: `tpl_${Date.now()}`, name, styles: state.customStyle };
+      const newTemplate = { id: `tpl_${Date.now()}`, name, styles: resolveEffectiveStyle(state.customStyle, state.exportPresetId, state.styleOverrides) };
       const newTemplates = [...state.customTemplates, newTemplate];
       return { customTemplates: newTemplates, activePreset: newTemplate.id };
     });
@@ -1739,6 +1755,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         hdrEnabled: Boolean(storedHdr) && !storedHdr.startsWith('off:') && isHdrLevelId(level),
         ...(isHdrLevelId(level) ? { hdrLevel: level } : {}),
       });
+      const storedOverrides = readJsonStorage<unknown>('saiko_style_overrides', {});
+      if (storedOverrides && typeof storedOverrides === 'object' && !Array.isArray(storedOverrides)) {
+        set({ styleOverrides: storedOverrides as Partial<StyleSettings> });
+      }
     } catch { /* ignore */ }
     // History lives in IndexedDB (taskStore). Migrate the old localStorage archive once, then drop it.
     void loadHistoryFromIdb().then((list) => {
