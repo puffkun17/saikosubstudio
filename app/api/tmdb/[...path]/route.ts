@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'edge';
 
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 const SEARCH_PATH = /^search\/(multi|movie|tv)$/;

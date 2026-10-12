@@ -1,7 +1,6 @@
-import { getOptionalRequestContext } from '@cloudflare/next-on-pages';
+import { getBindings } from '@/server/bindings';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'edge';
 
 type FeedbackCategory = 'issue' | 'idea' | 'other';
 type FeedbackPayload = { category?: unknown; message?: unknown };
@@ -71,8 +70,7 @@ export async function POST(request: NextRequest) {
     return json({ error: '请填写 10 到 3000 个字符的反馈内容。' }, 400);
   }
 
-  const context = getOptionalRequestContext();
-  const mailer = context?.env.FEEDBACK_MAILER;
+  const mailer = (await getBindings()).FEEDBACK_MAILER;
   if (!mailer) {
     return json({ error: '反馈服务尚未完成部署，请稍后再试。' }, 503);
   }

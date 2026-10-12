@@ -1,22 +1,19 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
 
-// eslint-config-next@15.5.2 still ships the legacy "extends" API.
-// FlatCompat bridges it into ESLint 9 flat config while Next stays pinned.
-// After OpenNext + Next bump, this can return to native flat exports.
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+// eslint-config-next 16 ships native flat configs (FlatCompat no longer needed).
+export default defineConfig([
+  ...nextVitals,
+  ...nextTs,
   {
-    ignores: [".next/**", "out/**", "build/**", "next-env.d.ts"],
+    // New in eslint-plugin-react-hooks 7 (bundled with eslint-config-next 16). Existing
+    // Act-2/export code trips these; kept as warnings so the framework bump stays behaviour-neutral.
+    // Tracked in next-iteration-plan.md §H.
+    rules: {
+      "react-hooks/set-state-in-effect": "warn",
+      "@typescript-eslint/no-this-alias": "warn",
+    },
   },
-];
-
-export default eslintConfig;
+  globalIgnores([".next/**", "out/**", "build/**", "dist/**", "public/**", "next-env.d.ts"]),
+]);

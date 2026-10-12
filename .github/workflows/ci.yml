@@ -7,8 +7,6 @@ on:
   push:
     branches: [ cf-pages-hosted ]
 
-# Keep Actions runtime on Node 24 while project build/test stays on Node 20
-# (Next 15.5.2 + @cloudflare/next-on-pages pin). Same rationale as deploy.yml.
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -24,12 +22,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
-        # --legacy-peer-deps required for current next-on-pages + Next 15.5.2 pin.
-        run: npm ci --legacy-peer-deps
+        run: npm ci
 
       - name: Core regression (merge algorithm)
         run: npm run test:core
