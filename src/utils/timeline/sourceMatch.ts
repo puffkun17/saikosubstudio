@@ -99,7 +99,7 @@ export const createSourceMatchReport = (
   const activityCurve = bins.map(value => Math.sqrt(value / maxBin));
   const activeBinCount = bins.filter(value => value > 0).length;
   const activeRatio = activeBinCount / binCount;
-  const distributionLabel = activeRatio > 0.68 ? '分布舒展' : activeRatio > 0.42 ? '分布集中' : '分布稀疏';
+  const distributionLabel = activeRatio > 0.68 ? '分布均匀' : activeRatio > 0.42 ? '分布集中' : '分布稀疏';
   const characterCount = rows.reduce(
     (total, row) => total + (row.text || '').replace(/\{[^}]*\}/g, '').replace(/<[^>]*>/g, '').replace(/\s+/g, '').length,
     0
