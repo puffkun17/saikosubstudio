@@ -196,7 +196,7 @@ const SliderControl = ({
 
 type StyleSidebarTone = 'cream' | 'theater';
 
-export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cream' }) => {
+export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolean }> = ({ tone = 'cream', embedded = false }) => {
   const {
     processedSubs,
     customStyle,
@@ -305,9 +305,11 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
       className={
         tone === 'theater'
           ? 'theater-style-drawer flex h-full w-full flex-col overflow-y-auto p-5 text-left text-[var(--v4-text)] scrollbar-thin'
-          : 'flex h-full w-full flex-col overflow-y-auto bg-[var(--v5-cream)] p-5 text-left text-[var(--v4-text)] scrollbar-thin'
+          : `flex h-full w-full flex-col overflow-y-auto text-left text-[var(--v4-text)] scrollbar-thin ${embedded ? 'px-[var(--ds-pad-well)] py-[var(--ds-gap-group)]' : 'bg-[var(--v5-cream)] p-5'}`
       }
     >
+      {/* 停靠面板已有标题与关闭；辅助线开关在画面下方 */}
+      {!embedded && (
       <div className="mb-5 flex flex-shrink-0 items-start justify-between gap-4 border-b border-[var(--v4-line)] pb-4">
         <div className="min-w-0 select-none">
           <div className="flex items-center gap-2">
@@ -317,7 +319,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             </h3>
           </div>
           <p className="mt-1 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
-            调整字幕在预览与导出中的呈现
+            预览与导出共用此样式
           </p>
         </div>
 
@@ -343,8 +345,9 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
           </button>
         </div>
       </div>
+      )}
 
-      <div className="ui-choice-group mb-4 w-full" role="tablist" aria-label="样式设置分类">
+      <div className="ui-choice-group mb-[var(--ds-gap-group)] w-full" role="tablist" aria-label="样式设置分类">
         {([
           { id: 'template', label: '模板' },
           { id: 'type', label: '文字' },
@@ -464,7 +467,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             max={1.8}
             step={0.05}
             suffix="x"
-            hint="调整字幕整体大小比例"
+            hint="按比例缩放全部字幕"
             onChange={value => handleStyleChange('globalScale', value)}
           />
           <SliderControl
@@ -552,7 +555,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             <span className="text-sm font-medium text-[var(--v4-text-muted)] inline-flex items-center gap-1.5">
               辅助字幕策略
               <InfoHint label="辅助字幕说明" side="left">
-                将声音描述、画面文字、歌词或非对白表达完整保留；智能精简模式会隐藏明确低价值环境音等。
+                将 SDH、标题告示、歌词或非对白表达完整保留；智能精简模式会隐藏明确低价值环境音等。
               </InfoHint>
             </span>
             <div className="ui-choice-group w-full" role="group" aria-label="辅助字幕策略">
@@ -579,7 +582,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             </div>
             {auxiliaryCount > 0 && (
               <p className="text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
-                检测到 {auxiliaryCount} 条辅助内容（画面文字 {screenTextCount} 条倾向保留；仅高置信音效可被智能精简剥离约 {smartHiddenCount} 条）。可在「字幕信息概览」分布图与详细内容中查看。
+                检测到 {auxiliaryCount} 条辅助内容（标题告示 {screenTextCount} 条倾向保留；仅高置信音效可被智能精简剥离约 {smartHiddenCount} 条）。可在「字幕信息概览」分布图与详细内容中查看。
               </p>
             )}
           </div>

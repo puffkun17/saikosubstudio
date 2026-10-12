@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, SquareArrowRightExit } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, type CreditDeclaration } from '@/store/useStudioStore';
-import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import {
   appendCreatorCredit as appendCreatorCreditCue,
   applyAuxiliarySubtitleMode,
@@ -365,19 +363,11 @@ const describeBundle = (hdrCount: number, srtCount: number): string =>
 
 
 /**
- * #9 — Export dropdown：菜单走 OverlayPortal + fixed，避免被放映厅样式壳压住。
- * Theater 下复用 theater-style-shell 玻璃，不单独改配色。
- * 默认下载一个 ASS；勾选 SRT 附加项后改为「打包下载」zip（本地生成）。
+ * 导出面板：放在剧场右侧停靠面板内（spec v1.1 §6），不再是浮层菜单，不遮挡预览。
+ * 默认下载一个 ASS；勾选 SRT 附加项后改为打包下载 zip（本地生成）。
  */
-export const ExportDropdown: React.FC<{
-  variant?: 'primary' | 'ghost';
-  menuShell?: 'default' | 'theater';
-}> = ({ variant = 'primary', menuShell = 'default' }) => {
-  const [open, setOpen] = useState(false);
+export const ExportPanel: React.FC = () => {
   const [busy, setBusy] = useState(false);
-  const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
   const { handleExport, isTraditional, secondaryLang } = useExport();
   const {
     assPresetId, setAssPresetId, namingId, setNamingId, srtAddonIds, toggleSrtAddon,
@@ -390,106 +380,19 @@ export const ExportDropdown: React.FC<{
     st.setIsPreviewPlaying(false);
     st.setPreviewIndex(row);
     st.setJumpLineVal(String(row + 1));
-    setOpen(false);
   };
   const plan = planExportBundle(exportBaseName, namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel, secondary: secondaryLang });
   const planHdrCount = plan.files.filter((file) => file.hdr).length;
   const planSrtCount = plan.files.filter((file) => file.format === 'srt').length;
   const bundled = Boolean(plan.zipName);
 
-  useEffect(() => {
-    if (!open) return;
-
-    const updatePosition = () => {
-      const rect = buttonRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const width = Math.min(21.25 * 16, window.innerWidth - 16);
-      const left = Math.min(
-        window.innerWidth - width - 8,
-        Math.max(8, rect.right - width),
-      );
-      setMenuPos({
-        top: rect.bottom + 8,
-        left,
-        width,
-      });
-    };
-
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-    };
-  }, [open]);
-
-  // Close on outside click（按钮 + 菜单均算内部）
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (buttonRef.current?.contains(target) || menuRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [open]);
-
-  const primaryClass = 'ui-action ui-action--lg export-next-cta';
-  const ghostClass = 'ui-action ui-action--secondary ui-action--lg';
-  const menuClass =
-    // Always the opaque light panel (also on the dark theater): fixes dark-on-dark labels.
-    `ui-menu export-menu dropdown-pop z-[var(--z-dropdown)]${menuShell === 'theater' ? ' export-menu--on-dark' : ''}`;
-
   return (
-    <div className="relative">
-      <button
-        ref={buttonRef}
-        type="button"
-        className={variant === 'primary' ? primaryClass : ghostClass}
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        aria-haspopup="dialog"
-      >
-        <SquareArrowRightExit className="h-4 w-4" aria-hidden="true" />
-        导出字幕
-        <ChevronDown
-          className={`h-4 w-4 opacity-70 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-          aria-hidden="true"
-        />
-      </button>
-
-      {open && menuPos && (
-        <OverlayPortal>
-          <div
-            ref={menuRef}
-            role="dialog"
-            aria-label="导出字幕"
-            data-surface="cream"
-            style={{
-              position: 'fixed',
-              top: menuPos.top,
-              left: menuPos.left,
-              width: menuPos.width,
-            }}
-            className={menuClass}
-          >
+          <div className="export-menu" aria-label="导出字幕">
             <div className="export-menu__body">
-              <p className="ds-title">导出字幕</p>
               <div className="export-menu__row">
                 <span className="ds-label">
                   文件名
-                  <span className="ds-info" title="默认用片子的原文名（和片源文件名一致），也可在前面加上中文片名。" aria-label="文件名说明">ⓘ</span>
+                  <span className="ds-info" title="默认使用原文名（与片源文件名一致），可选加中文片名前缀。" aria-label="文件名说明">ⓘ</span>
                 </span>
                 <div className="ds-segmented" role="radiogroup" aria-label="文件名">
                   {NAME_MODE_OPTIONS.map((option) => (
@@ -575,7 +478,7 @@ export const ExportDropdown: React.FC<{
             {reviewItems.length > 0 && (
               <div className="export-menu__review">
                 <p className="ds-label">
-                  留意（不影响导出）
+                  复核提示（不影响导出）
                   <span className="ds-info" title={REVIEW_CODE_TABLE.map(([code, label]) => `${code} ${label}`).join('\n')} aria-label="复核代码表">ⓘ</span>
                 </p>
                 <ul className="mt-1 grid gap-1">
@@ -606,7 +509,6 @@ export const ExportDropdown: React.FC<{
                     await handleExport({ assPresetId, srtAddonIds, namingId, hdrLevel, nameMode });
                   } finally {
                     setBusy(false);
-                    setOpen(false);
                   }
                 }}
               >
@@ -624,8 +526,5 @@ export const ExportDropdown: React.FC<{
               </button>
             </div>
           </div>
-        </OverlayPortal>
-      )}
-    </div>
   );
 };

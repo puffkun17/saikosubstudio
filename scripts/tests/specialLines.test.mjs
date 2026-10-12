@@ -28,3 +28,18 @@ test('slideshow: stills advance evenly', () => {
   assert.equal(sl.slideIndexFor(99, 100, 5), 4);
   assert.equal(sl.slideIndexFor(50, 100, 1), 0);
 });
+
+test('pager ordinal and stepping within a category', () => {
+  const idx = [3, 7, 12];
+  assert.equal(sl.pagerOrdinal(idx, 0), 0);
+  assert.equal(sl.pagerOrdinal(idx, 7), 2);
+  assert.equal(sl.pagerOrdinal(idx, 20), 3);
+  assert.equal(sl.stepSpecial(idx, 7, 1), 12);
+  assert.equal(sl.stepSpecial(idx, 12, 1), 3);
+  assert.equal(sl.stepSpecial(idx, 3, -1), 12);
+  assert.equal(sl.stepSpecial(idx, 8, -1), 7);
+  assert.equal(sl.stepSpecial([], 0, 1), -1);
+  const rows = [{ text: 'a', cueKind: 'lyrics' }, { text: 'b' }, { text: 'c', cueKind: 'sound_caption' }];
+  assert.deepEqual(sl.specialIndices(rows).lyrics, [0]);
+  assert.deepEqual(sl.specialIndices(rows).sdh, [2]);
+});

@@ -4,10 +4,10 @@ import type { SubRow } from '../utils/subtitleCore';
 export type SpecialKind = 'long' | 'lyrics' | 'sign' | 'sdh';
 
 export const SPECIAL_LABEL: Record<SpecialKind, string> = {
-  long: '长对白',
   lyrics: '歌词',
-  sign: '画面字',
-  sdh: '声音描述',
+  sdh: 'SDH',
+  long: '长对话',
+  sign: '标题告示',
 };
 
 const LONG_ZH_CHARS = 22;
@@ -44,3 +44,31 @@ export function countSpecial(rows: Pick<SubRow, 'text' | 'type' | 'cueKind' | 'a
 /** Slideshow: which still to show for a row (stills advance evenly through the episode). */
 export const slideIndexFor = (rowIndex: number, rowCount: number, stillCount: number): number =>
   stillCount <= 1 || rowCount <= 1 ? 0 : Math.min(stillCount - 1, Math.floor((rowIndex / rowCount) * stillCount));
+
+/** All row indices per kind, in order (drives chips, pager and timeline ticks). */
+export function specialIndices(rows: Pick<SubRow, 'text' | 'type' | 'cueKind' | 'auxiliary'>[]): Record<SpecialKind, number[]> {
+  const out: Record<SpecialKind, number[]> = { long: [], lyrics: [], sign: [], sdh: [] };
+  rows.forEach((r, i) => {
+    const k = specialKindOf(r);
+    if (k) out[k].push(i);
+  });
+  return out;
+}
+
+/**
+ * Pager position for `current` inside `indices`: 1-based ordinal of the occurrence at or
+ * before `current` (0 when `current` precedes the first one).
+ */
+export function pagerOrdinal(indices: number[], current: number): number {
+  let ord = 0;
+  for (let i = 0; i < indices.length && indices[i] <= current; i += 1) ord = i + 1;
+  return ord;
+}
+
+/** Step within a category: dir +1 → next occurrence after current, -1 → previous; wraps. */
+export function stepSpecial(indices: number[], current: number, dir: 1 | -1): number {
+  if (!indices.length) return -1;
+  if (dir === 1) return indices.find((i) => i > current) ?? indices[0];
+  for (let k = indices.length - 1; k >= 0; k -= 1) if (indices[k] < current) return indices[k];
+  return indices[indices.length - 1];
+}
