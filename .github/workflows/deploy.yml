@@ -1,10 +1,10 @@
-name: Build check (Cloudflare Workers via vinext)
+name: Deploy Worker (Cloudflare Workers via vinext)
 
-# Deployment itself is done by Cloudflare Workers Builds (Git integration):
-#   - production branch: cf-pages-hosted
-#   - non-production branches: preview URLs <branch>-saikosubstudio.<subdomain>.workers.dev
-# This workflow only proves the Worker bundle builds and the SW is generated.
-# The legacy Pages project "saikosubstudio" is kept as rollback until the custom domain is switched.
+# Push to cf-pages-hosted -> build -> wrangler deploy to Worker "saikosubstudio"
+# (custom domains dualsubs.quest + www.dualsubs.quest, switched 2026-10-13).
+# Needs repo secret CLOUDFLARE_API_TOKEN (Workers Scripts:Edit). Without it the job builds and
+# skips the deploy with a warning. Worker secret TMDB_API_KEY lives on the Worker, not here.
+# The legacy Pages project "saikosubstudio" is kept (no custom domain) as rollback.
 
 on:
   push:
@@ -31,3 +31,14 @@ jobs:
           test -f dist/client/sw.js
           test -f dist/client/libarchive/libarchive.wasm
           npx wrangler deploy --config dist/server/wrangler.json --dry-run
+
+      - name: Deploy to Workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: e4817f5651bb4a362691fcbe72054f54
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::warning::CLOUDFLARE_API_TOKEN repo secret not set; skipped deploy (run wrangler deploy manually)."
+            exit 0
+          fi
+          npx wrangler deploy --config dist/server/wrangler.json
