@@ -7,6 +7,7 @@ import { IngestStep } from '@/components/IngestStep';
 import { WorkbenchStep } from '@/components/WorkbenchStep';
 import { TheaterStep } from '@/components/TheaterStep';
 import { FeedbackCenter } from '@/components/Global/FeedbackCenter';
+import { HistoryPanel } from '@/components/Global/HistoryPanel';
 import { useSessionLeaveWarning } from '@/hooks/useSessionLeaveWarning';
 
 export default function Home() {
@@ -28,6 +29,7 @@ export default function Home() {
       </div>
 
       <FeedbackCenter />
+      <HistoryPanel />
     </main>
   );
 }
