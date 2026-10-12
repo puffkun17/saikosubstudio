@@ -17,33 +17,29 @@ import {
 } from '@/utils/subtitleCore';
 import {
   ASS_PRESET_IDS,
-  DEFAULT_EXPORT_PRESET_ID,
   DEFAULT_NAMING_ID,
   EXPORT_PRESETS,
   NAMING_OPTIONS,
   SRT_ADDON_IDS,
   SRT_ADDON_LABELS,
-  getExportPreset,
   getNamingOption,
   planExportBundle,
   resolvePresetStyle,
   type ExportPresetId,
 } from '@/utils/exportPresets';
 import {
-  DEFAULT_HDR_LEVEL,
   HDR_BUNDLE_FOLDER,
   HDR_LEVEL_ORDER,
   HDR_LEVELS_PROVISIONAL,
-  isHdrLevelId,
   type HdrLevelId,
 } from '@/utils/hdrPresets';
 import { buildMergeReviewQueue } from '@/utils/timeline/alignmentDiff';
+import { REVIEW_CODE_TABLE, deriveExportReview, reviewLabel } from '@/core/exportReview';
+import { applyCreditPlan, buildClosingCreditLines, classifyCreditCue, planCredits } from '@/core/credits';
 import { buildExportBaseFromMeta, type NamingMode } from '@/core/taskModel';
 
-const PRESET_STORAGE_KEY = 'saiko_export_preset';
 const NAMING_STORAGE_KEY = 'saiko_export_naming';
 const SRT_ADDONS_STORAGE_KEY = 'saiko_export_srt_addons';
-const HDR_STORAGE_KEY = 'saiko_export_hdr';
 const NAME_MODE_STORAGE_KEY = 'saiko_export_name_mode';
 
 export const NAME_MODE_OPTIONS: { id: NamingMode; label: string }[] = [
@@ -51,6 +47,31 @@ export const NAME_MODE_OPTIONS: { id: NamingMode; label: string }[] = [
   { id: 'zh+original', label: '中文 + 原文名' },
 ];
 const isNameMode = (v: unknown): v is NamingMode => v === 'original' || v === 'zh+original';
+
+/** R-xx list for the export menu (derived; never blocks the download). */
+export const useExportReview = () => {
+  const { processedSubs, tmdbData, filenameEpKey, isTv } = useStudioStore(useShallow((s) => ({
+    processedSubs: s.processedSubs,
+    tmdbData: s.tmdbData,
+    filenameEpKey: s.filenameEpKey,
+    isTv: s.tasks.find((t) => t.id === s.selectedTaskId)?.epKey != null || /S\d+E\d+/i.test(s.customFilename),
+  })));
+  return React.useMemo(() => {
+    const rows = processedSubs ?? [];
+    if (rows.length === 0) return [];
+    const queue = buildMergeReviewQueue(rows);
+    const unresolved = [...new Set(queue.items.flatMap((item) => item.rowIndexes))].sort((a, b) => a - b);
+    const plan = planCredits({ primaryRows: rows });
+    return deriveExportReview({
+      rows,
+      hasTmdb: Boolean(tmdbData),
+      isTv,
+      epKey: filenameEpKey,
+      unresolvedRows: unresolved,
+      movedStatementRows: plan.dropCueIndexes,
+    });
+  }, [processedSubs, tmdbData, filenameEpKey, isTv]);
+};
 
 /**
  * Export base name: manual title > borrowed video filename > TMDB 原文名(.年份.SxxEyy) > task title.
@@ -94,41 +115,27 @@ export interface ExportRequest {
  * Default = one ASS file; SRT variants are opt-in add-ons that turn the download into a zip.
  */
 export const useExportChoices = () => {
-  const [assPresetId, setAssPresetIdState] = useState<ExportPresetId>(DEFAULT_EXPORT_PRESET_ID);
+  // Preset + HDR live in the store so the preview toolbar and this menu stay in sync (preview == export).
+  const { assPresetId, setAssPresetId, hdrEnabled, hdrLevelChoice, setHdr } = useStudioStore(useShallow((s) => ({
+    assPresetId: s.exportPresetId,
+    setAssPresetId: s.setExportPresetId,
+    hdrEnabled: s.hdrEnabled,
+    hdrLevelChoice: s.hdrLevel,
+    setHdr: s.setHdr,
+  })));
   const [namingId, setNamingIdState] = useState<string>(DEFAULT_NAMING_ID);
   const [srtAddonIds, setSrtAddonIdsState] = useState<ExportPresetId[]>([]);
-  // Stored as "<level>" when on, "off:<level>" when off (keeps the last chosen level).
-  const [hdrEnabled, setHdrEnabledState] = useState(false);
   const [nameMode, setNameModeState] = useState<NamingMode>('original');
-  const [hdrLevelChoice, setHdrLevelChoiceState] = useState<HdrLevelId>(DEFAULT_HDR_LEVEL);
   useEffect(() => {
-    const storedPreset = getExportPreset(readStoredChoice(PRESET_STORAGE_KEY));
-    setAssPresetIdState(storedPreset.formats.includes('ass') ? storedPreset.id : DEFAULT_EXPORT_PRESET_ID);
     setNamingIdState(getNamingOption(readStoredChoice(NAMING_STORAGE_KEY)).id);
     const storedAddons = (readStoredChoice(SRT_ADDONS_STORAGE_KEY) || '').split(',');
     setSrtAddonIdsState(SRT_ADDON_IDS.filter((id) => storedAddons.includes(id)));
     const storedMode = readStoredChoice(NAME_MODE_STORAGE_KEY);
     if (isNameMode(storedMode)) setNameModeState(storedMode);
-    const storedHdr = readStoredChoice(HDR_STORAGE_KEY) || '';
-    const level = storedHdr.replace(/^off:/, '');
-    setHdrEnabledState(Boolean(storedHdr) && !storedHdr.startsWith('off:') && isHdrLevelId(level));
-    if (isHdrLevelId(level)) setHdrLevelChoiceState(level);
   }, []);
-  const persistHdr = (enabled: boolean, level: HdrLevelId) =>
-    writeStoredChoice(HDR_STORAGE_KEY, enabled ? level : `off:${level}`);
-  const setHdrEnabled = (enabled: boolean) => {
-    setHdrEnabledState(enabled);
-    persistHdr(enabled, hdrLevelChoice);
-  };
-  const setHdrLevelChoice = (level: HdrLevelId) => {
-    setHdrLevelChoiceState(level);
-    persistHdr(hdrEnabled, level);
-  };
+  const setHdrEnabled = (enabled: boolean) => setHdr(enabled);
+  const setHdrLevelChoice = (level: HdrLevelId) => setHdr(hdrEnabled, level);
   const hdrLevel: HdrLevelId | null = hdrEnabled ? hdrLevelChoice : null;
-  const setAssPresetId = (id: ExportPresetId) => {
-    setAssPresetIdState(id);
-    writeStoredChoice(PRESET_STORAGE_KEY, id);
-  };
   const setNamingId = (id: string) => {
     setNamingIdState(id);
     writeStoredChoice(NAMING_STORAGE_KEY, id);
@@ -219,6 +226,7 @@ export const useExport = () => {
     creatorCredit,
     detectedAttributions,
     appendCreatorCredit,
+    keepOriginalCredit,
     creditDeclaration,
     creditPlacement,
     isOfficialSubtitle,
@@ -239,6 +247,7 @@ export const useExport = () => {
     creatorCredit: state.creatorCredit,
     detectedAttributions: state.detectedAttributions,
     appendCreatorCredit: state.appendCreatorCredit,
+    keepOriginalCredit: state.keepOriginalCredit,
     creditDeclaration: state.creditDeclaration,
     creditPlacement: state.creditPlacement,
     isOfficialSubtitle: state.isOfficialSubtitle,
@@ -277,11 +286,25 @@ export const useExport = () => {
     }
 
     try {
-      const exportSubs = appendCreatorCredit
-        ? appendCreatorCreditCue(processedSubs, creatorCredit, creditPlacement)
-        : processedSubs;
+      // Credit block (core/credits): secondary statements leave the timeline (→ anonymous thanks),
+      // formal credits stay in place and are never filtered; the user's 「双语合并：」 line comes after the original.
+      const creditPlan = planCredits({
+        primaryRows: processedSubs,
+        user: appendCreatorCredit && creatorCredit.trim() ? { name: creatorCredit, placement: creditPlacement } : undefined,
+        keepFormalInPlace: keepOriginalCredit,
+      });
+      const exportSubs = buildClosingCreditLines(creditPlan).reduce(
+        (rows, line) => appendCreatorCreditCue(rows, line, creditPlacement, true),
+        applyCreditPlan(processedSubs, creditPlan),
+      );
       const auxiliaryMode = customStyle.auxiliaryMode || 'keep';
-      const filteredExportSubs = applyAuxiliarySubtitleMode(exportSubs, auxiliaryMode);
+      const isFormalCredit = (row: { text: string }) => classifyCreditCue(row.text.replace(/\\N|\n/g, ' '))?.kind === 'formal';
+      const closing = new Set(buildClosingCreditLines(creditPlan));
+      const filteredExportSubs = applyAuxiliarySubtitleMode(
+        exportSubs,
+        auxiliaryMode,
+        (row) => (creditPlan.keepFormalInPlace && isFormalCredit(row)) || closing.has(row.text),
+      );
       const hiddenAuxiliaryCount = exportSubs.length - filteredExportSubs.length;
       const baseName = filenameSource === 'manual' && customFilename.trim()
         ? customFilename
@@ -361,6 +384,14 @@ export const ExportDropdown: React.FC<{
     hdrEnabled, setHdrEnabled, hdrLevelChoice, setHdrLevelChoice, hdrLevel, nameMode, setNameMode,
   } = useExportChoices();
   const exportBaseName = useExportBaseName(nameMode);
+  const reviewItems = useExportReview();
+  const jumpToRow = (row: number) => {
+    const st = useStudioStore.getState();
+    st.setIsPreviewPlaying(false);
+    st.setPreviewIndex(row);
+    st.setJumpLineVal(String(row + 1));
+    setOpen(false);
+  };
   const plan = planExportBundle(exportBaseName, namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel, secondary: secondaryLang });
   const planHdrCount = plan.files.filter((file) => file.hdr).length;
   const planSrtCount = plan.files.filter((file) => file.format === 'srt').length;
@@ -541,6 +572,28 @@ export const ExportDropdown: React.FC<{
                 </select>
               </div>
             </div>
+            {reviewItems.length > 0 && (
+              <div className="export-menu__review">
+                <p className="ds-label">
+                  留意（不影响导出）
+                  <span className="ds-info" title={REVIEW_CODE_TABLE.map(([code, label]) => `${code} ${label}`).join('\n')} aria-label="复核代码表">ⓘ</span>
+                </p>
+                <ul className="mt-1 grid gap-1">
+                  {reviewItems.map((item) => (
+                    <li key={item.code} className="ds-meta flex flex-wrap items-baseline gap-x-1.5">
+                      <span className="ds-mono font-semibold text-[var(--ds-ink-2)]">{item.code}</span>
+                      <span className="min-w-0">{reviewLabel(item.code)}</span>
+                      {(item.cues ?? []).slice(0, 3).map((row) => (
+                        <button key={row} type="button" className="underline decoration-dotted hover:text-[var(--v5-accent-strong)]" onClick={() => jumpToRow(row)}>
+                          第 {row + 1} 行
+                        </button>
+                      ))}
+                      {(item.cues?.length ?? 0) > 3 && <span>等 {item.cues!.length} 行</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="p-1.5">
               <button
                 type="button"

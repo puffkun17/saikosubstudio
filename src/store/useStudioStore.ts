@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { parseEpisodeRef, episodeKeyOf } from '../core/episode';
 import { cueTimesFromRows } from '../core/timelineAgreement';
+import type { Task } from '../core/taskModel';
+import { ERROR_CODES, codeErrorMessage, rememberErrorCode } from '../core/errorCodes';
+import { DEFAULT_EXPORT_PRESET_ID, getExportPreset, type ExportPresetId } from '../utils/exportPresets';
+import { DEFAULT_HDR_LEVEL, isHdrLevelId, type HdrLevelId } from '../utils/hdrPresets';
+import { clearAllLocalData, deleteTask, listMerged, listTasks, migrateLegacyLibrary, purgeExpiredSources, purgeExpiredTasks, putHistoryEntry } from '../core/taskStore';
 import { decideSameEpisode, type EpisodeCandidate } from '../core/sameEpisode';
 import { detectSdhByContent, splitAssByLanguageStyles, titleKeyOf } from '../core/recognition';
 import { detectLanguageByContent } from '../utils/subtitleCore';
@@ -250,6 +255,9 @@ export interface StudioState {
   detectedAttributions: SubtitleAttribution[];
   creatorCredit: string;
   appendCreatorCredit: boolean;
+  /** Formal credits (翻译：…) stay on the timeline. Deep switch only; off = moved to the end, still credited. */
+  keepOriginalCredit: boolean;
+  setKeepOriginalCredit: (keep: boolean) => void;
   /** 本批导入是否标记为官方字幕（写入 ASS 声明）。 */
   isOfficialSubtitle: boolean;
   /** 制作声明：写入 ASS Script Info 前缀。 */
@@ -339,10 +347,21 @@ export interface StudioState {
   deleteTask: (taskId: string) => void;
   cancelCurrentUpload: () => void;
   saveToLibrary: () => void;
+  clearHistory: () => Promise<void>;
+  historyReady: boolean;
+  /** Unified preset (spec: preview == export). Shared by the preview toolbar and the export menu. */
+  exportPresetId: ExportPresetId;
+  setExportPresetId: (id: ExportPresetId) => void;
+  /** HDR copy: on/off + level; the preview dims fills the same way the HDR export does. */
+  hdrEnabled: boolean;
+  hdrLevel: HdrLevelId;
+  setHdr: (enabled: boolean, level?: HdrLevelId) => void;
   deleteFromLibrary: (id: string) => void;
   loadFromLibrary: (item: LibraryItem) => void;
   processFiles: (files: Subfile[]) => void;
   runSubtitleMerge: () => void;
+  /** Workbench episode tabs: keep this episode's result, open the other one (saved result or fresh merge). */
+  switchEpisode: (taskId: string) => void;
   restartSystem: () => void;
 }
 
@@ -354,6 +373,57 @@ const TMDB_CLIENT_CACHE_TTL_MS = 5 * 60_000;
 const tmdbClientCache = new Map<string, { expiresAt: number; results: TmdbSuggestion[] }>();
 
 const normalizeMediaIdentityTitle = (value: string) => cleanFilename(value).toLowerCase().replace(/\s+/g, ' ').trim();
+
+/** One history entry per task id (episode). */
+const historyIdFor = (key: string) => `hist_${key.replace(/[^\w\u4e00-\u9fff.-]+/g, '_')}`;
+
+const libraryItemToTask = (item: LibraryItem): Task => {
+  const now = Date.now();
+  return {
+    id: item.id,
+    createdAt: now,
+    updatedAt: now,
+    stage: 'merged',
+    episode: { season: null, episode: null },
+    name: { value: item.name, state: 'locked' },
+    exportBaseName: { value: item.name.replace(/\s+/g, '.'), state: 'locked' },
+    slots: [],
+    singleLanguage: !item.subs.some((row) => row.text.includes('\n')),
+    review: [],
+  };
+};
+
+/** Load history from IndexedDB (migrating + purging first). Null when IndexedDB is unavailable. */
+const loadHistoryFromIdb = async (): Promise<LibraryItem[] | null> => {
+  try {
+    const migrated = await migrateLegacyLibrary();
+    await purgeExpiredTasks();
+    await purgeExpiredSources();
+    const [tasks, merged] = await Promise.all([listTasks(), listMerged()]);
+    const byId = new Map(merged.map((m) => [m.taskId, m]));
+    const list: LibraryItem[] = tasks.flatMap((task) => {
+      const m = byId.get(task.id);
+      if (!m || !Array.isArray(m.rows) || m.rows.length === 0) return [];
+      const extra = (m.extra || {}) as { backdrop?: string | null; backdropList?: string[] | null; customStyle?: StyleSettings | null };
+      return [{
+        id: task.id,
+        name: task.name.value,
+        date: new Date(task.updatedAt).toLocaleString(),
+        subs: m.rows as SubRow[],
+        backdrop: extra.backdrop ?? null,
+        backdropList: extra.backdropList ?? null,
+        customStyle: (extra.customStyle ?? useStudioStore.getState().customStyle) as StyleSettings,
+      }];
+    });
+    // Old archive is now in IndexedDB: remove the localStorage copy (decided A10).
+    if (migrated > 0 || list.length > 0) {
+      try { localStorage.removeItem(LIBRARY_STORAGE_KEY); } catch { /* ignore */ }
+    }
+    return list;
+  } catch {
+    return null;
+  }
+};
 
 const formatTmdbOutputName = (meta: TmdbMetadata, episodeKey?: string) => {
   const parts = [meta.title, meta.year].filter(Boolean);
@@ -404,6 +474,19 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   filenameSource: 'unknown',
   filenameEpKey: '',
   borrowedVideoName: null,
+  historyReady: false,
+  exportPresetId: DEFAULT_EXPORT_PRESET_ID,
+  setExportPresetId: (exportPresetId) => {
+    set({ exportPresetId });
+    try { localStorage.setItem('saiko_export_preset', exportPresetId); } catch { /* ignore */ }
+  },
+  hdrEnabled: false,
+  hdrLevel: DEFAULT_HDR_LEVEL,
+  setHdr: (hdrEnabled, level) => {
+    const hdrLevel = level ?? get().hdrLevel;
+    set({ hdrEnabled, hdrLevel });
+    try { localStorage.setItem('saiko_export_hdr', hdrEnabled ? hdrLevel : `off:${hdrLevel}`); } catch { /* ignore */ }
+  },
   setBorrowedVideoName: (borrowedVideoName) => set({ borrowedVideoName }),
   uploadedFiles: [],
   tasks: [],
@@ -452,6 +535,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   detectedAttributions: [],
   creatorCredit: '',
   appendCreatorCredit: false,
+  keepOriginalCredit: true,
+  setKeepOriginalCredit: (keepOriginalCredit) => set({ keepOriginalCredit }),
   isOfficialSubtitle: false,
   creditDeclaration: 'none',
   creditPlacement: 'after-last',
@@ -473,7 +558,18 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setWorkflowStep: (step) => set({ workflowStep: step }),
   setIngestClearing: (isIngestClearing) => set({ isIngestClearing }),
   setLang: (lang) => set({ lang }),
-  addLog: (msg, type = 'info') => {
+  addLog: (rawMsg, type = 'info') => {
+    const msg = type === 'error' ? codeErrorMessage(rawMsg) : rawMsg;
+    if (type === 'error') {
+      // Errors stay until closed (decided A9): what happened + what to do + E-xx for feedback.
+      const code = rememberErrorCode(msg);
+      get().setStatusNotice({
+        id: `error-${code ?? 'x'}`,
+        tone: 'alert',
+        title: code ? `${ERROR_CODES[code]}（${code}）` : '出错了',
+        message: `${msg.replace(/^\[E-\d{2}\]\s*/, '')}${code ? ' · 反馈时可附上这个代码' : ''}`,
+      });
+    }
     const id = Date.now() + Math.random();
     const time = new Date().toLocaleTimeString();
     set(state => ({
@@ -1634,6 +1730,20 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     if (typeof window === 'undefined') return;
     const savedLibrary = readJsonStorage<unknown>(LIBRARY_STORAGE_KEY, []);
     if (Array.isArray(savedLibrary)) set({ libraryList: fitLibraryToStorageBudget(savedLibrary as LibraryItem[]) });
+    try {
+      const storedPreset = getExportPreset(localStorage.getItem('saiko_export_preset'));
+      const storedHdr = localStorage.getItem('saiko_export_hdr') || '';
+      const level = storedHdr.replace(/^off:/, '');
+      set({
+        exportPresetId: storedPreset.formats.includes('ass') ? storedPreset.id : DEFAULT_EXPORT_PRESET_ID,
+        hdrEnabled: Boolean(storedHdr) && !storedHdr.startsWith('off:') && isHdrLevelId(level),
+        ...(isHdrLevelId(level) ? { hdrLevel: level } : {}),
+      });
+    } catch { /* ignore */ }
+    // History lives in IndexedDB (taskStore). Migrate the old localStorage archive once, then drop it.
+    void loadHistoryFromIdb().then((list) => {
+      if (list) set({ libraryList: list, historyReady: true });
+    });
     const savedStyles = readJsonStorage<{ preset?: string; style?: Partial<StyleSettings>; templates?: CustomTemplate[] }>(STYLE_STORAGE_KEY, {});
     if (savedStyles.preset) set({ activePreset: savedStyles.preset });
     if (savedStyles.style) set({ customStyle: { resolution: '1080p', aspectRatio: '16:9', globalScale: 1.0, lyricFontSize: 16, lyricColor: '#E6E6FA', lyricItalic: true, lyricPosition: 'top', ...savedStyles.style } as StyleSettings });
@@ -1944,14 +2054,27 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     get().addLog("已取消本次导入", "info");
   },
 
+  clearHistory: async () => {
+    try {
+      await clearAllLocalData();
+    } catch {
+      /* fall through: still clear the legacy key */
+    }
+    try { localStorage.removeItem(LIBRARY_STORAGE_KEY); } catch { /* ignore */ }
+    set({ libraryList: [] });
+    get().addLog('已清空本机历史（任务、合并结果与源字幕）', 'success');
+  },
+
   saveToLibrary: () => {
-    const { processedSubs, customFilename, tmdbData, tmdbBackdrop, tmdbBackdropList, customStyle, libraryList } = get();
+    const { processedSubs, customFilename, tmdbData, tmdbBackdrop, tmdbBackdropList, customStyle, libraryList, selectedTaskId } = get();
     if (!processedSubs || processedSubs.length === 0) return;
     const name = customFilename
       || (tmdbData ? [tmdbData.title, tmdbData.year].filter(Boolean).join('.') : '')
       || '未命名字幕';
+    // One entry per task (re-merging the same task replaces it instead of piling up duplicates).
+    const historyId = historyIdFor(selectedTaskId || name);
     const newItem: LibraryItem = {
-      id: `lib_${Date.now()}`,
+      id: historyId,
       name: name,
       date: new Date().toLocaleString(),
       subs: processedSubs,
@@ -1959,29 +2082,19 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       backdropList: tmdbBackdropList,
       customStyle: customStyle
     };
-    const updatedLib = fitLibraryToStorageBudget([newItem, ...libraryList]);
-    if (estimateJsonBytes(updatedLib) > MAX_LIBRARY_BYTES) {
-      get().addLog('当前字幕体积超过本地存档容量，请直接导出文件保存', 'error');
-      return;
-    }
-    const persisted = writeJsonStorage(LIBRARY_STORAGE_KEY, updatedLib);
-    if ('error' in persisted) {
-      get().addLog(`本地存档失败: ${persisted.error}`, 'error');
-      return;
-    }
-    set({ libraryList: updatedLib });
-    get().addLog(`[存档] 已写入本机历史：${name}`, "success");
+    set({ libraryList: [newItem, ...libraryList.filter((item) => item.id !== historyId)] });
+    void putHistoryEntry(libraryItemToTask(newItem), processedSubs, {
+      backdrop: tmdbBackdrop, backdropList: tmdbBackdropList, customStyle,
+    }).then(
+      () => get().addLog(`[历史] 已保存到本机：${name}`, 'success'),
+      (error: unknown) => get().addLog(`本机历史保存失败：${error instanceof Error ? error.message : String(error)}`, 'error'),
+    );
   },
 
   deleteFromLibrary: (id) => {
-    set(state => {
-      const updatedLib = state.libraryList.filter(item => item.id !== id);
-      if (typeof window !== 'undefined') {
-        writeJsonStorage(LIBRARY_STORAGE_KEY, updatedLib);
-      }
-      get().addLog("已从系统字幕库中删除记录", "info");
-      return { libraryList: updatedLib };
-    });
+    set(state => ({ libraryList: state.libraryList.filter(item => item.id !== id) }));
+    void deleteTask(id).catch(() => undefined);
+    get().addLog('已删除这条历史', 'info');
   },
 
   loadFromLibrary: (item) => {
@@ -2262,6 +2375,19 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       get().addLog(`已加载/更新 ${newFiles.length} 个文件。当前文件总数: ${updatedUploadedFiles.length}`, 'success');
       return { uploadedFiles: updatedUploadedFiles, tasks: currentTasks };
     });
+  },
+
+  switchEpisode: (taskId) => {
+    const state = get();
+    if (taskId === state.selectedTaskId) return;
+    if (state.processedSubs && state.processedSubs.length > 0) state.saveToLibrary();
+    state.selectTask(taskId);
+    const saved = get().libraryList.find((item) => item.id === historyIdFor(taskId));
+    if (saved) {
+      set({ processedSubs: saved.subs, previewIndex: 0, workflowStep: 2, editHistory: [], editFuture: [] });
+      return;
+    }
+    get().runSubtitleMerge();
   },
 
   runSubtitleMerge: () => {

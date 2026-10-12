@@ -118,3 +118,34 @@
 .align-choice__item[aria-checked="true"] { border-color: color-mix(in srgb, var(--v5-accent) 50%, transparent); background: var(--v5-accent-soft); }
 .align-choice__item[aria-checked="true"] .ds-body { color: var(--v5-accent-strong); }
 @media (max-width: 640px) { .align-choice { grid-template-columns: 1fr 1fr; } }
+
+.export-menu__review { padding: var(--ds-space-3) var(--ds-space-4); border-bottom: 1px solid var(--surface-line); max-height: 160px; overflow-y: auto; }
+
+/* Episode tabs (workbench) */
+.episode-tabs { display: flex; gap: var(--ds-space-1); overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.episode-tabs__tab {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 var(--ds-space-3); flex-shrink: 0;
+  border-radius: var(--radius-md); border: 1px solid var(--surface-line); background: var(--v5-panel);
+  font-size: var(--ds-fs-meta); font-weight: var(--ds-fw-medium); color: var(--ds-ink-2); cursor: pointer;
+}
+.episode-tabs__tab[aria-selected="true"] { border-color: color-mix(in srgb, var(--v5-accent) 55%, transparent); background: var(--v5-accent-soft); color: var(--ds-ink); font-weight: var(--ds-fw-strong); }
+.episode-tabs__tab:disabled { opacity: .6; cursor: wait; }
+.episode-tabs__dot { width: 6px; height: 6px; border-radius: 999px; background: var(--surface-line-strong); }
+.episode-tabs__dot.is-done { background: var(--v5-accent-strong); }
+
+/* Import film card: on narrow screens a one-row strip (thumbnail + title + actions); synopsis hidden. */
+@media (max-width: 1023px) {
+  .source-identity-rail { flex-direction: row; height: auto; align-items: stretch; }
+  .source-identity-rail .source-identity-rail__poster { width: 72px; flex-shrink: 0; border-bottom: 0; border-right: 1px solid var(--surface-line); }
+  .source-identity-rail > div:last-child { padding: var(--ds-space-3); gap: var(--ds-space-2); min-width: 0; }
+  .source-identity-rail__overview { display: none; }
+  .source-identity-rail__tmdb { margin-top: var(--ds-space-1); justify-content: flex-start; }
+}
+
+/* Custom properties resolve where declared: re-derive ink inside each surface scope so
+   ds-* text follows the local surface (forest theater = light ink, cream panels = dark ink). */
+[data-surface] {
+  --ds-ink: var(--surface-text, var(--v4-text));
+  --ds-ink-2: color-mix(in srgb, var(--ds-ink) 82%, transparent);
+  --ds-ink-3: color-mix(in srgb, var(--ds-ink) 62%, transparent);
+}

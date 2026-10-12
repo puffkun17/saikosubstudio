@@ -18,6 +18,8 @@ export const CreditTool: React.FC = () => {
     detectedAttributions,
     creatorCredit,
     appendCreatorCredit,
+    keepOriginalCredit,
+    setKeepOriginalCredit,
     creditDeclaration,
     creditPlacement,
     isOfficialSubtitle,
@@ -29,6 +31,8 @@ export const CreditTool: React.FC = () => {
     detectedAttributions: state.detectedAttributions,
     creatorCredit: state.creatorCredit,
     appendCreatorCredit: state.appendCreatorCredit,
+    keepOriginalCredit: state.keepOriginalCredit,
+    setKeepOriginalCredit: state.setKeepOriginalCredit,
     creditDeclaration: state.creditDeclaration,
     creditPlacement: state.creditPlacement,
     isOfficialSubtitle: state.isOfficialSubtitle,
@@ -162,6 +166,31 @@ export const CreditTool: React.FC = () => {
                 </div>
               </div>
             ) : null}
+            {detectedAttributions.length > 0 && (
+              <p className="ds-meta mt-1">
+                原署名会保留并排在前面{appendCreatorCredit && creatorCredit.trim() ? `，之后是「双语合并：${creatorCredit.trim()}」` : ''}
+              </p>
+            )}
+          </div>
+
+          <div className="ds-form__label">高级</div>
+          <div className="ds-form__control">
+            <details>
+              <summary className="ds-meta cursor-pointer">原署名的位置</summary>
+              <label className="ds-check mt-2">
+                <input
+                  type="checkbox"
+                  checked={!keepOriginalCredit}
+                  onChange={(event) => setKeepOriginalCredit(!event.target.checked)}
+                />
+                不在原位置显示原署名
+              </label>
+              {!keepOriginalCredit && (
+                <p className="ds-meta mt-1 !text-[var(--v5-warning)]">
+                  原署名会移到片尾并写进文件信息，不会删除。请尊重原译者。
+                </p>
+              )}
+            </details>
           </div>
         </div>
       ) : null}

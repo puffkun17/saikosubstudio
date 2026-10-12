@@ -23,7 +23,7 @@ export interface SourceRecord {
   expiresAt: number;
 }
 
-export interface MergedRecord { taskId: string; rows: unknown[]; savedAt: number }
+export interface MergedRecord { taskId: string; rows: unknown[]; savedAt: number; extra?: Record<string, unknown> }
 
 export const isExpired = (r: { expiresAt: number }, now = Date.now()) => r.expiresAt <= now;
 export const expiryFor = (storedAt: number, retentionDays = RETENTION_DAYS_DEFAULT) => storedAt + Math.max(1, retentionDays) * DAY;
@@ -93,11 +93,36 @@ export async function getSource(id: string, now = Date.now()): Promise<SourceRec
   return rec && !isExpired(rec, now) ? rec : null;
 }
 
-export async function putMerged(taskId: string, rows: unknown[]): Promise<void> {
+export async function putMerged(taskId: string, rows: unknown[], extra?: Record<string, unknown>): Promise<void> {
   const db = await open();
   const tx = db.transaction('merged', 'readwrite');
-  tx.objectStore('merged').put({ taskId, rows, savedAt: Date.now() } satisfies MergedRecord);
+  tx.objectStore('merged').put({ taskId, rows, savedAt: Date.now(), extra } satisfies MergedRecord);
   await done(tx);
+}
+
+/** Task + merged result in one transaction (history entry). */
+export async function putHistoryEntry(task: Task, rows: unknown[], extra?: Record<string, unknown>): Promise<void> {
+  const db = await open();
+  const tx = db.transaction(['tasks', 'merged'], 'readwrite');
+  tx.objectStore('tasks').put(task);
+  tx.objectStore('merged').put({ taskId: task.id, rows, savedAt: task.updatedAt, extra } satisfies MergedRecord);
+  await done(tx);
+}
+
+export async function listMerged(): Promise<MergedRecord[]> {
+  const db = await open();
+  return result(db.transaction('merged').objectStore('merged').getAll() as IDBRequest<MergedRecord[]>);
+}
+
+/** Pure: which history tasks fall outside the retention window. */
+export const expiredTaskIds = (tasks: Pick<Task, 'id' | 'updatedAt'>[], now = Date.now(), retentionDays = RETENTION_DAYS_DEFAULT): string[] =>
+  tasks.filter((t) => isExpired({ expiresAt: expiryFor(t.updatedAt, retentionDays) }, now)).map((t) => t.id);
+
+/** History retention: tasks (and their merged rows / sources) older than N days are removed. */
+export async function purgeExpiredTasks(now = Date.now(), retentionDays = RETENTION_DAYS_DEFAULT): Promise<number> {
+  const ids = expiredTaskIds(await listTasks(), now, retentionDays);
+  for (const id of ids) await deleteTask(id);
+  return ids.length;
 }
 
 /** Delete expired source texts. Task records stay (history keeps names / TMDB / settings). */
@@ -160,8 +185,10 @@ export async function migrateLegacyLibrary(storage: Pick<Storage, 'getItem'> | n
   const tx = db.transaction(['tasks', 'merged', 'meta'], 'readwrite');
   for (const item of Array.isArray(items) ? items : []) {
     const { task, rows } = legacyItemToTask(item);
+    const legacy = item as LegacyLibraryItem & Record<string, unknown>;
+    const extra = { backdrop: legacy.backdrop ?? null, backdropList: legacy.backdropList ?? null, customStyle: legacy.customStyle ?? null, migrated: true };
     tx.objectStore('tasks').put(task);
-    tx.objectStore('merged').put({ taskId: task.id, rows, savedAt: task.updatedAt });
+    tx.objectStore('merged').put({ taskId: task.id, rows, savedAt: task.updatedAt, extra } satisfies MergedRecord);
   }
   tx.objectStore('meta').put({ key: 'legacyMigrated', at: Date.now(), count: items.length });
   await done(tx);

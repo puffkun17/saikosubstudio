@@ -4,10 +4,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { SequenceList } from '@/components/Workbench/SequenceList';
+import { EpisodeTabs } from '@/components/Workbench/EpisodeTabs';
 import { SourceMatchPanel, type InspectionMarkFilter } from '@/components/Workbench/SourceMatchPanel';
 import { InspectionMarkGlyph, MARK_FILTERS, MARK_LABEL } from '@/components/Workbench/inspectionMarks';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
-import { ExportDropdown } from '@/hooks/useExport';
 import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
 import { SlidersHorizontal } from 'lucide-react';
 import { MergeReviewModal } from '@/components/Workbench/MergeReviewModal';
@@ -142,9 +142,9 @@ export const WorkbenchStep: React.FC = () => {
             aria-pressed={isSettingsOpen}
           >
             <SlidersHorizontal className="h-4 w-4" />
-            字幕样式
+            <span className="max-sm:sr-only">字幕样式</span>
           </button>
-          <ExportDropdown variant="primary" />
+          {/* Spec §4: one primary per screen — export lives in Act 3 (preview == export). */}
           <WorkflowContinueInFlow />
         </>
       ),
@@ -174,17 +174,21 @@ export const WorkbenchStep: React.FC = () => {
     return () => setForwardAction(null);
   }, [processedSubs, reviewRemaining, reviewCheckedCount, reviewTotal, setForwardAction, setStatusNotice, setWorkflowStep]);
 
+  const isSingleLanguage = Boolean(processedSubs && processedSubs.length > 0 && !processedSubs.some((row) => /\n|\\N/.test(row.text)));
+
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[var(--v4-canvas)]">
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         <div className="flex-1 px-3 py-2 md:px-4 md:py-3 min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
           <div className="max-w-[1280px] w-full flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
+            <EpisodeTabs />
             {processedSubs && processedSubs.length > 0 && (
               <section className="v4-panel flex-shrink-0 overflow-hidden">
                 <div className="workbench-overview flex flex-col gap-2 px-4 py-2 md:flex-row md:items-center md:justify-between md:gap-4">
                   <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                     <div className="flex items-center gap-2">
                                             <h2 className="ds-label">概览</h2>
+                      {isSingleLanguage && <span className="ds-meta" title="只有一种语言，按单语整理（R-10）">单语</span>}
                       {reviewTotal > 0 && reviewRemaining > 0 ? (
                         <button
                           type="button"
@@ -228,7 +232,7 @@ export const WorkbenchStep: React.FC = () => {
                     </div>
 
                     {profileStats && (
-                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-[var(--v4-text-muted)]">
+                      <div className="hidden flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-[var(--v4-text-muted)] sm:flex">
                         <span>
                           文本量{' '}
                           <strong className="font-semibold tabular-nums text-[var(--v4-text)]">
@@ -286,7 +290,7 @@ export const WorkbenchStep: React.FC = () => {
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-2 md:justify-end">
-                    <div className="ui-choice-group" role="tablist" aria-label="时间轴标记筛选">
+                    <div className="ui-choice-group max-md:w-full max-md:flex-nowrap max-md:overflow-x-auto" role="tablist" aria-label="时间轴标记筛选">
                       {MARK_FILTERS.map(item => (
                         <button
                           key={item.id}

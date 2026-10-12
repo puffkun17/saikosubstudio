@@ -9,6 +9,8 @@ import { TheaterSystemChrome } from '@/components/Theater/ControlDeck';
 import { TimelineControls } from '@/components/Workbench/TimelineControls';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportDropdown } from '@/hooks/useExport';
+import { resolvePreviewStyle } from '@/utils/previewStyle';
+import { SPECIAL_LABEL, countSpecial, nextSpecialIndex, slideIndexFor, type SpecialKind } from '@/core/specialLines';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import { ChevronLeft, SlidersHorizontal } from 'lucide-react';
 import { SubtitleDataSlot, BackdropSlot, StyleSettings } from '@/types/subtitleTypes';
@@ -50,6 +52,7 @@ export const TheaterStep: React.FC = () => {
     sceneBackground,
     setSceneBackground,
     tmdbBackdrop,
+    tmdbBackdropList,
     theaterAspect,
     showGuides,
     tempShowGuides,
@@ -58,6 +61,9 @@ export const TheaterStep: React.FC = () => {
     setPreviewIndex,
     setJumpLineVal,
     setIsPreviewPlaying,
+    exportPresetId,
+    hdrEnabled,
+    hdrLevel,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     previewIndex: state.previewIndex,
@@ -70,6 +76,7 @@ export const TheaterStep: React.FC = () => {
     sceneBackground: state.sceneBackground,
     setSceneBackground: state.setSceneBackground,
     tmdbBackdrop: state.tmdbBackdrop,
+    tmdbBackdropList: state.tmdbBackdropList,
     theaterAspect: state.theaterAspect,
     showGuides: state.showGuides,
     tempShowGuides: state.tempShowGuides,
@@ -78,13 +85,31 @@ export const TheaterStep: React.FC = () => {
     setPreviewIndex: state.setPreviewIndex,
     setJumpLineVal: state.setJumpLineVal,
     setIsPreviewPlaying: state.setIsPreviewPlaying,
+    exportPresetId: state.exportPresetId,
+    hdrEnabled: state.hdrEnabled,
+    hdrLevel: state.hdrLevel,
   })));
+  // Preview == export: render with the chosen ASS preset, and dim fills like the HDR copy when it is on.
+  const previewStyle = React.useMemo(
+    () => resolvePreviewStyle(customStyle, exportPresetId, hdrEnabled ? hdrLevel : null),
+    [customStyle, exportPresetId, hdrEnabled, hdrLevel],
+  );
 
   const safePreviewIndex = processedSubs && processedSubs.length > 0
     ? Math.min(Math.max(previewIndex, 0), processedSubs.length - 1)
     : 0;
 
   const [showLightsExitTip, setShowLightsExitTip] = useState(false);
+  const [slideshow, setSlideshow] = useState(true);
+  const specialCounts = React.useMemo(() => countSpecial(processedSubs ?? []), [processedSubs]);
+  const jumpToNext = (kind: SpecialKind) => {
+    const rows = processedSubs ?? [];
+    const next = nextSpecialIndex(rows, safePreviewIndex, kind);
+    if (next < 0) return;
+    setIsPreviewPlaying(false);
+    setPreviewIndex(next);
+    setJumpLineVal(String(next + 1));
+  };
 
   // 进入关灯时给短提示；开灯或卸载时清掉。
   useEffect(() => {
@@ -174,8 +199,12 @@ export const TheaterStep: React.FC = () => {
     : { status: 'idle' };
 
   let backdropSlot: BackdropSlot;
-  if (tmdbBackdrop) {
-    backdropSlot = { type: 'tmdb', backdropUrl: tmdbBackdrop };
+  // Slideshow: with several stills, the still advances with the timeline position.
+  const slideUrl = slideshow && tmdbBackdrop && tmdbBackdropList.length > 1
+    ? tmdbBackdropList[slideIndexFor(safePreviewIndex, processedSubs?.length ?? 0, tmdbBackdropList.length)]
+    : null;
+  if (slideUrl || tmdbBackdrop) {
+    backdropSlot = { type: 'tmdb', backdropUrl: (slideUrl || tmdbBackdrop) as string };
   } else {
     backdropSlot = { type: 'preset', name: sceneBackground };
   }
@@ -184,7 +213,7 @@ export const TheaterStep: React.FC = () => {
     <div data-surface="forest" className="relative flex h-full w-full flex-1 flex-col overflow-hidden">
       
       {/* 顶部导航栏 */}
-      <div className="relative z-[var(--z-raised)] flex flex-col gap-3 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-5 py-4 md:px-8">
+      <div className="relative z-[var(--z-raised)] flex flex-col gap-2 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-3 py-2 md:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <motion.button
@@ -198,8 +227,8 @@ export const TheaterStep: React.FC = () => {
             </motion.button>
           
             <div>
-              <h2 className="text-xl font-semibold tracking-tight text-[var(--v4-text)]">字幕预览</h2>
-              <p className="mt-0.5 text-sm font-medium text-[var(--v4-text-muted)]">{theaterAspect} · {tmdbBackdrop ? '影片剧照' : '默认背景'}</p>
+              <h2 className="ds-head">字幕预览</h2>
+              <p className="ds-meta">{theaterAspect} · {tmdbBackdrop ? '影片剧照' : '默认背景'}</p>
             </div>
           </div>
 
@@ -211,7 +240,7 @@ export const TheaterStep: React.FC = () => {
               aria-pressed={isSettingsOpen}
             >
               <SlidersHorizontal className="h-4 w-4 stroke-[2]" />
-              字幕样式
+              <span className="max-sm:sr-only">字幕样式</span>
             </button>
             <ExportDropdown variant="primary" menuShell="theater" />
           </div>
@@ -227,12 +256,36 @@ export const TheaterStep: React.FC = () => {
               <SimulatorWithClock
                 subtitle={subtitleSlot}
                 backdrop={backdropSlot}
-                style={customStyle}
+                style={previewStyle}
                 previewIndex={safePreviewIndex}
                 theaterAspect={theaterAspect}
                 guides={{ show: showGuides, temp: tempShowGuides }}
               />
             </SimulatorBoundary>
+          </div>
+
+          {/* 特殊行跳转 + 幻灯片开关（spec: 剧照幻灯片预览） */}
+          <div className="theater-special-jumps flex w-full max-w-[1080px] flex-wrap items-center gap-1.5 px-1" role="toolbar" aria-label="跳到下一处特殊行">
+            <span className="ds-meta mr-1">下一处</span>
+            {(Object.keys(SPECIAL_LABEL) as SpecialKind[]).map((kind) => (
+              <button
+                key={kind}
+                type="button"
+                className="ds-entry !h-7"
+                disabled={specialCounts[kind] === 0}
+                onClick={() => jumpToNext(kind)}
+                title={specialCounts[kind] === 0 ? `没有${SPECIAL_LABEL[kind]}` : `跳到下一处${SPECIAL_LABEL[kind]}`}
+              >
+                {SPECIAL_LABEL[kind]}
+                <span className="tabular-nums opacity-70">{specialCounts[kind]}</span>
+              </button>
+            ))}
+            {tmdbBackdropList.length > 1 && (
+              <label className="ds-check ml-auto" title="剧照随播放进度切换">
+                <input type="checkbox" checked={slideshow} onChange={(e) => setSlideshow(e.target.checked)} />
+                剧照轮播
+              </label>
+            )}
           </div>
 
           {/* 播放条：几何避让由抽屉 bottom 让出，禁止临时抬 z。 */}

@@ -85,3 +85,10 @@ test('legacy store naming (buildExportBaseFromMeta): 原文名 default, 中文 +
   assert.equal(tm.buildExportBaseFromMeta(meta, '', 'original', { videoName: 'The.Bear.S01E01.1080p.WEB.mkv' }), 'The.Bear.S01E01.1080p.WEB');
   assert.equal(tm.buildExportBaseFromMeta(null, '', 'original', { fallback: '熊家餐馆 S01E01' }), '熊家餐馆 S01E01');
 });
+
+test('history retention: tasks older than 30 days are expired, newer kept', () => {
+  const now = Date.parse('2026-10-13T00:00:00Z');
+  const day = 86400000;
+  const ids = ts.expiredTaskIds([{ id: 'old', updatedAt: now - 31 * day }, { id: 'new', updatedAt: now - 2 * day }], now);
+  assert.deepEqual(ids, ['old']);
+});

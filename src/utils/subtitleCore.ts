@@ -2255,12 +2255,13 @@ export function appendCreatorCredit(
   subs: SubRow[],
   creatorCredit: string,
   placement: CreatorCreditPlacement = 'after-last',
+  raw = false,
 ): SubRow[] {
-  const cleanCredit = cleanAttributionValue(creatorCredit);
+  const cleanCredit = raw ? creatorCredit.trim() : cleanAttributionValue(creatorCredit);
   if (!cleanCredit || subs.length === 0) return subs;
 
   // Decided (A2): the user's own line reads 「双语合并：…」 and sits after the original credits.
-  const displayText = /^(?:双语合并|字幕制作|制作(?:者)?|Subtitles?\s*(?:by|制作))\s*[:：]/i.test(cleanCredit)
+  const displayText = raw || /^(?:双语合并|字幕制作|制作(?:者)?|Subtitles?\s*(?:by|制作))\s*[:：]/i.test(cleanCredit)
     ? cleanCredit
     : `双语合并：${cleanCredit}`;
   const lastEnd = Math.max(...subs.map(sub => timestampToMs(sub.ts.split(' --> ')[1] || sub.ts)));
@@ -2297,9 +2298,9 @@ const shouldKeepSubtitleForAuxiliaryMode = (sub: SubRow, mode: AuxiliarySubtitle
   return true;
 };
 
-export function applyAuxiliarySubtitleMode(subs: SubRow[], mode: AuxiliarySubtitleMode = 'keep'): SubRow[] {
+export function applyAuxiliarySubtitleMode(subs: SubRow[], mode: AuxiliarySubtitleMode = 'keep', alwaysKeep?: (sub: SubRow) => boolean): SubRow[] {
   return subs
-    .filter(sub => shouldKeepSubtitleForAuxiliaryMode(sub, mode))
+    .filter(sub => (alwaysKeep?.(sub) ?? false) || shouldKeepSubtitleForAuxiliaryMode(sub, mode))
     .map((sub, index) => ({ ...sub, index: index + 1 }));
 }
 

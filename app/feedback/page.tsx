@@ -1,6 +1,17 @@
 'use client';
 
 import { FormEvent, useRef, useState, useSyncExternalStore } from 'react';
+import { ERROR_CODES, LAST_ERROR_KEY, type ErrorCode } from '@/core/errorCodes';
+
+const readLastErrorCode = (): ErrorCode | null => {
+  try {
+    const v = sessionStorage.getItem(LAST_ERROR_KEY);
+    return v && v in ERROR_CODES ? (v as ErrorCode) : null;
+  } catch {
+    return null;
+  }
+};
+const noopSubscribe = () => () => undefined;
 import { Bug, CheckCircle2, Lightbulb, LoaderCircle, MessageSquareText, Send, ThumbsUp } from 'lucide-react';
 
 type FeedbackCategory = 'issue' | 'idea' | 'other';
@@ -24,6 +35,9 @@ export default function FeedbackPage() {
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [error, setError] = useState('');
   const [showSupportPrompt, setShowSupportPrompt] = useState(false);
+  // Last E-xx code from this tab (code only, never subtitle text); opt-in.
+  const lastErrorCode = useSyncExternalStore(noopSubscribe, readLastErrorCode, () => null);
+  const [attachCode, setAttachCode] = useState(true);
   const hasLiked = useSyncExternalStore(subscribeToLocalSupport, getLocalSupportSnapshot, getServerSupportSnapshot);
   const supportPromptRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +63,7 @@ export default function FeedbackPage() {
       const response = await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, message: text }),
+        body: JSON.stringify({ category, message: lastErrorCode && attachCode ? `错误代码：${lastErrorCode}\n${text}` : text }),
       });
       const body = await response.json().catch(() => null) as { error?: string } | null;
       if (!response.ok) throw new Error(body?.error || '反馈暂时未能送达，请稍后再试。');
@@ -132,6 +146,12 @@ export default function FeedbackPage() {
               className="mt-3 w-full resize-y rounded-xl border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] px-4 py-3.5 text-base font-medium leading-7 text-[var(--v4-text)] outline-none transition-colors placeholder:text-[var(--v4-text-faint)] focus:border-[var(--v4-accent)]/55 focus:bg-[var(--v4-accent-soft)]/40"
             />
             <p className="mt-2 text-sm font-medium text-[var(--v4-text-faint)]">{message.length} / 3000</p>
+            {lastErrorCode && (
+              <label className="ds-check mt-2">
+                <input type="checkbox" checked={attachCode} onChange={(event) => setAttachCode(event.target.checked)} />
+                附上最近的错误代码 {lastErrorCode}（{ERROR_CODES[lastErrorCode]}），不含字幕内容
+              </label>
+            )}
           </div>
 
           {showSupportPrompt && (

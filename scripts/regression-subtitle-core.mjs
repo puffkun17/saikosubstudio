@@ -2358,7 +2358,7 @@ const createTmdbImages = () => ({
   assert.equal(lib[0]?.name, 'Demo.Title');
   assert.ok(lib[0]?.subs?.length > 0, 'Archive entry must keep subtitle rows');
   const raw = storage.get('nexus_subtitle_library');
-  assert.ok(raw && raw.includes('Demo.Title'), 'Archive must persist to localStorage');
+  assert.ok(!raw || !raw.includes('Demo.Title'), 'History persists to IndexedDB (taskStore), not localStorage');
 }
 
 

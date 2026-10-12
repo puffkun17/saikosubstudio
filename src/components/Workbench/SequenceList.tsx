@@ -262,7 +262,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
       <div ref={listRef} className="flex-1 overflow-y-auto">
         {visibleSubs.length > 0 ? (
           <div className="flex flex-col relative">
-            <div className="sticky top-0 z-20 grid grid-cols-[3.75rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] items-center gap-2 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-4 py-1 text-xs font-semibold tracking-wide text-[var(--v4-text-muted)] select-none md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] md:gap-3">
+            <div className="sticky top-0 z-20 hidden md:grid grid-cols-[3.75rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] items-center gap-2 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-4 py-1 text-xs font-semibold tracking-wide text-[var(--v4-text-muted)] select-none md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] md:gap-3">
               <div className="pl-0.5">行号</div>
               <div>时间轴</div>
               <div>字幕内容</div>
@@ -327,7 +327,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
               const endTime = sub.ts.split(' --> ')[1]?.replace(',', '.').trim() || '';
 
-              const rowClass = `group relative grid grid-cols-[3.75rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] items-center gap-2 md:gap-3 py-1.5 px-4 border-b border-[var(--v4-line)] cursor-pointer select-none text-left overflow-hidden transition-colors duration-150
+              const rowClass = `group relative grid grid-cols-[2.5rem_minmax(0,1fr)_1.75rem] md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] items-center gap-2 md:gap-3 py-1.5 px-3 md:px-4 border-b border-[var(--v4-line)] cursor-pointer select-none text-left overflow-hidden transition-colors duration-150
                 ${isActive ? 'glass-lens-active' : isSelected ? 'bg-[var(--v4-accent-soft)]/55' : 'bg-transparent hover:bg-[var(--v4-panel-muted)]'}
                 ${(isLyric || isCredit) && !isActive && !isSelected ? 'bg-[var(--v4-panel-muted)]/50' : ''}
                 ${sub.index > 30 ? 'timeline-row-deferred' : ''}`;
@@ -397,7 +397,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     </span>
                   </div>
 
-                  <div className="flex min-w-0 items-center gap-2 self-center select-none">
+                  <div className="hidden min-w-0 items-center gap-2 self-center select-none md:flex">
                     <div className="relative flex flex-col items-center self-stretch py-0.5">
                       <span className={`mt-0.5 h-2 w-2 rounded-full border ${isActive ? 'bg-[var(--v4-accent-strong)] border-[var(--v4-accent-strong)] shadow-[var(--glow-accent)]' : 'bg-[var(--v4-accent-soft)] border-[var(--v4-line-strong)]'}`} />
                       <span className="mt-1 flex-1 w-px bg-[var(--v4-line)]" />
@@ -408,7 +408,8 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     </div>
                   </div>
 
-                  <div className="flex min-w-0 flex-col gap-1 pr-1">
+                  <div className="flex min-w-0 flex-col gap-0.5 pr-1">
+                    <span className={`ds-mono text-[length:var(--ds-fs-micro)] tabular-nums md:hidden ${isActive ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--ds-ink-3)]'}`}>{startTime} → {endTime}</span>
                     {editingIndex === sub.index ? (
                       <div className="z-10 flex w-full cursor-auto select-text flex-col gap-2" onClick={(e) => e.stopPropagation()}>
                         <input
