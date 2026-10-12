@@ -254,6 +254,9 @@ export interface StudioState {
   detectedAttributions: SubtitleAttribution[];
   creatorCredit: string;
   appendCreatorCredit: boolean;
+  /** Formal credits (翻译：…) stay on the timeline. Deep switch only; off = moved to the end, still credited. */
+  keepOriginalCredit: boolean;
+  setKeepOriginalCredit: (keep: boolean) => void;
   /** 本批导入是否标记为官方字幕（写入 ASS 声明）。 */
   isOfficialSubtitle: boolean;
   /** 制作声明：写入 ASS Script Info 前缀。 */
@@ -526,6 +529,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   detectedAttributions: [],
   creatorCredit: '',
   appendCreatorCredit: false,
+  keepOriginalCredit: true,
+  setKeepOriginalCredit: (keepOriginalCredit) => set({ keepOriginalCredit }),
   isOfficialSubtitle: false,
   creditDeclaration: 'none',
   creditPlacement: 'after-last',

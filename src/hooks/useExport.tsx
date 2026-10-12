@@ -34,6 +34,7 @@ import {
   type HdrLevelId,
 } from '@/utils/hdrPresets';
 import { buildMergeReviewQueue } from '@/utils/timeline/alignmentDiff';
+import { applyCreditPlan, buildClosingCreditLines, classifyCreditCue, planCredits } from '@/core/credits';
 import { buildExportBaseFromMeta, type NamingMode } from '@/core/taskModel';
 
 const NAMING_STORAGE_KEY = 'saiko_export_naming';
@@ -199,6 +200,7 @@ export const useExport = () => {
     creatorCredit,
     detectedAttributions,
     appendCreatorCredit,
+    keepOriginalCredit,
     creditDeclaration,
     creditPlacement,
     isOfficialSubtitle,
@@ -219,6 +221,7 @@ export const useExport = () => {
     creatorCredit: state.creatorCredit,
     detectedAttributions: state.detectedAttributions,
     appendCreatorCredit: state.appendCreatorCredit,
+    keepOriginalCredit: state.keepOriginalCredit,
     creditDeclaration: state.creditDeclaration,
     creditPlacement: state.creditPlacement,
     isOfficialSubtitle: state.isOfficialSubtitle,
@@ -257,11 +260,25 @@ export const useExport = () => {
     }
 
     try {
-      const exportSubs = appendCreatorCredit
-        ? appendCreatorCreditCue(processedSubs, creatorCredit, creditPlacement)
-        : processedSubs;
+      // Credit block (core/credits): secondary statements leave the timeline (→ anonymous thanks),
+      // formal credits stay in place and are never filtered; the user's 「双语合并：」 line comes after the original.
+      const creditPlan = planCredits({
+        primaryRows: processedSubs,
+        user: appendCreatorCredit && creatorCredit.trim() ? { name: creatorCredit, placement: creditPlacement } : undefined,
+        keepFormalInPlace: keepOriginalCredit,
+      });
+      const exportSubs = buildClosingCreditLines(creditPlan).reduce(
+        (rows, line) => appendCreatorCreditCue(rows, line, creditPlacement, true),
+        applyCreditPlan(processedSubs, creditPlan),
+      );
       const auxiliaryMode = customStyle.auxiliaryMode || 'keep';
-      const filteredExportSubs = applyAuxiliarySubtitleMode(exportSubs, auxiliaryMode);
+      const isFormalCredit = (row: { text: string }) => classifyCreditCue(row.text.replace(/\\N|\n/g, ' '))?.kind === 'formal';
+      const closing = new Set(buildClosingCreditLines(creditPlan));
+      const filteredExportSubs = applyAuxiliarySubtitleMode(
+        exportSubs,
+        auxiliaryMode,
+        (row) => (creditPlan.keepFormalInPlace && isFormalCredit(row)) || closing.has(row.text),
+      );
       const hiddenAuxiliaryCount = exportSubs.length - filteredExportSubs.length;
       const baseName = filenameSource === 'manual' && customFilename.trim()
         ? customFilename
