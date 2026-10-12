@@ -422,6 +422,8 @@ export const TaskList: React.FC = () => {
     && !showSameScriptWarning
     && isChineseFamilyLang(primaryFile.lang, primaryFile.name),
   );
+  // Single-language fast path (R-10): one track only → skip alignment, gentle note, continue as-is.
+  const isSingleLanguage = Boolean(activeTask && !activeTask.isBilingualSingle && primaryFile && !secondaryFile && !showSameScriptWarning);
 
   const edgeLabel = isProcessing
     ? '正在准备…'
@@ -871,17 +873,23 @@ export const TaskList: React.FC = () => {
             <p
               role="note"
               data-testid="chinese-only-hint"
-              className="inline-flex items-start gap-1.5 px-1 text-xs leading-5 text-[var(--v4-text-faint)]"
+              className="ds-meta inline-flex items-start gap-1.5 px-1"
             >
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span>
-                目前只有中文。想做双语，可以再找一份同一集的英语、西语或法语等字幕拖进来；没有也可以直接继续，中文保持原来的位置。
+                目前只有中文。想做双语，可以再拖入同一集的英语等字幕；不加也可以直接继续。
               </span>
+            </p>
+          )}
+          {isSingleLanguage && !showChineseOnlyHint && (
+            <p role="note" data-testid="single-language-hint" className="ds-meta inline-flex items-start gap-1.5 px-1">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>只有一种语言，会按单语直接整理；想做双语，再拖入同一集的中文字幕即可。</span>
             </p>
           )}
 
           {/* 对齐方式：紧挨字幕序列，全宽双栏说明 */}
-          {!activeTask.isBilingualSingle && (
+          {!activeTask.isBilingualSingle && !isSingleLanguage && (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-1.5">
                 <h4 className="ds-head">对齐方式</h4>

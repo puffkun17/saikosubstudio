@@ -174,6 +174,8 @@ export const WorkbenchStep: React.FC = () => {
     return () => setForwardAction(null);
   }, [processedSubs, reviewRemaining, reviewCheckedCount, reviewTotal, setForwardAction, setStatusNotice, setWorkflowStep]);
 
+  const isSingleLanguage = Boolean(processedSubs && processedSubs.length > 0 && !processedSubs.some((row) => /\n|\\N/.test(row.text)));
+
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[var(--v4-canvas)]">
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
@@ -185,6 +187,7 @@ export const WorkbenchStep: React.FC = () => {
                   <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                     <div className="flex items-center gap-2">
                                             <h2 className="ds-label">概览</h2>
+                      {isSingleLanguage && <span className="ds-meta" title="只有一种语言，按单语整理（R-10）">单语</span>}
                       {reviewTotal > 0 && reviewRemaining > 0 ? (
                         <button
                           type="button"
