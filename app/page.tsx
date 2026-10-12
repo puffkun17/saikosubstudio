@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useStudioStore } from '@/store/useStudioStore';
+import '@/workers/registerMergeWorker';
 import { IngestStep } from '@/components/IngestStep';
 import { WorkbenchStep } from '@/components/WorkbenchStep';
 import { TheaterStep } from '@/components/TheaterStep';

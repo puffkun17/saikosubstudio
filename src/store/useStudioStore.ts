@@ -4,6 +4,9 @@ import { cueTimesFromRows } from '../core/timelineAgreement';
 import { decideSameEpisode, type EpisodeCandidate } from '../core/sameEpisode';
 import { detectSdhByContent, splitAssByLanguageStyles, titleKeyOf } from '../core/recognition';
 import { detectLanguageByContent } from '../utils/subtitleCore';
+import { mergeWorkerAvailable, runMergeJob, runMergeJobInThread } from '../core/mergeClient';
+import type { MergeJobEvent, MergeJobInput, MergeJobResult } from '../core/mergeJob';
+import type { AlignmentFallbackInfo } from '../utils/subtitleCore';
 import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity, isMainPathSecondaryLanguage, isEnglishSecondaryLanguage, isLatinSecondaryLanguage, mainPathPrimaryRank, mainPathSecondaryRank, estimateSubtitleCueCount, isSparseSecondaryTrack, measureMergeOrphanRate, isSdhOrCcSubtitleFilename } from '../utils/subtitleCore';
 import { assessTvYearFit, parseSeasonNumber, parseYearToken, shouldDemoteBySeasonSpan } from '../utils/tmdbCandidateFit';
 import { estimateJsonBytes, readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
@@ -2260,78 +2263,64 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     get().clearMergeReviewChecked(taskKey);
     set({ isProcessing: true, processedSubs: null });
     
-    try {
-      if (currentTask?.isBilingualSingle && files.zh) {
-        // Single bilingual srt/ass parsing
-        const rawParsed = parseSubtitle(files.zh.text);
-        const parsed: SubRow[] = normalizeSingleBilingualRows(rawParsed);
-        
-        set({ processedSubs: parsed, previewIndex: 0, workflowStep: 2, editHistory: [], editFuture: [] });
-        get().addLog(`已成功加载原生双语字幕，共包含 ${parsed.length} 行流数据，并自动完成双语拆轨`, 'success');
-      } else {
-        // Standard double merge
-        const zhParsed = parseSubtitle(files.zh?.text || '');
-        const enParsed = parseSubtitle(files.en?.text || '');
-        const commParsed = parseSubtitle(files.commentary?.text || '');
-
-        const { alignmentMode } = get();
-        let usedMode: 'standard' | 'industrial' = alignmentMode;
-        let merged = alignmentMode === 'industrial'
-          ? alignSubtitlesIndustrial(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t), {
-              onFallback: (info) => {
-                if (info.reason === 'banded') {
-                  get().setStatusNotice({
-                    id: 'alignment-banded',
-                    tone: 'notice',
-                    title: '已启用带状对齐',
-                    message: `字幕体量较大（约 ${Math.round(info.cells / 1_000_000)}M 对齐单元），使用带宽 ${((info.bandHalfWidth ?? 0) * 2) + 1} 的工业对齐以控制内存。`,
-                  });
-                  return;
-                }
-                get().setStatusNotice({
-                  id: 'alignment-fallback',
-                  tone: 'notice',
-                  title: '已切换快速对齐',
-                  message: `字幕体量较大（约 ${Math.round(info.cells / 1_000_000)}M 对齐单元），已用低内存快速合并，建议人工复核时间轴。`,
-                });
-              },
-            })
-          : mergeSubtitles(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t));
-
-        // 智能 orphans 爆炸时自动升级精校；不清理 uploadedFiles / 任务绑定。
-        if (alignmentMode === 'standard' && measureMergeOrphanRate(merged) >= 0.22) {
-          get().addLog('[合并] 智能对齐孤立行偏多，自动改用精校对齐', 'info');
-          usedMode = 'industrial';
-          merged = alignSubtitlesIndustrial(zhParsed, enParsed, commParsed, (m, t) => get().addLog(m, t), {
-            onFallback: (info) => {
-              if (info.reason === 'banded') {
-                get().setStatusNotice({
-                  id: 'alignment-banded',
-                  tone: 'notice',
-                  title: '已启用带状对齐',
-                  message: `字幕体量较大（约 ${Math.round(info.cells / 1_000_000)}M 对齐单元），使用带宽 ${((info.bandHalfWidth ?? 0) * 2) + 1} 的工业对齐以控制内存。`,
-                });
-              }
-            },
-          });
-          get().setStatusNotice({
-            id: 'alignment-auto-industrial',
-            tone: 'notice',
-            title: '已自动改用精校',
-            message: '智能对齐出现较多未配对行，已在不重新导入的前提下改用精校对齐。',
-          });
-        }
-        void usedMode;
-        set({ processedSubs: merged, previewIndex: 0, workflowStep: 2, editHistory: [], editFuture: [] });
+    const notice = (info: AlignmentFallbackInfo, phase: 'primary' | 'auto-upgrade') => {
+      if (info.reason === 'banded') {
+        get().setStatusNotice({
+          id: 'alignment-banded',
+          tone: 'notice',
+          title: '已启用带状对齐',
+          message: `字幕体量较大（约 ${Math.round(info.cells / 1_000_000)}M 对齐单元），使用带宽 ${((info.bandHalfWidth ?? 0) * 2) + 1} 的工业对齐以控制内存。`,
+        });
+        return;
       }
+      if (phase === 'primary') {
+        get().setStatusNotice({
+          id: 'alignment-fallback',
+          tone: 'notice',
+          title: '已切换快速对齐',
+          message: `字幕体量较大（约 ${Math.round(info.cells / 1_000_000)}M 对齐单元），已用低内存快速合并，建议人工复核时间轴。`,
+        });
+      }
+    };
+    // Parse + merge/alignment run in a native Web Worker (src/workers/merge.worker.ts);
+    // the main thread only applies the result. In-thread (synchronous) when Workers are unavailable.
+    const input: MergeJobInput = {
+      zhText: files.zh?.text || '',
+      enText: files.en?.text || '',
+      commentaryText: files.commentary?.text || '',
+      mode: get().alignmentMode,
+      bilingualSingle: Boolean(currentTask?.isBilingualSingle && files.zh),
+    };
+    const onEvent = (event: MergeJobEvent) => {
+      if (event.type === 'log') get().addLog(event.msg, event.tone);
+      else if (event.type === 'fallback') notice(event.info, event.phase);
+      else if (event.type === 'auto-industrial') {
+        get().setStatusNotice({
+          id: 'alignment-auto-industrial',
+          tone: 'notice',
+          title: '已自动改用精校',
+          message: '智能对齐出现较多未配对行，已在不重新导入的前提下改用精校对齐。',
+        });
+      }
+    };
+    const apply = (result: MergeJobResult) => {
+      // Ignore stale results if the user switched task while the worker ran.
+      if (get().selectedTaskId !== selectedTaskId) return;
+      set({ processedSubs: result.rows, previewIndex: 0, workflowStep: 2, editHistory: [], editFuture: [] });
       // Clear save point: a finished merge is restorable from 存档 after reload / leaving /.
       get().saveToLibrary();
-    } catch (err: unknown) {
+    };
+    const fail = (err: unknown) => {
       const msg = err instanceof Error ? err.message : String(err);
       get().addLog(`[异常] 合并失败: ${msg}`, 'error');
-    } finally {
-      set({ isProcessing: false });
+    };
+    if (!mergeWorkerAvailable()) {
+      try { apply(runMergeJobInThread(input, onEvent)); } catch (err) { fail(err); } finally { set({ isProcessing: false }); }
+      return;
     }
+    void runMergeJob(input, onEvent).then(apply).catch(fail).finally(() => {
+      set({ isProcessing: false });
+    });
   },
 
   restartSystem: () => {
