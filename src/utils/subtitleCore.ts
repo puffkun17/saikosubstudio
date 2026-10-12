@@ -2259,9 +2259,10 @@ export function appendCreatorCredit(
   const cleanCredit = cleanAttributionValue(creatorCredit);
   if (!cleanCredit || subs.length === 0) return subs;
 
-  const displayText = /^(?:字幕制作|制作(?:者)?|Subtitles?\s*(?:by|制作))\s*[:：]/i.test(cleanCredit)
+  // Decided (A2): the user's own line reads 「双语合并：…」 and sits after the original credits.
+  const displayText = /^(?:双语合并|字幕制作|制作(?:者)?|Subtitles?\s*(?:by|制作))\s*[:：]/i.test(cleanCredit)
     ? cleanCredit
-    : `字幕制作：${cleanCredit}`;
+    : `双语合并：${cleanCredit}`;
   const lastEnd = Math.max(...subs.map(sub => timestampToMs(sub.ts.split(' --> ')[1] || sub.ts)));
   const duration = 5000;
   const start = placement === 'before-end'
