@@ -29,14 +29,14 @@ const trayChrome =
 
 /** Icon+label control: never squash copy — hide label via container query instead. */
 const trayCtrl =
-  'system-tray__ctrl v4-focus-ring inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 text-[15px] font-semibold transition-colors';
+  'system-tray__ctrl v4-focus-ring inline-flex h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-[length:var(--ds-fs-meta)] font-medium transition-colors';
 
 /**
  * Labels appear from available deck width (parent @container), not control width —
  * avoids the hide↔narrow feedback loop. HOME-BRAND：短标签「存档/隐私/反馈」，
  * 阈值远低于旧 @[22rem]，默认桌面可见；极窄才 icon-only。
  */
-const trayLabel = 'hidden whitespace-nowrap @[8rem]/tray:inline';
+const trayLabel = 'whitespace-nowrap'; // spec: core entries are icon + text
 
 const getDefaultScale = () => {
   if (typeof window === 'undefined') return 1.0;
@@ -202,7 +202,7 @@ export const SystemTray = () => {
     .reverse()
     .find((notice) => notice.id === 'workflow-gated');
   const isInfoPage = pathname === '/about' || pathname === '/feedback';
-  const showLibrary = !isInfoPage && workflowStep === 1;
+  const showLibrary = !isInfoPage;
   /** Narrow studio: workflow lives in bottom tray; status deck yields. */
   const showBottomWorkflow = isNarrowChrome && !isInfoPage;
   const showTopWorkflow = !isNarrowChrome && !isInfoPage;
@@ -419,7 +419,7 @@ export const SystemTray = () => {
             aria-label="历史存档"
           >
             <Archive className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
-            <span className={trayLabel}>存档</span>
+            <span className={trayLabel}>历史</span>
             {libraryCount > 0 && (
               <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-[color-mix(in_srgb,var(--v5-orange)_22%,transparent)] px-1.5 py-0.5 text-xs font-semibold text-[var(--v5-orange)]">
                 {libraryCount}
@@ -526,25 +526,12 @@ export const SystemTray = () => {
             </span>
           </button>
 
-          <div
-            className="system-tray__clock inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-[var(--radius-pill)] border border-[var(--tray-line)] bg-[var(--tray-fill)] px-2.5 sm:px-3"
-            aria-label={`本地时间 ${zoneShort} ${time}`}
+          <span
+            className="system-tray__local hidden items-center px-2 text-[length:var(--ds-fs-meta)] font-medium text-[var(--tray-ink-muted)] sm:inline-flex"
+            title="字幕只在这台设备上读取和处理，不会上传"
           >
-            <span className="system-tray__local-badge rounded-[var(--radius-pill)] bg-[var(--v4-accent-soft)] px-1.5 py-0.5 font-mono text-xs font-bold tracking-[var(--tracking-eyebrow-wide)] text-[var(--v5-orange)]">
-              LOCAL
-            </span>
-            <span className="text-[length:var(--type-body)] font-semibold tabular-nums text-[var(--tray-ink)]" suppressHydrationWarning>
-              {time || '--:--:--'}
-            </span>
-            <span className="hidden font-mono text-xs text-[var(--tray-ink-muted)] min-[900px]:inline" suppressHydrationWarning>
-              {zoneShort}
-            </span>
-            {zoneCity ? (
-              <span className="hidden text-xs text-[var(--tray-ink-faint)] min-[1100px]:inline" suppressHydrationWarning>
-                {zoneCity}
-              </span>
-            ) : null}
-          </div>
+            仅本机处理
+          </span>
         </div>
       </nav>
 
