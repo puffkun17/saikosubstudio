@@ -165,7 +165,13 @@ export interface SubtitleAttribution {
 
 /** Optional ASS Script Info fields written on export. */
 export interface AssScriptMeta {
+  /** Original author of the script. Never the merging user (use scriptUpdatedBy). */
   originalScript?: string;
+  originalTranslation?: string;
+  originalEditing?: string;
+  originalTiming?: string;
+  /** The person who produced this bilingual merge. */
+  scriptUpdatedBy?: string;
   comments?: string[];
   updateDetails?: string;
 }
@@ -2537,6 +2543,16 @@ export function generateAssContent(
   const safeTitle = hdrLevel ? `${baseTitle} (HDR ${hdrLevel.label})` : baseTitle;
   const safeOriginal = (scriptMeta?.originalScript || '').replace(/[\r\n]/g, ' ').trim();
   const safeUpdateDetails = (scriptMeta?.updateDetails || '').replace(/[\r\n]/g, ' ').trim();
+  const creditFieldLines = ([
+    ['Original Translation', scriptMeta?.originalTranslation],
+    ['Original Editing', scriptMeta?.originalEditing],
+    ['Original Timing', scriptMeta?.originalTiming],
+    ['Script Updated By', scriptMeta?.scriptUpdatedBy],
+  ] as const)
+    .map(([key, value]) => [key, (value || '').replace(/[\r\n]/g, ' ').trim()] as const)
+    .filter(([, value]) => value)
+    .map(([key, value]) => `${key}: ${value}\n`)
+    .join('');
   const commentLines = (scriptMeta?.comments || [])
     .map((line) => line.replace(/[\r\n]/g, ' ').trim())
     .filter(Boolean);
@@ -2587,7 +2603,7 @@ PlayResY: ${resY}
 ScaledBorderAndShadow: yes
 ScriptType: v4.00+
 ${hdrLevel ? 'YCbCr Matrix: None\n' : ''}Title: ${safeTitle}
-${safeOriginal ? `Original Script: ${safeOriginal}\n` : ''}${commentLines.map((line) => `Comment: ${line}`).join('\n')}${commentLines.length ? '\n' : ''}${safeUpdateDetails ? `Update Details: ${safeUpdateDetails}\n` : ''}
+${safeOriginal ? `Original Script: ${safeOriginal}\n` : ''}${creditFieldLines}${commentLines.map((line) => `Comment: ${line}`).join('\n')}${commentLines.length ? '\n' : ''}${safeUpdateDetails ? `Update Details: ${safeUpdateDetails}\n` : ''}
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 ${dialogueStyles}

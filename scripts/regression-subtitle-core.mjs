@@ -324,10 +324,13 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
   const rows = [{ index: 1, ts: '00:01:00,000 --> 00:01:02,000', text: 'Hello' }];
   const assWithMeta = generateAssContent(rows, { zhFontSize: 20, enFontSize: 12, zhColor: '#FFFFFF', enColor: '#B0B0B0', zhOutline: '#000000', enOutline: '#000000', enScale: 90, maxLenZh: 20, maxLenEn: 80, marginV: 20 }, 'Demo', {
     originalScript: 'Nexus Studio',
+    originalTranslation: '小林',
+    scriptUpdatedBy: 'Derek',
     comments: ['声明：原创字幕', '来源：官方字幕'],
     updateDetails: '声明：原创字幕；来源：官方字幕',
   });
   assert.match(assWithMeta, /Original Script: Nexus Studio/, 'ASS Script Info should carry Original Script.');
+  assert.match(assWithMeta, /Original Translation: 小林\nScript Updated By: Derek/, 'Credit fields: original translator, then the merging user in Script Updated By.');
   assert.match(assWithMeta, /Comment: 声明：原创字幕/, 'ASS Script Info should carry declaration comments.');
   assert.match(assWithMeta, /Update Details: 声明：原创字幕；来源：官方字幕/, 'ASS Script Info should carry Update Details.');
 }
