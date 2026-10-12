@@ -19,16 +19,16 @@ const CONTEXTUAL_NOTICE_IDS = new Set([
 ]);
 
 const errorLogStyle = {
-  shell: 'border-[color-mix(in_srgb,var(--v5-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-danger)]',
+  shell: 'border-[color-mix(in_srgb,var(--v5-danger)_28%,transparent)] bg-[var(--v5-panel)] text-[var(--v4-danger)]',
   icon: <AlertTriangle className="h-4 w-4 text-[var(--v4-danger)]" />,
 };
 
 const noticeStyles = {
-  message: 'border-[var(--v4-line-strong)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-text)]',
-  success: 'border-[color-mix(in_srgb,var(--v5-orange)_32%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-text)]',
-  notice: 'border-[color-mix(in_srgb,var(--v5-green)_16%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-text)]',
-  warning: 'border-[color-mix(in_srgb,var(--v5-warning)_34%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-text)]',
-  alert: 'border-[color-mix(in_srgb,var(--v5-danger)_32%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-danger)]',
+  message: 'border-[var(--v4-line-strong)] bg-[var(--v5-panel)] text-[var(--v4-text)]',
+  success: 'border-[color-mix(in_srgb,var(--v5-orange)_32%,transparent)] bg-[var(--v5-panel)] text-[var(--v4-text)]',
+  notice: 'border-[color-mix(in_srgb,var(--v5-green)_16%,transparent)] bg-[var(--v5-panel)] text-[var(--v4-text)]',
+  warning: 'border-[color-mix(in_srgb,var(--v5-warning)_34%,transparent)] bg-[var(--v5-panel)] text-[var(--v4-text)]',
+  alert: 'border-[color-mix(in_srgb,var(--v5-danger)_32%,transparent)] bg-[var(--v5-panel)] text-[var(--v4-danger)]',
 } as const;
 
 /**
@@ -66,7 +66,7 @@ export const FeedbackCenter: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={shouldReduceMotion ? undefined : { opacity: 0, y: 6 }}
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className={`ui-toast pointer-events-auto border px-3.5 py-3 backdrop-blur-md ${noticeStyles[latestNotice.tone]}`}
+              className={`ui-toast pointer-events-auto border px-3.5 py-3 ${noticeStyles[latestNotice.tone]}`}
             >
               <div className="flex items-start gap-2.5">
                 <div className="min-w-0 flex-1">

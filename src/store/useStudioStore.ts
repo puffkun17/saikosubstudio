@@ -237,7 +237,7 @@ export interface StudioState {
   tmdbManualOpen: boolean;
   tmdbManualInput: TmdbManualInput;
   tmdbSuggestions: TmdbSuggestion[];
-  /** 同名季跨度优选后的另一候选（最多 1 条，供「不是这个？」切换，不新增搜索）。 */
+  /** 同名季跨度优选后的另一候选（最多 1 条，供「更换候选」切换，不新增搜索）。 */
   tmdbAlternateSuggestion: TmdbSuggestion | null;
   selectedSuggestion: TmdbSuggestion | null;
   isSettingsOpen: boolean;
@@ -408,7 +408,7 @@ const loadHistoryFromIdb = async (): Promise<LibraryItem[] | null> => {
       return [{
         id: task.id,
         name: task.name.value,
-        date: new Date(task.updatedAt).toLocaleString(),
+        date: new Date(task.updatedAt).toLocaleString('zh-CN', { hour12: false }),
         subs: m.rows as SubRow[],
         backdrop: extra.backdrop ?? null,
         backdropList: extra.backdropList ?? null,
@@ -897,7 +897,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           id: 'media-identity',
           tone: 'notice',
           title: '请补充片名',
-          message: '已识别季集信息，输入片名后即可匹配影片资料。',
+          message: '已识别季集信息。输入片名以匹配影片资料。',
           meta: episodeKey,
           action: 'openTmdbManual',
           actionLabel: '补充片名',
@@ -1055,7 +1055,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             reasons.push('year:missing');
           }
         } else if (isEpisodeQuery && !year && itemYear && shouldDemoteBySeasonSpan({ itemYear, season: seasonHint })) {
-          // 无年份：用「今天」估季跨度，本地降权撑不起 Sxx 的同名剧（不 reject，留给「不是这个？」）
+          // 无年份：用「今天」估季跨度，本地降权撑不起 Sxx 的同名剧（不 reject，留给「更换候选」）
           score -= 200;
           reasons.push('season-span:demote');
         } else if (year && itemYear === year) {
@@ -1320,7 +1320,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           id: 'media-match',
           tone: 'notice',
           title: '请补充年份',
-          message: '存在多个同名片名且未能从文件名得到可用年份。填写首播年可直接命中；若只记得发行/观影年，也会排除跨度不够的错误结果并请你确认。',
+          message: '存在多个同名片名且未能从文件名得到可用年份。填写首播年可精确匹配；填写发行或观看年份时，将排除跨度不符的结果并请求确认。',
           meta: episodeKey || searchStr,
           action: 'openTmdbManual',
           actionLabel: '补充年份',
@@ -1349,7 +1349,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         if (!silent) {
           get().addLog(
             luckyAlternate
-              ? '已按季跨度优先匹配，若不对应可点「不是这个？」'
+              ? '已按季跨度优先匹配，若不对应可点「更换候选」'
               : '已找到匹配结果，正在应用',
             'success',
           );
@@ -1373,7 +1373,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
               id: 'media-match',
               tone: 'success',
               title: '已按季跨度优选',
-              message: '同名剧已按开播跨度排序。若不对，可点「不是这个？」切换另一候选（不再搜索）。',
+              message: '同名剧已按开播跨度排序。若不对，可点「更换候选」切换另一候选（不再搜索）。',
               meta: best.title || best.name || searchStr,
             });
           }
@@ -2051,7 +2051,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       mergeReviewCheckedByTask: {},
       isLightsOff: false
     });
-    get().addLog("已取消本次导入", "info");
+    get().addLog("已取消导入", "info");
   },
 
   clearHistory: async () => {
@@ -2076,7 +2076,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     const newItem: LibraryItem = {
       id: historyId,
       name: name,
-      date: new Date().toLocaleString(),
+      date: new Date().toLocaleString('zh-CN', { hour12: false }),
       subs: processedSubs,
       backdrop: tmdbBackdrop,
       backdropList: tmdbBackdropList,

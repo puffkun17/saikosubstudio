@@ -745,8 +745,8 @@ body {
   z-index: calc(var(--z-nav) - 1);
   height: var(--info-bar-h);
   border-bottom: 1px solid var(--v4-line);
-  background: color-mix(in srgb, var(--v4-canvas-raised) 94%, transparent);
-  backdrop-filter: blur(10px);
+  background: var(--v4-canvas-raised);
+  backdrop-filter: none;
 }
 
 .workflow-info-bar__inner {
@@ -1627,8 +1627,8 @@ body {
 
 @media (min-width: 768px) and (max-height: 800px) {
   .ingest-shell {
-    padding-top: 1.25rem;
-    padding-bottom: 1.25rem;
+    padding-top: var(--ds-gap-section);
+    padding-bottom: var(--ds-gap-section);
   }
 
   .ingest-heading {
@@ -1680,8 +1680,8 @@ body {
   }
 
   .ingest-shell {
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
+    padding-top: var(--ds-gap-section);
+    padding-bottom: var(--ds-gap-section);
     /* Extra bottom slack so formats footnote clears the forest tray */
     scroll-padding-bottom: calc(var(--tray-h) + 0.5rem);
   }
@@ -1850,9 +1850,8 @@ button {
 }
 
 .theater-chrome-bar {
-  background: color-mix(in srgb, #142e29 72%, transparent);
-  backdrop-filter: blur(16px) saturate(1.15);
-  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  background: #17332e;
+  backdrop-filter: none;
   box-shadow: var(--elevation-2-dim);
 }
 
@@ -1889,9 +1888,8 @@ button {
 /* 放映厅样式抽屉：深绿毛玻璃；关灯时更深、更透，夜光 LCD 感 */
 .theater-style-shell {
   border: 1px solid color-mix(in srgb, var(--v5-cream) 14%, transparent);
-  background: color-mix(in srgb, #142e29 78%, transparent);
-  backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  background: #142e29;
+  backdrop-filter: none;
   box-shadow: var(--elevation-3-dim);
 }
 
@@ -1908,7 +1906,7 @@ button {
 
 .lights-off-stage .theater-style-shell {
   border-color: color-mix(in srgb, var(--v5-orange) 20%, transparent);
-  background: color-mix(in srgb, #0a0e0d 82%, transparent);
+  background: #0a0e0d;
   box-shadow:
     0 0 36px 2px color-mix(in srgb, var(--v5-orange) 6%, transparent),
     var(--elevation-3-dim);

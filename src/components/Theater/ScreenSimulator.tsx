@@ -327,7 +327,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
           )}
 
           {subtitle.status === 'loading' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-30 select-none bg-black/60 backdrop-blur-xs">
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-30 select-none bg-black/60-xs">
               <div className="w-6 h-6 border-2 border-accent-neon border-t-transparent rounded-full animate-spin mb-3" />
               <span className="text-white/55 text-sm font-medium">
                 {subtitle.progress ? `字幕载入中 ${Math.round(subtitle.progress * 100)}%` : '正在载入字幕'}

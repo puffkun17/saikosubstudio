@@ -5,14 +5,14 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { ScreenSimulator } from '@/components/Theater/ScreenSimulator';
 import { SimulatorBoundary } from '@/components/Theater/SimulatorBoundary';
-import { TheaterSystemChrome } from '@/components/Theater/ControlDeck';
+import { TheaterSystemChrome, TheaterDockOptions, DockToggle, DOCK_TITLES, type TheaterDockId } from '@/components/Theater/ControlDeck';
 import { TimelineControls } from '@/components/Workbench/TimelineControls';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
-import { ExportDropdown } from '@/hooks/useExport';
+import { ExportPanel } from '@/hooks/useExport';
 import { resolvePreviewStyle } from '@/utils/previewStyle';
-import { SPECIAL_LABEL, countSpecial, nextSpecialIndex, slideIndexFor, type SpecialKind } from '@/core/specialLines';
+import { SPECIAL_LABEL, specialIndices, pagerOrdinal, stepSpecial, slideIndexFor, type SpecialKind } from '@/core/specialLines';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
-import { ChevronLeft, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, SlidersHorizontal, SquareArrowRightExit, X } from 'lucide-react';
 import { SubtitleDataSlot, BackdropSlot, StyleSettings } from '@/types/subtitleTypes';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -101,14 +101,37 @@ export const TheaterStep: React.FC = () => {
 
   const [showLightsExitTip, setShowLightsExitTip] = useState(false);
   const [slideshow, setSlideshow] = useState(true);
-  const specialCounts = React.useMemo(() => countSpecial(processedSubs ?? []), [processedSubs]);
-  const jumpToNext = (kind: SpecialKind) => {
-    const rows = processedSubs ?? [];
-    const next = nextSpecialIndex(rows, safePreviewIndex, kind);
-    if (next < 0) return;
+  // 唯一的右侧停靠面板（spec v1.1 §6）：所有工具栏选项都在这里打开，预览缩小但始终完整可见。
+  const [dock, setDock] = useState<TheaterDockId | null>(() => (isSettingsOpen ? 'style' : null));
+  const toggleDock = (id: TheaterDockId) => {
+    const next = dock === id ? null : id;
+    setDock(next);
+    setIsSettingsOpen(next === 'style');
+  };
+  // 特殊行导航（spec v1.1 §6.3）：分类标签 + 分类内翻页 + 时间轴刻度/高亮。
+  const special = React.useMemo(() => specialIndices(processedSubs ?? []), [processedSubs]);
+  const kinds = (Object.keys(SPECIAL_LABEL) as SpecialKind[]).filter((k) => special[k].length > 0);
+  const [specialKind, setSpecialKind] = useState<SpecialKind | null>(null);
+  const [pulse, setPulse] = useState<{ row: number; key: number } | null>(null);
+  const goRow = (row: number) => {
+    if (row < 0) return;
     setIsPreviewPlaying(false);
-    setPreviewIndex(next);
-    setJumpLineVal(String(next + 1));
+    setPreviewIndex(row);
+    setJumpLineVal(String(row + 1));
+    setPulse({ row, key: Date.now() });
+  };
+  const pickKind = (kind: SpecialKind) => {
+    setSpecialKind(kind);
+    goRow(special[kind][0]);
+  };
+  const activeIdx = specialKind ? special[specialKind] : [];
+  const [coachSeen, setCoachSeen] = useState(true);
+  useEffect(() => {
+    try { setCoachSeen(localStorage.getItem('saiko_coach_special') === '1'); } catch { /* private mode */ }
+  }, []);
+  const dismissCoach = () => {
+    setCoachSeen(true);
+    try { localStorage.setItem('saiko_coach_special', '1'); } catch { /* ignore */ }
   };
 
   // 进入关灯时给短提示；开灯或卸载时清掉。
@@ -138,15 +161,15 @@ export const TheaterStep: React.FC = () => {
   }, [sceneBackground, setSceneBackground]);
 
   useEffect(() => {
-    if (!isSettingsOpen) return;
+    if (!dock) return;
     const handleEscape = (event: KeyboardEvent) => {
-      // 关灯优先吃掉 Esc；再按一次才关样式抽屉。
+      // 关灯优先吃掉 Esc；再按一次才关面板。
       if (useStudioStore.getState().isLightsOff) return;
-      if (event.key === 'Escape') setIsSettingsOpen(false);
+      if (event.key === 'Escape') { setDock(null); setIsSettingsOpen(false); }
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [isSettingsOpen, setIsSettingsOpen]);
+  }, [dock, setIsSettingsOpen]);
 
   // ── 关灯模式退出规则 ────────────────────────────────────────────
   // Esc / 点击暗幕 / 再按 L → 退出；离开放映厅 → 复位。
@@ -233,22 +256,15 @@ export const TheaterStep: React.FC = () => {
           </div>
 
           <div className="relative flex flex-wrap items-center justify-end gap-2">
-            <TheaterSystemChrome />
-            <button
-              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-              className={isSettingsOpen ? 'ui-action' : 'ui-action ui-action--secondary'}
-              aria-pressed={isSettingsOpen}
-            >
-              <SlidersHorizontal className="h-4 w-4 stroke-[2]" />
-              <span className="max-sm:sr-only">字幕样式</span>
-            </button>
-            <ExportDropdown variant="primary" menuShell="theater" />
+            <TheaterSystemChrome dock={dock} onToggle={toggleDock} />
+            <DockToggle id="style" active={dock} onToggle={toggleDock} icon={<SlidersHorizontal className="h-4 w-4 stroke-[2]" aria-hidden="true" />} label="字幕样式" />
+            <DockToggle id="export" active={dock} onToggle={toggleDock} primary icon={<SquareArrowRightExit className="h-4 w-4" aria-hidden="true" />} label="导出字幕" />
           </div>
         </div>
       </div>
 
       {/* 主体：关灯时整块（预览 + 夜光侧栏）提到暗幕之上 */}
-        <div className={`flex-1 flex min-h-0 overflow-hidden relative ${isLightsOff ? 'lights-off-stage' : ''}`}>
+        <div className={`flex-1 flex min-h-0 flex-col overflow-hidden relative lg:flex-row ${isLightsOff ? 'lights-off-stage' : ''}`}>
         {/* L0 舞台：隔离内部 z，避免电视框压过样式面板 */}
         <div className="relative z-[var(--z-theater-stage)] isolate flex min-w-0 flex-1 flex-col items-center justify-center gap-3 p-3 md:p-5 xl:p-6">
           <div className="flex-1 w-full min-h-0 flex items-center justify-center">
@@ -264,29 +280,40 @@ export const TheaterStep: React.FC = () => {
             </SimulatorBoundary>
           </div>
 
-          {/* 特殊行跳转 + 幻灯片开关（spec: 剧照幻灯片预览） */}
-          <div className="theater-special-jumps flex w-full max-w-[1080px] flex-wrap items-center gap-1.5 px-1" role="toolbar" aria-label="跳到下一处特殊行">
-            <span className="ds-meta mr-1">下一处</span>
-            {(Object.keys(SPECIAL_LABEL) as SpecialKind[]).map((kind) => (
-              <button
-                key={kind}
-                type="button"
-                className="ds-entry !h-7"
-                disabled={specialCounts[kind] === 0}
-                onClick={() => jumpToNext(kind)}
-                title={specialCounts[kind] === 0 ? `没有${SPECIAL_LABEL[kind]}` : `跳到下一处${SPECIAL_LABEL[kind]}`}
-              >
-                {SPECIAL_LABEL[kind]}
-                <span className="tabular-nums opacity-70">{specialCounts[kind]}</span>
-              </button>
-            ))}
-            {tmdbBackdropList.length > 1 && (
-              <label className="ds-check ml-auto" title="剧照随播放进度切换">
-                <input type="checkbox" checked={slideshow} onChange={(e) => setSlideshow(e.target.checked)} />
-                剧照轮播
-              </label>
-            )}
-          </div>
+          {/* 特殊行导航：空分类不显示；无任何特殊行时整条隐藏 */}
+          {kinds.length > 0 && (
+            <div className="theater-special-nav flex w-full max-w-[1080px] flex-wrap items-center gap-2 px-1" role="toolbar" aria-label="特殊行导航">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {kinds.map((kind) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    className="ds-chip"
+                    aria-pressed={specialKind === kind}
+                    data-kind={kind}
+                    onClick={() => pickKind(kind)}
+                    title={`定位到第一处${SPECIAL_LABEL[kind]}`}
+                  >
+                    {SPECIAL_LABEL[kind]}
+                    <span className="ds-chip__count">{special[kind].length}</span>
+                  </button>
+                ))}
+              </div>
+              {specialKind && (
+                <div className="ds-pager" role="group" aria-label={`${SPECIAL_LABEL[specialKind]}翻页`}>
+                  <button type="button" className="ds-pager__btn" aria-label="上一处" onClick={() => goRow(stepSpecial(activeIdx, safePreviewIndex, -1))}>‹</button>
+                  <span className="ds-pager__pos" aria-live="polite">{pagerOrdinal(activeIdx, safePreviewIndex)} / {activeIdx.length}</span>
+                  <button type="button" className="ds-pager__btn" aria-label="下一处" onClick={() => goRow(stepSpecial(activeIdx, safePreviewIndex, 1))}>›</button>
+                </div>
+              )}
+              {!coachSeen && (
+                <p className="ds-coach" role="note">
+                  选择类别可定位特殊行，用 ‹ › 逐处查看。
+                  <button type="button" className="ds-coach__close" aria-label="不再提示" onClick={dismissCoach}>知道了</button>
+                </p>
+              )}
+            </div>
+          )}
 
           {/* 播放条：几何避让由抽屉 bottom 让出，禁止临时抬 z。 */}
           <div className="theater-stage-chrome relative flex w-full max-w-[1080px] shrink-0 px-1">
@@ -294,39 +321,35 @@ export const TheaterStep: React.FC = () => {
               variant="theater"
               theaterChrome={{
                 lightsOff: isLightsOff,
+                marks: specialKind ? activeIdx : undefined,
+                pulse,
               }}
             />
           </div>
         </div>
 
-        {/* L1 样式：浮在舞台之上；导出菜单走 Portal + --z-dropdown，再压在样式之上。 */}
-        <AnimatePresence>
-          {isSettingsOpen && (
-            <>
-              <motion.button
-                type="button"
-                aria-label="关闭样式参数"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-x-0 top-0 bottom-[var(--theater-deck-h)] z-[var(--z-theater-style)] bg-black/55 xl:hidden"
-                onClick={() => setIsSettingsOpen(false)}
-              />
-              <motion.aside
-                aria-label="样式参数"
-                initial={{ x: 360, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: 360, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                // 始终 absolute 浮层：不进 flex 文档流，避免预览屏随开合左右挪动。
-                // bottom 让出 --theater-deck-h（播放条 + 底 padding 写死档）。
-                className="theater-style-shell absolute top-4 right-4 bottom-[var(--theater-deck-h)] z-[var(--z-theater-style)] flex w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[var(--radius-xl)] xl:w-[380px]"
-              >
-                <StyleSidebar tone="theater" />
-              </motion.aside>
-            </>
-          )}
-        </AnimatePresence>
+        {/* 停靠面板：文档流内的兄弟节点（不是浮层），预览随之缩小、保持比例、不被遮挡。 */}
+        {dock && (
+          <aside id="theater-dock" data-surface="cream" className="ds-dock" aria-label={DOCK_TITLES[dock]}>
+            <header className="ds-dock__head">
+              <h3 className="ds-head">{DOCK_TITLES[dock]}</h3>
+              <button type="button" className="ui-action ui-action--secondary ui-action--icon" aria-label="关闭面板" onClick={() => { setDock(null); setIsSettingsOpen(false); }}>
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </header>
+            <div className="ds-dock__body">
+              {dock === 'style' && <StyleSidebar tone="cream" embedded />}
+              {dock === 'export' && <ExportPanel />}
+              {(dock === 'aspect' || dock === 'backdrop' || dock === 'preset') && <TheaterDockOptions panel={dock} />}
+              {dock === 'backdrop' && tmdbBackdropList.length > 1 && (
+                <label className="ds-check ds-dock__group" title="按播放进度切换剧照">
+                  <input type="checkbox" checked={slideshow} onChange={(e) => setSlideshow(e.target.checked)} />
+                  剧照轮播
+                </label>
+              )}
+            </div>
+          </aside>
+        )}
       </div>
 
       {/* 关灯暗幕：压暗双托盘与放映厅其余界面，点击即开灯 */}
@@ -335,8 +358,8 @@ export const TheaterStep: React.FC = () => {
           {isLightsOff && (
             <motion.button
               type="button"
-              aria-label="再点空白处退出关灯 · Esc / L"
-              title="再点空白处退出关灯 · Esc / L"
+              aria-label="点击空白处、按 Esc 或 L 退出关灯"
+              title="点击空白处、按 Esc 或 L 退出关灯"
               initial={{ opacity: 0 }}
               // 关灯像影院调光：先快速压到六成，再缓缓沉到全暗；开灯一步到位（快出）。
               animate={{ opacity: [0, 0.62, 1] }}
@@ -358,8 +381,8 @@ export const TheaterStep: React.FC = () => {
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="lights-off-exit-tip pointer-events-none fixed bottom-8 left-1/2 z-[calc(var(--z-dim)+1)] w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 text-center"
             >
-              <span className="inline-flex items-center rounded-[var(--radius-md)] border border-white/10 bg-black/70 px-3 py-1.5 text-xs font-medium tracking-wide text-white/90 shadow-[var(--elevation-2)] backdrop-blur-sm">
-                再点空白处退出关灯 · Esc / L
+              <span className="inline-flex items-center rounded-[var(--radius-md)] border border-white/10 bg-black/70 px-3 py-1.5 text-xs font-medium tracking-wide text-white/90 shadow-[var(--elevation-2)]">
+                点击空白处、按 Esc 或 L 退出关灯
               </span>
             </motion.div>
           )}
