@@ -240,7 +240,7 @@ export const TheaterStep: React.FC = () => {
               aria-pressed={isSettingsOpen}
             >
               <SlidersHorizontal className="h-4 w-4 stroke-[2]" />
-              字幕样式
+              <span className="max-sm:sr-only">字幕样式</span>
             </button>
             <ExportDropdown variant="primary" menuShell="theater" />
           </div>

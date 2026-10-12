@@ -101,7 +101,7 @@ const TheaterHeaderMenu: React.FC<HeaderMenuProps> = ({ label, icon, menuLabel, 
         aria-haspopup="menu"
       >
         {icon}
-        {label}
+        <span className="max-sm:sr-only">{label}</span>
         <ChevronDown
           className={`h-3.5 w-3.5 opacity-70 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
           aria-hidden="true"
@@ -329,7 +329,7 @@ export const TheaterSystemChrome: React.FC = () => {
         className={`ui-action ui-action--secondary ${isLightsOff ? 'theater-lights-action--on' : ''}`}
       >
         <LampCeiling className="h-4 w-4 stroke-[2]" aria-hidden="true" />
-        {isLightsOff ? '开灯' : '关灯'}
+        <span className="max-sm:sr-only">{isLightsOff ? '开灯' : '关灯'}</span>
       </button>
     </div>
   );
