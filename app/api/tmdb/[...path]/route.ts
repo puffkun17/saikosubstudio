@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBindings } from '@/server/bindings';
 
 
 const TMDB_BASE = 'https://api.themoviedb.org/3';
@@ -118,7 +119,7 @@ export async function GET(
   if (!searchParams) return json({ error: 'A valid search query is required' }, 400, { 'Cache-Control': 'no-store' });
 
   const tmdbUrl = new URL(`${TMDB_BASE}/${path}`);
-  const apiKey = process.env.TMDB_API_KEY;
+  const apiKey = (await getBindings()).TMDB_API_KEY;
   if (!apiKey) {
     console.error('TMDB proxy is missing TMDB_API_KEY');
     return json({ error: 'Metadata service is unavailable' }, 503, { 'Cache-Control': 'no-store' });
