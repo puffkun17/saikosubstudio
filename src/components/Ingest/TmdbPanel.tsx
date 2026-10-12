@@ -334,7 +334,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                   )}
                   {!needsTitleInput && tmdbManualInput.type === 'tv' && (
                     <p className="mt-0.5 text-xs text-[var(--v4-text-muted)]">
-                      同名剧集可填年份区分：首播年直接命中；发行/观影年会排除跨度不够的结果并请你确认。
+                      同名剧集可用年份区分：首播年精确匹配；发行或观看年份将排除跨度不符的结果并请求确认。
                     </p>
                   )}
                 </div>
@@ -396,7 +396,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                         value={tmdbManualInput.year}
                         onChange={e => setTmdbManualInput({ ...tmdbManualInput, year: e.target.value })}
                         placeholder={tmdbManualInput.type === 'tv' ? '首播年优先' : '可选'}
-                        title={tmdbManualInput.type === 'tv' ? '首播年可直接命中；若只记得发行/观影年，也会排除季跨度不够的同名剧并请你确认' : undefined}
+                        title={tmdbManualInput.type === 'tv' ? '首播年可精确匹配；发行或观看年份将排除季跨度不符的同名剧并请求确认' : undefined}
                       />
                     </label>
                   </div>

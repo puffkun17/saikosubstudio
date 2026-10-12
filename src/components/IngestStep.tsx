@@ -28,7 +28,7 @@ export const IngestStep: React.FC = () => {
   // Ready-state info bar is owned by TaskList (show name / episode + file actions).
 
   return (
-    <div className="ingest-shell relative z-0 flex h-full w-full flex-1 flex-col overflow-y-auto px-5 py-5 md:px-8 md:py-8 lg:px-10 xl:px-14 2xl:px-16">
+    <div className="ingest-shell relative z-0 flex h-full w-full flex-1 flex-col overflow-y-auto px-[var(--ds-page-x)] py-[var(--ds-gap-section)]">
       <AnimatePresence mode="wait">
         {shellState === 'ready' ? (
           <motion.div 
@@ -36,7 +36,7 @@ export const IngestStep: React.FC = () => {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="z-10 mx-auto grid w-full max-w-[1180px] flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(220px,260px)_minmax(0,1fr)] lg:items-stretch lg:gap-5"
+            className="z-10 mx-auto grid w-full max-w-[1180px] flex-1 grid-cols-1 gap-[var(--ds-gap-section)] lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)] lg:items-start"
           >
             <SourceIdentityStrip />
             <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col">

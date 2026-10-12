@@ -257,7 +257,7 @@ export const SystemTray = () => {
           id: 'workflow-gated',
           tone: 'notice',
           title: '请先添加字幕',
-          message: '加入文件并整理后，即可进入工作台。',
+          message: '添加并整理文件后可进入工作台。',
           meta: '2',
         });
         focusIngestDropZone();
@@ -530,7 +530,7 @@ export const SystemTray = () => {
             className="system-tray__local hidden items-center px-2 text-[length:var(--ds-fs-meta)] font-medium text-[var(--tray-ink-muted)] sm:inline-flex"
             title="字幕只在这台设备上读取和处理，不会上传"
           >
-            仅本机处理
+            仅本地处理
           </span>
         </div>
       </nav>

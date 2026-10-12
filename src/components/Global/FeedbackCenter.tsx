@@ -66,7 +66,7 @@ export const FeedbackCenter: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={shouldReduceMotion ? undefined : { opacity: 0, y: 6 }}
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className={`ui-toast pointer-events-auto border px-3.5 py-3 backdrop-blur-md ${noticeStyles[latestNotice.tone]}`}
+              className={`ui-toast pointer-events-auto border p-[var(--ds-pad-card)] backdrop-blur-md ${noticeStyles[latestNotice.tone]}`}
             >
               <div className="flex items-start gap-2.5">
                 <div className="min-w-0 flex-1">

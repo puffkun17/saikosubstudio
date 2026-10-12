@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-/** 时间轴检查标记：结构差异 / 画面文字 / 声音描述 / 歌词 / 署名信息 */
+/** 时间轴检查标记：结构差异 / 标题告示 / SDH / 歌词 / 署名信息 */
 export type InspectionMarkKind = 'structure' | 'screen' | 'sound' | 'lyrics' | 'credit';
 
 export type InspectionMarkFilter =
@@ -25,8 +25,8 @@ export const MARK_COLOR: Record<InspectionMarkKind, string> = {
 /** 全局全称 */
 export const MARK_LABEL: Record<InspectionMarkKind, string> = {
   structure: '结构差异',
-  screen: '画面文字',
-  sound: '声音描述',
+  screen: '标题告示',
+  sound: 'SDH',
   lyrics: '歌词',
   credit: '署名信息',
 };

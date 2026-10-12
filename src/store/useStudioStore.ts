@@ -12,6 +12,7 @@ import { detectLanguageByContent } from '../utils/subtitleCore';
 import { mergeWorkerAvailable, runMergeJob, runMergeJobInThread } from '../core/mergeClient';
 import type { MergeJobEvent, MergeJobInput, MergeJobResult } from '../core/mergeJob';
 import type { AlignmentFallbackInfo } from '../utils/subtitleCore';
+import { resolveEffectiveStyle } from '../utils/previewStyle';
 import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity, isMainPathSecondaryLanguage, isEnglishSecondaryLanguage, isLatinSecondaryLanguage, mainPathPrimaryRank, mainPathSecondaryRank, estimateSubtitleCueCount, isSparseSecondaryTrack, measureMergeOrphanRate, isSdhOrCcSubtitleFilename } from '../utils/subtitleCore';
 import { assessTvYearFit, parseSeasonNumber, parseYearToken, shouldDemoteBySeasonSpan } from '../utils/tmdbCandidateFit';
 import { estimateJsonBytes, readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
@@ -237,7 +238,7 @@ export interface StudioState {
   tmdbManualOpen: boolean;
   tmdbManualInput: TmdbManualInput;
   tmdbSuggestions: TmdbSuggestion[];
-  /** 同名季跨度优选后的另一候选（最多 1 条，供「不是这个？」切换，不新增搜索）。 */
+  /** 同名季跨度优选后的另一候选（最多 1 条，供「更换候选」切换，不新增搜索）。 */
   tmdbAlternateSuggestion: TmdbSuggestion | null;
   selectedSuggestion: TmdbSuggestion | null;
   isSettingsOpen: boolean;
@@ -352,6 +353,12 @@ export interface StudioState {
   /** Unified preset (spec: preview == export). Shared by the preview toolbar and the export menu. */
   exportPresetId: ExportPresetId;
   setExportPresetId: (id: ExportPresetId) => void;
+  /**
+   * Edits made in 样式参数 while a fixed preset (libass / 深蓝描边) is selected. Layered on top of the
+   * preset so sliders always take effect, in preview AND export. Cleared when another preset is picked.
+   */
+  styleOverrides: Partial<StyleSettings>;
+  setStyleOverrides: (patch: Partial<StyleSettings>) => void;
   /** HDR copy: on/off + level; the preview dims fills the same way the HDR export does. */
   hdrEnabled: boolean;
   hdrLevel: HdrLevelId;
@@ -408,7 +415,7 @@ const loadHistoryFromIdb = async (): Promise<LibraryItem[] | null> => {
       return [{
         id: task.id,
         name: task.name.value,
-        date: new Date(task.updatedAt).toLocaleString(),
+        date: new Date(task.updatedAt).toLocaleString('zh-CN', { hour12: false }),
         subs: m.rows as SubRow[],
         backdrop: extra.backdrop ?? null,
         backdropList: extra.backdropList ?? null,
@@ -477,8 +484,17 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   historyReady: false,
   exportPresetId: DEFAULT_EXPORT_PRESET_ID,
   setExportPresetId: (exportPresetId) => {
-    set({ exportPresetId });
-    try { localStorage.setItem('saiko_export_preset', exportPresetId); } catch { /* ignore */ }
+    set({ exportPresetId, styleOverrides: {} });
+    try {
+      localStorage.setItem('saiko_export_preset', exportPresetId);
+      localStorage.removeItem('saiko_style_overrides');
+    } catch { /* ignore */ }
+  },
+  styleOverrides: {},
+  setStyleOverrides: (patch) => {
+    const styleOverrides = { ...get().styleOverrides, ...patch };
+    set({ styleOverrides });
+    try { localStorage.setItem('saiko_style_overrides', JSON.stringify(styleOverrides)); } catch { /* ignore */ }
   },
   hdrEnabled: false,
   hdrLevel: DEFAULT_HDR_LEVEL,
@@ -631,7 +647,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   },
   saveCustomTemplate: (name) => {
     set((state) => {
-      const newTemplate = { id: `tpl_${Date.now()}`, name, styles: state.customStyle };
+      const newTemplate = { id: `tpl_${Date.now()}`, name, styles: resolveEffectiveStyle(state.customStyle, state.exportPresetId, state.styleOverrides) };
       const newTemplates = [...state.customTemplates, newTemplate];
       return { customTemplates: newTemplates, activePreset: newTemplate.id };
     });
@@ -897,7 +913,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           id: 'media-identity',
           tone: 'notice',
           title: '请补充片名',
-          message: '已识别季集信息，输入片名后即可匹配影片资料。',
+          message: '已识别季集信息。输入片名以匹配影片资料。',
           meta: episodeKey,
           action: 'openTmdbManual',
           actionLabel: '补充片名',
@@ -1055,7 +1071,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             reasons.push('year:missing');
           }
         } else if (isEpisodeQuery && !year && itemYear && shouldDemoteBySeasonSpan({ itemYear, season: seasonHint })) {
-          // 无年份：用「今天」估季跨度，本地降权撑不起 Sxx 的同名剧（不 reject，留给「不是这个？」）
+          // 无年份：用「今天」估季跨度，本地降权撑不起 Sxx 的同名剧（不 reject，留给「更换候选」）
           score -= 200;
           reasons.push('season-span:demote');
         } else if (year && itemYear === year) {
@@ -1320,7 +1336,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           id: 'media-match',
           tone: 'notice',
           title: '请补充年份',
-          message: '存在多个同名片名且未能从文件名得到可用年份。填写首播年可直接命中；若只记得发行/观影年，也会排除跨度不够的错误结果并请你确认。',
+          message: '存在多个同名片名且未能从文件名得到可用年份。填写首播年可精确匹配；填写发行或观看年份时，将排除跨度不符的结果并请求确认。',
           meta: episodeKey || searchStr,
           action: 'openTmdbManual',
           actionLabel: '补充年份',
@@ -1349,7 +1365,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         if (!silent) {
           get().addLog(
             luckyAlternate
-              ? '已按季跨度优先匹配，若不对应可点「不是这个？」'
+              ? '已按季跨度优先匹配，若不对应可点「更换候选」'
               : '已找到匹配结果，正在应用',
             'success',
           );
@@ -1373,7 +1389,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
               id: 'media-match',
               tone: 'success',
               title: '已按季跨度优选',
-              message: '同名剧已按开播跨度排序。若不对，可点「不是这个？」切换另一候选（不再搜索）。',
+              message: '同名剧已按开播跨度排序。若不对，可点「更换候选」切换另一候选（不再搜索）。',
               meta: best.title || best.name || searchStr,
             });
           }
@@ -1739,6 +1755,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         hdrEnabled: Boolean(storedHdr) && !storedHdr.startsWith('off:') && isHdrLevelId(level),
         ...(isHdrLevelId(level) ? { hdrLevel: level } : {}),
       });
+      const storedOverrides = readJsonStorage<unknown>('saiko_style_overrides', {});
+      if (storedOverrides && typeof storedOverrides === 'object' && !Array.isArray(storedOverrides)) {
+        set({ styleOverrides: storedOverrides as Partial<StyleSettings> });
+      }
     } catch { /* ignore */ }
     // History lives in IndexedDB (taskStore). Migrate the old localStorage archive once, then drop it.
     void loadHistoryFromIdb().then((list) => {
@@ -2051,7 +2071,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       mergeReviewCheckedByTask: {},
       isLightsOff: false
     });
-    get().addLog("已取消本次导入", "info");
+    get().addLog("已取消导入", "info");
   },
 
   clearHistory: async () => {
@@ -2076,7 +2096,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     const newItem: LibraryItem = {
       id: historyId,
       name: name,
-      date: new Date().toLocaleString(),
+      date: new Date().toLocaleString('zh-CN', { hour12: false }),
       subs: processedSubs,
       backdrop: tmdbBackdrop,
       backdropList: tmdbBackdropList,

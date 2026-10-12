@@ -3,11 +3,14 @@
 import React, { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
-import { applyAuxiliarySubtitleMode, type StyleSettings } from '@/utils/subtitleCore';
-import { ALargeSmall, ChevronDown, ChevronUp, FileType, Paintbrush, Pipette, Save, SlidersHorizontal, SquareArrowRightExit, SquareCenterlineDashedHorizontal, Trash2, X } from 'lucide-react';
+import { applyAuxiliarySubtitleMode, extractStylesFromAss, type StyleSettings } from '@/utils/subtitleCore';
+import { estimateStyleFromImageFile } from '@/utils/styleFromImage';
+import { FileUp, Image as ImageIcon, ALargeSmall, ChevronDown, ChevronUp, FileType, Paintbrush, Pipette, Save, SlidersHorizontal, SquareArrowRightExit, SquareCenterlineDashedHorizontal, Trash2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { ColorSampler } from '@/components/Settings/ColorSampler';
+import { resolveEffectiveStyle } from '@/utils/previewStyle';
+import { EXPORT_PRESETS } from '@/utils/exportPresets';
 
 const PRESET_COLORS = ['#FFFFFF', '#E0E0E0', '#B0B0B0', '#9CAFB8', '#A8B7A3', '#B9A7B5', '#C0A89A', '#7F8C8D', '#000000'];
 
@@ -41,10 +44,10 @@ const FontFamilySelect = ({
   options: FontFamilyOption[];
   onChange: (v: string) => void
 }) => (
-  <div className="flex items-center justify-between gap-3 py-2">
-    <span className="text-sm text-[var(--v4-text-muted)] font-medium shrink-0">{label}</span>
+  <div className="grid grid-cols-[56px_minmax(0,1fr)] items-center gap-[var(--ds-gap-group)]">
+    <span className="text-sm text-[var(--v4-text-muted)] font-medium">{label}</span>
     <select
-      className="min-w-0 w-40 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-2.5 py-2 text-right text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
+      className="h-[var(--ds-ctl-h)] min-w-0 w-full rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-[var(--ds-ctl-px)] text-left text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
       value={value}
       onChange={e => onChange(e.target.value)}
     >
@@ -69,7 +72,7 @@ const ColorPicker = ({
   onChange: (val: string) => void
 }) => {
   return (
-    <div className="flex flex-col py-2">
+    <div className="flex flex-col">
       <button
         type="button"
         className="flex w-full items-center justify-between cursor-pointer select-none group"
@@ -142,15 +145,15 @@ const SettingSection = ({
   action?: React.ReactNode;
   icon?: React.ReactNode;
 }) => (
-  <section className="border-t border-[var(--v4-line)] pt-4 first:border-t-0 first:pt-0">
-    <div className="flex items-center justify-between gap-3 mb-3">
+  <section className="ds-style-section border-t border-[var(--v4-line)] pt-[var(--ds-pad-card)] first:border-t-0 first:pt-0">
+    <div className="flex min-h-8 items-center justify-between gap-[var(--ds-gap-group)] mb-[var(--ds-gap-group)]">
       <h4 className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--v4-text)] tracking-tight">
         {icon}
         {title}
       </h4>
       {action}
     </div>
-    <div className="flex flex-col gap-3">{children}</div>
+    <div className="flex flex-col gap-[var(--ds-gap-group)]">{children}</div>
   </section>
 );
 
@@ -173,10 +176,10 @@ const SliderControl = ({
   hint?: string;
   onChange: (value: number) => void;
 }) => (
-  <div className="flex flex-col gap-1.5">
-    <div className="flex justify-between text-sm font-medium text-[var(--v4-text-muted)] select-none">
+  <div className="ds-slider">
+    <div className="ds-slider__head select-none">
       <span>{label}</span>
-      <span className="font-mono text-[var(--v4-text)] font-semibold text-xs tabular-nums">
+      <span className="ds-slider__value">
         {suffix === 'x' ? value.toFixed(2) : value}{suffix}
       </span>
     </div>
@@ -187,20 +190,24 @@ const SliderControl = ({
       step={step}
       value={value}
       onChange={e => onChange(Number(e.target.value))}
-      className="w-full glass-slider-input"
+      className="ds-slider__track glass-slider-input"
       aria-label={label}
     />
-    {hint && <div className="text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">{hint}</div>}
+    {hint && <div className="ds-slider__hint">{hint}</div>}
   </div>
 );
 
 type StyleSidebarTone = 'cream' | 'theater';
 
-export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cream' }) => {
+export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolean }> = ({ tone = 'cream', embedded = false }) => {
   const {
     processedSubs,
-    customStyle,
+    customStyle: baseStyle,
     setCustomStyle,
+    exportPresetId,
+    setExportPresetId,
+    styleOverrides,
+    setStyleOverrides,
     activePreset,
     setActivePreset,
     showGuides,
@@ -223,7 +230,22 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
     saveCustomTemplate: state.saveCustomTemplate,
     deleteCustomTemplate: state.deleteCustomTemplate,
     setIsSettingsOpen: state.setIsSettingsOpen,
+    exportPresetId: state.exportPresetId,
+    setExportPresetId: state.setExportPresetId,
+    styleOverrides: state.styleOverrides,
+    setStyleOverrides: state.setStyleOverrides,
   })));
+  // 面板显示与编辑的都是“实际生效样式”（侧栏样式 → 导出预设 → 用户微调），与预览、导出同源。
+  const customStyle = React.useMemo(
+    () => resolveEffectiveStyle(baseStyle, exportPresetId, styleOverrides),
+    [baseStyle, exportPresetId, styleOverrides],
+  );
+  const presetLocksStyle = Boolean(EXPORT_PRESETS[exportPresetId]?.style);
+  /** Write a style patch into the one shared state. Fixed presets keep their profile; edits layer on top. */
+  const commitStyle = (patch: Partial<StyleSettings>) => {
+    if (presetLocksStyle) setStyleOverrides(patch);
+    else setCustomStyle({ ...baseStyle, ...patch });
+  };
 
   const [showTemplateSave, setShowTemplateSave] = useState(false);
   const [templateNameInput, setTemplateNameInput] = useState('');
@@ -249,11 +271,9 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
 
   const handleApplyPreset = (preset: { id: string; styles: Partial<StyleSettings> }) => {
     setActivePreset(preset.id);
-    const updated = {
-      ...customStyle,
-      ...preset.styles
-    };
-    setCustomStyle(updated);
+    // 模板是完整样式：切到「当前样式」预设，让模板本身成为导出样式。
+    setExportPresetId('current');
+    setCustomStyle({ ...customStyle, ...preset.styles });
   };
 
   const handleRestore = () => {
@@ -281,15 +301,35 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
       enFontFamily: 'Helvetica Neue, Arial, "Inter", sans-serif'
     };
     // 持久化由 store 的 persistStyles 统一处理，这里不再直接写 localStorage。
-    setCustomStyle(defaultStyle);
+    setExportPresetId('current');
+    setCustomStyle({ ...baseStyle, ...defaultStyle });
   };
 
   const handleStyleChange = <K extends keyof StyleSettings>(key: K, value: StyleSettings[K]) => {
     setActivePreset('custom');
-    setCustomStyle({
-      ...customStyle,
-      [key]: value
-    });
+    commitStyle({ [key]: value } as Partial<StyleSettings>);
+  };
+
+  const [importNote, setImportNote] = useState<string | null>(null);
+  /** 从 .ass 或截图取样式，写入同一份样式（切到「当前样式」预设，预览与导出一致）。全部在本机完成。 */
+  const importStyleFile = async (file: File) => {
+    const isAss = /\.(ass|ssa)$/i.test(file.name);
+    try {
+      const mined = isAss ? extractStylesFromAss(await file.text()) : await estimateStyleFromImageFile(file);
+      if (!mined) {
+        setImportNote(isAss ? '这个文件里没有可用的 [V4+ Styles]。' : '没在截图下部找到字幕，换一张字幕清楚的截图。');
+        return;
+      }
+      const patch = Object.fromEntries(Object.entries(mined).filter(([, v]) => v !== undefined)) as Partial<StyleSettings>;
+      setActivePreset('custom');
+      setExportPresetId('current');
+      setCustomStyle({ ...customStyle, ...patch });
+      setImportNote(isAss
+        ? `已采用 ${file.name} 的样式：字号 ${patch.zhFontSize ?? '—'}/${patch.enFontSize ?? '—'}，下边距 ${patch.marginV ?? '—'}。`
+        : `已按截图估计：文字 ${patch.zhColor}、描边 ${patch.zhOutline}、字号约 ${patch.zhFontSize}、下边距约 ${patch.marginV}。仅为估计，请对照预览微调。`);
+    } catch {
+      setImportNote('读取失败，文件未改动任何样式。');
+    }
   };
 
   const handleSaveTemplate = () => {
@@ -304,10 +344,12 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
       data-surface={tone === 'theater' ? 'forest' : 'cream'}
       className={
         tone === 'theater'
-          ? 'theater-style-drawer flex h-full w-full flex-col overflow-y-auto p-5 text-left text-[var(--v4-text)] scrollbar-thin'
-          : 'flex h-full w-full flex-col overflow-y-auto bg-[var(--v5-cream)] p-5 text-left text-[var(--v4-text)] scrollbar-thin'
+          ? `theater-style-drawer flex h-full w-full flex-col overflow-y-auto text-left text-[var(--v4-text)] scrollbar-thin ${embedded ? 'p-[var(--ds-pad-card)]' : 'p-[var(--ds-pad-card)]'}`
+          : `flex h-full w-full flex-col overflow-y-auto text-left text-[var(--v4-text)] scrollbar-thin ${embedded ? 'p-[var(--ds-pad-card)]' : 'bg-[var(--v5-cream)] p-[var(--ds-pad-card)]'}`
       }
     >
+      {/* 停靠面板已有标题与关闭；辅助线开关在画面下方 */}
+      {!embedded && (
       <div className="mb-5 flex flex-shrink-0 items-start justify-between gap-4 border-b border-[var(--v4-line)] pb-4">
         <div className="min-w-0 select-none">
           <div className="flex items-center gap-2">
@@ -317,7 +359,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             </h3>
           </div>
           <p className="mt-1 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
-            调整字幕在预览与导出中的呈现
+            预览与导出共用此样式
           </p>
         </div>
 
@@ -343,8 +385,9 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
           </button>
         </div>
       </div>
+      )}
 
-      <div className="ui-choice-group mb-4 w-full" role="tablist" aria-label="样式设置分类">
+      <div className="ui-choice-group mb-[var(--ds-gap-group)] w-full" role="tablist" aria-label="样式设置分类">
         {([
           { id: 'template', label: '模板' },
           { id: 'type', label: '文字' },
@@ -363,7 +406,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
         ))}
       </div>
 
-      <div className="flex flex-1 flex-col gap-4">
+      <div className="flex flex-1 flex-col gap-[var(--ds-pad-card)]">
         {activePanel === 'template' && (
         <SettingSection
           title="模板"
@@ -397,7 +440,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
                     value={templateNameInput}
                     onChange={e => setTemplateNameInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleSaveTemplate(); if (e.key === 'Escape') setShowTemplateSave(false); }}
-              className="min-w-0 flex-1 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2 text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)]"
+              className="h-[var(--ds-ctl-h)] min-w-0 flex-1 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-[var(--ds-ctl-px)] text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)]"
                     placeholder="模板名称"
                   />
                   <button
@@ -423,7 +466,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
                   if (tpl) handleApplyPreset(tpl);
                 }
               }}
-              className="h-10 min-w-0 flex-1 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
+              className="h-[var(--ds-ctl-h)] min-w-0 flex-1 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
             >
               <option value="classic">默认经典样式</option>
               {customTemplates.map(tpl => (
@@ -441,6 +484,36 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
               >
                 <Trash2 className="h-4 w-4" />
               </button>
+            )}
+          </div>
+        </SettingSection>
+        )}
+
+        {activePanel === 'template' && (
+        <SettingSection
+          title="从文件获取样式"
+          icon={<FileUp className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}
+          action={
+            <InfoHint label="从文件获取样式说明" side="left">
+              在本机读取，不上传。.ass/.ssa 读取 [V4+ Styles] 的字体、字号、颜色、描边、边距；截图只能估计文字颜色、描边和位置。
+            </InfoHint>
+          }
+        >
+          <div className="flex flex-col gap-[var(--ds-gap-item)]">
+            <div className="grid grid-cols-2 gap-[var(--ds-gap-item)]">
+              <label className="ui-action justify-center cursor-pointer" data-testid="import-style-ass">
+                <FileType className="h-4 w-4" aria-hidden="true" />
+                ASS 文件
+                <input type="file" accept=".ass,.ssa" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void importStyleFile(f); }} />
+              </label>
+              <label className="ui-action justify-center cursor-pointer" data-testid="import-style-image">
+                <ImageIcon className="h-4 w-4" aria-hidden="true" />
+                截图
+                <input type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void importStyleFile(f); }} />
+              </label>
+            </div>
+            {importNote && (
+              <p className="text-xs leading-relaxed text-[var(--v4-text-muted)]" role="status" data-testid="import-style-note">{importNote}</p>
             )}
           </div>
         </SettingSection>
@@ -464,7 +537,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             max={1.8}
             step={0.05}
             suffix="x"
-            hint="调整字幕整体大小比例"
+            hint="按比例缩放全部字幕"
             onChange={value => handleStyleChange('globalScale', value)}
           />
           <SliderControl
@@ -552,7 +625,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             <span className="text-sm font-medium text-[var(--v4-text-muted)] inline-flex items-center gap-1.5">
               辅助字幕策略
               <InfoHint label="辅助字幕说明" side="left">
-                将声音描述、画面文字、歌词或非对白表达完整保留；智能精简模式会隐藏明确低价值环境音等。
+                将 SDH、标题告示、歌词或非对白表达完整保留；智能精简模式会隐藏明确低价值环境音等。
               </InfoHint>
             </span>
             <div className="ui-choice-group w-full" role="group" aria-label="辅助字幕策略">
@@ -579,12 +652,12 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
             </div>
             {auxiliaryCount > 0 && (
               <p className="text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
-                检测到 {auxiliaryCount} 条辅助内容（画面文字 {screenTextCount} 条倾向保留；仅高置信音效可被智能精简剥离约 {smartHiddenCount} 条）。可在「字幕信息概览」分布图与详细内容中查看。
+                检测到 {auxiliaryCount} 条辅助内容（标题告示 {screenTextCount} 条倾向保留；仅高置信音效可被智能精简剥离约 {smartHiddenCount} 条）。可在「字幕信息概览」分布图与详细内容中查看。
               </p>
             )}
           </div>
 
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-[var(--ds-gap-item)]">
             <span className="text-sm font-medium text-[var(--v4-text-muted)] inline-flex items-center gap-1.5">
               画面规格
               <InfoHint label="画面规格说明" side="left">
@@ -592,7 +665,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
               </InfoHint>
             </span>
             <select
-              className="h-10 w-36 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-right text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
+              className="h-[var(--ds-ctl-h)] w-full min-w-0 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-[var(--ds-ctl-px)] text-left text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
               value={customStyle.resolution || '1080p'}
               onChange={e => handleStyleChange('resolution', e.target.value as StyleSettings['resolution'])}
             >
@@ -641,10 +714,10 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone }> = ({ tone = 'cr
                       onToggle={() => setOpenPicker(openPicker === 'lyricColor' ? null : 'lyricColor')}
                       onChange={(c) => handleStyleChange('lyricColor', c)}
                     />
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="grid grid-cols-[56px_minmax(0,1fr)] items-center gap-[var(--ds-gap-group)]">
                       <span className="text-sm font-medium text-[var(--v4-text-muted)]">位置</span>
                       <select
-                        className="h-10 w-32 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-right text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
+                        className="h-[var(--ds-ctl-h)] w-full min-w-0 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-[var(--ds-ctl-px)] text-left text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
                         value={customStyle.lyricPosition ?? 'top'}
                         onChange={e => handleStyleChange('lyricPosition', e.target.value as StyleSettings['lyricPosition'])}
                       >

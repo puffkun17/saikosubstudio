@@ -216,7 +216,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
   return (
     <div className="v4-panel flex flex-1 flex-col overflow-hidden">
       {total > 0 && (
-        <div className="timeline-head flex flex-col gap-2 px-4 py-2 border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] flex-shrink-0 lg:flex-row lg:items-center lg:gap-4">
+        <div className="timeline-head flex flex-col gap-2 p-[var(--ds-pad-card)] border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] flex-shrink-0 lg:flex-row lg:items-center lg:gap-4">
             <div className="flex items-center justify-between gap-4 lg:order-2 lg:shrink-0">
             <div className="min-w-0 flex items-center gap-3">
               <span className="ds-label whitespace-nowrap">时间轴</span>

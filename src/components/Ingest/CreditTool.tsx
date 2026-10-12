@@ -53,7 +53,7 @@ export const CreditTool: React.FC = () => {
   ].filter(Boolean);
 
   return (
-    <section className="flex flex-col gap-2">
+    <section className="ds-section">
       <button
         type="button"
         className="v4-focus-ring flex w-full items-center gap-1.5 rounded-md text-left"
@@ -74,7 +74,7 @@ export const CreditTool: React.FC = () => {
       </button>
 
       {expanded ? (
-        <div className="ds-form rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-4 py-3">
+        <div className="ds-form ds-well border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]">
           <div className="ds-form__label">制作声明</div>
           <div className="ds-form__control">
             <div className="ui-choice-group" role="radiogroup" aria-label="制作声明">
@@ -97,7 +97,7 @@ export const CreditTool: React.FC = () => {
             </div>
             <p className="ds-meta mt-1">
               {isOfficialSubtitle ? '已标记官方字幕 · ' : ''}
-              会写进字幕文件信息
+              写入字幕文件元数据
             </p>
           </div>
 
@@ -117,7 +117,7 @@ export const CreditTool: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="ds-meta">未发现署名行</p>
+              <p className="ds-meta">未检测到署名</p>
             )}
           </div>
 
@@ -129,7 +129,7 @@ export const CreditTool: React.FC = () => {
                 checked={appendCreatorCredit}
                 onChange={(event) => setAppendCreatorCredit(event.target.checked)}
               />
-              <span>片尾加一行「双语合并：…」</span>
+              <span>片尾添加「双语合并：…」署名</span>
             </label>
 
             {appendCreatorCredit ? (
@@ -168,7 +168,7 @@ export const CreditTool: React.FC = () => {
             ) : null}
             {detectedAttributions.length > 0 && (
               <p className="ds-meta mt-1">
-                原署名会保留并排在前面{appendCreatorCredit && creatorCredit.trim() ? `，之后是「双语合并：${creatorCredit.trim()}」` : ''}
+                原署名保留并置于最前{appendCreatorCredit && creatorCredit.trim() ? `，之后是「双语合并：${creatorCredit.trim()}」` : ''}
               </p>
             )}
           </div>
@@ -183,7 +183,7 @@ export const CreditTool: React.FC = () => {
                   checked={!keepOriginalCredit}
                   onChange={(event) => setKeepOriginalCredit(!event.target.checked)}
                 />
-                不在原位置显示原署名
+                隐藏原位置的署名
               </label>
               {!keepOriginalCredit && (
                 <p className="ds-meta mt-1 !text-[var(--v5-warning)]">

@@ -557,10 +557,10 @@ export const TaskList: React.FC = () => {
               type="button"
               className="ui-action ui-action--quiet"
               onClick={() => setPendingCancelUpload(true)}
-              title="取消本次导入并返回上传入口"
+              title="取消导入并返回上传入口"
             >
               <RotateCcw className="h-4 w-4" />
-              <span className="hidden sm:inline">取消本次导入</span>
+              <span className="hidden sm:inline">取消导入</span>
               <span className="sm:hidden">取消</span>
             </button>
           )}
@@ -626,7 +626,7 @@ export const TaskList: React.FC = () => {
   ));
 
   return (
-    <div className="v4-panel relative flex h-full w-full max-w-[760px] flex-col gap-4 p-5 md:p-6 lg:max-w-none">
+    <div className="v4-panel ds-card relative flex h-full w-full max-w-[760px] flex-col gap-[var(--ds-gap-section)] lg:max-w-none">
 
       {/* Task tab switcher (if multiple tasks exist) */}
       {tasks.length > 1 && (
@@ -650,13 +650,13 @@ export const TaskList: React.FC = () => {
       )}
 
       {/* Main workspace — hug content; sticky dock without stretching voids */}
-      <div className="relative flex min-h-0 flex-col gap-4 overflow-x-visible overflow-y-auto pr-1 select-none scrollbar-thin">
+      <div className="relative flex min-h-0 flex-col gap-[var(--ds-gap-section)] overflow-x-visible overflow-y-auto pr-1 select-none scrollbar-thin">
 
         {needsTitleInput && (
           <div className="relative flex flex-shrink-0 items-center gap-2.5 rounded-lg border border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] px-3 py-2.5">
             <CircleAlert className="h-4 w-4 shrink-0 text-[var(--v4-accent-strong)]" aria-hidden="true" />
             <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--v4-text)]">
-              片名待确认，请先补充后再命名导出
+              片名待确认，请补充后再命名
             </span>
             <button
               type="button"
@@ -670,10 +670,10 @@ export const TaskList: React.FC = () => {
         )}
 
         {/* Track bindings first — primary decision before naming/credits */}
-        <div className="flex min-h-0 flex-col gap-3.5 overflow-visible">
-          <div className="relative flex flex-col gap-3 overflow-visible">
+        <div className="flex min-h-0 flex-col gap-[var(--ds-gap-section)] overflow-visible">
+          <div className="ds-section relative overflow-visible">
             <div className="flex items-center gap-2">
-              <h4 className="block select-none text-base font-semibold text-[var(--v4-text)]">
+              <h4 className="ds-head select-none">
                 字幕序列
               </h4>
               <InfoHint label="字幕序列说明">
@@ -686,11 +686,11 @@ export const TaskList: React.FC = () => {
               )}
               {!activeTask.isBilingualSingle && activeTask.zh && activeTask.en && (
                 <span className="ml-auto text-xs font-normal text-[var(--v4-text-faint)]">
-                  按住行尾六点拖动可对调主副轨
+                  拖动行尾手柄可互换主副轨
                 </span>
               )}
             </div>
-            <div className="relative flex flex-col gap-2.5 overflow-visible rounded-lg bg-[var(--v4-panel-muted)] p-3">
+            <div className="ds-well relative flex flex-col gap-[var(--ds-gap-item)] overflow-visible bg-[var(--v4-panel-muted)]">
               {(() => {
                 const trackOptions = uploadedFiles.map(f => ({
                   id: f.id,
@@ -779,7 +779,7 @@ export const TaskList: React.FC = () => {
                           </InfoHint>
                         </span>
                         <span className="truncate text-[10px] font-normal leading-tight text-[var(--v4-text-faint)]">
-                          默认：中文
+                          默认中文
                         </span>
                       </>,
                       '选择中文或双语字幕',
@@ -884,23 +884,23 @@ export const TaskList: React.FC = () => {
           {isSingleLanguage && !showChineseOnlyHint && (
             <p role="note" data-testid="single-language-hint" className="ds-meta inline-flex items-start gap-1.5 px-1">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>只有一种语言，会按单语直接整理；想做双语，再拖入同一集的中文字幕即可。</span>
+              <span>仅检测到一种语言，将按单语处理。如需双语，请添加同集另一语言的字幕。</span>
             </p>
           )}
 
           {/* 对齐方式：紧挨字幕序列，全宽双栏说明 */}
           {!activeTask.isBilingualSingle && !isSingleLanguage && (
-            <div className="flex flex-col gap-2">
+            <div className="ds-section">
               <div className="flex items-center gap-1.5">
                 <h4 className="ds-head">对齐方式</h4>
                 <InfoHint label="对齐方式说明">
                   智能：按时间就近配对，孤立行多时自动改用精校。精校：完整对齐搜索，处理插入、删减与断句不一致，耗时更长。仅在两条分轨时生效。
                 </InfoHint>
               </div>
-              <div className="align-choice grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="对齐方式">
+              <div className="align-choice grid gap-[var(--ds-gap-item)] sm:grid-cols-2" role="radiogroup" aria-label="对齐方式">
                 {([
-                  { id: 'standard', label: '智能', hint: '快，适合大多数双语字幕' },
-                  { id: 'industrial', label: '精校', hint: '慢一些，适合断句差异大的片子' },
+                  { id: 'standard', label: '智能', hint: '速度快，适用于多数双语字幕' },
+                  { id: 'industrial', label: '精校', hint: '耗时较长，适用于断句差异较大的字幕' },
                 ] as const).map((option) => (
                   <button
                     key={option.id}
@@ -919,12 +919,12 @@ export const TaskList: React.FC = () => {
           )}
 
           {/* Credit first, then export name (field + fill shortcuts) */}
-          <div className="flex flex-shrink-0 flex-col gap-4">
+          <div className="flex flex-shrink-0 flex-col gap-[var(--ds-gap-section)]">
             <CreditTool />
 
-            <div className="flex flex-col gap-2">
+            <div className="ds-section">
               <div className="flex items-center gap-2">
-                <h4 className="inline-flex select-none items-center gap-1.5 text-base font-semibold text-[var(--v4-text)]">
+                <h4 className="ds-head inline-flex select-none items-center gap-1.5">
                   导出选项
                   <InfoHint label="导出选项说明">
                     默认留空，可手输；也可用下方捷径从片源或原始文件名填充。格式在导出时再选。
@@ -935,7 +935,7 @@ export const TaskList: React.FC = () => {
                 </span>
               </div>
 
-              <div className="rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2.5">
+              <div className="ds-well border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]">
                 <div className="relative">
                   <div className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md border px-2.5 py-1.5 transition-colors ${
                     isFilenameFocused
@@ -963,8 +963,8 @@ export const TaskList: React.FC = () => {
                   )}
                 </div>
 
-                <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                  <span className="ui-meta">从…填充</span>
+                <div className="mt-[var(--ds-gap-item)] flex flex-wrap items-center gap-2">
+                  <span className="ui-meta">填充来源</span>
                   <div className="ui-choice-group" role="group" aria-label="填充导出文件名">
                     <button
                       type="button"
@@ -991,7 +991,7 @@ export const TaskList: React.FC = () => {
 
           {/* Configuration & Process Dock — sticky when ASS style decision is present */}
           {foundAssStyle && (
-          <div className="sticky bottom-0 z-10 mt-3 flex flex-col gap-3 overflow-visible border-t border-[var(--v4-line)] bg-[var(--v4-panel)]/95 pt-3 backdrop-blur-sm">
+          <div className="sticky bottom-0 z-10 flex flex-col gap-[var(--ds-gap-item)] overflow-visible border-t border-[var(--v4-line)] bg-[var(--v4-panel)]/95 pt-[var(--ds-gap-group)] backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -999,7 +999,7 @@ export const TaskList: React.FC = () => {
             >
               <div className="grid gap-0 md:grid-cols-[minmax(220px,0.72fr)_minmax(0,1fr)]">
                 <AssStylePreview style={foundAssStyle} className="min-h-36 rounded-none border-0 border-b border-[var(--v4-line)] md:border-b-0 md:border-r" />
-                <div className="flex min-w-0 flex-col justify-between gap-4 p-4 md:p-5">
+                <div className="flex min-w-0 flex-col justify-between gap-[var(--ds-gap-group)] p-[var(--ds-pad-card)]">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Paintbrush className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />

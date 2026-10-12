@@ -109,8 +109,8 @@ export const SourceIdentityStrip: React.FC = () => {
         </AnimatePresence>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
-        <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto">
+      <div className="ds-card flex min-h-0 flex-1 flex-col gap-[var(--ds-gap-group)]">
+        <div className="flex min-h-0 flex-1 flex-col gap-[var(--ds-gap-item)] overflow-y-auto">
           <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <h3
@@ -212,7 +212,7 @@ export const SourceIdentityStrip: React.FC = () => {
                   title="切换到同一次搜索缓存的另一同名候选，不再发起检索"
                 >
                   <RefreshCw className="h-4 w-4" aria-hidden="true" />
-                  不是这个？
+                  更换候选
                 </button>
                 <button
                   type="button"

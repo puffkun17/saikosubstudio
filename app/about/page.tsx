@@ -10,28 +10,28 @@ const Section = ({
   en?: string;
   children: React.ReactNode;
 }) => (
-  <section className="border-t border-[var(--v4-line)] py-7 first:border-t-0 first:pt-0">
+  <section className="border-t border-[var(--v4-line)] py-[var(--ds-gap-section)] first:border-t-0 first:pt-0">
     <h2 className="text-lg font-semibold tracking-tight text-[var(--v4-text)]">{title}</h2>
     {en ? (
       <p className="mt-1 text-sm font-medium leading-6 text-[var(--v4-text-faint)]">{en}</p>
     ) : null}
-    <div className="mt-3 space-y-3 text-[15px] font-medium leading-7 text-[var(--v4-text-muted)]">{children}</div>
+    <div className="ds-body mt-[var(--ds-gap-item)] space-y-[var(--ds-gap-item)] text-[var(--v4-text-muted)]">{children}</div>
   </section>
 );
 
 export default function AboutPage() {
   return (
-    <main className="flex-1 overflow-y-auto bg-[var(--v4-canvas)] px-5 py-8 md:px-10 md:py-12 xl:px-16">
-      <div className="mx-auto w-full max-w-3xl pb-10 pt-3">
+    <main className="flex-1 overflow-y-auto bg-[var(--v4-canvas)] px-[var(--ds-page-x)] py-[var(--ds-gap-section)] md:py-8">
+      <div className="mx-auto w-full max-w-3xl pb-[var(--ds-gap-section)]">
         <div className="mt-3 flex items-start gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--v4-accent)]/25 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]">
             <ShieldCheck className="h-5 w-5 stroke-[2]" aria-hidden="true" />
           </div>
           <div>
             <p className="text-xs font-semibold tracking-[0.12em] text-[var(--v4-accent-strong)]">SAIKOSUBSTUDIO / POLICY</p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-[var(--v4-text)] md:text-[2rem]">隐私与版权说明</h1>
+            <h1 className="ds-title !text-[24px] mt-[var(--ds-gap-item)]">隐私与版权说明</h1>
             <p className="mt-1 text-sm font-medium tracking-[0.04em] text-[var(--v4-text-faint)]">Privacy &amp; Copyright Notice</p>
-            <p className="mt-4 max-w-2xl text-[15px] font-medium leading-7 text-[var(--v4-text-muted)] md:text-base">
+            <p className="ds-body mt-[var(--ds-gap-group)] max-w-[68ch] text-[var(--v4-text-muted)]">
               文件处理在当前设备本地完成，不会上传到本站；片源资料检索与反馈提交遵循最小必要原则。
             </p>
             <p className="mt-1 text-sm leading-6 text-[var(--v4-text-faint)]">
@@ -40,7 +40,7 @@ export default function AboutPage() {
           </div>
         </div>
 
-        <div className="v4-panel density-copy mt-10 rounded-lg">
+        <div className="v4-panel ds-card mt-[var(--ds-gap-section)] rounded-lg">
           <Section title="本地文件处理 / Local files" en="Subtitles and reference media stay in the browser; preferences may be stored on-device only.">
             <p>
               字幕、ZIP、7Z、RAR 字幕包与作为参照的本地媒体文件，均由浏览器在当前设备读取和处理，不会上传或保存到本站服务器。

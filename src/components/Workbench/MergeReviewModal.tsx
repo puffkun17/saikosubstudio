@@ -50,7 +50,7 @@ export const MergeReviewModal: React.FC<MergeReviewModalProps> = ({
               className="ui-modal ui-modal--wide flex max-h-[min(85vh,52rem)] w-full flex-col overflow-hidden !p-0"
               tabIndex={-1}
             >
-              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--v4-line)] px-4 py-3">
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--v4-line)] p-[var(--ds-pad-card)]">
                 <div className="min-w-0">
                   <h2 id="workbench-review-title" className="text-base font-bold tracking-wide text-[var(--v4-text)]">
                     合轴待复核

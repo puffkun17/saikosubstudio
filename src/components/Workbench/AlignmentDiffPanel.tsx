@@ -329,7 +329,7 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
       className="v4-panel overflow-hidden outline-none"
       aria-label="合轴待复核明细"
     >
-      <div className="flex flex-col gap-2 border-b border-[var(--v4-line)] px-4 py-2">
+      <div className="flex flex-col gap-2 border-b border-[var(--v4-line)] px-[var(--ds-pad-card)] py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="inline-flex flex-wrap items-center gap-x-1 text-xs text-[var(--v4-text-faint)]">
             <span className="font-medium text-[var(--v4-text-muted)]">合轴待复核</span>
@@ -449,9 +449,9 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
       </div>
 
       {items.length === 0 ? (
-        <div className="px-4 py-6 text-center text-xs text-[var(--v4-text-faint)]">
+        <div className="px-[var(--ds-pad-card)] py-6 text-center text-xs text-[var(--v4-text-faint)]">
           {surfaceTab === 'aux'
-            ? '没有列出的辅助内容（画面字 / 声音描述 / 歌词 / 署名）'
+            ? '没有列出的辅助内容（标题告示 / SDH / 歌词 / 署名）'
             : reviewFilter === 'all'
               ? '没有需要合轴复核的结构项'
               : '当前筛选下暂无待复核项'}
@@ -476,7 +476,7 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
                 className={`border-b border-[var(--v4-line)] last:border-b-0 ${isActive ? 'bg-[var(--v4-accent-soft)]/35' : ''} ${isChecked ? 'opacity-70' : ''}`}
                 style={{ contentVisibility: 'auto', containIntrinsicSize: '0 48px' }}
               >
-                <div className="grid grid-cols-1 gap-1.5 px-4 py-2 md:grid-cols-[4.75rem_minmax(0,1.35fr)_minmax(0,1fr)_auto] md:items-center md:gap-3">
+                <div className="grid grid-cols-1 gap-1.5 px-[var(--ds-pad-card)] py-2 md:grid-cols-[4.75rem_minmax(0,1.35fr)_minmax(0,1fr)_auto] md:items-center md:gap-3">
                   <div className="min-w-0">
                     <div className="font-mono text-xs tabular-nums text-[var(--v4-text-muted)]">
                       {formatMsClock(item.startMs)}
@@ -551,7 +551,7 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
                 </div>
 
                 {isSourceOpen && item.provenance && (
-                  <div className="border-t border-[var(--v4-line)] bg-[var(--v4-panel-muted)]/40 px-4 py-2">
+                  <div className="border-t border-[var(--v4-line)] bg-[var(--v4-panel-muted)]/40 px-[var(--ds-pad-card)] py-2">
                     <div className="grid gap-2 lg:grid-cols-2">
                       {item.provenance.slice(0, 4).map((source, sourceIndex) => (
                         <div key={`${item.id}-src-${sourceIndex}`} className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel)] px-2.5 py-2 text-xs leading-5">

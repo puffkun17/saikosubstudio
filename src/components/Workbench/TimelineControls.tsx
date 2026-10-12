@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Pause, Play, SquareCenterlineDashedHorizontal } from 'lucide-react';
+import { LampCeiling, Pause, Play, SquareCenterlineDashedHorizontal } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
@@ -12,6 +12,10 @@ interface TimelineControlsProps {
   /** 放映厅：关灯仍保留播放+进度；画幅辅助线放在播放单元外侧，不打断进度条。 */
   theaterChrome?: {
     lightsOff: boolean;
+    /** 选中特殊行分类时，在时间轴上画出该类的刻度（行号）。 */
+    marks?: number[];
+    /** 每次跳转短暂高亮落点。 */
+    pulse?: { row: number; key: number } | null;
   };
 }
 
@@ -78,6 +82,8 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
     setIsPreviewPlaying,
     showGuides,
     setShowGuides,
+    isLightsOff,
+    setLightsOff,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     previewIndex: state.previewIndex,
@@ -92,6 +98,8 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
     setIsPreviewPlaying: state.setIsPreviewPlaying,
     showGuides: state.showGuides,
     setShowGuides: state.setShowGuides,
+    isLightsOff: state.isLightsOff,
+    setLightsOff: state.setLightsOff,
   })));
   const [scrubTimeMs, setScrubTimeMs] = useState<number | null>(null);
   const [sliderTip, setSliderTip] = useState<{ x: number; y: number } | null>(null);
@@ -379,6 +387,23 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
               aria-label={`字幕预览时间，第 ${tipLine} 行，${timelinePercent}%`}
               title={`第 ${tipLine} 行 · ${timelinePercent}%`}
             />
+            {(theaterChrome?.marks?.length || theaterChrome?.pulse) ? (
+              <div className="timeline-marks" aria-hidden="true">
+                {(theaterChrome?.marks ?? []).map((row) => {
+                  const r = processedSubs?.[row];
+                  if (!r) return null;
+                  const pct = (parseSubtitleRange(r.ts).startMs / sharedDurationMs) * 100;
+                  return <span key={row} className="timeline-marks__tick" style={{ left: `${pct}%` }} />;
+                })}
+                {theaterChrome?.pulse && processedSubs?.[theaterChrome.pulse.row] ? (
+                  <span
+                    key={theaterChrome.pulse.key}
+                    className="timeline-marks__pulse"
+                    style={{ left: `${(parseSubtitleRange(processedSubs[theaterChrome.pulse.row].ts).startMs / sharedDurationMs) * 100}%` }}
+                  />
+                ) : null}
+              </div>
+            ) : null}
             {showSliderTip && (
               <div
                 className="pointer-events-none fixed z-[var(--z-dropdown)] -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-[var(--radius-md)] border border-[var(--v4-line-strong)] bg-[color-mix(in_srgb,var(--v5-green)_88%,#000)] px-2 py-1 font-mono text-xs font-semibold tabular-nums text-[var(--v4-accent-strong)] shadow-[var(--elevation-1-dim)] backdrop-blur-md"
@@ -393,6 +418,20 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
 
         <div className="mx-0.5 hidden h-5 w-px shrink-0 bg-[var(--v4-line)] sm:block" aria-hidden="true" />
         {guidesButton}
+        {/* 关灯：画面级视图开关，与画幅辅助线并列（不放在选项按钮行）。 */}
+        <button
+          type="button"
+          onClick={() => setLightsOff(!isLightsOff)}
+          aria-pressed={isLightsOff}
+          title="关灯（L）；Esc 或 L 退出"
+          className={`theater-chrome-chip theater-lights-toggle v4-focus-ring inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border px-2 text-xs font-semibold transition-colors
+            ${isLightsOff
+              ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
+              : 'border-[var(--v4-line)] text-[var(--v4-text-muted)] hover:text-[var(--v4-text)]'}`}
+        >
+          <LampCeiling className="h-4 w-4 stroke-[2]" aria-hidden="true" />
+          <span className="hidden sm:inline">{isLightsOff ? '开灯' : '关灯'}</span>
+        </button>
       </div>
     );
   }
