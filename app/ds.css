@@ -1,0 +1,120 @@
+/*
+ * Design system v1 tokens — see /docs/ui-spec-v1.md (mirrors workspace ui-spec-v1.md).
+ * One scale for the whole site. New / restyled code uses --ds-* and .ds-* only.
+ */
+:root {
+  /* Spacing: 4px base */
+  --ds-space-1: 4px;
+  --ds-space-2: 8px;
+  --ds-space-3: 12px;
+  --ds-space-4: 16px;
+  --ds-space-5: 24px;
+  --ds-space-6: 32px;
+
+  /* Type: 5 sizes · 3 weights · 3 line-heights */
+  --ds-fs-title: 20px;   /* page title (片名) */
+  --ds-fs-head: 16px;    /* section / card title */
+  --ds-fs-body: 14px;    /* body, controls, subtitle text secondary */
+  --ds-fs-meta: 13px;    /* hints, labels, timecodes */
+  --ds-fs-micro: 12px;   /* badges only; never smaller */
+  --ds-fw-regular: 400;
+  --ds-fw-medium: 500;
+  --ds-fw-strong: 600;
+  --ds-lh-tight: 1.25;   /* titles, badges, single-line controls */
+  --ds-lh-body: 1.45;    /* body, subtitle lines */
+  --ds-lh-meta: 1.4;     /* hints */
+
+  /* Ink: 2 secondary levels only */
+  --ds-ink: var(--surface-text, #1a3d37);
+  --ds-ink-2: color-mix(in srgb, var(--ds-ink) 82%, transparent);
+  --ds-ink-3: color-mix(in srgb, var(--ds-ink) 62%, transparent);
+
+  /* Chrome heights */
+  --ds-bar-h: 48px;
+  --ds-control-h: 32px;
+  --ds-hit-min: 32px;
+}
+
+@media (max-width: 640px) {
+  :root { --ds-fs-title: 18px; --ds-bar-h: 44px; }
+}
+
+.ds-title { font-size: var(--ds-fs-title); font-weight: var(--ds-fw-strong); line-height: var(--ds-lh-tight); color: var(--ds-ink); }
+.ds-head  { font-size: var(--ds-fs-head);  font-weight: var(--ds-fw-strong); line-height: var(--ds-lh-tight); color: var(--ds-ink); }
+.ds-body  { font-size: var(--ds-fs-body);  font-weight: var(--ds-fw-regular); line-height: var(--ds-lh-body); color: var(--ds-ink); }
+.ds-meta  { font-size: var(--ds-fs-meta);  font-weight: var(--ds-fw-regular); line-height: var(--ds-lh-meta); color: var(--ds-ink-3); }
+.ds-label { display: inline-flex; align-items: center; gap: var(--ds-space-1); font-size: var(--ds-fs-meta); font-weight: var(--ds-fw-medium); line-height: var(--ds-lh-tight); color: var(--ds-ink-2); }
+.ds-mono  { font-family: var(--font-mono); }
+
+/* ⓘ: one-line explanation on hover/focus; 32px hit area around a small glyph */
+.ds-info {
+  display: inline-grid; place-items: center; min-width: 20px; min-height: 20px;
+  margin: -6px; padding: 6px; box-sizing: content-box;
+  font-size: var(--ds-fs-micro); line-height: 1; color: var(--ds-ink-3); cursor: help;
+}
+.ds-info:hover, .ds-info:focus-visible { color: var(--v5-accent-strong); }
+
+.ds-select {
+  height: var(--ds-control-h); width: 100%; padding: 0 var(--ds-space-2);
+  border: 1px solid var(--surface-line-strong); border-radius: var(--radius-md);
+  background: var(--v5-panel-raised); color: var(--ds-ink);
+  font-size: var(--ds-fs-meta); font-weight: var(--ds-fw-medium);
+}
+.ds-select:disabled { opacity: 0.5; }
+
+.ds-check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: var(--ds-fs-meta); color: var(--ds-ink); line-height: var(--ds-lh-tight); min-height: 24px; }
+.ds-check input { width: 16px; height: 16px; accent-color: var(--v5-accent-strong); }
+
+.ds-segmented { display: inline-flex; padding: 2px; gap: 2px; border-radius: var(--radius-md); background: var(--v5-panel-muted); }
+.ds-segmented__item {
+  height: 28px; padding: 0 var(--ds-space-3); border-radius: 6px; cursor: pointer;
+  font-size: var(--ds-fs-meta); font-weight: var(--ds-fw-medium); color: var(--ds-ink-2);
+}
+.ds-segmented__item[aria-checked="true"], .ds-segmented__item[aria-pressed="true"] {
+  background: var(--v5-panel-raised); color: var(--ds-ink); font-weight: var(--ds-fw-strong);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--v5-green) 18%, transparent);
+}
+
+/* Export menu */
+.export-menu { max-width: calc(100vw - 16px); color: var(--ds-ink); background: var(--v5-panel-raised); }
+.export-menu__body { display: grid; gap: var(--ds-space-3); padding: var(--ds-space-4); border-bottom: 1px solid var(--surface-line); }
+.export-menu__row { display: grid; gap: var(--ds-space-1); min-width: 0; border: 0; padding: 0; margin: 0; }
+.export-menu__row.flex { display: flex; }
+.export-menu__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ds-space-2); }
+.export-menu__grid .ds-label { margin-bottom: var(--ds-space-1); }
+.export-menu__download {
+  display: flex; width: 100%; align-items: flex-start; gap: var(--ds-space-3);
+  padding: var(--ds-space-3) var(--ds-space-4); text-align: left; cursor: pointer;
+  transition: background-color .15s;
+}
+.export-menu__download:hover { background: var(--v5-accent-soft); }
+.export-menu__download:disabled { cursor: wait; opacity: .6; }
+.export-menu--on-dark { box-shadow: 0 12px 40px rgba(0,0,0,.45); }
+
+/* Labeled chrome entry (icon + text). Icon-only buttons are reserved for universal actions. */
+.ds-entry {
+  display: inline-flex; align-items: center; gap: 6px; height: var(--ds-control-h);
+  padding: 0 var(--ds-space-3); border-radius: var(--radius-md);
+  font-size: var(--ds-fs-meta); font-weight: var(--ds-fw-medium); color: var(--ds-ink-2);
+}
+.ds-entry:hover { background: var(--v5-accent-soft); color: var(--ds-ink); }
+
+/* Two-column form grid: fixed label column, controls right (属性信息 etc.) */
+.ds-form { display: grid; grid-template-columns: 96px minmax(0, 1fr); column-gap: var(--ds-space-4); row-gap: var(--ds-space-3); align-items: start; }
+.ds-form__label { padding-top: 6px; font-size: var(--ds-fs-meta); font-weight: var(--ds-fw-medium); line-height: var(--ds-lh-tight); color: var(--ds-ink-2); }
+.ds-form__control { min-width: 0; }
+@media (max-width: 640px) {
+  .ds-form { grid-template-columns: minmax(0, 1fr); row-gap: var(--ds-space-1); }
+  .ds-form__control { margin-bottom: var(--ds-space-2); }
+}
+
+/* 对齐方式: compact two-option choice, one line each */
+.align-choice__item {
+  display: flex; flex-direction: column; gap: 2px; padding: var(--ds-space-2) var(--ds-space-3);
+  text-align: left; border-radius: var(--radius-md); border: 1px solid var(--surface-line);
+  background: var(--v5-panel-muted); cursor: pointer; transition: border-color .15s, background-color .15s;
+}
+.align-choice__item:hover { border-color: var(--surface-line-strong); }
+.align-choice__item[aria-checked="true"] { border-color: color-mix(in srgb, var(--v5-accent) 50%, transparent); background: var(--v5-accent-soft); }
+.align-choice__item[aria-checked="true"] .ds-body { color: var(--v5-accent-strong); }
+@media (max-width: 640px) { .align-choice { grid-template-columns: 1fr 1fr; } }
