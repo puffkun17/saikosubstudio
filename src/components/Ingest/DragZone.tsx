@@ -549,7 +549,13 @@ export const DragZone: React.FC = () => {
     }
   };
 
-  const addFilesToQueue = (incoming: IncomingFile[]) => {
+  const addFilesToQueue = (rawIncoming: IncomingFile[]) => {
+    const videoRecord = rawIncoming.find((record) => isVideoFile(record.file));
+    if (videoRecord) {
+      useStudioStore.getState().setBorrowedVideoName(videoRecord.file.name);
+      addLog(`已借用视频文件名「${videoRecord.file.name}」作为导出名（视频本身不读取）`, 'success');
+    }
+    const incoming = rawIncoming.filter((record) => !isVideoFile(record.file));
     if (incoming.length === 0) return;
     const seenKeys = new Set(queuedItems.map(item => item.key));
     const additions: PreflightItem[] = [];
@@ -741,7 +747,17 @@ export const DragZone: React.FC = () => {
     }
   };
 
-  const handleFilesProcess = async (filesList?: File[]) => {
+const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
+  const isVideoFile = (file: File) => file.type.startsWith('video/') || VIDEO_EXT.test(file.name);
+  const handleFilesProcess = async (incomingList?: File[]) => {
+    // Video files: only the filename is borrowed for export naming; never read, never counted in the size limit.
+    const videoFiles = (incomingList || []).filter(isVideoFile);
+    if (videoFiles.length > 0) {
+      useStudioStore.getState().setBorrowedVideoName(videoFiles[0].name);
+      addLog(`已借用视频文件名「${videoFiles[0].name}」作为导出名（视频本身不读取）`, 'success');
+    }
+    const filesList = incomingList?.filter((file) => !isVideoFile(file));
+    if (incomingList && incomingList.length > 0 && filesList && filesList.length === 0 && queuedItems.length === 0) return;
     const preflight = (filesList && filesList.length > 0 && queuedItems.length === 0)
       ? filesList.map((file) => createPreflightItem(file))
       : queuedItems.length > 0
@@ -1574,7 +1590,7 @@ export const DragZone: React.FC = () => {
         ref={fileInputRef}
         type="file"
         multiple
-        accept=".srt,.ass,.zip,.rar,.7z"
+        accept=".srt,.ass,.zip,.rar,.7z,video/*,.mkv"
         className="hidden"
         onChange={(e) => {
           addFilesToQueue(Array.from(e.target.files || []).map((file) => ({ file })));

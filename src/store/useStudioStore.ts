@@ -200,6 +200,11 @@ export interface StudioState {
   files: { zh: Subfile | null; en: Subfile | null; commentary: Subfile | null };
   customFilename: string;
   filenameSource: FilenameSource;
+  /** SxxEyy of the current task, for export naming. */
+  filenameEpKey: string;
+  /** Video dropped in Act 1: only its filename is borrowed for export naming. */
+  borrowedVideoName: string | null;
+  setBorrowedVideoName: (name: string | null) => void;
   uploadedFiles: Subfile[];
   tasks: TaskPair[];
   selectedTaskId: string | null;
@@ -397,6 +402,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   files: { zh: null, en: null, commentary: null },
   customFilename: '',
   filenameSource: 'unknown',
+  filenameEpKey: '',
+  borrowedVideoName: null,
+  setBorrowedVideoName: (borrowedVideoName) => set({ borrowedVideoName }),
   uploadedFiles: [],
   tasks: [],
   selectedTaskId: null,
@@ -1582,6 +1590,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         tmdbBackdropList: backdrops,
         customFilename: keepManual ? state.customFilename : formattedName,
         filenameSource: keepManual ? 'manual' : 'tmdb',
+        filenameEpKey: (epKey || manualEpisodeKey || '').toUpperCase(),
         tasks: selectedTaskId
           ? state.tasks.map((t) => (
             t.id === selectedTaskId
@@ -1674,6 +1683,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         return {
           customFilename: keepManual ? state.customFilename : formattedName,
           filenameSource: keepManual ? 'manual' : 'tmdb',
+          filenameEpKey: (task.epKey || '').toUpperCase(),
           tasks: state.tasks.map((candidate) =>
             candidate.id === taskId
               ? {
@@ -1866,7 +1876,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           const active = nextTasks.find(t => t.id === state.selectedTaskId) || nextTasks[0];
           get().selectTask(active.id);
         } else {
-          set({ selectedTaskId: null, files: { zh: null, en: null, commentary: null }, customFilename: '', filenameSource: 'unknown' });
+          set({ selectedTaskId: null, files: { zh: null, en: null, commentary: null }, customFilename: '', filenameSource: 'unknown', borrowedVideoName: null, filenameEpKey: '' });
         }
       }, 0);
 
@@ -1889,7 +1899,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           const active = nextTasks[0];
           get().selectTask(active.id);
         } else {
-          set({ selectedTaskId: null, files: { zh: null, en: null, commentary: null }, customFilename: '', filenameSource: 'unknown' });
+          set({ selectedTaskId: null, files: { zh: null, en: null, commentary: null }, customFilename: '', filenameSource: 'unknown', borrowedVideoName: null, filenameEpKey: '' });
         }
       }, 0);
 

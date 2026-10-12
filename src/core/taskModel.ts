@@ -115,6 +115,21 @@ export function buildExportBaseName(task: Pick<Task, 'episode' | 'tmdb' | 'video
   return parts.filter(Boolean).join('.') || 'subtitle';
 }
 
+/** Same naming rule for the legacy (pre-task) store: TMDB meta + SxxEyy, or a borrowed video filename. */
+export function buildExportBaseFromMeta(
+  meta: { title: string; originalTitle: string; year: string } | null,
+  epKey: string,
+  mode: NamingMode,
+  opts: { videoName?: string | null; fallback?: string } = {},
+): string {
+  if (opts.videoName) return opts.videoName.replace(/\.[A-Za-z0-9]{2,4}$/, '');
+  if (!meta) return opts.fallback || 'subtitles';
+  const original = sanitizeSegment(meta.originalTitle || meta.title);
+  const zh = meta.title && meta.title !== meta.originalTitle ? sanitizeSegment(meta.title) : '';
+  const parts = [mode === 'zh+original' ? zh : '', original, meta.year || '', (epKey || '').toUpperCase()];
+  return parts.filter(Boolean).join('.') || opts.fallback || 'subtitles';
+}
+
 /** Human task name for chrome/tabs: 熊家餐馆 S01E02 (zh title preferred). */
 export function buildTaskDisplayName(task: Pick<Task, 'episode' | 'tmdb'>, fallbackTitle = ''): string {
   const title = task.tmdb?.title || task.tmdb?.originalTitle || fallbackTitle || '待补充片名';
