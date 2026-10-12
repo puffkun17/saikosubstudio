@@ -113,12 +113,14 @@ export const TheaterStep: React.FC = () => {
   const kinds = (Object.keys(SPECIAL_LABEL) as SpecialKind[]).filter((k) => special[k].length > 0);
   const [specialKind, setSpecialKind] = useState<SpecialKind | null>(null);
   const [pulse, setPulse] = useState<{ row: number; key: number } | null>(null);
+  const pulseSeq = React.useRef(0);
   const goRow = (row: number) => {
     if (row < 0) return;
     setIsPreviewPlaying(false);
     setPreviewIndex(row);
     setJumpLineVal(String(row + 1));
-    setPulse({ row, key: Date.now() });
+    pulseSeq.current += 1;
+    setPulse({ row, key: pulseSeq.current });
   };
   const pickKind = (kind: SpecialKind) => {
     setSpecialKind(kind);
