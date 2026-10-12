@@ -34,6 +34,7 @@ import {
   type HdrLevelId,
 } from '@/utils/hdrPresets';
 import { buildMergeReviewQueue } from '@/utils/timeline/alignmentDiff';
+import { REVIEW_CODE_TABLE, deriveExportReview, reviewLabel } from '@/core/exportReview';
 import { applyCreditPlan, buildClosingCreditLines, classifyCreditCue, planCredits } from '@/core/credits';
 import { buildExportBaseFromMeta, type NamingMode } from '@/core/taskModel';
 
@@ -46,6 +47,31 @@ export const NAME_MODE_OPTIONS: { id: NamingMode; label: string }[] = [
   { id: 'zh+original', label: '中文 + 原文名' },
 ];
 const isNameMode = (v: unknown): v is NamingMode => v === 'original' || v === 'zh+original';
+
+/** R-xx list for the export menu (derived; never blocks the download). */
+export const useExportReview = () => {
+  const { processedSubs, tmdbData, filenameEpKey, isTv } = useStudioStore(useShallow((s) => ({
+    processedSubs: s.processedSubs,
+    tmdbData: s.tmdbData,
+    filenameEpKey: s.filenameEpKey,
+    isTv: s.tasks.find((t) => t.id === s.selectedTaskId)?.epKey != null || /S\d+E\d+/i.test(s.customFilename),
+  })));
+  return React.useMemo(() => {
+    const rows = processedSubs ?? [];
+    if (rows.length === 0) return [];
+    const queue = buildMergeReviewQueue(rows);
+    const unresolved = [...new Set(queue.items.flatMap((item) => item.rowIndexes))].sort((a, b) => a - b);
+    const plan = planCredits({ primaryRows: rows });
+    return deriveExportReview({
+      rows,
+      hasTmdb: Boolean(tmdbData),
+      isTv,
+      epKey: filenameEpKey,
+      unresolvedRows: unresolved,
+      movedStatementRows: plan.dropCueIndexes,
+    });
+  }, [processedSubs, tmdbData, filenameEpKey, isTv]);
+};
 
 /**
  * Export base name: manual title > borrowed video filename > TMDB 原文名(.年份.SxxEyy) > task title.
@@ -358,6 +384,14 @@ export const ExportDropdown: React.FC<{
     hdrEnabled, setHdrEnabled, hdrLevelChoice, setHdrLevelChoice, hdrLevel, nameMode, setNameMode,
   } = useExportChoices();
   const exportBaseName = useExportBaseName(nameMode);
+  const reviewItems = useExportReview();
+  const jumpToRow = (row: number) => {
+    const st = useStudioStore.getState();
+    st.setIsPreviewPlaying(false);
+    st.setPreviewIndex(row);
+    st.setJumpLineVal(String(row + 1));
+    setOpen(false);
+  };
   const plan = planExportBundle(exportBaseName, namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel, secondary: secondaryLang });
   const planHdrCount = plan.files.filter((file) => file.hdr).length;
   const planSrtCount = plan.files.filter((file) => file.format === 'srt').length;
@@ -538,6 +572,28 @@ export const ExportDropdown: React.FC<{
                 </select>
               </div>
             </div>
+            {reviewItems.length > 0 && (
+              <div className="export-menu__review">
+                <p className="ds-label">
+                  留意（不影响导出）
+                  <span className="ds-info" title={REVIEW_CODE_TABLE.map(([code, label]) => `${code} ${label}`).join('\n')} aria-label="复核代码表">ⓘ</span>
+                </p>
+                <ul className="mt-1 grid gap-1">
+                  {reviewItems.map((item) => (
+                    <li key={item.code} className="ds-meta flex flex-wrap items-baseline gap-x-1.5">
+                      <span className="ds-mono font-semibold text-[var(--ds-ink-2)]">{item.code}</span>
+                      <span className="min-w-0">{reviewLabel(item.code)}</span>
+                      {(item.cues ?? []).slice(0, 3).map((row) => (
+                        <button key={row} type="button" className="underline decoration-dotted hover:text-[var(--v5-accent-strong)]" onClick={() => jumpToRow(row)}>
+                          第 {row + 1} 行
+                        </button>
+                      ))}
+                      {(item.cues?.length ?? 0) > 3 && <span>等 {item.cues!.length} 行</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="p-1.5">
               <button
                 type="button"

@@ -1,0 +1,37 @@
+/**
+ * R-xx review list shown at export (not blocking). Derived from the finished timeline + task
+ * identity only; the Act-2 algorithm is not consulted or changed.
+ */
+import { REVIEW_REASONS, type ReviewReason, type ReviewReasonCode } from './reviewReasons';
+
+export interface ExportReviewInput {
+  rows: { text: string }[];
+  hasTmdb: boolean;
+  isTv: boolean;
+  epKey: string;
+  /** Rows still flagged by the merge review queue (unpaired / suspicious), 0-based. */
+  unresolvedRows: number[];
+  /** Secondary statements moved off the timeline (credits plan), 0-based. */
+  movedStatementRows: number[];
+}
+
+const MAX_CUES = 50;
+
+export function deriveExportReview(input: ExportReviewInput): ReviewReason[] {
+  const out: ReviewReason[] = [];
+  const add = (code: ReviewReasonCode, cues: number[] = [], detail?: string) => out.push({ code, cues: cues.slice(0, MAX_CUES), detail });
+  if (!input.hasTmdb) add('R-02');
+  if (input.hasTmdb && input.isTv && !input.epKey) add('R-03');
+  const bilingual = input.rows.some((r) => /\n|\\N/.test(r.text));
+  if (input.rows.length > 0 && !bilingual) add('R-10');
+  if (input.movedStatementRows.length) add('R-07', input.movedStatementRows);
+  const positioned = input.rows.flatMap((r, i) => (/\\(?:frz|pos)\(?/i.test(r.text) ? [i] : []));
+  if (positioned.length) add('R-08', positioned);
+  const dialogue = input.rows.flatMap((r, i) => (/(^|\n|\\N)\s*-\s*\S.*(\n|\\N)\s*-\s*\S/.test(r.text) ? [i] : []));
+  if (dialogue.length) add('R-09', dialogue);
+  if (input.unresolvedRows.length) add('R-11', input.unresolvedRows);
+  return out;
+}
+
+export const reviewLabel = (code: ReviewReasonCode): string => REVIEW_REASONS[code];
+export const REVIEW_CODE_TABLE = Object.entries(REVIEW_REASONS) as [ReviewReasonCode, string][];
