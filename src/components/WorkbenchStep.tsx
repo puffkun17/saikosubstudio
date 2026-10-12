@@ -8,7 +8,6 @@ import { EpisodeTabs } from '@/components/Workbench/EpisodeTabs';
 import { SourceMatchPanel, type InspectionMarkFilter } from '@/components/Workbench/SourceMatchPanel';
 import { InspectionMarkGlyph, MARK_FILTERS, MARK_LABEL } from '@/components/Workbench/inspectionMarks';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
-import { ExportDropdown } from '@/hooks/useExport';
 import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
 import { SlidersHorizontal } from 'lucide-react';
 import { MergeReviewModal } from '@/components/Workbench/MergeReviewModal';
@@ -143,9 +142,9 @@ export const WorkbenchStep: React.FC = () => {
             aria-pressed={isSettingsOpen}
           >
             <SlidersHorizontal className="h-4 w-4" />
-            字幕样式
+            <span className="max-sm:sr-only">字幕样式</span>
           </button>
-          <ExportDropdown variant="primary" />
+          {/* Spec §4: one primary per screen — export lives in Act 3 (preview == export). */}
           <WorkflowContinueInFlow />
         </>
       ),
@@ -233,7 +232,7 @@ export const WorkbenchStep: React.FC = () => {
                     </div>
 
                     {profileStats && (
-                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-[var(--v4-text-muted)]">
+                      <div className="hidden flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-[var(--v4-text-muted)] sm:flex">
                         <span>
                           文本量{' '}
                           <strong className="font-semibold tabular-nums text-[var(--v4-text)]">
@@ -291,7 +290,7 @@ export const WorkbenchStep: React.FC = () => {
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-2 md:justify-end">
-                    <div className="ui-choice-group" role="tablist" aria-label="时间轴标记筛选">
+                    <div className="ui-choice-group max-md:w-full max-md:flex-nowrap max-md:overflow-x-auto" role="tablist" aria-label="时间轴标记筛选">
                       {MARK_FILTERS.map(item => (
                         <button
                           key={item.id}

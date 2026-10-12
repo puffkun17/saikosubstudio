@@ -153,7 +153,7 @@ export const SourceIdentityStrip: React.FC = () => {
           </div>
 
           {overview ? (
-            <p className="prose-serif text-[14.5px] leading-[1.75] text-[var(--v4-text)] md:text-[15px]">
+            <p className="source-identity-rail__overview ds-body prose-serif">
               {overview}
             </p>
           ) : null}
@@ -227,7 +227,7 @@ export const SourceIdentityStrip: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setTmdbManualOpen(true)}
-                className="ui-action w-full"
+                className="ui-action ui-action--secondary w-full"
               >
                 <Search className="h-4 w-4" aria-hidden="true" />
                 {rematchLabel}
@@ -239,7 +239,7 @@ export const SourceIdentityStrip: React.FC = () => {
               href="https://www.themoviedb.org/"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 flex w-full items-center justify-center gap-2 text-xs font-medium text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)]"
+              className="source-identity-rail__tmdb mt-3 flex w-full items-center justify-center gap-2 text-xs font-medium text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)]"
               title="This product uses the TMDB API but is not endorsed or certified by TMDB."
             >
               <span>Powered by</span>

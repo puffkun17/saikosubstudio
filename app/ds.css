@@ -132,3 +132,12 @@
 .episode-tabs__tab:disabled { opacity: .6; cursor: wait; }
 .episode-tabs__dot { width: 6px; height: 6px; border-radius: 999px; background: var(--surface-line-strong); }
 .episode-tabs__dot.is-done { background: var(--v5-accent-strong); }
+
+/* Import film card: on narrow screens a one-row strip (thumbnail + title + actions); synopsis hidden. */
+@media (max-width: 1023px) {
+  .source-identity-rail { flex-direction: row; height: auto; align-items: stretch; }
+  .source-identity-rail .source-identity-rail__poster { width: 72px; flex-shrink: 0; border-bottom: 0; border-right: 1px solid var(--surface-line); }
+  .source-identity-rail > div:last-child { padding: var(--ds-space-3); gap: var(--ds-space-2); min-width: 0; }
+  .source-identity-rail__overview { display: none; }
+  .source-identity-rail__tmdb { margin-top: var(--ds-space-1); justify-content: flex-start; }
+}

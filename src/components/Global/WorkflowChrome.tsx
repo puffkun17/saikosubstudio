@@ -177,7 +177,7 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
           className="workflow-info-bar"
         >
           <div className="workflow-info-bar__inner">
-            <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-4">
+            <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-4">
               {config.onBack && (
                 <button
                   type="button"
@@ -189,9 +189,9 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
                 </button>
               )}
               {/* 片名 + 年份锚点：年份紧跟片名，等宽数字体与 CJK 片名区分 */}
-              <div className="flex min-w-0 max-w-[min(52%,24rem)] shrink-0 items-baseline gap-2 md:max-w-[min(56%,28rem)] md:gap-2.5">
+              <div className="flex min-w-0 max-w-full shrink items-baseline gap-2 sm:max-w-[min(56%,28rem)] sm:shrink-0 md:gap-2.5">
                 <h2
-                  className="min-w-0 truncate text-[22px] font-semibold leading-none tracking-tight text-[var(--v4-text)] md:text-[26px]"
+                  className="ds-title min-w-0 truncate"
                   title={config.title}
                 >
                   {config.title}
@@ -208,7 +208,7 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
               </div>
               {/* 旁侧：静态元数据（非 chip / 非按钮） */}
               {(metaBadges.length > 0 || localChips.length > 0) && (
-                <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
+                <div className="hidden min-w-0 flex-1 flex-col justify-center gap-0.5 sm:flex">
                   {metaBadges.length > 0 && (
                     <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
                       {metaBadges.map((item) => (
@@ -230,7 +230,7 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
               )}
             </div>
             {config.actions && (
-              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 self-center">
+              <div className="flex shrink-0 flex-nowrap items-center justify-end gap-1.5 self-center sm:gap-2">
                 {config.actions}
               </div>
             )}
