@@ -261,7 +261,7 @@ export const TheaterStep: React.FC = () => {
 
           <div className="relative flex flex-wrap items-center justify-end gap-2">
             <TheaterSystemChrome dock={dock} onToggle={toggleDock} />
-            <DockToggle id="style" active={dock} onToggle={toggleDock} icon={<SlidersHorizontal className="h-4 w-4 stroke-[2]" aria-hidden="true" />} label="字幕样式" />
+            <DockToggle id="style" active={dock} onToggle={toggleDock} icon={<SlidersHorizontal className="h-4 w-4 stroke-[2]" aria-hidden="true" />} label="样式" />
             <DockToggle id="export" active={dock} onToggle={toggleDock} primary icon={<SquareArrowRightExit className="h-4 w-4" aria-hidden="true" />} label="导出字幕" />
           </div>
         </div>
@@ -343,8 +343,8 @@ export const TheaterStep: React.FC = () => {
             </header>
             <div className="ds-dock__body">
               {dock === 'style' && <StyleSidebar tone="theater" embedded />}
-              {dock === 'export' && <ExportPanel />}
-              {(dock === 'aspect' || dock === 'backdrop' || dock === 'preset') && <TheaterDockOptions panel={dock} />}
+              {dock === 'export' && <ExportPanel onOpenStyle={() => toggleDock('style')} />}
+              {(dock === 'aspect' || dock === 'backdrop') && <TheaterDockOptions panel={dock} />}
               {dock === 'backdrop' && tmdbBackdropList.length > 1 && (
                 <label className="ds-check ds-dock__group" title="按播放进度切换剧照">
                   <input type="checkbox" checked={slideshow} onChange={(e) => setSlideshow(e.target.checked)} />

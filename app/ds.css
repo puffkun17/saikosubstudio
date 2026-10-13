@@ -270,3 +270,14 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
   font-variant-numeric: tabular-nums; color: var(--v4-text); }
 .ds-slider__track { display: block; width: 100%; margin: 0; }
 .ds-slider__hint { font-size: 0.75rem; line-height: 1.4; color: var(--v4-text-muted); }
+
+/* 「样式」列表（v1.3 tokens）：行内上下 8、左右 12；字形与色块均为 20px 行盒 */
+.ds-style-list { --row-px: min(var(--ds-ctl-px), calc(var(--ds-pad-card) - 4px)); display: flex; flex-direction: column; gap: 2px; margin: 0 calc(-1 * var(--row-px)); }
+.ds-style-row { display: flex; align-items: stretch; border-radius: var(--radius-md); }
+.ds-style-row:hover { background: color-mix(in srgb, var(--v4-panel-raised) 60%, transparent); }
+.ds-style-row--on { background: var(--v4-panel-raised); color: var(--v4-accent-strong); }
+.ds-style-row__main { display: flex; flex: 1; min-width: 0; align-items: flex-start; gap: 10px; padding: var(--ds-gap-item) var(--row-px); text-align: left; cursor: pointer; }
+.ds-style-row__main > svg { margin-top: 2px; }
+.ds-style-row__swatch { width: 20px; height: 20px; flex-shrink: 0; border-radius: 6px; }
+.ds-style-row__del { display: grid; place-items: center; width: var(--ds-ctl-h); flex-shrink: 0; color: var(--v4-text-muted); border-radius: var(--radius-md); cursor: pointer; }
+.ds-style-row__del:hover { color: var(--v4-danger, #e5484d); }

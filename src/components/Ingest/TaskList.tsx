@@ -85,8 +85,6 @@ export const TaskList: React.FC = () => {
     setShowAssHint,
     foundAssStyle,
     customStyle,
-    setCustomStyle,
-    setActivePreset,
     addLog,
     alignmentMode,
     setAlignmentMode,
@@ -113,8 +111,6 @@ export const TaskList: React.FC = () => {
     setShowAssHint: state.setShowAssHint,
     foundAssStyle: state.foundAssStyle,
     customStyle: state.customStyle,
-    setCustomStyle: state.setCustomStyle,
-    setActivePreset: state.setActivePreset,
     addLog: state.addLog,
     alignmentMode: state.alignmentMode,
     setAlignmentMode: state.setAlignmentMode,
@@ -1027,8 +1023,8 @@ export const TaskList: React.FC = () => {
                         type="button"
                         className="ui-choice ui-choice--on"
                         onClick={() => {
-                          setCustomStyle({ ...customStyle, ...foundAssStyle } as StyleSettings);
-                          setActivePreset('ass_native');
+                          // 与第三幕「样式」列表同一入口：选中「源文件内嵌样式」这一项。
+                          useStudioStore.getState().applyStyleEntry('source');
                           setShowAssHint(false);
                           addLog('已采用 ASS 文件内嵌样式', 'success');
                         }}

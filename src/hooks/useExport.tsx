@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { applyOverridesToProfile } from '@/utils/previewStyle';
+import { useSelectedStyleEntry } from '@/components/Settings/StyleLibrary';
 import { useStudioStore, type CreditDeclaration } from '@/store/useStudioStore';
 import {
   appendCreatorCredit as appendCreatorCreditCue,
@@ -15,7 +16,6 @@ import {
   type SubtitleAttribution,
 } from '@/utils/subtitleCore';
 import {
-  ASS_PRESET_IDS,
   DEFAULT_NAMING_ID,
   EXPORT_PRESETS,
   NAMING_OPTIONS,
@@ -369,13 +369,19 @@ const describeBundle = (hdrCount: number, srtCount: number): string =>
  * 导出面板：放在剧场右侧停靠面板内（spec v1.1 §6），不再是浮层菜单，不遮挡预览。
  * 默认下载一个 ASS；勾选 SRT 附加项后改为打包下载 zip（本地生成）。
  */
-export const ExportPanel: React.FC = () => {
+export const ExportPanel: React.FC<{ onOpenStyle?: () => void }> = ({ onOpenStyle }) => {
   const [busy, setBusy] = useState(false);
   const { handleExport, isTraditional, secondaryLang } = useExport();
   const {
-    assPresetId, setAssPresetId, namingId, setNamingId, srtAddonIds, toggleSrtAddon,
+    assPresetId, namingId, setNamingId, srtAddonIds, toggleSrtAddon,
     hdrEnabled, setHdrEnabled, hdrLevelChoice, setHdrLevelChoice, hdrLevel, nameMode, setNameMode,
   } = useExportChoices();
+  const styleState = useStudioStore(useShallow((st) => ({
+    templates: st.customTemplates, source: st.foundAssStyle, active: st.activePreset,
+    base: st.customStyle, presetId: st.exportPresetId, overrides: st.styleOverrides,
+  })));
+  const { entry: styleEntry, tuned: styleTuned } = useSelectedStyleEntry(styleState.templates, styleState.source, styleState.active, styleState.base, styleState.presetId, styleState.overrides);
+  const styleName = `${styleEntry?.name ?? '自定义'}${styleTuned ? ' · 已微调' : ''}`;
   const exportBaseName = useExportBaseName(nameMode);
   const reviewItems = useExportReview();
   const jumpToRow = (row: number) => {
@@ -413,19 +419,14 @@ export const ExportPanel: React.FC = () => {
                 </div>
               </div>
               <div className="export-menu__grid">
-                <label className="min-w-0">
+                <div className="min-w-0">
                   <span className="ds-label">样式</span>
-                  <select
-                    className="ds-select"
-                    value={assPresetId}
-                    onChange={(event) => setAssPresetId(event.target.value as ExportPresetId)}
-                    aria-label="ASS 样式"
-                  >
-                    {ASS_PRESET_IDS.map((id) => (
-                      <option key={id} value={id}>{EXPORT_PRESETS[id].label}</option>
-                    ))}
-                  </select>
-                </label>
+                  {/* 样式只在「样式」面板里选；这里只显示，避免两处各选一份。 */}
+                  <button type="button" className="ds-select flex items-center justify-between gap-2" onClick={onOpenStyle} data-testid="export-style-link" title="在「样式」面板中更改">
+                    <span className="truncate">{styleName}</span>
+                    <span className="ds-meta shrink-0">更改</span>
+                  </button>
+                </div>
                 <label className="min-w-0">
                   <span className="ds-label">语言后缀</span>
                   <select

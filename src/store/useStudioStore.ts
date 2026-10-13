@@ -12,7 +12,7 @@ import { detectLanguageByContent } from '../utils/subtitleCore';
 import { mergeWorkerAvailable, runMergeJob, runMergeJobInThread } from '../core/mergeClient';
 import type { MergeJobEvent, MergeJobInput, MergeJobResult } from '../core/mergeJob';
 import type { AlignmentFallbackInfo } from '../utils/subtitleCore';
-import { resolveEffectiveStyle } from '../utils/previewStyle';
+import { entryTarget, listStyleEntries, snapshotForSave, stripContent, type StyleTemplateRecord } from '../utils/styleLibrary';
 import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity, isMainPathSecondaryLanguage, isEnglishSecondaryLanguage, isLatinSecondaryLanguage, mainPathPrimaryRank, mainPathSecondaryRank, estimateSubtitleCueCount, isSparseSecondaryTrack, measureMergeOrphanRate, isSdhOrCcSubtitleFilename } from '../utils/subtitleCore';
 import { assessTvYearFit, parseSeasonNumber, parseYearToken, shouldDemoteBySeasonSpan } from '../utils/tmdbCandidateFit';
 import { estimateJsonBytes, readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
@@ -188,11 +188,7 @@ type TmdbConfirmationDecision = {
   reasons: string[];
 };
 
-type CustomTemplate = {
-  id: string;
-  name: string;
-  styles: StyleSettings;
-};
+type CustomTemplate = StyleTemplateRecord;
 
 type SubtitleEditRecord = {
   index: number;
@@ -299,7 +295,9 @@ export interface StudioState {
   setTmdbBackdrop: (url: string | null) => void;
   setIsTemplateLab: (val: boolean) => void;
   setCustomStyle: (style: StyleSettings) => void;
-  saveCustomTemplate: (name: string) => void;
+  saveCustomTemplate: (name: string, opts?: { styles: Partial<StyleSettings>; source?: StyleTemplateRecord['source'] }) => void;
+  /** Select an entry of the unified 「样式」 list (fixed preset, saved, imported, source). Also used for 重置. */
+  applyStyleEntry: (id: string) => void;
   deleteCustomTemplate: (id: string) => void;
   setPreviewIndex: (idx: number) => void;
   setLocateGroupIndexes: (indexes: number[]) => void;
@@ -645,12 +643,25 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set({ customStyle });
     persistStyles(get());
   },
-  saveCustomTemplate: (name) => {
-    set((state) => {
-      const newTemplate = { id: `tpl_${Date.now()}`, name, styles: resolveEffectiveStyle(state.customStyle, state.exportPresetId, state.styleOverrides) };
-      const newTemplates = [...state.customTemplates, newTemplate];
-      return { customTemplates: newTemplates, activePreset: newTemplate.id };
-    });
+  saveCustomTemplate: (name, opts) => {
+    const state = get();
+    const snap = opts
+      ? { presetId: 'current' as ExportPresetId, styles: stripContent(opts.styles) }
+      : snapshotForSave(state.customStyle, state.exportPresetId, state.styleOverrides);
+    const newTemplate: CustomTemplate = { id: `tpl_${Date.now()}`, name, ...snap, source: opts?.source ?? 'saved' };
+    set({ customTemplates: [...state.customTemplates, newTemplate] });
+    get().applyStyleEntry(newTemplate.id);
+  },
+  applyStyleEntry: (id) => {
+    const state = get();
+    const entry = listStyleEntries(state.customTemplates, state.foundAssStyle).find((e) => e.id === id);
+    if (!entry) return;
+    const target = entryTarget(entry, state.customStyle);
+    set({ ...target, activePreset: id });
+    try {
+      localStorage.setItem('saiko_export_preset', target.exportPresetId);
+      localStorage.setItem('saiko_style_overrides', JSON.stringify(target.styleOverrides));
+    } catch { /* ignore */ }
     persistStyles(get());
   },
   deleteCustomTemplate: (id) => {
