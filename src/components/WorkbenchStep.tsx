@@ -7,9 +7,9 @@ import { SequenceList } from '@/components/Workbench/SequenceList';
 import { EpisodeTabs } from '@/components/Workbench/EpisodeTabs';
 import { SourceMatchPanel, type InspectionMarkFilter } from '@/components/Workbench/SourceMatchPanel';
 import { InspectionMarkGlyph, MARK_FILTERS, MARK_LABEL } from '@/components/Workbench/inspectionMarks';
-import { StyleSidebar } from '@/components/Settings/StyleSidebar';
+import { AuxiliaryPolicy } from '@/components/Workbench/AuxiliaryPolicy';
 import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
-import { SlidersHorizontal } from 'lucide-react';
+
 import { MergeReviewModal } from '@/components/Workbench/MergeReviewModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { analyzeAlignmentDiff, buildMergeReviewQueue } from '@/utils/timeline/alignmentDiff';
@@ -134,16 +134,6 @@ export const WorkbenchStep: React.FC = () => {
       },
       actions: (
         <>
-          <button
-            type="button"
-            className={isSettingsOpen ? 'ui-action' : 'ui-action ui-action--secondary'}
-            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-            title="调整字幕样式"
-            aria-pressed={isSettingsOpen}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            <span className="max-sm:sr-only">字幕样式</span>
-          </button>
           {/* Spec §4: one primary per screen — export lives in Act 3 (preview == export). */}
           <WorkflowContinueInFlow />
         </>
@@ -309,6 +299,10 @@ export const WorkbenchStep: React.FC = () => {
                 </div>
 
                 <div className="border-t border-[var(--v4-line)]">
+                  <AuxiliaryPolicy />
+                </div>
+
+                <div className="border-t border-[var(--v4-line)]">
                   <SourceMatchPanel
                     rows={processedSubs}
                     onTimelineDurationChange={setSourceDurationMs}
@@ -323,31 +317,7 @@ export const WorkbenchStep: React.FC = () => {
           </div>
         </div>
 
-        <AnimatePresence>
-          {isSettingsOpen && (
-            <>
-              <motion.button
-                type="button"
-                aria-label="关闭样式参数"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 z-40 bg-black/55 lg:hidden"
-                onClick={() => setIsSettingsOpen(false)}
-              />
-              <motion.aside
-                aria-label="样式参数"
-                initial={{ x: 360, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: 360, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="v4-panel absolute inset-y-4 right-4 z-50 flex w-[min(390px,calc(100vw-2rem))] flex-col overflow-hidden lg:relative lg:inset-auto lg:z-20 lg:my-6 lg:mr-6 lg:w-[390px] lg:shrink-0"
-              >
-                <StyleSidebar />
-              </motion.aside>
-            </>
-          )}
-        </AnimatePresence>
+
       </div>
 
       <MergeReviewModal
