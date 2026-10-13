@@ -2279,3 +2279,17 @@ button {
     overflow: visible !important;
   }
 }
+
+/* 复核「已核对」开关：关 = 空框描边；开 = 实心强调色 + ✓，一眼区分 */
+.review-check__box {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 3px;
+  border: 1.5px solid currentColor;
+  opacity: 0.7;
+}
+.review-check--on {
+  background: var(--v4-accent);
+  border-color: var(--v4-accent);
+  color: var(--v4-on-accent, #fff);
+}

@@ -36,3 +36,10 @@ export const arrayIndexOfLine = (rows: { index?: number }[], line: number): numb
   const hit = rows.findIndex((row, i) => lineNumberOf(row, i) === line);
   return hit;
 };
+
+/** 「486 行 · 合并 572 行」：按辅助字幕策略的实际导出行数 + 合并总数（未隐去时只显示总数）。 */
+export function lineCountLabel(rows: RowLike[] | null | undefined, mode: AuxiliarySubtitleMode): string {
+  const total = rows?.length ?? 0;
+  const hidden = rows ? countHiddenByPolicy(rows, mode) : 0;
+  return hidden > 0 ? `${total - hidden} 行 · 合并 ${total} 行` : `${total} 行`;
+}

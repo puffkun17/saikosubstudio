@@ -942,7 +942,7 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
     const acceptedCount = queuedItems.filter((item) => item.accepted).length;
     const disabled = acceptedCount === 0 || Boolean(queueIssue);
     setForwardAction({
-      label: '下一步',
+      label: '整理文件',
       disabled,
       ready: !disabled,
       disabledReason: queueIssue || '清单中暂无可整理的字幕文件，移除无效项或补充文件后继续。',

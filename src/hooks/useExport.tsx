@@ -36,6 +36,7 @@ import { buildMergeReviewQueue } from '@/utils/timeline/alignmentDiff';
 import { REVIEW_CODE_TABLE, deriveExportReview, reviewLabel } from '@/core/exportReview';
 import { arrayIndexOfLine, lineNumberOf } from '@/core/lineKinds';
 import { reviewTaskKey } from '@/core/reviewKey';
+import { lineCountLabel } from '@/core/lineKinds';
 import { reviewNoticeMessage, reviewNoticeTitle } from '@/components/Global/ReviewNoticeSync';
 import { applyCreditPlan, buildClosingCreditLines, classifyCreditCue, planCredits } from '@/core/credits';
 import type { NamingMode } from '@/core/taskModel';
@@ -377,6 +378,8 @@ export const ExportPanel: React.FC<{ onOpenStyle?: () => void }> = ({ onOpenStyl
     st.setJumpLineVal(String(line));
   };
   const plan = planExportBundle(exportBaseName, namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel, secondary: secondaryLang });
+  const exportRows = useStudioStore((st) => st.processedSubs);
+  const exportAuxMode = useStudioStore((st) => st.customStyle.auxiliaryMode || 'keep');
   const planHdrCount = plan.files.filter((file) => file.hdr).length;
   const planSrtCount = plan.files.filter((file) => file.format === 'srt').length;
   const bundled = Boolean(plan.zipName);
@@ -478,13 +481,12 @@ export const ExportPanel: React.FC<{ onOpenStyle?: () => void }> = ({ onOpenStyl
               <div className="export-menu__review">
                 <p className="ds-label">
                   复核提示（不影响导出）
-                  <span className="ds-info" title={REVIEW_CODE_TABLE.map(([code, label]) => `${code} ${label}`).join('\n')} aria-label="复核代码表">ⓘ</span>
+                  <span className="ds-info" title={REVIEW_CODE_TABLE.map(([code, label]) => `${code} ${label}`).join('\n')} aria-label="复核提示说明">ⓘ</span>
                 </p>
                 <ul className="mt-1 grid gap-1">
                   {reviewItems.map((item) => (
-                    <li key={item.code} className="ds-meta flex flex-wrap items-baseline gap-x-1.5">
-                      <span className="ds-mono font-semibold text-[var(--ds-ink-2)]">{item.code}</span>
-                      <span className="min-w-0">{reviewLabel(item.code)}</span>
+                    <li key={item.code} className="ds-meta flex flex-wrap items-baseline gap-x-1.5" title={item.code} data-review-code={item.code}>
+                      <span className="min-w-0 font-medium text-[var(--ds-ink-2)]">{reviewLabel(item.code)}</span>
                       {(item.cues ?? []).slice(0, 3).map((row) => (
                         <button key={row} type="button" className="underline decoration-dotted hover:text-[var(--v5-accent-strong)]" onClick={() => jumpToRow(row)}>
                           第 {row} 行
@@ -521,6 +523,7 @@ export const ExportPanel: React.FC<{ onOpenStyle?: () => void }> = ({ onOpenStyl
                   <span className="ds-meta ds-mono block truncate">
                     {plan.zipName ?? plan.files[0].filename}
                   </span>
+                  <span className="ds-meta block" data-testid="export-line-count">{lineCountLabel(exportRows, exportAuxMode)}</span>
                 </span>
               </button>
             </div>

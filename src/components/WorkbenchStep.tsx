@@ -9,7 +9,7 @@ import { SourceMatchPanel, type InspectionMarkFilter } from '@/components/Workbe
 import { InspectionMarkGlyph, MARK_FILTERS, MARK_LABEL } from '@/components/Workbench/inspectionMarks';
 import { AuxiliaryPolicy } from '@/components/Workbench/AuxiliaryPolicy';
 import { CreditPanel } from '@/components/Workbench/CreditPanel';
-import { countLineKinds } from '@/core/lineKinds';
+import { countLineKinds, lineCountLabel } from '@/core/lineKinds';
 import { taskDisplayTitle } from '@/store/useStudioStore';
 import { reviewTaskKey } from '@/core/reviewKey';
 import { reviewNoticeMessage, reviewNoticeTitle } from '@/components/Global/ReviewNoticeSync';
@@ -40,6 +40,7 @@ export const WorkbenchStep: React.FC = () => {
     setStatusNotice,
     filenameEpKey,
     activeTaskTitle,
+    auxMode,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     customFilename: state.customFilename,
@@ -52,6 +53,7 @@ export const WorkbenchStep: React.FC = () => {
     mergeReviewCheckedByTask: state.mergeReviewCheckedByTask,
     setStatusNotice: state.setStatusNotice,
     filenameEpKey: state.filenameEpKey,
+    auxMode: state.customStyle.auxiliaryMode || 'keep',
     activeTaskTitle: state.tasks.find((t) => t.id === state.selectedTaskId)?.title ?? '',
   })));
   const { setInfoBar, setForwardAction } = useWorkflowChrome();
@@ -97,6 +99,7 @@ export const WorkbenchStep: React.FC = () => {
   const creditCount = lineKinds.credit;
   const soundCount = lineKinds.sound;
   const narrationCount = lineKinds.narration;
+  const markCount = (kind: string) => (kind === 'screen' ? screenCount : kind === 'sound' ? soundCount : kind === 'lyrics' ? lyricsCount : kind === 'credit' ? creditCount : 1);
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -113,17 +116,12 @@ export const WorkbenchStep: React.FC = () => {
       title: tmdbData?.title || customFilename || '字幕调校',
       year: tmdbData?.year || undefined,
       localChips: [
-        `${processedSubs?.length || 0} 行`,
+        lineCountLabel(processedSubs, auxMode),
         taskDisplayTitle(tmdbData, filenameEpKey) || activeTaskTitle || '未命名字幕',
         tmdbData ? undefined : '未匹配',
       ].filter((item): item is string => Boolean(item)),
-      onBack: () => {
-        if (processedSubs && processedSubs.length > 0) {
-          setShowBackConfirm(true);
-        } else {
-          setWorkflowStep(1);
-        }
-      },
+      // 返回导入只切换页面：保留合轴结果与导入设置（含「原创」），重新「开始合轴」才会覆盖。
+      onBack: () => setWorkflowStep(1),
       actions: (
         <>
           {/* Spec §4: one primary per screen — export lives in Act 3 (preview == export). */}
@@ -132,7 +130,7 @@ export const WorkbenchStep: React.FC = () => {
       ),
     });
     return () => setInfoBar(null);
-  }, [processedSubs, customFilename, filenameEpKey, activeTaskTitle, isSettingsOpen, tmdbData, setInfoBar, setIsSettingsOpen, setWorkflowStep]);
+  }, [processedSubs, auxMode, customFilename, filenameEpKey, activeTaskTitle, isSettingsOpen, tmdbData, setInfoBar, setIsSettingsOpen, setWorkflowStep]);
 
   useEffect(() => {
     const hasTimeline = Boolean(processedSubs && processedSubs.length > 0);
@@ -276,7 +274,7 @@ export const WorkbenchStep: React.FC = () => {
 
                   <div className="flex flex-wrap items-center justify-between gap-2 md:justify-end">
                     <div className="ui-choice-group max-md:w-full max-md:flex-nowrap max-md:overflow-x-auto" role="tablist" aria-label="时间轴标记筛选">
-                      {MARK_FILTERS.map(item => (
+                      {MARK_FILTERS.filter(item => !item.kind || item.kind === 'structure' || markCount(item.kind) > 0).map(item => (
                         <button
                           key={item.id}
                           type="button"

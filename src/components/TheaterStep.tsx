@@ -157,10 +157,17 @@ export const TheaterStep: React.FC = () => {
   useEffect(() => {
     try { setCoachSeen(localStorage.getItem('saiko_coach_special') === '1'); } catch { /* private mode */ }
   }, []);
-  const dismissCoach = () => {
+  const dismissCoach = React.useCallback(() => {
     setCoachSeen(true);
     try { localStorage.setItem('saiko_coach_special', '1'); } catch { /* ignore */ }
-  };
+  }, []);
+  // 首次提示不常驻：8 秒后或第一次选类别后自动收起，并记住。
+  useEffect(() => {
+    if (coachSeen) return;
+    const t = window.setTimeout(dismissCoach, 8000);
+    return () => window.clearTimeout(t);
+  }, [coachSeen, dismissCoach]);
+  useEffect(() => { if (specialKind && !coachSeen) dismissCoach(); }, [specialKind, coachSeen, dismissCoach]);
 
   // 进入关灯时给短提示；开灯或卸载时清掉。
   useEffect(() => {
@@ -340,7 +347,8 @@ export const TheaterStep: React.FC = () => {
               )}
               {!coachSeen && (
                 <p className="ds-coach" role="note">
-                  选择类别可定位特殊行，用 ‹ › 逐处查看。
+                  <span className="max-md:hidden">选择类别可定位特殊行，用 ‹ › 逐处查看。</span>
+                  <span className="md:hidden">点类别定位，‹ › 翻看</span>
                   <button type="button" className="ds-coach__close" aria-label="不再提示" onClick={dismissCoach}>知道了</button>
                 </p>
               )}

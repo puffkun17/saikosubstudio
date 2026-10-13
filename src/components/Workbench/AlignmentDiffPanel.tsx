@@ -191,7 +191,6 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
   const checkedIdList = useStudioStore((state) => state.mergeReviewCheckedByTask[taskKey] ?? EMPTY_CHECKED_IDS);
   const checkedIds = useMemo(() => new Set(checkedIdList), [checkedIdList]);
   const toggleMergeReviewChecked = useStudioStore((state) => state.toggleMergeReviewChecked);
-  const markMergeReviewChecked = useStudioStore((state) => state.markMergeReviewChecked);
   const setPreviewIndex = useStudioStore((state) => state.setPreviewIndex);
   const setLocateGroupIndexes = useStudioStore((state) => state.setLocateGroupIndexes);
   const setJumpLineVal = useStudioStore((state) => state.setJumpLineVal);
@@ -244,7 +243,7 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
     const first = indexes[0] ?? 0;
     setActiveItemId(item.id);
     setPreviewIndex(first);
-    setJumpLineVal(String(first + 1));
+    setJumpLineVal(String(rows[first]?.index ?? first + 1));
     setLocateGroupIndexes(indexes.length > 1 ? indexes : []);
     if (first >= 100 && !showAllSubs) setShowAllSubs(true);
   };
@@ -261,15 +260,6 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
     toggleMergeReviewChecked(taskKey, id);
   };
 
-  const markCheckedAndMaybeNext = (id: string) => {
-    markMergeReviewChecked(taskKey, id);
-    const idx = items.findIndex(item => item.id === id);
-    if (idx >= 0 && idx < items.length - 1) {
-      const item = items[idx + 1];
-      setActiveItemId(item.id);
-      handleLocate(item);
-    }
-  };
 
   const chipCount = (id: MergeReviewFilter) => {
     if (id === 'all') return queue.total;
@@ -479,15 +469,29 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
                         来源
                       </button>
                     )}
+                    {/* 只切换状态，不定位、不滚动时间轴；每次点击都在 store 内原子切换。 */}
                     <button
                       type="button"
-                      onClick={() => (isChecked ? toggleChecked(item.id) : markCheckedAndMaybeNext(item.id))}
-                      className={isChecked ? 'ui-action' : 'ui-action ui-action--quiet'}
-                      title={isChecked ? '取消已核对' : '标记已核对并跳到下一项'}
+                      role="switch"
+                      aria-checked={isChecked}
+                      onClick={(event) => { event.stopPropagation(); toggleChecked(item.id); }}
+                      className={`ui-action review-check ${isChecked ? 'review-check--on' : 'ui-action--quiet'}`}
+                      title={isChecked ? '已核对，点「撤销」取消' : '标记为已核对'}
+                      data-testid="review-check"
                     >
-                      <Check className="h-3 w-3" />
-                      已核对
+                      {isChecked ? <Check className="h-3 w-3" /> : <span className="review-check__box" aria-hidden="true" />}
+                      {isChecked ? '已核对' : '标记已核对'}
                     </button>
+                    {isChecked && (
+                      <button
+                        type="button"
+                        className="ui-action ui-action--quiet text-[var(--v4-text-muted)] underline underline-offset-2"
+                        onClick={(event) => { event.stopPropagation(); toggleChecked(item.id); }}
+                        data-testid="review-undo"
+                      >
+                        撤销
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {

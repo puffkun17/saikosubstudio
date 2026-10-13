@@ -6,6 +6,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { classifyLineKind } from '@/core/lineKinds';
 import { InfoHint } from '@/components/ui/InfoHint';
+import { OriginalConfirmDialog } from '@/components/Ingest/OriginalConfirmDialog';
 
 /**
  * 署名（内容，不是样式）：时间点始终保持原样。
@@ -23,7 +24,9 @@ export const CreditPanel: React.FC = () => {
     setCreatorCredit: state.setCreatorCredit,
     editSubtitleText: state.editSubtitleText,
     setProcessedSubs: state.setProcessedSubs,
+    setIsOriginalWork: state.setIsOriginalWork,
   })));
+  const [confirming, setConfirming] = React.useState(false);
   const credits = React.useMemo(() => (s.processedSubs ?? []).filter((row) => classifyLineKind(row) === 'credit'), [s.processedSubs]);
   const editable = s.isOriginalWork;
   if (credits.length === 0 && !editable) return null;
@@ -48,7 +51,20 @@ export const CreditPanel: React.FC = () => {
           {!editable && <Lock className="h-3 w-3" aria-hidden="true" />}
           {status}
         </span>
+        {!s.isOfficialSubtitle && (
+          <button
+            type="button"
+            className="ui-action ui-action--quiet ml-auto min-h-8 px-[var(--ds-ctl-px-sm)] text-xs"
+            onClick={() => (editable ? s.setIsOriginalWork(false) : setConfirming(true))}
+            data-testid="credit-original-toggle"
+          >
+            {editable ? '取消原创' : '设为原创'}
+          </button>
+        )}
       </div>
+      {confirming && (
+        <OriginalConfirmDialog onCancel={() => setConfirming(false)} onConfirm={() => { s.setIsOriginalWork(true); setConfirming(false); }} />
+      )}
       {credits.length > 0 ? (
         <ul className="grid gap-[var(--ds-gap-item)]">
           {credits.map((row) => (

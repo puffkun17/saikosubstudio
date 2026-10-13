@@ -365,7 +365,7 @@ export const TaskList: React.FC = () => {
     ? '正在准备…'
     : needsTitleInput
       ? '跳过匹配'
-      : '下一步';
+      : '开始合轴';
 
   useEffect(() => {
     if (!activeTask) {
