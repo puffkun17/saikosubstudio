@@ -1,4 +1,4 @@
-import type { SubRow } from '../utils/subtitleCore';
+import { classifyLineKind, type SubRow } from '../utils/subtitleCore';
 
 /** Special-line kinds the preview can jump between (spec: slideshow preview). */
 export type SpecialKind = 'long' | 'lyrics' | 'sign' | 'sdh';
@@ -13,10 +13,12 @@ export const SPECIAL_LABEL: Record<SpecialKind, string> = {
 const LONG_ZH_CHARS = 22;
 
 export function specialKindOf(row: Pick<SubRow, 'text' | 'type' | 'cueKind' | 'auxiliary'>): SpecialKind | null {
-  if (row.type === 'lyrics' || row.cueKind === 'lyrics') return 'lyrics';
-  const cat = row.auxiliary?.category;
-  if (row.cueKind === 'screen_text' || cat === 'screen_text') return 'sign';
-  if (row.cueKind === 'sound_caption' || cat === 'ambient_sdh' || cat === 'semantic_sdh' || cat === 'music') return 'sdh';
+  // Same classifier as every other count (core/lineKinds): 署名 > 歌词 > 音效 > 标题告示 > 旁白 > 对白.
+  const kind = classifyLineKind(row);
+  if (kind === 'lyrics') return 'lyrics';
+  if (kind === 'screen') return 'sign';
+  if (kind === 'sound') return 'sdh';
+  if (kind !== 'dialogue') return null;
   const first = (row.text || '').replace(/\\N/gi, '\n').split('\n')[0] || '';
   if (first.replace(/\{[^}]*\}/g, '').length > LONG_ZH_CHARS) return 'long';
   return null;

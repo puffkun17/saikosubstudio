@@ -9,13 +9,10 @@ import {
   ImageOff,
   Maximize2,
   RectangleHorizontal,
-  Sparkles,
   Square,
   StretchHorizontal,
   Shuffle,
 } from 'lucide-react';
-import { ASS_PRESET_IDS, EXPORT_PRESETS } from '@/utils/exportPresets';
-import { HDR_LEVEL_ORDER, HDR_LEVELS_PROVISIONAL } from '@/utils/hdrPresets';
 
 const ASPECT_RATIOS = [
   { id: '4:3', label: '4:3', description: '标准', icon: <Square className="h-4 w-4 stroke-[2]" aria-hidden="true" /> },
@@ -24,13 +21,12 @@ const ASPECT_RATIOS = [
   { id: '1.9:1', label: 'IMAX', description: '1.90:1', icon: <Maximize2 className="h-4 w-4 stroke-[2]" aria-hidden="true" /> },
 ];
 
-export type TheaterDockId = 'aspect' | 'backdrop' | 'preset' | 'style' | 'export';
+export type TheaterDockId = 'aspect' | 'backdrop' | 'style' | 'export';
 
 export const DOCK_TITLES: Record<TheaterDockId, string> = {
   aspect: '画幅',
   backdrop: '剧照',
-  preset: '样式预设',
-  style: '样式参数',
+  style: '样式',
   export: '导出字幕',
 };
 
@@ -115,16 +111,14 @@ export const TheaterSystemChrome: React.FC<{
         icon={tmdbBackdrop ? <ImageIcon className="h-4 w-4 stroke-[2]" aria-hidden="true" /> : <ImageOff className="h-4 w-4 stroke-[2]" aria-hidden="true" />}
         label="剧照"
       />
-      <DockToggle id="preset" active={dock} onToggle={onToggle} icon={<Sparkles className="h-4 w-4 stroke-[2]" aria-hidden="true" />} label="样式预设" />
     </div>
   );
 };
 
-/** 停靠面板内容：画幅 / 剧照 / 样式预设。选中即生效，面板保持打开以便对照画面。 */
-export const TheaterDockOptions: React.FC<{ panel: 'aspect' | 'backdrop' | 'preset' }> = ({ panel }) => {
+/** 停靠面板内容：画幅 / 剧照（样式与显示亮度在「样式」面板）。选中即生效，面板保持打开以便对照画面。 */
+export const TheaterDockOptions: React.FC<{ panel: 'aspect' | 'backdrop' }> = ({ panel }) => {
   const {
     theaterAspect, setTheaterAspect, tmdbBackdrop, tmdbBackdropList, setTmdbBackdrop, shuffleBackdrop,
-    exportPresetId, setExportPresetId, hdrEnabled, hdrLevel, setHdr,
   } = useStudioStore(useShallow((state) => ({
     theaterAspect: state.theaterAspect,
     setTheaterAspect: state.setTheaterAspect,
@@ -132,11 +126,6 @@ export const TheaterDockOptions: React.FC<{ panel: 'aspect' | 'backdrop' | 'pres
     tmdbBackdropList: state.tmdbBackdropList,
     setTmdbBackdrop: state.setTmdbBackdrop,
     shuffleBackdrop: state.shuffleBackdrop,
-    exportPresetId: state.exportPresetId,
-    setExportPresetId: state.setExportPresetId,
-    hdrEnabled: state.hdrEnabled,
-    hdrLevel: state.hdrLevel,
-    setHdr: state.setHdr,
   })));
   const hasBackdropPool = tmdbBackdropList.length > 0;
   const canShuffleBackdrop = tmdbBackdropList.length > 1;
@@ -174,17 +163,5 @@ export const TheaterDockOptions: React.FC<{ panel: 'aspect' | 'backdrop' | 'pres
       </div>
     );
   }
-  return (
-    <div className="ds-dock__list" aria-label="样式预设">
-      <p className="ds-label ds-dock__group">字幕样式</p>
-      {ASS_PRESET_IDS.map((id) => (
-        <MenuItem key={id} active={exportPresetId === id} icon={<Sparkles className="h-4 w-4 stroke-[2]" aria-hidden="true" />} title={EXPORT_PRESETS[id].label} onClick={() => setExportPresetId(id)} />
-      ))}
-      <p className="ds-label ds-dock__group">显示亮度</p>
-      <MenuItem active={!hdrEnabled} icon={<span className="text-xs font-semibold">SDR</span>} title="SDR" description="普通屏幕" onClick={() => setHdr(false)} />
-      {HDR_LEVEL_ORDER.map((id) => (
-        <MenuItem key={id} active={hdrEnabled && hdrLevel === id} icon={<span className="text-xs font-semibold">HDR</span>} title={`HDR · ${HDR_LEVELS_PROVISIONAL[id].label}`} onClick={() => setHdr(true, id)} />
-      ))}
-    </div>
-  );
+  return null;
 };

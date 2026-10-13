@@ -434,7 +434,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                               if (e.key === 'Escape') cancelEditing();
                             }}
                             className="w-full rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-1.5 text-xs font-normal leading-relaxed text-[var(--v4-text-muted)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]"
-                            placeholder="原文字幕文本"
+                            placeholder="副字幕文本"
                           />
                         )}
                         <div className="mt-1 flex justify-end gap-2">

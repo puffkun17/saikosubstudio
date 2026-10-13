@@ -189,6 +189,8 @@ export interface StyleSettings {
   marginV: number;
   resolution?: '1080p' | '4K' | 'SD';
   aspectRatio?: '16:9' | '4:3' | '2.39:1' | '1.9:1';
+  /** 署名行在画面上的位置（样式）：居中（默认）/ 底部 / 顶部。时间点不受影响。 */
+  creditPosition?: 'center' | 'bottom' | 'top';
   globalScale?: number;
   lyricFontSize?: number;
   lyricColor?: string;
@@ -2279,24 +2281,43 @@ export function appendCreatorCredit(
   }];
 }
 
-const shouldKeepSubtitleForAuxiliaryMode = (sub: SubRow, mode: AuxiliarySubtitleMode): boolean => {
-  if (mode === 'keep') return true;
-  // 歌词正文（含译词合并行）不因 music 辅助类被 smart/clean 剥掉。
-  if (sub.type === 'lyrics' || sub.cueKind === 'lyrics' || isLyricText(sub.text)) return true;
-  // 署名信息默认不进观看轨
-  if (sub.type === 'credit' || sub.cueKind === 'credit' || isSubtitleCreditText(sub.text)) {
-    return false;
+/** 特殊行分类（唯一来源，优先级：署名 > 歌词 > 音效 > 标题告示 > 旁白 > 对白）。 */
+/** 署名位置 → ASS/SRT \\an 对齐（numpad）。 */
+export const CREDIT_ALIGN = { center: 5, bottom: 2, top: 8 } as const;
+
+export type LineKind = 'credit' | 'lyrics' | 'sound' | 'screen' | 'narration' | 'dialogue';
+type LineKindRow = Pick<SubRow, 'text'> & Partial<Pick<SubRow, 'type' | 'cueKind' | 'auxiliary'>>;
+
+export function classifyLineKind(row: LineKindRow): LineKind {
+  const category = row.auxiliary?.category;
+  if (row.type === 'credit' || row.cueKind === 'credit' || isSubtitleCreditText(row.text)) return 'credit';
+  if (row.type === 'lyrics' || row.cueKind === 'lyrics' || isLyricText(row.text)) return 'lyrics';
+  if (row.cueKind === 'sound_caption' || category === 'ambient_sdh' || category === 'music' || category === 'semantic_sdh') return 'sound';
+  if (row.cueKind === 'screen_text' || category === 'screen_text') return 'screen';
+  if (row.cueKind === 'narration' || row.cueKind === 'commentary' || category === 'speech_context' || category === 'unknown') return 'narration';
+  return 'dialogue';
+}
+
+/**
+ * Does the auxiliary policy hide this line? Credits are owned by the credits plan (never by the
+ * policy), lyrics and dialogue are never hidden. 智能 hides only ambient / music SDH, so it can
+ * never hide more than the 音效 count.
+ */
+export function isHiddenByPolicy(row: LineKindRow, mode: AuxiliarySubtitleMode): boolean {
+  if (mode === 'keep') return false;
+  const kind = classifyLineKind(row);
+  const category = row.auxiliary?.category;
+  if (kind === 'sound') {
+    if (mode === 'smart') return category === 'ambient_sdh' || category === 'music';
+    return Boolean(category) && category !== 'semantic_sdh';
   }
-  const category = sub.auxiliary?.category;
-  if (!category) return true;
-  if (mode === 'clean') {
-    return category === 'screen_text' || category === 'semantic_sdh' || category === 'speech_context';
+  if (mode === 'clean' && kind === 'narration') {
+    return Boolean(category) && category !== 'semantic_sdh' && category !== 'speech_context' && category !== 'screen_text';
   }
-  if (mode === 'smart') {
-    return category !== 'ambient_sdh' && category !== 'music';
-  }
-  return true;
-};
+  return false;
+}
+
+const shouldKeepSubtitleForAuxiliaryMode = (sub: SubRow, mode: AuxiliarySubtitleMode): boolean => !isHiddenByPolicy(sub, mode);
 
 export function applyAuxiliarySubtitleMode(subs: SubRow[], mode: AuxiliarySubtitleMode = 'keep', alwaysKeep?: (sub: SubRow) => boolean): SubRow[] {
   return subs
@@ -2431,7 +2452,10 @@ export function generateSrtContent(subs: SubRow[], styleSettings?: StyleSettings
       const cleanText = text.replace(/<\/?i>/g, '');
       text = `<i>${cleanText}</i>`;
     }
-    if (srt.keepAn8 && isTopPlacedCue(s)) text = `{\\an8}${text}`;
+    // SRT 默认不加对齐（兼容旧版）；用户在「样式 · 署名」里选过位置才写 \\an。
+    const creditPos = styleSettings?.creditPosition;
+    if (creditPos && creditPos !== 'bottom' && classifyLineKind(s) === 'credit') text = `{\\an${CREDIT_ALIGN[creditPos]}}${text}`;
+    else if (srt.keepAn8 && isTopPlacedCue(s)) text = `{\\an8}${text}`;
     return `${s.index}\n${s.ts}\n${text}`;
   }).join("\n\n") + "\n";
 }
@@ -2610,7 +2634,7 @@ ${safeOriginal ? `Original Script: ${safeOriginal}\n` : ''}${creditFieldLines}${
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 ${dialogueStyles}
 Style: Note,${auxZhFont},${mNoteFont},${assWhitePrimary},&H000000FF,&H0000FBFF,&H00000000,0,0,0,0,100,100,0,0,1,${mOutline},${shadow},8,${mBaseMargin},${mBaseMargin},${mMarginV},1
-Style: Credit,${auxZhFont},${mNoteFont},${assZhColor},&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,${mOutline},${shadow},5,${mBaseMargin},${mBaseMargin},${mMarginV},1
+Style: Credit,${auxZhFont},${mNoteFont},${assZhColor},&H00000000,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,${mOutline},${shadow},${CREDIT_ALIGN[styleSettings?.creditPosition ?? 'center']},${mBaseMargin},${mBaseMargin},${mMarginV},1
 Style: Lyrics,${auxZhFont},${mLyricFont},${assLyricColor},&H00000000,&H00000000,&H00000000,0,${lyricItalic ? 1 : 0},0,0,100,100,0,0,1,${mOutline},${shadow},${lyricPosition === 'top' ? 8 : 2},${mBaseMargin},${mBaseMargin},${lyricPosition === 'top' ? Math.floor(mMarginV * 0.8) : mMarginV},1
 Style: Lyrics_EN,${auxEnFont},${mLyricEnFont},${assLyricEnColor},&H00000000,${assEnOutline},&H00000000,0,${lyricItalic ? 1 : 0},0,0,100,100,0,0,1,${mEnOutline},${enShadow},${lyricPosition === 'top' ? 8 : 2},${mBaseMargin},${mBaseMargin},${lyricPosition === 'top' ? Math.floor(mMarginV * 0.5) : Math.floor(mMarginV * 0.6)},1
 
@@ -2634,7 +2658,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
   const events = applyAuxiliarySubtitleMode(subs, auxiliaryMode).flatMap((s): string[] => {
     const [start, end] = s.ts.split(" --> ").map(srtToAssTime);
     let style = "Han";
-    if (s.type === "credit") {
+    if (s.type === "credit" || classifyLineKind(s) === 'credit') {
       style = "Credit";
     } else if (s.type === "lyrics") {
       style = /[一-龥]/.test(s.text) ? "Lyrics" : "Lyrics_EN";

@@ -58,3 +58,23 @@ test('navy stacked layout follows user overrides (export == preview)', () => {
   assert.equal(p.stacked.primaryOutlineColour, '#FF0000');
   assert.ok(Math.abs(p.stacked.primaryFontSize * p.stacked.secondaryScale - 51) < 0.01);
 });
+
+test('style library: one list, entries apply as preset/base, tuning detected, reset clears', () => {
+  execFileSync('npx', ['tsc', 'src/utils/styleLibrary.ts', '--target', 'ES2022', '--module', 'commonjs', '--moduleResolution', 'node', '--outDir', out, '--skipLibCheck', '--rootDir', 'src', '--lib', 'ES2022,DOM'], { stdio: 'ignore' });
+  const L = req('./utils/styleLibrary.js');
+  const tpl = [{ id: 't1', name: 'mine', styles: { zhColor: '#FF0000', auxiliaryMode: 'clean' } }, { id: 't2', name: 'navy+', presetId: 'navy-outline', styles: { zhFontSize: 30 } }];
+  const entries = L.listStyleEntries(tpl, { zhColor: '#00FF00' });
+  assert.deepEqual(entries.map((e) => e.id), ['classic', 'libass-ass', 'navy-outline', 'source', 't1', 't2']);
+  const full = { ...base, auxiliaryMode: 'smart' };
+  const t1 = L.entryTarget(entries[4], full);
+  assert.equal(t1.exportPresetId, 'current');
+  assert.equal(t1.customStyle.zhColor, '#FF0000');
+  assert.equal(t1.customStyle.auxiliaryMode, 'smart', 'content decision is not part of a style entry');
+  const t2 = L.entryTarget(entries[5], full);
+  assert.equal(t2.exportPresetId, 'navy-outline');
+  assert.deepEqual(t2.styleOverrides, { zhFontSize: 30 });
+  assert.equal(L.isEntryTuned(entries[5], full, 'navy-outline', { zhFontSize: 30 }), false);
+  assert.equal(L.isEntryTuned(entries[5], full, 'navy-outline', { zhFontSize: 32 }), true);
+  assert.equal(L.isEntryTuned(entries[2], full, 'navy-outline', {}), false);
+  assert.deepEqual(L.snapshotForSave(full, 'navy-outline', { zhFontSize: 28, auxiliaryMode: 'clean' }), { presetId: 'navy-outline', styles: { zhFontSize: 28 } });
+});

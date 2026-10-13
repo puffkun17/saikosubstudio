@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { applyOverridesToProfile } from '@/utils/previewStyle';
-import { useStudioStore, type CreditDeclaration } from '@/store/useStudioStore';
+import { useSelectedStyleEntry } from '@/components/Settings/StyleLibrary';
+import { resolveExportBase, useStudioStore, type CreditDeclaration } from '@/store/useStudioStore';
 import {
   appendCreatorCredit as appendCreatorCreditCue,
   applyAuxiliarySubtitleMode,
@@ -15,7 +16,6 @@ import {
   type SubtitleAttribution,
 } from '@/utils/subtitleCore';
 import {
-  ASS_PRESET_IDS,
   DEFAULT_NAMING_ID,
   EXPORT_PRESETS,
   NAMING_OPTIONS,
@@ -34,18 +34,20 @@ import {
 } from '@/utils/hdrPresets';
 import { buildMergeReviewQueue } from '@/utils/timeline/alignmentDiff';
 import { REVIEW_CODE_TABLE, deriveExportReview, reviewLabel } from '@/core/exportReview';
+import { arrayIndexOfLine, lineNumberOf } from '@/core/lineKinds';
+import { reviewTaskKey } from '@/core/reviewKey';
+import { lineCountLabel } from '@/core/lineKinds';
+import { reviewNoticeMessage, reviewNoticeTitle } from '@/components/Global/ReviewNoticeSync';
 import { applyCreditPlan, buildClosingCreditLines, classifyCreditCue, planCredits } from '@/core/credits';
-import { buildExportBaseFromMeta, type NamingMode } from '@/core/taskModel';
+import type { NamingMode } from '@/core/taskModel';
 
 const NAMING_STORAGE_KEY = 'saiko_export_naming';
 const SRT_ADDONS_STORAGE_KEY = 'saiko_export_srt_addons';
-const NAME_MODE_STORAGE_KEY = 'saiko_export_name_mode';
 
 export const NAME_MODE_OPTIONS: { id: NamingMode; label: string }[] = [
-  { id: 'original', label: '原文名' },
-  { id: 'zh+original', label: '中文 + 原文名' },
+  { id: 'original', label: '原片名' },
+  { id: 'zh+original', label: '中文名 + 原片名' },
 ];
-const isNameMode = (v: unknown): v is NamingMode => v === 'original' || v === 'zh+original';
 
 /** R-xx list for the export menu (derived; never blocks the download). */
 export const useExportReview = () => {
@@ -59,7 +61,8 @@ export const useExportReview = () => {
     const rows = processedSubs ?? [];
     if (rows.length === 0) return [];
     const queue = buildMergeReviewQueue(rows);
-    const unresolved = [...new Set(queue.items.flatMap((item) => item.rowIndexes))].sort((a, b) => a - b);
+    // R-11 = 单轨未配对行（与复核弹窗「单轨」同一批条目），行号一律 1 起始（row.index）。
+    const unresolved = [...new Set(queue.items.filter((item) => item.category === 'single-track').flatMap((item) => item.rowIndexes))].sort((a, b) => a - b);
     const plan = planCredits({ primaryRows: rows });
     return deriveExportReview({
       rows,
@@ -67,22 +70,13 @@ export const useExportReview = () => {
       isTv,
       epKey: filenameEpKey,
       unresolvedRows: unresolved,
-      movedStatementRows: plan.dropCueIndexes,
+      movedStatementRows: plan.dropCueIndexes.map((i) => lineNumberOf(rows[i] ?? {}, i)),
     });
   }, [processedSubs, tmdbData, filenameEpKey, isTv]);
 };
 
-/**
- * Export base name: manual title > borrowed video filename > TMDB 原文名(.年份.SxxEyy) > task title.
- */
-export const useExportBaseName = (mode: NamingMode): string =>
-  useStudioStore((state) => {
-    if (state.filenameSource === 'manual' && state.customFilename.trim()) return state.customFilename;
-    return buildExportBaseFromMeta(state.tmdbData, state.filenameEpKey, mode, {
-      videoName: state.borrowedVideoName,
-      fallback: state.customFilename || 'subtitles',
-    });
-  });
+/** Export base name — the single source (store resolveExportBase). */
+export const useExportBaseName = (): string => useStudioStore(resolveExportBase);
 
 const readStoredChoice = (key: string): string | null => {
   try {
@@ -124,13 +118,12 @@ export const useExportChoices = () => {
   })));
   const [namingId, setNamingIdState] = useState<string>(DEFAULT_NAMING_ID);
   const [srtAddonIds, setSrtAddonIdsState] = useState<ExportPresetId[]>([]);
-  const [nameMode, setNameModeState] = useState<NamingMode>('original');
+  const nameMode = useStudioStore((s) => s.exportNameMode);
+  const setNameMode = useStudioStore((s) => s.setExportNameMode);
   useEffect(() => {
     setNamingIdState(getNamingOption(readStoredChoice(NAMING_STORAGE_KEY)).id);
     const storedAddons = (readStoredChoice(SRT_ADDONS_STORAGE_KEY) || '').split(',');
     setSrtAddonIdsState(SRT_ADDON_IDS.filter((id) => storedAddons.includes(id)));
-    const storedMode = readStoredChoice(NAME_MODE_STORAGE_KEY);
-    if (isNameMode(storedMode)) setNameModeState(storedMode);
   }, []);
   const setHdrEnabled = (enabled: boolean) => setHdr(enabled);
   const setHdrLevelChoice = (level: HdrLevelId) => setHdr(hdrEnabled, level);
@@ -138,10 +131,6 @@ export const useExportChoices = () => {
   const setNamingId = (id: string) => {
     setNamingIdState(id);
     writeStoredChoice(NAMING_STORAGE_KEY, id);
-  };
-  const setNameMode = (mode: NamingMode) => {
-    setNameModeState(mode);
-    writeStoredChoice(NAME_MODE_STORAGE_KEY, mode);
   };
   const toggleSrtAddon = (id: ExportPresetId) => {
     setSrtAddonIdsState((prev) => {
@@ -216,19 +205,12 @@ const buildAssScriptMeta = ({
 export const useExport = () => {
   const {
     processedSubs,
-    customFilename,
-    filenameSource,
-    filenameEpKey,
-    borrowedVideoName,
-    tmdbData,
     customStyle,
     creatorCredit,
     detectedAttributions,
     appendCreatorCredit,
-    keepOriginalCredit,
-    creditDeclaration,
-    creditPlacement,
     isOfficialSubtitle,
+    isOriginalWork,
     selectedTaskId,
     mergeReviewCheckedByTask,
     addLog,
@@ -246,10 +228,8 @@ export const useExport = () => {
     creatorCredit: state.creatorCredit,
     detectedAttributions: state.detectedAttributions,
     appendCreatorCredit: state.appendCreatorCredit,
-    keepOriginalCredit: state.keepOriginalCredit,
-    creditDeclaration: state.creditDeclaration,
-    creditPlacement: state.creditPlacement,
     isOfficialSubtitle: state.isOfficialSubtitle,
+    isOriginalWork: state.isOriginalWork,
     selectedTaskId: state.selectedTaskId,
     mergeReviewCheckedByTask: state.mergeReviewCheckedByTask,
     addLog: state.addLog,
@@ -270,7 +250,7 @@ export const useExport = () => {
   const handleExport = async ({ assPresetId, srtAddonIds, namingId, hdrLevel, nameMode }: ExportRequest) => {
     if (!processedSubs || processedSubs.length === 0) return;
 
-    const taskKey = selectedTaskId || customFilename || '_default';
+    const taskKey = reviewTaskKey(selectedTaskId, processedSubs);
     const queue = buildMergeReviewQueue(processedSubs);
     const checked = new Set(mergeReviewCheckedByTask[taskKey] ?? []);
     const checkedCount = queue.items.reduce((count, item) => count + (checked.has(item.id) ? 1 : 0), 0);
@@ -279,8 +259,8 @@ export const useExport = () => {
       setStatusNotice({
         id: 'merge-review-unchecked',
         tone: 'notice',
-        title: `还有 ${remaining} 项未核对，仍可继续`,
-        message: `合轴待复核已核对 ${checkedCount} / 共 ${queue.total}。导出不会被拦截。`,
+        title: reviewNoticeTitle(remaining),
+        message: reviewNoticeMessage(checkedCount, queue.total),
       });
     }
 
@@ -289,11 +269,12 @@ export const useExport = () => {
       // formal credits stay in place and are never filtered; the user's 「双语合并：」 line comes after the original.
       const creditPlan = planCredits({
         primaryRows: processedSubs,
-        user: appendCreatorCredit && creatorCredit.trim() ? { name: creatorCredit, placement: creditPlacement } : undefined,
-        keepFormalInPlace: keepOriginalCredit,
+        // 署名是内容：始终留在原时间点；「我的署名」只在导入来源为「原创」时追加，紧跟最后一行。
+        user: isOriginalWork && appendCreatorCredit && creatorCredit.trim() ? { name: creatorCredit, placement: 'after-last' } : undefined,
+        keepFormalInPlace: true,
       });
       const exportSubs = buildClosingCreditLines(creditPlan).reduce(
-        (rows, line) => appendCreatorCreditCue(rows, line, creditPlacement, true),
+        (rows, line) => appendCreatorCreditCue(rows, line, 'after-last', true),
         applyCreditPlan(processedSubs, creditPlan),
       );
       const auxiliaryMode = customStyle.auxiliaryMode || 'keep';
@@ -305,23 +286,22 @@ export const useExport = () => {
         (row) => (creditPlan.keepFormalInPlace && isFormalCredit(row)) || closing.has(row.text),
       );
       const hiddenAuxiliaryCount = exportSubs.length - filteredExportSubs.length;
-      const baseName = filenameSource === 'manual' && customFilename.trim()
-        ? customFilename
-        : buildExportBaseFromMeta(tmdbData, filenameEpKey, nameMode, { videoName: borrowedVideoName, fallback: customFilename || 'subtitles' });
+      const baseName = resolveExportBase({ ...useStudioStore.getState(), exportNameMode: nameMode });
       const plan = planExportBundle(baseName, namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel, secondary: secondaryLang });
       const report = createWrapReport();
-      const scriptMeta = buildAssScriptMeta({ creatorCredit, creditDeclaration, isOfficialSubtitle, attributions: detectedAttributions });
+      const scriptMeta = buildAssScriptMeta({ creatorCredit: isOriginalWork && appendCreatorCredit ? creatorCredit : '', creditDeclaration: isOriginalWork ? 'original' : 'none', isOfficialSubtitle, attributions: detectedAttributions });
 
       const files = plan.files.map((file) => {
         const preset = EXPORT_PRESETS[file.presetId];
         // Chosen ASS preset carries the user's 样式参数 overrides (preview == export); add-on SRT presets stay fixed.
         const overrides = file.presetId === assPresetId ? useStudioStore.getState().styleOverrides : {};
-        const exportStyle = { ...resolvePresetStyle(customStyle, preset), ...overrides, auxiliaryMode: 'keep' as const };
+        // 预览画幅不进入导出：画面规格固定 16:9 帧（分辨率由样式决定）。
+        const exportStyle = { ...resolvePresetStyle(customStyle, preset), ...overrides, aspectRatio: '16:9' as const, auxiliaryMode: 'keep' as const };
         // The HDR copy re-runs the same export; don't double-count its wrap stats.
         const runOptions = { profile: applyOverridesToProfile(preset, overrides), report: file.hdr ? undefined : report, hdr: file.hdr ?? null };
         const content = file.format === 'srt'
           ? generateSrtContent(filteredExportSubs, exportStyle, runOptions)
-          : generateAssContent(filteredExportSubs, exportStyle, customFilename, scriptMeta, runOptions);
+          : generateAssContent(filteredExportSubs, exportStyle, baseName, scriptMeta, runOptions);
         return { ...file, content };
       });
 
@@ -369,22 +349,37 @@ const describeBundle = (hdrCount: number, srtCount: number): string =>
  * 导出面板：放在剧场右侧停靠面板内（spec v1.1 §6），不再是浮层菜单，不遮挡预览。
  * 默认下载一个 ASS；勾选 SRT 附加项后改为打包下载 zip（本地生成）。
  */
-export const ExportPanel: React.FC = () => {
+export const ExportPanel: React.FC<{ onOpenStyle?: () => void }> = ({ onOpenStyle }) => {
   const [busy, setBusy] = useState(false);
   const { handleExport, isTraditional, secondaryLang } = useExport();
   const {
-    assPresetId, setAssPresetId, namingId, setNamingId, srtAddonIds, toggleSrtAddon,
+    assPresetId, namingId, setNamingId, srtAddonIds, toggleSrtAddon,
     hdrEnabled, setHdrEnabled, hdrLevelChoice, setHdrLevelChoice, hdrLevel, nameMode, setNameMode,
   } = useExportChoices();
-  const exportBaseName = useExportBaseName(nameMode);
+  const styleState = useStudioStore(useShallow((st) => ({
+    templates: st.customTemplates, source: st.foundAssStyle, active: st.activePreset,
+    base: st.customStyle, presetId: st.exportPresetId, overrides: st.styleOverrides,
+  })));
+  const { entry: styleEntry, tuned: styleTuned } = useSelectedStyleEntry(styleState.templates, styleState.source, styleState.active, styleState.base, styleState.presetId, styleState.overrides);
+  const styleName = `${styleEntry?.name ?? '自定义'}${styleTuned ? ' · 已微调' : ''}`;
+  const exportBaseName = useExportBaseName();
+  const customFilename = useStudioStore((s) => s.customFilename);
+  const filenameSource = useStudioStore((s) => s.filenameSource);
+  const setCustomFilename = useStudioStore((s) => s.setCustomFilename);
+  const isManualName = filenameSource === 'manual' && Boolean(customFilename.trim());
   const reviewItems = useExportReview();
-  const jumpToRow = (row: number) => {
+  /** `line` is a 1-based line number (same as shown); map it back to the array position. */
+  const jumpToRow = (line: number) => {
     const st = useStudioStore.getState();
+    const idx = arrayIndexOfLine(st.processedSubs ?? [], line);
+    if (idx < 0) return;
     st.setIsPreviewPlaying(false);
-    st.setPreviewIndex(row);
-    st.setJumpLineVal(String(row + 1));
+    st.setPreviewIndex(idx);
+    st.setJumpLineVal(String(line));
   };
   const plan = planExportBundle(exportBaseName, namingId, assPresetId, srtAddonIds, { traditional: isTraditional, hdr: hdrLevel, secondary: secondaryLang });
+  const exportRows = useStudioStore((st) => st.processedSubs);
+  const exportAuxMode = useStudioStore((st) => st.customStyle.auxiliaryMode || 'keep');
   const planHdrCount = plan.files.filter((file) => file.hdr).length;
   const planSrtCount = plan.files.filter((file) => file.format === 'srt').length;
   const bundled = Boolean(plan.zipName);
@@ -395,8 +390,16 @@ export const ExportPanel: React.FC = () => {
               <div className="export-menu__row">
                 <span className="ds-label">
                   文件名
-                  <span className="ds-info" title="默认使用原文名（与片源文件名一致），可选加中文片名前缀。" aria-label="文件名说明">ⓘ</span>
+                  <span className="ds-info" title="默认用原片名（与片源文件名一致），可加中文名前缀；也可直接改写，清空即恢复自动命名。" aria-label="文件名说明">ⓘ</span>
                 </span>
+                <input
+                  type="text"
+                  className="ds-select font-mono"
+                  value={isManualName ? customFilename : exportBaseName}
+                  onChange={(event) => setCustomFilename(event.target.value, event.target.value.trim() ? 'manual' : 'unknown')}
+                  aria-label="导出文件名"
+                  data-testid="export-filename"
+                />
                 <div className="ds-segmented" role="radiogroup" aria-label="文件名">
                   {NAME_MODE_OPTIONS.map((option) => (
                     <button
@@ -405,6 +408,7 @@ export const ExportPanel: React.FC = () => {
                       role="radio"
                       aria-checked={nameMode === option.id}
                       className="ds-segmented__item"
+                      disabled={isManualName}
                       onClick={() => setNameMode(option.id)}
                     >
                       {option.label}
@@ -413,19 +417,14 @@ export const ExportPanel: React.FC = () => {
                 </div>
               </div>
               <div className="export-menu__grid">
-                <label className="min-w-0">
+                <div className="min-w-0">
                   <span className="ds-label">样式</span>
-                  <select
-                    className="ds-select"
-                    value={assPresetId}
-                    onChange={(event) => setAssPresetId(event.target.value as ExportPresetId)}
-                    aria-label="ASS 样式"
-                  >
-                    {ASS_PRESET_IDS.map((id) => (
-                      <option key={id} value={id}>{EXPORT_PRESETS[id].label}</option>
-                    ))}
-                  </select>
-                </label>
+                  {/* 样式只在「样式」面板里选；这里只显示，避免两处各选一份。 */}
+                  <button type="button" className="ds-select flex items-center justify-between gap-2" onClick={onOpenStyle} data-testid="export-style-link" title="在「样式」面板中更改">
+                    <span className="truncate">{styleName}</span>
+                    <span className="ds-meta shrink-0">更改</span>
+                  </button>
+                </div>
                 <label className="min-w-0">
                   <span className="ds-label">语言后缀</span>
                   <select
@@ -456,7 +455,7 @@ export const ExportPanel: React.FC = () => {
                 </div>
               </fieldset>
               <div className="export-menu__row flex items-center gap-2">
-                <label className="ds-check" title={`HDR 版放在 zip 的 ${HDR_BUNDLE_FOLDER}/ 文件夹；SRT 不生成 HDR 版`}>
+                <label className="ds-check" title={`HDR 版放在 zip 的 ${HDR_BUNDLE_FOLDER}/ 文件夹；SRT 不生成 HDR 版。开启后预览按所选档位显示。`}>
                   <input
                     type="checkbox"
                     checked={hdrEnabled}
@@ -482,16 +481,15 @@ export const ExportPanel: React.FC = () => {
               <div className="export-menu__review">
                 <p className="ds-label">
                   复核提示（不影响导出）
-                  <span className="ds-info" title={REVIEW_CODE_TABLE.map(([code, label]) => `${code} ${label}`).join('\n')} aria-label="复核代码表">ⓘ</span>
+                  <span className="ds-info" title={REVIEW_CODE_TABLE.map(([code, label]) => `${code} ${label}`).join('\n')} aria-label="复核提示说明">ⓘ</span>
                 </p>
                 <ul className="mt-1 grid gap-1">
                   {reviewItems.map((item) => (
-                    <li key={item.code} className="ds-meta flex flex-wrap items-baseline gap-x-1.5">
-                      <span className="ds-mono font-semibold text-[var(--ds-ink-2)]">{item.code}</span>
-                      <span className="min-w-0">{reviewLabel(item.code)}</span>
+                    <li key={item.code} className="ds-meta flex flex-wrap items-baseline gap-x-1.5" title={item.code} data-review-code={item.code}>
+                      <span className="min-w-0 font-medium text-[var(--ds-ink-2)]">{reviewLabel(item.code)}</span>
                       {(item.cues ?? []).slice(0, 3).map((row) => (
                         <button key={row} type="button" className="underline decoration-dotted hover:text-[var(--v5-accent-strong)]" onClick={() => jumpToRow(row)}>
-                          第 {row + 1} 行
+                          第 {row} 行
                         </button>
                       ))}
                       {(item.cues?.length ?? 0) > 3 && <span>等 {item.cues!.length} 行</span>}
@@ -525,6 +523,7 @@ export const ExportPanel: React.FC = () => {
                   <span className="ds-meta ds-mono block truncate">
                     {plan.zipName ?? plan.files[0].filename}
                   </span>
+                  <span className="ds-meta block" data-testid="export-line-count">{lineCountLabel(exportRows, exportAuxMode)}</span>
                 </span>
               </button>
             </div>

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { parseEpisodeRef, episodeKeyOf } from '../core/episode';
 import { cueTimesFromRows } from '../core/timelineAgreement';
-import type { Task } from '../core/taskModel';
+import { buildExportBaseFromMeta, type NamingMode, type Task } from '../core/taskModel';
 import { ERROR_CODES, codeErrorMessage, rememberErrorCode } from '../core/errorCodes';
 import { DEFAULT_EXPORT_PRESET_ID, getExportPreset, type ExportPresetId } from '../utils/exportPresets';
 import { DEFAULT_HDR_LEVEL, isHdrLevelId, type HdrLevelId } from '../utils/hdrPresets';
@@ -9,10 +9,12 @@ import { clearAllLocalData, deleteTask, listMerged, listTasks, migrateLegacyLibr
 import { decideSameEpisode, type EpisodeCandidate } from '../core/sameEpisode';
 import { detectSdhByContent, splitAssByLanguageStyles, titleKeyOf } from '../core/recognition';
 import { detectLanguageByContent } from '../utils/subtitleCore';
+import { reviewTaskKey } from '../core/reviewKey';
+import { classifyLineKind } from '../core/lineKinds';
 import { mergeWorkerAvailable, runMergeJob, runMergeJobInThread } from '../core/mergeClient';
 import type { MergeJobEvent, MergeJobInput, MergeJobResult } from '../core/mergeJob';
 import type { AlignmentFallbackInfo } from '../utils/subtitleCore';
-import { resolveEffectiveStyle } from '../utils/previewStyle';
+import { entryTarget, listStyleEntries, snapshotForSave, stripContent, type StyleTemplateRecord } from '../utils/styleLibrary';
 import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity, isMainPathSecondaryLanguage, isEnglishSecondaryLanguage, isLatinSecondaryLanguage, mainPathPrimaryRank, mainPathSecondaryRank, estimateSubtitleCueCount, isSparseSecondaryTrack, measureMergeOrphanRate, isSdhOrCcSubtitleFilename } from '../utils/subtitleCore';
 import { assessTvYearFit, parseSeasonNumber, parseYearToken, shouldDemoteBySeasonSpan } from '../utils/tmdbCandidateFit';
 import { estimateJsonBytes, readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
@@ -188,11 +190,7 @@ type TmdbConfirmationDecision = {
   reasons: string[];
 };
 
-type CustomTemplate = {
-  id: string;
-  name: string;
-  styles: StyleSettings;
-};
+type CustomTemplate = StyleTemplateRecord;
 
 type SubtitleEditRecord = {
   index: number;
@@ -261,6 +259,9 @@ export interface StudioState {
   setKeepOriginalCredit: (keep: boolean) => void;
   /** 本批导入是否标记为官方字幕（写入 ASS 声明）。 */
   isOfficialSubtitle: boolean;
+  /** 导入来源「原创」：默认关；只有开启时第二幕才能编辑署名（保留 / 改字）。与「官方」互斥。 */
+  isOriginalWork: boolean;
+  setIsOriginalWork: (on: boolean) => void;
   /** 制作声明：写入 ASS Script Info 前缀。 */
   creditDeclaration: CreditDeclaration;
   /** 字幕后署名时间位置。 */
@@ -294,12 +295,17 @@ export interface StudioState {
   clearStatusNotices: () => void;
   setIsDragging: (isDragging: boolean) => void;
   setCustomFilename: (name: string, source?: FilenameSource) => void;
+  /** 导出命名模式（原文名 / 中文 + 原文名），全局并持久化。 */
+  exportNameMode: NamingMode;
+  setExportNameMode: (mode: NamingMode) => void;
   setSelectedTaskId: (id: string | null) => void;
   setTmdbData: (data: TmdbMetadata | null) => void;
   setTmdbBackdrop: (url: string | null) => void;
   setIsTemplateLab: (val: boolean) => void;
   setCustomStyle: (style: StyleSettings) => void;
-  saveCustomTemplate: (name: string) => void;
+  saveCustomTemplate: (name: string, opts?: { styles: Partial<StyleSettings>; source?: StyleTemplateRecord['source'] }) => void;
+  /** Select an entry of the unified 「样式」 list (fixed preset, saved, imported, source). Also used for 重置. */
+  applyStyleEntry: (id: string) => void;
   deleteCustomTemplate: (id: string) => void;
   setPreviewIndex: (idx: number) => void;
   setLocateGroupIndexes: (indexes: number[]) => void;
@@ -432,11 +438,6 @@ const loadHistoryFromIdb = async (): Promise<LibraryItem[] | null> => {
   }
 };
 
-const formatTmdbOutputName = (meta: TmdbMetadata, episodeKey?: string) => {
-  const parts = [meta.title, meta.year].filter(Boolean);
-  if (episodeKey) parts.push(episodeKey.toUpperCase());
-  return parts.join('.');
-};
 
 const episodeCandidateCache = new WeakMap<Subfile, EpisodeCandidate>();
 /** Reuses the parsed timeline per file (first few dozen cues only). */
@@ -472,6 +473,30 @@ const expandRecognizedFiles = (files: Subfile[]): Subfile[] => files.flatMap((fi
   }
   return [base];
 });
+
+/** 任务显示名（第二幕底栏、标签）：中文片名 + 集号，例如「幸运女神 S01E01」。不是文件名。 */
+export const taskDisplayTitle = (meta: { title: string; originalTitle?: string } | null | undefined, episodeKey?: string): string =>
+  [meta?.title || meta?.originalTitle || '', (episodeKey || '').toUpperCase()].filter(Boolean).join(' ');
+
+const readStoredNameMode = (): NamingMode => {
+  try {
+    const v = typeof localStorage !== 'undefined' ? localStorage.getItem('saiko_export_name_mode') : null;
+    return v === 'zh+original' ? 'zh+original' : 'original';
+  } catch { return 'original'; }
+};
+
+/**
+ * 导出文件名的唯一来源：手动名 > 视频文件名 > TMDB 原文名（+ 命名模式）> 字幕文件名。
+ * 第二幕、导出面板、下载名、ASS Title 都读它。
+ */
+export function resolveExportBase(state: Pick<StudioState, 'customFilename' | 'filenameSource' | 'tmdbData' | 'filenameEpKey' | 'exportNameMode' | 'borrowedVideoName' | 'files'>): string {
+  if (state.filenameSource === 'manual' && state.customFilename.trim()) return state.customFilename.trim();
+  const trackStem = (state.files?.zh?.name || state.files?.en?.name || '').replace(/\.(srt|ass|ssa|vtt)$/i, '');
+  return buildExportBaseFromMeta(state.tmdbData, state.filenameEpKey, state.exportNameMode, {
+    videoName: state.borrowedVideoName,
+    fallback: trackStem || 'subtitles',
+  });
+}
 
 export const useStudioStore = create<StudioState>((set, get) => ({
   workflowStep: 1,
@@ -554,6 +579,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   keepOriginalCredit: true,
   setKeepOriginalCredit: (keepOriginalCredit) => set({ keepOriginalCredit }),
   isOfficialSubtitle: false,
+  isOriginalWork: false,
   creditDeclaration: 'none',
   creditPlacement: 'after-last',
   isLightsOff: false,
@@ -567,7 +593,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   },
   setCreatorCredit: (creatorCredit) => set({ creatorCredit }),
   setAppendCreatorCredit: (appendCreatorCredit) => set({ appendCreatorCredit }),
-  setIsOfficialSubtitle: (isOfficialSubtitle) => set({ isOfficialSubtitle }),
+  setIsOfficialSubtitle: (isOfficialSubtitle) => set((state) => ({ isOfficialSubtitle, isOriginalWork: isOfficialSubtitle ? false : state.isOriginalWork })),
+  setIsOriginalWork: (isOriginalWork) => set((state) => ({
+    isOriginalWork,
+    isOfficialSubtitle: isOriginalWork ? false : state.isOfficialSubtitle,
+    // 原创关闭时，我的署名一并撤下（署名只在原创下可编辑）。
+    appendCreatorCredit: isOriginalWork ? state.appendCreatorCredit : false,
+    creditDeclaration: isOriginalWork ? 'original' : 'none',
+  })),
   setCreditDeclaration: (creditDeclaration) => set({ creditDeclaration }),
   setCreditPlacement: (creditPlacement) => set({ creditPlacement }),
   setLibraryOpen: (isLibraryOpen) => set({ isLibraryOpen }),
@@ -616,6 +649,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   clearStatusNotices: () => set({ statusNotices: [] }),
   setIsDragging: (isDragging) => set({ isDragging }),
   setCustomFilename: (customFilename, source = 'manual') => set({ customFilename, filenameSource: source }),
+  exportNameMode: readStoredNameMode(),
+  setExportNameMode: (exportNameMode) => {
+    set({ exportNameMode });
+    try { localStorage.setItem('saiko_export_name_mode', exportNameMode); } catch { /* ignore */ }
+  },
   setSelectedTaskId: (selectedTaskId) => set({ selectedTaskId }),
   setTmdbData: (tmdbData) => set({ tmdbData }),
   setTmdbBackdrop: (tmdbBackdrop) => set({ tmdbBackdrop }),
@@ -645,12 +683,25 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set({ customStyle });
     persistStyles(get());
   },
-  saveCustomTemplate: (name) => {
-    set((state) => {
-      const newTemplate = { id: `tpl_${Date.now()}`, name, styles: resolveEffectiveStyle(state.customStyle, state.exportPresetId, state.styleOverrides) };
-      const newTemplates = [...state.customTemplates, newTemplate];
-      return { customTemplates: newTemplates, activePreset: newTemplate.id };
-    });
+  saveCustomTemplate: (name, opts) => {
+    const state = get();
+    const snap = opts
+      ? { presetId: 'current' as ExportPresetId, styles: stripContent(opts.styles) }
+      : snapshotForSave(state.customStyle, state.exportPresetId, state.styleOverrides);
+    const newTemplate: CustomTemplate = { id: `tpl_${Date.now()}`, name, ...snap, source: opts?.source ?? 'saved' };
+    set({ customTemplates: [...state.customTemplates, newTemplate] });
+    get().applyStyleEntry(newTemplate.id);
+  },
+  applyStyleEntry: (id) => {
+    const state = get();
+    const entry = listStyleEntries(state.customTemplates, state.foundAssStyle).find((e) => e.id === id);
+    if (!entry) return;
+    const target = entryTarget(entry, state.customStyle);
+    set({ ...target, activePreset: id });
+    try {
+      localStorage.setItem('saiko_export_preset', target.exportPresetId);
+      localStorage.setItem('saiko_style_overrides', JSON.stringify(target.styleOverrides));
+    } catch { /* ignore */ }
     persistStyles(get());
   },
   deleteCustomTemplate: (id) => {
@@ -669,15 +720,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setPreviewClockMs: (previewClockMs) => set({ previewClockMs }),
   setIsPreviewPlaying: (isPreviewPlaying) => set({ isPreviewPlaying }),
   setSceneBackground: (sceneBackground) => set({ sceneBackground }),
-  setTheaterAspect: (theaterAspect) => set((state) => ({
-    theaterAspect,
-    customStyle: {
-      ...state.customStyle,
-      aspectRatio: theaterAspect === '4:3' || theaterAspect === '2.39:1' || theaterAspect === '1.9:1'
-        ? theaterAspect
-        : '16:9',
-    },
-  })),
+  // 画幅只影响预览取景，不写入导出样式（导出画面规格由样式决定）。
+  setTheaterAspect: (theaterAspect) => set({ theaterAspect }),
   setShowGuides: (showGuides) => set({ showGuides }),
   setTempShowGuides: (tempShowGuides) => set({ tempShowGuides }),
   setJumpLineVal: (jumpLineVal) => set({ jumpLineVal }),
@@ -751,6 +795,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     const { processedSubs } = get();
     const row = processedSubs?.find(s => s.index === index);
     if (!row || row.text === text) return;
+    // 署名是内容：只有导入来源为「原创」时才可改（官方 / 转载锁定）。
+    if (classifyLineKind(row) === 'credit' && !get().isOriginalWork) return;
     get().updateSubtitleText(index, text);
     set(state => ({
       editHistory: [...state.editHistory, { index, before: row.text, after: text }].slice(-50),
@@ -1577,7 +1623,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           id: 'media-match',
           tone: 'warning',
           title: '未找到匹配结果',
-          message: '可尝试原文片名、去掉集标题，或补充年份后再搜索。',
+          message: '可尝试原片名、去掉集标题，或补充年份后再搜索。',
           meta: searchStr,
           action: 'openTmdbManual',
           actionLabel: '修改搜索',
@@ -1693,22 +1739,18 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       const manualEpisodeKey = type === 'tv' && !epKey
         ? `S${String(tmdbManualInput.season).padStart(2, '0')}E${String(tmdbManualInput.episode).padStart(2, '0')}`
         : undefined;
-      const formattedName = formatTmdbOutputName(meta, epKey || manualEpisodeKey);
-      const keepManual = get().filenameSource === 'manual' && Boolean(get().customFilename.trim());
-      // Job identity: TMDB title flows into task title, export naming, and workbench chrome.
+      // TMDB 不写 customFilename（只存手动名）；导出名统一由 resolveExportBase 派生。
       set((state) => ({
         tmdbData: meta,
         tmdbBackdrop: chosenBackdrop,
         tmdbBackdropList: backdrops,
-        customFilename: keepManual ? state.customFilename : formattedName,
-        filenameSource: keepManual ? 'manual' : 'tmdb',
         filenameEpKey: (epKey || manualEpisodeKey || '').toUpperCase(),
         tasks: selectedTaskId
           ? state.tasks.map((t) => (
             t.id === selectedTaskId
               ? {
                   ...t,
-                  title: keepManual ? t.title : formattedName,
+                  title: taskDisplayTitle(meta, epKey || manualEpisodeKey),
                   tmdbData: meta,
                   tmdbBackdrop: chosenBackdrop,
                   tmdbBackdropList: backdrops,
@@ -1807,18 +1849,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
     // 复用/已有片源时按当前集 epKey 重算导出名（手动填写过的不覆盖）
     if (resolvedMeta) {
-      const formattedName = formatTmdbOutputName(resolvedMeta, task.epKey);
       set((state) => {
-        const keepManual = state.filenameSource === 'manual' && Boolean(state.customFilename.trim());
         return {
-          customFilename: keepManual ? state.customFilename : formattedName,
-          filenameSource: keepManual ? 'manual' : 'tmdb',
           filenameEpKey: (task.epKey || '').toUpperCase(),
           tasks: state.tasks.map((candidate) =>
             candidate.id === taskId
               ? {
                   ...candidate,
-                  title: keepManual ? candidate.title : formattedName,
+                  title: taskDisplayTitle(resolvedMeta, task.epKey),
                   tmdbData: resolvedMeta,
                   tmdbBackdrop: candidate.tmdbBackdrop || inheritedBackdrop,
                   tmdbBackdropList: candidate.tmdbBackdropList?.length
@@ -1934,8 +1972,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
                 get().setStatusNotice({
                   id: 'secondary-bind-blocked',
                   tone: 'notice',
-                  title: '原文轨未绑定',
-                  message: `「${blockedName}」语种为 ${blockedLang}，自动合轴原文槽支持英语、西语、法语、葡语、德语、意语、日语、韩语。请改选文件，或先纠正语种标签。`,
+                  title: '副字幕未绑定',
+                  message: `「${blockedName}」语种为 ${blockedLang}，自动合轴副字幕支持英语、西语、法语、葡语、德语、意语、日语、韩语。请改选文件，或先纠正语种标签。`,
                 });
               }, 0);
               updated.en = null;
@@ -1982,7 +2020,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       });
       return { tasks: nextTasks };
     });
-    get().addLog('已对调主字幕与原文字幕', 'info');
+    get().addLog('已对调主字幕与副字幕', 'info');
   },
 
   removeFileFromTask: (taskId, fileName) => {
@@ -2324,7 +2362,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
               get().setStatusNotice({
                 id: 'secondary-source-fallback',
                 tone: 'notice',
-                title: isLatinSecondaryLanguage(bestSourceFallback.lang) ? '第二语言已绑定' : '原文已回退到源语言轨',
+                title: isLatinSecondaryLanguage(bestSourceFallback.lang) ? '第二语言已绑定' : '副字幕已回退到源语言轨',
                 message: `未找到可用的英语对白轨（缺失或行数过少），已绑定「${bestSourceFallback.name}」。可手动改绑。`,
               });
             }, 0);
@@ -2343,7 +2381,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
                 id: 'secondary-en-sparse',
                 tone: 'notice',
                 title: '英语轨未自动绑定',
-                message: '检测到的英语文件行数远少于主字幕，更像屏显/稀疏字幕；可手动指定原文，或改用西语、法语、日语等其他语言轨。',
+                message: '检测到的英语文件行数远少于主字幕，更像屏显/稀疏字幕；可手动指定副字幕，或改用西语、法语、日语等其他语言轨。',
               });
             }, 0);
           }
@@ -2415,7 +2453,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     const currentTask = tasks.find(t => t.id === selectedTaskId);
     if (!files.zh && !files.en) return;
 
-    const taskKey = selectedTaskId || customFilename || '_default';
+    const taskKey = reviewTaskKey(selectedTaskId, get().processedSubs);
     get().clearMergeReviewChecked(taskKey);
     set({ isProcessing: true, processedSubs: null });
     
@@ -2506,6 +2544,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       mergeReviewCheckedByTask: {},
       isLightsOff: false,
       isOfficialSubtitle: false,
+      isOriginalWork: false,
       creditDeclaration: 'none',
       creditPlacement: 'after-last',
       creatorCredit: '',

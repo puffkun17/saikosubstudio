@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { secondaryTermFor } from '@/core/trackTerms';
+import { OriginalConfirmDialog } from '@/components/Ingest/OriginalConfirmDialog';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
 import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity, isSdhOrCcSubtitleFilename } from '@/utils/subtitleCore';
@@ -317,17 +319,20 @@ const describeTrack = (file: Subfile) => {
     const pair = file.languagePair;
     return pair ? `${labels[pair.primary]} / ${labels[pair.secondary]} 双语轨` : '双语轨';
   }
-  if (file.lang === 'zh-CN' || file.lang === 'zh-TW') return '主字幕轨';
+  if (file.lang === 'zh-CN' || file.lang === 'zh-TW') return '主字幕';
   if (file.lang === 'en') {
-    return isSdhOrCcSubtitleFilename(file.name) ? 'SDH/CC 原文轨' : '原文轨';
+    return isSdhOrCcSubtitleFilename(file.name) ? '副字幕 · 英语 SDH/CC' : '副字幕 · 英语';
   }
-  if (['es', 'fr', 'pt', 'de', 'it'].includes(file.lang)) return '第二语言轨';
+  if (['es', 'fr', 'pt', 'de', 'it'].includes(file.lang)) return secondaryTermFor(file.lang);
   if (['ja', 'ko', 'latin'].includes(file.lang)) return '其他语种轨';
   return '待确认轨';
 };
 
 export const DragZone: React.FC = () => {
-  const { isDragging, setIsDragging, processFiles, addLog, setIngestClearing, isOfficialSubtitle, setIsOfficialSubtitle, setStatusNotice, statusNotices, dismissStatusNotice } = useStudioStore(useShallow((state) => ({
+  const [confirmOriginal, setConfirmOriginal] = React.useState(false);
+  const { isDragging, setIsDragging, processFiles, addLog, setIngestClearing, isOfficialSubtitle, setIsOfficialSubtitle, isOriginalWork, setIsOriginalWork, setStatusNotice, statusNotices, dismissStatusNotice } = useStudioStore(useShallow((state) => ({
+    isOriginalWork: state.isOriginalWork,
+    setIsOriginalWork: state.setIsOriginalWork,
     isDragging: state.isDragging,
     setIsDragging: state.setIsDragging,
     processFiles: state.processFiles,
@@ -937,7 +942,7 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
     const acceptedCount = queuedItems.filter((item) => item.accepted).length;
     const disabled = acceptedCount === 0 || Boolean(queueIssue);
     setForwardAction({
-      label: '下一步',
+      label: '整理文件',
       disabled,
       ready: !disabled,
       disabledReason: queueIssue || '清单中暂无可整理的字幕文件，移除无效项或补充文件后继续。',
@@ -1067,6 +1072,7 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
     if (hasLoose && parts.length === 0) parts.push('本地文件');
     else if (hasLoose && (hasArchive || hasFolder)) parts.push('含本地文件');
     if (isOfficialSubtitle) parts.unshift('官方字幕');
+    if (isOriginalWork) parts.unshift('原创');
     return parts.join(' · ');
   })();
 
@@ -1359,6 +1365,25 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
                     />
                     官方字幕
                   </label>
+                  <label className="inline-flex h-10 cursor-pointer items-center gap-2 px-1 text-sm font-medium text-[var(--v4-text-muted)] md:h-11 md:text-[15px]" title="开启后可在工作台编辑署名">
+                    <input
+                      type="checkbox"
+                      checked={isOriginalWork}
+                      onChange={(event) => {
+                        if (event.target.checked) setConfirmOriginal(true);
+                        else setIsOriginalWork(false);
+                      }}
+                      className="h-3.5 w-3.5 accent-[var(--v4-accent)]"
+                      data-testid="source-original"
+                    />
+                    原创
+                  </label>
+                  {confirmOriginal && (
+                    <OriginalConfirmDialog
+                      onCancel={() => setConfirmOriginal(false)}
+                      onConfirm={() => { setIsOriginalWork(true); setConfirmOriginal(false); }}
+                    />
+                  )}
                   <div className="relative" ref={addMenuRef}>
                     <button
                       type="button"

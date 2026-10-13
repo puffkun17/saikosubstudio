@@ -1,5 +1,6 @@
 'use client';
 
+import { secondaryTermFor } from '@/core/trackTerms';
 import React, { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, Subfile } from '@/store/useStudioStore';
@@ -7,7 +8,6 @@ import { Check, CircleAlert, GripVertical, Info, Paintbrush, Plus, RotateCcw, Se
 import { parseSrt, decodeBuffer, detectSubtitleLanguage, StyleSettings } from '@/utils/subtitleCore';
 import { motion } from 'framer-motion';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
-import { CreditTool } from '@/components/Ingest/CreditTool';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { FileFormatIcon, LanguageMark } from '@/components/ui/FileFormatIcon';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
@@ -52,7 +52,6 @@ const isEnglishLikeLang = (lang?: string | null, name?: string | null): boolean 
 export const TaskList: React.FC = () => {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [pendingCancelUpload, setPendingCancelUpload] = useState(false);
-  const [isFilenameFocused, setIsFilenameFocused] = useState(false);
   const [draggingTrack, setDraggingTrack] = useState<'zh' | 'en' | null>(null);
   const [dropTargetTrack, setDropTargetTrack] = useState<'zh' | 'en' | null>(null);
   const [dragPointer, setDragPointer] = useState<{ x: number; y: number } | null>(null);
@@ -76,18 +75,10 @@ export const TaskList: React.FC = () => {
     deleteTask,
     cancelCurrentUpload,
     uploadedFiles,
-    customFilename,
-    filenameSource,
-    setCustomFilename,
     isProcessing,
     runSubtitleMerge,
-    showAssHint,
-    setShowAssHint,
     foundAssStyle,
     customStyle,
-    setCustomStyle,
-    setActivePreset,
-    addLog,
     alignmentMode,
     setAlignmentMode,
     setTmdbManualOpen,
@@ -113,8 +104,6 @@ export const TaskList: React.FC = () => {
     setShowAssHint: state.setShowAssHint,
     foundAssStyle: state.foundAssStyle,
     customStyle: state.customStyle,
-    setCustomStyle: state.setCustomStyle,
-    setActivePreset: state.setActivePreset,
     addLog: state.addLog,
     alignmentMode: state.alignmentMode,
     setAlignmentMode: state.setAlignmentMode,
@@ -200,67 +189,16 @@ export const TaskList: React.FC = () => {
     }
   };
 
-  const getFilenameSourceLabel = () => {
-    switch (filenameSource) {
-      case 'tmdb':
-        return '片源信息';
-      case 'auto':
-        return '原始文件名';
-      case 'manual':
-        return '手动输入';
-      case 'library':
-        return '历史存档';
-      default:
-        return '待填写';
-    }
-  };
 
-  const stripSubtitleExt = (name: string) => name.replace(/\.(srt|ass)$/i, '').trim();
 
-  const buildSourceFilename = () => {
-    if (!tmdbData) return '';
-    const parts = [tmdbData.title, tmdbData.year, activeTask?.epKey?.toUpperCase()].filter(Boolean);
-    return parts.join('.');
-  };
 
-  const buildTrackFilename = () => {
-    if (!activeTask) return '';
-    const stems = [activeTask.zh?.name, activeTask.en?.name]
-      .filter(Boolean)
-      .map((name) => stripSubtitleExt(name as string));
-    if (stems.length === 0) {
-      const fallback = activeTask.title.replace(/待补充片名.*/g, '').trim();
-      return fallback;
-    }
-    if (stems.length === 1) return stems[0];
-    // Prefer shared prefix; otherwise keep primary stem.
-    const [a, b] = stems;
-    let i = 0;
-    const limit = Math.min(a.length, b.length);
-    while (i < limit && a[i] === b[i]) i += 1;
-    const shared = a.slice(0, i).replace(/[.\-_\[\(]+$/g, '').trim();
-    return shared.length >= 6 ? shared : a;
-  };
 
-  const applyFilenameFromSource = (source: 'tmdb' | 'auto') => {
-    const next = source === 'tmdb' ? buildSourceFilename() : buildTrackFilename();
-    if (!next) {
-      addLog(source === 'tmdb' ? '暂无可用片源命名' : '暂无可用字幕文件名', 'info');
-      return;
-    }
-    setCustomFilename(next, source);
-  };
 
-  const renderMarqueeText = (text: string, className = '') => {
-    const shouldScroll = text.length > 38;
-    return (
-      <span className={`hover-marquee ${className}`} title={text}>
-        <span className={shouldScroll ? 'hover-marquee-content' : 'truncate'}>
-          {text}
-        </span>
-      </span>
-    );
-  };
+
+
+
+
+
 
   // Find active task or default to first
   const activeTask = tasks.find(t => t.id === selectedTaskId) || tasks[0];
@@ -375,11 +313,9 @@ export const TaskList: React.FC = () => {
   const secondaryLooksEnglish = Boolean(
     secondaryFile && isEnglishLikeLang(secondaryFile.lang, secondaryFile.name),
   );
-  const secondaryLabel = secondaryLooksEnglish ? '原文' : '次语言 / 原文轨';
-  const secondaryPlaceholder = secondaryLooksEnglish
-    ? '选择英语原文（可选）'
-    : '选择次语言 / 原文轨（可选）';
-  const secondaryHint = '次语言通常为英语，也支持西语、法语、葡语、德语、意语和日语、韩语等与主语言不同的对白轨；与主字幕同语种（含简繁互为）不能作为合轴对。';
+  const secondaryLabel = secondaryTermFor(secondaryFile?.lang);
+  const secondaryPlaceholder = secondaryLooksEnglish ? '选择副字幕 · 英语（可选）' : '选择副字幕（可选）';
+  const secondaryHint = '副字幕通常为英语，也支持西语、法语、葡语、德语、意语和日语、韩语等与主语言不同的对白轨；与主字幕同语种（含简繁互为）不能作为合轴对。';
 
   const sameScriptPairBound = Boolean(
     activeTask
@@ -429,7 +365,7 @@ export const TaskList: React.FC = () => {
     ? '正在准备…'
     : needsTitleInput
       ? '跳过匹配'
-      : '下一步';
+      : '开始合轴';
 
   useEffect(() => {
     if (!activeTask) {
@@ -441,7 +377,7 @@ export const TaskList: React.FC = () => {
       disabled: !canProceed,
       ready: canProceed && !isProcessing && !sameScriptPairBound,
       disabledReason: sameScriptPairBound
-        ? '当前像是两套中文主语言字幕，请补上次语言轨或取消次轨后再继续。'
+        ? '当前像是两套中文主语言字幕，请补上副字幕或取消副字幕后再继续。'
         : '请先为当前任务绑定至少一条主字幕轨。',
       onClick: () => {
         if (!canProceed) return;
@@ -450,7 +386,7 @@ export const TaskList: React.FC = () => {
             id: 'same-script-pair-blocked',
             tone: 'warning',
             title: '无法按双语合轴继续',
-            message: '当前像是两套中文主语言字幕，不是双语对。请补上英语等次语言轨再合轴；或取消次轨，按单语整理/导出。',
+            message: '当前像是两套中文主语言字幕，不是双语对。请补上英语等副字幕再合轴；或取消副字幕，按单语整理/导出。',
           });
           return;
         }
@@ -677,7 +613,7 @@ export const TaskList: React.FC = () => {
                 字幕序列
               </h4>
               <InfoHint label="字幕序列说明">
-                选择要处理的字幕文件。双语单文件会自动识别；分开的中文主字幕与次语言轨将按时间轴合并。同语种（含简繁）不能作为合轴对。
+                选择要处理的字幕文件。双语单文件会自动识别；分开的主字幕与副字幕将按时间轴合并。同语种（含简繁）不能作为合轴对。
               </InfoHint>
               {activeTask.isBilingualSingle && (
                 <span className="rd-chip rd-chip--tight text-[var(--v4-text-muted)]">
@@ -686,7 +622,7 @@ export const TaskList: React.FC = () => {
               )}
               {!activeTask.isBilingualSingle && activeTask.zh && activeTask.en && (
                 <span className="ml-auto text-xs font-normal text-[var(--v4-text-faint)]">
-                  拖动行尾手柄可互换主副轨
+                  拖动行尾手柄可对调主字幕与副字幕
                 </span>
               )}
             </div>
@@ -751,8 +687,8 @@ export const TaskList: React.FC = () => {
                             swapPrimaryTracks(activeTask.id);
                           }
                         }}
-                        aria-label={canReorderTracks ? `拖动以对调${trackKey === 'zh' ? '主字幕' : '次语言'}顺序` : undefined}
-                        title={canReorderTracks ? '按住拖动，对调主副轨' : undefined}
+                        aria-label={canReorderTracks ? `拖动以对调${trackKey === 'zh' ? '主字幕' : '副字幕'}顺序` : undefined}
+                        title={canReorderTracks ? '按住拖动，对调主字幕与副字幕' : undefined}
                         className={`grid h-11 w-8 shrink-0 place-items-center rounded-md text-[var(--v4-text-muted)] transition-colors touch-none ${
                           canReorderTracks
                             ? 'cursor-grab hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] active:cursor-grabbing'
@@ -792,7 +728,7 @@ export const TaskList: React.FC = () => {
                           'en',
                           <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-[var(--v4-text-muted)]">
                             {secondaryLabel}
-                            <InfoHint label="次语言 / 原文轨说明" side="right">
+                            <InfoHint label="副字幕说明" side="right">
                               {secondaryHint}
                             </InfoHint>
                           </span>,
@@ -864,7 +800,7 @@ export const TaskList: React.FC = () => {
                 当前像是两套中文主语言字幕，不是双语对
               </p>
               <p className="mt-1 text-[var(--v4-text-muted)]">
-                请补上英语等次语言轨再合轴；或取消次轨，按单语整理/导出。简繁中文互为同语种，不能作为合轴对。
+                请补上英语等副字幕再合轴；或取消副字幕，按单语整理/导出。简繁中文互为同语种，不能作为合轴对。
               </p>
             </div>
           )}
@@ -918,77 +854,6 @@ export const TaskList: React.FC = () => {
             </div>
           )}
 
-          {/* Credit first, then export name (field + fill shortcuts) */}
-          <div className="flex flex-shrink-0 flex-col gap-[var(--ds-gap-section)]">
-            <CreditTool />
-
-            <div className="ds-section">
-              <div className="flex items-center gap-2">
-                <h4 className="ds-head inline-flex select-none items-center gap-1.5">
-                  导出选项
-                  <InfoHint label="导出选项说明">
-                    默认留空，可手输；也可用下方捷径从片源或原始文件名填充。格式在导出时再选。
-                  </InfoHint>
-                </h4>
-                <span className="ui-meta ml-auto shrink-0">
-                  {getFilenameSourceLabel()}
-                </span>
-              </div>
-
-              <div className="ds-well border border-[var(--v4-line)] bg-[var(--v4-panel-muted)]">
-                <div className="relative">
-                  <div className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md border px-2.5 py-1.5 transition-colors ${
-                    isFilenameFocused
-                      ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)]'
-                      : 'border-[var(--v4-line)] bg-[var(--v4-panel)]'
-                  }`}>
-                    <input
-                      type="text"
-                      className="v4-focus-ring h-8 w-full min-w-0 border-0 bg-transparent font-mono text-[14px] font-medium text-[var(--v4-text)] outline-none placeholder:text-[var(--v4-text-faint)]"
-                      value={customFilename}
-                      onChange={e => setCustomFilename(e.target.value, 'manual')}
-                      onFocus={() => setIsFilenameFocused(true)}
-                      onBlur={() => setIsFilenameFocused(false)}
-                      placeholder="输入导出文件名"
-                      aria-label="导出文件名"
-                    />
-                    <span className="shrink-0 font-mono text-xs font-semibold tracking-wide text-[var(--v4-text-faint)]">
-                      .ass / .srt
-                    </span>
-                  </div>
-                  {customFilename.length > 42 && !isFilenameFocused && (
-                    <div className="pointer-events-none absolute inset-y-px left-2.5 right-[4.75rem] flex items-center overflow-hidden bg-[var(--v4-panel)] font-mono text-[14px] font-medium text-[var(--v4-text)]">
-                      {renderMarqueeText(customFilename, 'w-full')}
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-[var(--ds-gap-item)] flex flex-wrap items-center gap-2">
-                  <span className="ui-meta">填充来源</span>
-                  <div className="ui-choice-group" role="group" aria-label="填充导出文件名">
-                    <button
-                      type="button"
-                      className={`ui-choice ${filenameSource === 'tmdb' ? 'ui-choice--on' : ''} ${tmdbData ? '' : 'cursor-not-allowed opacity-40'}`}
-                      disabled={!tmdbData}
-                      title={tmdbData ? '用片源信息生成文件名' : '需先匹配片源'}
-                      onClick={() => applyFilenameFromSource('tmdb')}
-                    >
-                      片源
-                    </button>
-                    <button
-                      type="button"
-                      className={`ui-choice ${filenameSource === 'auto' ? 'ui-choice--on' : ''}`}
-                      title="用当前字幕轨原始文件名填充"
-                      onClick={() => applyFilenameFromSource('auto')}
-                    >
-                      原始文件名
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Configuration & Process Dock — sticky when ASS style decision is present */}
           {foundAssStyle && (
           <div className="sticky bottom-0 z-10 flex flex-col gap-[var(--ds-gap-item)] overflow-visible border-t border-[var(--v4-line)] bg-[var(--v4-panel)]/95 pt-[var(--ds-gap-group)] backdrop-blur-sm">
@@ -1003,8 +868,8 @@ export const TaskList: React.FC = () => {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Paintbrush className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />
-                      <h5 className="text-sm font-semibold text-[var(--v4-text)]">文件内嵌样式</h5>
-                      {isFoundAssStyleApplied && !showAssHint && (
+                      <h5 className="text-sm font-semibold text-[var(--v4-text)]">源文件内嵌样式</h5>
+                      {isFoundAssStyleApplied && (
                         <span className="ui-meta ui-meta--key gap-1">
                           <Check className="h-3 w-3" />
                           已用于导出
@@ -1015,40 +880,13 @@ export const TaskList: React.FC = () => {
                       预览来自当前 ASS 文件。字体按当前设备可用版本近似呈现。
                     </p>
                     <p className="ui-meta-row mt-3">
-                      中文 {foundAssStyle.zhFontSize || '--'} px
+                      主字幕 {foundAssStyle.zhFontSize || '--'} px
                       <span aria-hidden="true"> · </span>
-                      原文 {foundAssStyle.enFontSize || '--'} px
+                      副字幕 {foundAssStyle.enFontSize || '--'} px
                     </p>
                   </div>
 
-                  {(showAssHint || !isFoundAssStyleApplied) && (
-                    <div className="ui-choice-group" role="group" aria-label="内嵌样式选择">
-                      <button
-                        type="button"
-                        className="ui-choice ui-choice--on"
-                        onClick={() => {
-                          setCustomStyle({ ...customStyle, ...foundAssStyle } as StyleSettings);
-                          setActivePreset('ass_native');
-                          setShowAssHint(false);
-                          addLog('已采用 ASS 文件内嵌样式', 'success');
-                        }}
-                      >
-                        使用源样式
-                      </button>
-                      {showAssHint && (
-                        <button
-                          type="button"
-                          className="ui-choice"
-                          onClick={() => {
-                            setShowAssHint(false);
-                            addLog('已保留当前字幕样式', 'info');
-                          }}
-                        >
-                          保留当前样式
-                        </button>
-                      )}
-                    </div>
-                  )}
+                  <p className="ds-meta">可在预览「样式」中选用「源文件内嵌样式」。</p>
                 </div>
               </div>
             </motion.div>

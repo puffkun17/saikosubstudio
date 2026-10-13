@@ -108,7 +108,7 @@ const WorkflowStepButton: React.FC<WorkflowStepButtonProps> = ({
 }) => {
   const isActive = workflowStep === step.id;
   const isFilled = step.id <= workflowStep;
-  const gatedHint = step.id === 2 || step.id === 3 ? '请先添加字幕' : undefined;
+  const gatedHint = step.id === 2 ? '导入完成（点「开始合轴」）后可进入' : step.id === 3 ? '进入工作台后可预览' : undefined;
 
   if (variant === 'bottom') {
     return (
@@ -242,22 +242,19 @@ export const SystemTray = () => {
   const handleStepClick = (targetStep: number) => {
     if (targetStep === workflowStep) return;
 
+    // 「导入」只负责切换，不清空；清空是导入页里单独的「清空本次导入」。
     if (targetStep === 1) {
-      if (hasUploadData || hasWorkbenchData) {
-        setPendingReset(true);
-        return;
-      }
       setWorkflowStep(1);
       return;
     }
 
     if (targetStep === 2) {
-      if (!hasUploadData && !hasWorkbenchData) {
+      if (!hasWorkbenchData) {
         setStatusNotice({
           id: 'workflow-gated',
           tone: 'notice',
-          title: '请先添加字幕',
-          message: '添加并整理文件后可进入工作台。',
+          title: hasUploadData ? '导入尚未完成' : '请先添加字幕',
+          message: hasUploadData ? '在导入页点「开始合轴」后可进入工作台。' : '添加并整理文件后可进入工作台。',
           meta: '2',
         });
         focusIngestDropZone();
@@ -312,7 +309,7 @@ export const SystemTray = () => {
   }, []);
 
   const stepDisabled = (stepId: number) =>
-    (stepId === 2 && !hasUploadData && !hasWorkbenchData)
+    (stepId === 2 && !hasWorkbenchData)
     || (stepId === 3 && !hasWorkbenchData);
 
   const workflowCluster = (variant: 'top' | 'bottom') => (

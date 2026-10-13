@@ -1,11 +1,12 @@
 'use client';
 
+import { classifyLineKind } from '@/core/lineKinds';
 import React, { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
-import { applyAuxiliarySubtitleMode, extractStylesFromAss, type StyleSettings } from '@/utils/subtitleCore';
-import { estimateStyleFromImageFile } from '@/utils/styleFromImage';
-import { FileUp, Image as ImageIcon, ALargeSmall, ChevronDown, ChevronUp, FileType, Paintbrush, Pipette, Save, SlidersHorizontal, SquareArrowRightExit, SquareCenterlineDashedHorizontal, Trash2, X } from 'lucide-react';
+import { type StyleSettings } from '@/utils/subtitleCore';
+import { StyleLibrary, useSelectedStyleEntry } from '@/components/Settings/StyleLibrary';
+import { RotateCcw, ALargeSmall, ChevronDown, ChevronUp, FileType, Pipette, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { ColorSampler } from '@/components/Settings/ColorSampler';
@@ -205,36 +206,29 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
     customStyle: baseStyle,
     setCustomStyle,
     exportPresetId,
-    setExportPresetId,
     styleOverrides,
     setStyleOverrides,
     activePreset,
-    setActivePreset,
-    showGuides,
-    setShowGuides,
-    triggerTempGuides,
     customTemplates,
-    saveCustomTemplate,
-    deleteCustomTemplate,
-    setIsSettingsOpen,
+    foundAssStyle,
+    applyStyleEntry,
+    triggerTempGuides,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     customStyle: state.customStyle,
     setCustomStyle: state.setCustomStyle,
-    activePreset: state.activePreset,
-    setActivePreset: state.setActivePreset,
-    showGuides: state.showGuides,
-    setShowGuides: state.setShowGuides,
-    triggerTempGuides: state.triggerTempGuides,
-    customTemplates: state.customTemplates,
-    saveCustomTemplate: state.saveCustomTemplate,
-    deleteCustomTemplate: state.deleteCustomTemplate,
-    setIsSettingsOpen: state.setIsSettingsOpen,
     exportPresetId: state.exportPresetId,
-    setExportPresetId: state.setExportPresetId,
     styleOverrides: state.styleOverrides,
     setStyleOverrides: state.setStyleOverrides,
+    activePreset: state.activePreset,
+    customTemplates: state.customTemplates,
+    foundAssStyle: state.foundAssStyle,
+    applyStyleEntry: state.applyStyleEntry,
+    triggerTempGuides: state.triggerTempGuides,
   })));
+  const { entry: selectedEntry, tuned } = useSelectedStyleEntry(customTemplates, foundAssStyle, activePreset, baseStyle, exportPresetId, styleOverrides);
+  const selectedId = selectedEntry?.id ?? 'classic';
+  const selectedName = selectedEntry?.name ?? '自定义';
   // 面板显示与编辑的都是“实际生效样式”（侧栏样式 → 导出预设 → 用户微调），与预览、导出同源。
   const customStyle = React.useMemo(
     () => resolveEffectiveStyle(baseStyle, exportPresetId, styleOverrides),
@@ -247,96 +241,16 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
     else setCustomStyle({ ...baseStyle, ...patch });
   };
 
-  const [showTemplateSave, setShowTemplateSave] = useState(false);
-  const [templateNameInput, setTemplateNameInput] = useState('');
   const [openPicker, setOpenPicker] = useState<string | null>(null);
   const [isLyricsExpanded, setIsLyricsExpanded] = useState(true);
-  const [activePanel, setActivePanel] = useState<'template' | 'type' | 'output'>('type');
 
+  const hasCredit = Boolean(processedSubs?.some((sub) => classifyLineKind(sub) === 'credit'));
   const hasLyrics = processedSubs?.some(sub => {
     if (!sub.text) return false;
     return /[♪♫♬♩🎵🎶]/.test(sub.text);
   });
-  const auxiliaryCount = processedSubs?.filter(sub => (
-    sub.cueKind === 'sound_caption'
-    || sub.cueKind === 'screen_text'
-    || sub.cueKind === 'narration'
-    || (sub.auxiliary?.category && sub.auxiliary.category !== 'unknown')
-  )).length ?? 0;
-  const screenTextCount = processedSubs?.filter(sub => (
-    sub.cueKind === 'screen_text' || sub.auxiliary?.category === 'screen_text'
-  )).length ?? 0;
-  const smartHiddenCount = processedSubs ? processedSubs.length - applyAuxiliarySubtitleMode(processedSubs, 'smart').length : 0;
-
-
-  const handleApplyPreset = (preset: { id: string; styles: Partial<StyleSettings> }) => {
-    setActivePreset(preset.id);
-    // 模板是完整样式：切到「当前样式」预设，让模板本身成为导出样式。
-    setExportPresetId('current');
-    setCustomStyle({ ...customStyle, ...preset.styles });
-  };
-
-  const handleRestore = () => {
-    setActivePreset('classic');
-    const defaultStyle = {
-      zhFontSize: 20,
-      enFontSize: 12,
-      zhColor: '#FFFFFF',
-      enColor: '#B0B0B0',
-      zhOutline: '#4B5563',
-      enOutline: '#000000',
-      marginV: 20,
-      lyricFontSize: 16,
-      lyricColor: '#E6E6FA',
-      lyricItalic: true,
-      lyricPosition: 'top' as const,
-      enScale: 90,
-      maxLenZh: 20,
-      maxLenEn: 80,
-      resolution: '1080p' as const,
-      aspectRatio: '16:9' as const,
-      globalScale: 1.0,
-      auxiliaryMode: 'keep' as const,
-      zhFontFamily: 'system-ui, "PingFang SC", "Noto Sans SC", sans-serif',
-      enFontFamily: 'Helvetica Neue, Arial, "Inter", sans-serif'
-    };
-    // 持久化由 store 的 persistStyles 统一处理，这里不再直接写 localStorage。
-    setExportPresetId('current');
-    setCustomStyle({ ...baseStyle, ...defaultStyle });
-  };
-
   const handleStyleChange = <K extends keyof StyleSettings>(key: K, value: StyleSettings[K]) => {
-    setActivePreset('custom');
     commitStyle({ [key]: value } as Partial<StyleSettings>);
-  };
-
-  const [importNote, setImportNote] = useState<string | null>(null);
-  /** 从 .ass 或截图取样式，写入同一份样式（切到「当前样式」预设，预览与导出一致）。全部在本机完成。 */
-  const importStyleFile = async (file: File) => {
-    const isAss = /\.(ass|ssa)$/i.test(file.name);
-    try {
-      const mined = isAss ? extractStylesFromAss(await file.text()) : await estimateStyleFromImageFile(file);
-      if (!mined) {
-        setImportNote(isAss ? '这个文件里没有可用的 [V4+ Styles]。' : '没在截图下部找到字幕，换一张字幕清楚的截图。');
-        return;
-      }
-      const patch = Object.fromEntries(Object.entries(mined).filter(([, v]) => v !== undefined)) as Partial<StyleSettings>;
-      setActivePreset('custom');
-      setExportPresetId('current');
-      setCustomStyle({ ...customStyle, ...patch });
-      setImportNote(isAss
-        ? `已采用 ${file.name} 的样式：字号 ${patch.zhFontSize ?? '—'}/${patch.enFontSize ?? '—'}，下边距 ${patch.marginV ?? '—'}。`
-        : `已按截图估计：文字 ${patch.zhColor}、描边 ${patch.zhOutline}、字号约 ${patch.zhFontSize}、下边距约 ${patch.marginV}。仅为估计，请对照预览微调。`);
-    } catch {
-      setImportNote('读取失败，文件未改动任何样式。');
-    }
-  };
-
-  const handleSaveTemplate = () => {
-    if (!templateNameInput.trim()) return;
-    saveCustomTemplate(templateNameInput.trim());
-    setTemplateNameInput('');
-    setShowTemplateSave(false);
   };
 
   return (
@@ -348,178 +262,21 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
           : `flex h-full w-full flex-col overflow-y-auto text-left text-[var(--v4-text)] scrollbar-thin ${embedded ? 'p-[var(--ds-pad-card)]' : 'bg-[var(--v5-cream)] p-[var(--ds-pad-card)]'}`
       }
     >
-      {/* 停靠面板已有标题与关闭；辅助线开关在画面下方 */}
-      {!embedded && (
-      <div className="mb-5 flex flex-shrink-0 items-start justify-between gap-4 border-b border-[var(--v4-line)] pb-4">
-        <div className="min-w-0 select-none">
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4 text-[var(--v4-text-muted)]" />
-            <h3 className="text-lg font-semibold tracking-tight text-[var(--v4-text)]">
-              样式参数
-            </h3>
-          </div>
-          <p className="mt-1 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
-            预览与导出共用此样式
-          </p>
-        </div>
+      <StyleLibrary />
 
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="ui-choice-group" role="group" aria-label="辅助线">
-            <button
-              type="button"
-              className={`ui-choice gap-2 ${showGuides ? 'ui-choice--on' : ''}`}
-              onClick={() => setShowGuides(!showGuides)}
-              aria-pressed={showGuides}
-            >
-              <SquareCenterlineDashedHorizontal className="h-4 w-4" aria-hidden="true" />
-              辅助线
+      <div className="mt-[var(--ds-gap-section)] flex flex-1 flex-col gap-[var(--ds-pad-card)] border-t border-[var(--v4-line)] pt-[var(--ds-pad-card)]">
+        <div className="flex min-h-8 items-center justify-between gap-[var(--ds-gap-group)]">
+          <h4 className="ds-label">微调</h4>
+          {tuned ? (
+            <button type="button" className="ui-action ui-action--quiet min-h-8 px-[var(--ds-ctl-px-sm)] text-xs" onClick={() => applyStyleEntry(selectedId)} data-testid="style-reset">
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+              重置为「{selectedName}」
             </button>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsSettingsOpen(false)}
-            className="ui-action ui-action--quiet ui-action--icon"
-            aria-label="关闭样式参数"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
+          ) : (
+            <span className="ds-meta">基于「{selectedName}」</span>
+          )}
         </div>
-      </div>
-      )}
-
-      <div className="ui-choice-group mb-[var(--ds-gap-group)] w-full" role="tablist" aria-label="样式设置分类">
-        {([
-          { id: 'template', label: '模板' },
-          { id: 'type', label: '文字' },
-          { id: 'output', label: '输出' },
-        ] as const).map(item => (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={activePanel === item.id}
-            onClick={() => setActivePanel(item.id)}
-            className={`ui-choice min-h-9 flex-1 ${activePanel === item.id ? 'ui-choice--on' : ''}`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex flex-1 flex-col gap-[var(--ds-pad-card)]">
-        {activePanel === 'template' && (
-        <SettingSection
-          title="模板"
-          icon={<Paintbrush className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}
-          action={
-            <button
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)] cursor-pointer"
-              onClick={() => {
-                setTemplateNameInput(`自定义模板 ${customTemplates.length + 1}`);
-                setShowTemplateSave(v => !v);
-              }}
-            >
-              <Save className="h-4 w-4" />
-              保存
-            </button>
-          }
-        >
-          <AnimatePresence>
-            {showTemplateSave && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                className="overflow-hidden"
-              >
-                <div className="flex gap-2 pb-1">
-                  <input
-                    type="text"
-                    autoFocus
-                    value={templateNameInput}
-                    onChange={e => setTemplateNameInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') handleSaveTemplate(); if (e.key === 'Escape') setShowTemplateSave(false); }}
-              className="h-[var(--ds-ctl-h)] min-w-0 flex-1 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-[var(--ds-ctl-px)] text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)]"
-                    placeholder="模板名称"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSaveTemplate}
-                    className="ui-action"
-                  >
-                    确定
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="flex items-center gap-2">
-            <select
-              value={activePreset}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === 'classic') handleRestore();
-                else {
-                  const tpl = customTemplates.find(t => t.id === val);
-                  if (tpl) handleApplyPreset(tpl);
-                }
-              }}
-              className="h-[var(--ds-ctl-h)] min-w-0 flex-1 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
-            >
-              <option value="classic">默认经典样式</option>
-              {customTemplates.map(tpl => (
-                <option key={tpl.id} value={tpl.id}>{tpl.name}</option>
-              ))}
-              {activePreset === 'custom' && (
-                <option value="custom" disabled>自定义配置（未保存）</option>
-              )}
-            </select>
-            {activePreset !== 'classic' && activePreset !== 'custom' && (
-              <button
-                onClick={() => deleteCustomTemplate(activePreset)}
-                className="ui-action ui-action--quiet ui-action--icon"
-                title="删除当前模板"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </SettingSection>
-        )}
-
-        {activePanel === 'template' && (
-        <SettingSection
-          title="从文件获取样式"
-          icon={<FileUp className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}
-          action={
-            <InfoHint label="从文件获取样式说明" side="left">
-              在本机读取，不上传。.ass/.ssa 读取 [V4+ Styles] 的字体、字号、颜色、描边、边距；截图只能估计文字颜色、描边和位置。
-            </InfoHint>
-          }
-        >
-          <div className="flex flex-col gap-[var(--ds-gap-item)]">
-            <div className="grid grid-cols-2 gap-[var(--ds-gap-item)]">
-              <label className="ui-action justify-center cursor-pointer" data-testid="import-style-ass">
-                <FileType className="h-4 w-4" aria-hidden="true" />
-                ASS 文件
-                <input type="file" accept=".ass,.ssa" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void importStyleFile(f); }} />
-              </label>
-              <label className="ui-action justify-center cursor-pointer" data-testid="import-style-image">
-                <ImageIcon className="h-4 w-4" aria-hidden="true" />
-                截图
-                <input type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void importStyleFile(f); }} />
-              </label>
-            </div>
-            {importNote && (
-              <p className="text-xs leading-relaxed text-[var(--v4-text-muted)]" role="status" data-testid="import-style-note">{importNote}</p>
-            )}
-          </div>
-        </SettingSection>
-        )}
-
-        {activePanel === 'type' && (
+        {(
           <>
         <SettingSection
           title="文字尺寸"
@@ -541,7 +298,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
             onChange={value => handleStyleChange('globalScale', value)}
           />
           <SliderControl
-            label="中文字幕"
+            label="主字幕"
             value={customStyle.zhFontSize}
             min={12}
             max={36}
@@ -549,7 +306,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
             onChange={value => handleStyleChange('zhFontSize', value)}
           />
           <SliderControl
-            label="原文字幕"
+            label="副字幕"
             value={customStyle.enFontSize}
             min={8}
             max={24}
@@ -571,13 +328,13 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
 
         <SettingSection title="字体" icon={<FileType className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}>
           <FontFamilySelect
-            label="中文"
+            label="主字幕"
             value={customStyle.zhFontFamily || FONT_FAMILIES_ZH[0].value}
             options={FONT_FAMILIES_ZH}
             onChange={(v) => handleStyleChange('zhFontFamily', v)}
           />
           <FontFamilySelect
-            label="原文"
+            label="副字幕"
             value={customStyle.enFontFamily || FONT_FAMILIES_EN[0].value}
             options={FONT_FAMILIES_EN}
             onChange={(v) => handleStyleChange('enFontFamily', v)}
@@ -586,28 +343,28 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
 
         <SettingSection title="颜色" icon={<Pipette className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}>
           <ColorPicker
-            label="中文文字"
+            label="主字幕文字"
             value={customStyle.zhColor}
             isOpen={openPicker === 'zhColor'}
             onToggle={() => setOpenPicker(openPicker === 'zhColor' ? null : 'zhColor')}
             onChange={(c) => handleStyleChange('zhColor', c)}
           />
           <ColorPicker
-            label="中文描边"
+            label="主字幕描边"
             value={customStyle.zhOutline}
             isOpen={openPicker === 'zhOutline'}
             onToggle={() => setOpenPicker(openPicker === 'zhOutline' ? null : 'zhOutline')}
             onChange={(c) => handleStyleChange('zhOutline', c)}
           />
           <ColorPicker
-            label="原文文字"
+            label="副字幕文字"
             value={customStyle.enColor}
             isOpen={openPicker === 'enColor'}
             onToggle={() => setOpenPicker(openPicker === 'enColor' ? null : 'enColor')}
             onChange={(c) => handleStyleChange('enColor', c)}
           />
           <ColorPicker
-            label="原文描边"
+            label="副字幕描边"
             value={customStyle.enOutline || '#000000'}
             isOpen={openPicker === 'enOutline'}
             onToggle={() => setOpenPicker(openPicker === 'enOutline' ? null : 'enOutline')}
@@ -618,63 +375,33 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
           </>
         )}
 
-        {activePanel === 'output' && (
+        {(
           <>
-        <SettingSection title="输出" icon={<SquareArrowRightExit className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}>
-          <div className="flex flex-col gap-2.5">
-            <span className="text-sm font-medium text-[var(--v4-text-muted)] inline-flex items-center gap-1.5">
-              辅助字幕策略
-              <InfoHint label="辅助字幕说明" side="left">
-                将 SDH、标题告示、歌词或非对白表达完整保留；智能精简模式会隐藏明确低价值环境音等。
-              </InfoHint>
-            </span>
-            <div className="ui-choice-group w-full" role="group" aria-label="辅助字幕策略">
-              {([
-                { value: 'keep', label: '完整', desc: '全保留' },
-                { value: 'smart', label: '智能', desc: '隐去环境音' },
-                { value: 'clean', label: '清洁', desc: '对白优先' },
-              ] as const).map(item => (
-                <button
-                  key={item.value}
-                  type="button"
-                  aria-pressed={(customStyle.auxiliaryMode || 'keep') === item.value}
-                  className={`ui-choice min-h-11 flex-1 flex-col !items-stretch !justify-center gap-0.5 px-1.5 py-1.5 ${
-                    (customStyle.auxiliaryMode || 'keep') === item.value ? 'ui-choice--on' : ''
-                  }`}
-                  onClick={() => handleStyleChange('auxiliaryMode', item.value)}
-                >
-                  <span className="block text-center text-xs font-semibold leading-tight">{item.label}</span>
-                  <span className="mt-0.5 block text-center text-xs leading-tight opacity-70">
-                    {item.desc}
-                  </span>
-                </button>
-              ))}
-            </div>
-            {auxiliaryCount > 0 && (
-              <p className="text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
-                检测到 {auxiliaryCount} 条辅助内容（标题告示 {screenTextCount} 条倾向保留；仅高置信音效可被智能精简剥离约 {smartHiddenCount} 条）。可在「字幕信息概览」分布图与详细内容中查看。
-              </p>
-            )}
-          </div>
+        {/* 输出规格（画面规格）不再单独暴露：由所选样式决定。 */}
 
-          <div className="flex flex-col gap-[var(--ds-gap-item)]">
-            <span className="text-sm font-medium text-[var(--v4-text-muted)] inline-flex items-center gap-1.5">
-              画面规格
-              <InfoHint label="画面规格说明" side="left">
-                声明 ASS 字幕样式的参考画布尺寸，影响字号、边距和描边等样式呈现。
-              </InfoHint>
-            </span>
-            <select
-              className="h-[var(--ds-ctl-h)] w-full min-w-0 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-[var(--ds-ctl-px)] text-left text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
-              value={customStyle.resolution || '1080p'}
-              onChange={e => handleStyleChange('resolution', e.target.value as StyleSettings['resolution'])}
-            >
-              <option value="SD">标清 SD</option>
-              <option value="1080p">全高清 HD 1080p</option>
-              <option value="4K">超高清 UHD 4K</option>
-            </select>
-          </div>
-        </SettingSection>
+        {hasCredit && (
+          <SettingSection title="署名" icon={<Star className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}>
+            <div className="flex flex-col gap-[var(--ds-gap-item)]">
+              <span className="text-sm font-medium text-[var(--v4-text-muted)]">画面位置</span>
+              <div className="ui-choice-group w-full" role="radiogroup" aria-label="署名画面位置">
+                {([['center', '居中'], ['bottom', '底部'], ['top', '顶部']] as const).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={(customStyle.creditPosition ?? 'center') === id}
+                    className={`ui-choice flex-1 ${(customStyle.creditPosition ?? 'center') === id ? 'ui-choice--on' : ''}`}
+                    onClick={() => handleStyleChange('creditPosition', id)}
+                    data-credit-pos={id}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="ds-meta">只改位置；署名时间点保持原样。</p>
+            </div>
+          </SettingSection>
+        )}
 
         {hasLyrics && (
           <SettingSection
