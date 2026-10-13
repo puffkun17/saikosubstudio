@@ -1,11 +1,11 @@
 'use client';
 
+import { classifyLineKind } from '@/core/lineKinds';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, HardDrive, MonitorPlay, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { DurationPicker, type DurationValue } from '@/components/ui/duration-picker';
 import type { SubRow } from '@/utils/subtitleCore';
-import { isLyricText, isSubtitleCreditText } from '@/utils/subtitleCore';
 import { createSourceMatchReport, type SourceMatchFinding, type SourceMatchReport } from '@/utils/timeline/sourceMatch';
 import { analyzeAlignmentDiff } from '@/utils/timeline/alignmentDiff';
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
@@ -94,17 +94,7 @@ const FindingIcon = ({ severity }: { severity: SourceMatchFinding['severity'] })
 
 const formatCount = (value: number) => new Intl.NumberFormat('zh-CN').format(value);
 
-const isLyricsInspectionRow = (row: SubRow) => (
-  row.type === 'lyrics'
-  || row.cueKind === 'lyrics'
-  || isLyricText(row.text)
-);
 
-const isCreditInspectionRow = (row: SubRow) => (
-  row.type === 'credit'
-  || row.cueKind === 'credit'
-  || isSubtitleCreditText(row.text)
-);
 
 export function buildInspectionMarks(rows: SubRow[], basisDurationMs: number): InspectionMark[] {
   const marks: InspectionMark[] = [];
@@ -119,19 +109,8 @@ export function buildInspectionMarks(rows: SubRow[], basisDurationMs: number): I
 
   rows.forEach((row, arrayIndex) => {
     const startMs = parseSubtitleRange(row.ts).startMs;
-    if (isCreditInspectionRow(row)) {
-      push('credit', arrayIndex, row.index, startMs);
-      return;
-    }
-    if (isLyricsInspectionRow(row)) {
-      push('lyrics', arrayIndex, row.index, startMs);
-      return;
-    }
-    if (row.cueKind === 'sound_caption' || row.auxiliary?.category === 'ambient_sdh' || row.auxiliary?.category === 'music') {
-      push('sound', arrayIndex, row.index, startMs);
-    } else if (row.cueKind === 'screen_text' || row.auxiliary?.category === 'screen_text') {
-      push('screen', arrayIndex, row.index, startMs);
-    }
+    const kind = classifyLineKind(row);
+    if (kind === 'credit' || kind === 'lyrics' || kind === 'sound' || kind === 'screen') push(kind, arrayIndex, row.index, startMs);
   });
 
   const alignment = analyzeAlignmentDiff(rows);

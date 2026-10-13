@@ -3,7 +3,8 @@
 import React from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
-import { applyAuxiliarySubtitleMode, type AuxiliarySubtitleMode } from '@/utils/subtitleCore';
+import type { AuxiliarySubtitleMode } from '@/utils/subtitleCore';
+import { countHiddenByPolicy, countLineKinds } from '@/core/lineKinds';
 import { InfoHint } from '@/components/ui/InfoHint';
 
 const OPTIONS: { value: AuxiliarySubtitleMode; label: string; desc: string }[] = [
@@ -24,12 +25,14 @@ export const AuxiliaryPolicy: React.FC = () => {
   })));
   const mode = customStyle.auxiliaryMode || 'keep';
   const stats = React.useMemo(() => {
+    // 与工作台分类、复核弹窗、预览、导出同一分类与同一过滤函数。
     const subs = processedSubs ?? [];
-    const auxiliary = subs.filter((sub) => sub.cueKind === 'sound_caption' || sub.cueKind === 'screen_text' || sub.cueKind === 'narration'
-      || (sub.auxiliary?.category && sub.auxiliary.category !== 'unknown')).length;
-    const screen = subs.filter((sub) => sub.cueKind === 'screen_text' || sub.auxiliary?.category === 'screen_text').length;
-    const kept = (m: AuxiliarySubtitleMode) => applyAuxiliarySubtitleMode(subs, m).length;
-    return { auxiliary, screen, hidden: { keep: 0, smart: subs.length - kept('smart'), clean: subs.length - kept('clean') } };
+    const counts = countLineKinds(subs);
+    return {
+      auxiliary: counts.auxiliary,
+      screen: counts.screen,
+      hidden: { keep: 0, smart: countHiddenByPolicy(subs, 'smart'), clean: countHiddenByPolicy(subs, 'clean') },
+    };
   }, [processedSubs]);
 
   return (
@@ -38,12 +41,12 @@ export const AuxiliaryPolicy: React.FC = () => {
         <div className="flex items-center gap-2">
           <h2 className="ds-label">辅助字幕</h2>
           <InfoHint label="辅助字幕说明" side="right">
-            SDH 音效、标题告示、歌词等非对白内容。完整：全部保留；智能：只隐去高置信的环境音；清洁：只留对白。只影响保留哪些行，不改样式。
+            SDH 音效、标题告示、歌词、旁白、署名等非对白行。完整：全部保留；智能：隐去环境音与配乐类 SDH；清洁：另隐去其余 SDH 与旁白说明。标题告示、歌词、署名不受影响。只决定保留哪些行，不改样式。
           </InfoHint>
         </div>
         <p className="ds-meta">
           {stats.auxiliary > 0
-            ? `检测到 ${stats.auxiliary} 条（标题告示 ${stats.screen} 条）。当前将隐去 ${stats.hidden[mode]} 条。`
+            ? `辅助内容 ${stats.auxiliary} 行，当前隐去 ${stats.hidden[mode]} 行。`
             : '未检测到辅助内容。'}
         </p>
       </div>
@@ -59,7 +62,7 @@ export const AuxiliaryPolicy: React.FC = () => {
             onClick={() => setCustomStyle({ ...customStyle, auxiliaryMode: o.value })}
             data-aux={o.value}
           >
-            {o.label}<span className="opacity-70 max-md:hidden">· {o.desc}</span>
+            {o.label}<span className="opacity-70">· {o.value === 'keep' ? o.desc : `隐去 ${stats.hidden[o.value]}`}</span>
           </button>
         ))}
       </div>

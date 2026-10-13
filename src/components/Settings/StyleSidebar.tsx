@@ -1,11 +1,12 @@
 'use client';
 
+import { classifyLineKind } from '@/core/lineKinds';
 import React, { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { type StyleSettings } from '@/utils/subtitleCore';
 import { StyleLibrary, useSelectedStyleEntry } from '@/components/Settings/StyleLibrary';
-import { RotateCcw, ALargeSmall, ChevronDown, ChevronUp, FileType, Pipette, SquareArrowRightExit } from 'lucide-react';
+import { RotateCcw, ALargeSmall, ChevronDown, ChevronUp, FileType, Pipette, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { ColorSampler } from '@/components/Settings/ColorSampler';
@@ -243,6 +244,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
   const [openPicker, setOpenPicker] = useState<string | null>(null);
   const [isLyricsExpanded, setIsLyricsExpanded] = useState(true);
 
+  const hasCredit = Boolean(processedSubs?.some((sub) => classifyLineKind(sub) === 'credit'));
   const hasLyrics = processedSubs?.some(sub => {
     if (!sub.text) return false;
     return /[♪♫♬♩🎵🎶]/.test(sub.text);
@@ -296,7 +298,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
             onChange={value => handleStyleChange('globalScale', value)}
           />
           <SliderControl
-            label="中文字幕"
+            label="主字幕"
             value={customStyle.zhFontSize}
             min={12}
             max={36}
@@ -304,7 +306,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
             onChange={value => handleStyleChange('zhFontSize', value)}
           />
           <SliderControl
-            label="原文字幕"
+            label="副字幕"
             value={customStyle.enFontSize}
             min={8}
             max={24}
@@ -326,13 +328,13 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
 
         <SettingSection title="字体" icon={<FileType className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}>
           <FontFamilySelect
-            label="中文"
+            label="主字幕"
             value={customStyle.zhFontFamily || FONT_FAMILIES_ZH[0].value}
             options={FONT_FAMILIES_ZH}
             onChange={(v) => handleStyleChange('zhFontFamily', v)}
           />
           <FontFamilySelect
-            label="原文"
+            label="副字幕"
             value={customStyle.enFontFamily || FONT_FAMILIES_EN[0].value}
             options={FONT_FAMILIES_EN}
             onChange={(v) => handleStyleChange('enFontFamily', v)}
@@ -341,28 +343,28 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
 
         <SettingSection title="颜色" icon={<Pipette className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}>
           <ColorPicker
-            label="中文文字"
+            label="主字幕文字"
             value={customStyle.zhColor}
             isOpen={openPicker === 'zhColor'}
             onToggle={() => setOpenPicker(openPicker === 'zhColor' ? null : 'zhColor')}
             onChange={(c) => handleStyleChange('zhColor', c)}
           />
           <ColorPicker
-            label="中文描边"
+            label="主字幕描边"
             value={customStyle.zhOutline}
             isOpen={openPicker === 'zhOutline'}
             onToggle={() => setOpenPicker(openPicker === 'zhOutline' ? null : 'zhOutline')}
             onChange={(c) => handleStyleChange('zhOutline', c)}
           />
           <ColorPicker
-            label="原文文字"
+            label="副字幕文字"
             value={customStyle.enColor}
             isOpen={openPicker === 'enColor'}
             onToggle={() => setOpenPicker(openPicker === 'enColor' ? null : 'enColor')}
             onChange={(c) => handleStyleChange('enColor', c)}
           />
           <ColorPicker
-            label="原文描边"
+            label="副字幕描边"
             value={customStyle.enOutline || '#000000'}
             isOpen={openPicker === 'enOutline'}
             onToggle={() => setOpenPicker(openPicker === 'enOutline' ? null : 'enOutline')}
@@ -375,25 +377,31 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
 
         {(
           <>
-        <SettingSection title="输出规格" icon={<SquareArrowRightExit className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}>
-          <div className="flex flex-col gap-[var(--ds-gap-item)]">
-            <span className="text-sm font-medium text-[var(--v4-text-muted)] inline-flex items-center gap-1.5">
-              画面规格
-              <InfoHint label="画面规格说明" side="left">
-                声明 ASS 字幕样式的参考画布尺寸，影响字号、边距和描边等样式呈现。
-              </InfoHint>
-            </span>
-            <select
-              className="h-[var(--ds-ctl-h)] w-full min-w-0 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-[var(--ds-ctl-px)] text-left text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
-              value={customStyle.resolution || '1080p'}
-              onChange={e => handleStyleChange('resolution', e.target.value as StyleSettings['resolution'])}
-            >
-              <option value="SD">标清 SD</option>
-              <option value="1080p">全高清 HD 1080p</option>
-              <option value="4K">超高清 UHD 4K</option>
-            </select>
-          </div>
-        </SettingSection>
+        {/* 输出规格（画面规格）不再单独暴露：由所选样式决定。 */}
+
+        {hasCredit && (
+          <SettingSection title="署名" icon={<Star className="h-4 w-4 text-[var(--v4-accent-strong)]" aria-hidden="true" />}>
+            <div className="flex flex-col gap-[var(--ds-gap-item)]">
+              <span className="text-sm font-medium text-[var(--v4-text-muted)]">画面位置</span>
+              <div className="ui-choice-group w-full" role="radiogroup" aria-label="署名画面位置">
+                {([['center', '居中'], ['bottom', '底部'], ['top', '顶部']] as const).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={(customStyle.creditPosition ?? 'center') === id}
+                    className={`ui-choice flex-1 ${(customStyle.creditPosition ?? 'center') === id ? 'ui-choice--on' : ''}`}
+                    onClick={() => handleStyleChange('creditPosition', id)}
+                    data-credit-pos={id}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="ds-meta">只改位置；署名时间点保持原样。</p>
+            </div>
+          </SettingSection>
+        )}
 
         {hasLyrics && (
           <SettingSection

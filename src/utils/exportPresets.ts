@@ -450,7 +450,7 @@ export interface NamingOption {
 }
 
 export const NAMING_OPTIONS: NamingOption[] = [
-  { id: 'plain', scheme: 'plain', flag: 'none', label: '原文件名' },
+  { id: 'plain', scheme: 'plain', flag: 'none', label: '仅文件名' },
   { id: 'plex', scheme: 'plex', flag: 'none', label: 'Plex · .zh' },
   { id: 'plex-sdh', scheme: 'plex', flag: 'sdh', label: 'Plex · .zh.sdh' },
   { id: 'plex-forced', scheme: 'plex', flag: 'forced', label: 'Plex · .zh.forced' },

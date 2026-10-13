@@ -10,6 +10,7 @@ import { TimelineControls } from '@/components/Workbench/TimelineControls';
 import { StyleSidebar } from '@/components/Settings/StyleSidebar';
 import { ExportPanel } from '@/hooks/useExport';
 import { resolvePreviewStyle } from '@/utils/previewStyle';
+import { isHiddenByPolicy } from '@/core/lineKinds';
 import { SPECIAL_LABEL, specialIndices, pagerOrdinal, stepSpecial, slideIndexFor, type SpecialKind } from '@/core/specialLines';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import { ChevronLeft, SlidersHorizontal, SquareArrowRightExit, X } from 'lucide-react';
@@ -110,8 +111,31 @@ export const TheaterStep: React.FC = () => {
     setDock(next);
     setIsSettingsOpen(next === 'style');
   };
+  // 其他面板（如样式里的「另附 HDR 版」）请求切换停靠面板。
+  useEffect(() => {
+    const onOpen = (event: Event) => {
+      const id = (event as CustomEvent<TheaterDockId>).detail;
+      setDock(id);
+      setIsSettingsOpen(id === 'style');
+    };
+    window.addEventListener('saiko:open-dock', onOpen);
+    return () => window.removeEventListener('saiko:open-dock', onOpen);
+  }, [setIsSettingsOpen]);
   // 特殊行导航（spec v1.1 §6.3）：分类标签 + 分类内翻页 + 时间轴刻度/高亮。
-  const special = React.useMemo(() => specialIndices(processedSubs ?? []), [processedSubs]);
+  // 辅助字幕策略与导出同一函数：被隐去的行在预览里不显示、不计入特殊行、方向键跳过。
+  const auxMode = customStyle.auxiliaryMode || 'keep';
+  const hiddenRows = React.useMemo(() => {
+    const set = new Set<number>();
+    (processedSubs ?? []).forEach((row, i) => { if (isHiddenByPolicy(row, auxMode)) set.add(i); });
+    return set;
+  }, [processedSubs, auxMode]);
+  const special = React.useMemo(() => {
+    const all = specialIndices(processedSubs ?? []);
+    if (hiddenRows.size === 0) return all;
+    const out = { ...all };
+    (Object.keys(out) as SpecialKind[]).forEach((k) => { out[k] = all[k].filter((i) => !hiddenRows.has(i)); });
+    return out;
+  }, [processedSubs, hiddenRows]);
   const kinds = (Object.keys(SPECIAL_LABEL) as SpecialKind[]).filter((k) => special[k].length > 0);
   const [specialKind, setSpecialKind] = useState<SpecialKind | null>(null);
   const [pulse, setPulse] = useState<{ row: number; key: number } | null>(null);
@@ -205,7 +229,11 @@ export const TheaterStep: React.FC = () => {
       if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
         event.preventDefault();
         const delta = event.key === 'ArrowLeft' ? -1 : 1;
-        const next = Math.max(0, Math.min(subs.length - 1, state.previewIndex + delta));
+        const mode = state.customStyle.auxiliaryMode || 'keep';
+        let next = state.previewIndex;
+        for (let i = state.previewIndex + delta; i >= 0 && i < subs.length; i += delta) {
+          if (!isHiddenByPolicy(subs[i], mode)) { next = i; break; }
+        }
         setIsPreviewPlaying(false);
         setPreviewIndex(next);
         setJumpLineVal(String(next + 1));
@@ -222,7 +250,7 @@ export const TheaterStep: React.FC = () => {
 
   // 转换数据格式
   const subtitleSlot: SubtitleDataSlot = processedSubs
-    ? { status: 'ready', data: processedSubs }
+    ? { status: 'ready', data: hiddenRows.size ? processedSubs.map((row, i) => (hiddenRows.has(i) ? { ...row, text: '' } : row)) : processedSubs }
     : { status: 'idle' };
 
   let backdropSlot: BackdropSlot;

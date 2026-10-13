@@ -2,7 +2,9 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Captions, Check, ChevronDown, ChevronUp, FileSearch2, LocateFixed, MoveHorizontal, Music2, Rows3, SplitSquareVertical, Star, Volume2 } from 'lucide-react';
-import { describeAuxiliaryReason, isLyricText, isSubtitleCreditText, type AlignmentProvenance, type SubRow } from '@/utils/subtitleCore';
+import { describeAuxiliaryReason, type AlignmentProvenance, type SubRow } from '@/utils/subtitleCore';
+import { arrayIndexOfLine, classifyLineKind } from '@/core/lineKinds';
+import { reviewTaskKey } from '@/core/reviewKey';
 import {
   buildMergeReviewQueue,
   filterMergeReviewQueue,
@@ -16,7 +18,7 @@ import { EMPTY_CHECKED_IDS } from '@/lib/emptyCheckedIds';
 import { MARK_COLOR, MARK_LABEL } from '@/components/Workbench/inspectionMarks';
 
 type SurfaceTab = 'merge' | 'aux';
-type UnifiedKind = MergeReviewCategory | 'screen-text' | 'sound-caption' | 'lyrics' | 'credit';
+type UnifiedKind = MergeReviewCategory | 'screen-text' | 'sound-caption' | 'lyrics' | 'credit' | 'narration';
 
 interface UnifiedReviewItem {
   id: string;
@@ -54,32 +56,6 @@ const CATEGORY_BADGE: Record<MergeReviewCategory, string> = {
   'other-suspect': '其他存疑',
 };
 
-const isScreenTextRow = (row: SubRow) => (
-  row.cueKind === 'screen_text' || row.auxiliary?.category === 'screen_text'
-);
-
-const isLyricsRow = (row: SubRow) => (
-  row.type === 'lyrics'
-  || row.cueKind === 'lyrics'
-  || isLyricText(row.text)
-);
-
-const isCreditRow = (row: SubRow) => (
-  row.type === 'credit'
-  || row.cueKind === 'credit'
-  || isSubtitleCreditText(row.text)
-);
-
-const isSoundCaptionRow = (row: SubRow) => (
-  !isLyricsRow(row)
-  && !isCreditRow(row)
-  && (
-    row.cueKind === 'sound_caption'
-    || row.auxiliary?.category === 'ambient_sdh'
-    || row.auxiliary?.category === 'music'
-  )
-);
-
 const reasonFromRow = (row: SubRow) => {
   const reason = row.auxiliary?.reasons?.[0];
   return reason ? describeAuxiliaryReason(reason) : '辅助内容';
@@ -91,7 +67,7 @@ const badgeTone = (kind: UnifiedKind) => {
     return 'bg-[var(--v4-warning)]/12 text-[var(--v4-warning)]';
   }
   if (kind === 'expanded-dialogue') return 'bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]';
-  if (kind === 'screen-text' || kind === 'lyrics' || kind === 'credit') {
+  if (kind === 'screen-text' || kind === 'lyrics' || kind === 'credit' || kind === 'narration') {
     return undefined;
   }
   if (kind === 'sound-caption') return 'bg-[var(--v4-warning)]/12 text-[var(--v4-warning)]';
@@ -152,56 +128,39 @@ const queueItemToUnified = (item: MergeReviewItem): UnifiedReviewItem => ({
   provenance: item.provenance,
 });
 
+/** 辅助内容列表：与工作台分类、辅助字幕卡片同一分类函数（core/lineKinds），每行只属一类。 */
+const AUX_KIND_MAP = {
+  screen: { kind: 'screen-text', badge: MARK_LABEL.screen },
+  sound: { kind: 'sound-caption', badge: MARK_LABEL.sound },
+  lyrics: { kind: 'lyrics', badge: MARK_LABEL.lyrics },
+  credit: { kind: 'credit', badge: MARK_LABEL.credit },
+  narration: { kind: 'narration', badge: '旁白' },
+} as const;
+
 const buildAuxItems = (rows: SubRow[], lyricPosition: 'top' | 'bottom'): UnifiedReviewItem[] => {
-  const screenItems: UnifiedReviewItem[] = rows
-    .filter(row => isScreenTextRow(row) && !isCreditRow(row) && !isLyricsRow(row))
-    .map(row => ({
-      id: `screen-${row.index}`,
-      kind: 'screen-text' as const,
+  const lyricPosLabel = lyricPosition === 'bottom' ? '底部' : '顶部';
+  const items: UnifiedReviewItem[] = [];
+  for (const row of rows) {
+    const lineKind = classifyLineKind(row);
+    if (lineKind === 'dialogue') continue;
+    const meta = AUX_KIND_MAP[lineKind];
+    const joiner = lineKind === 'lyrics' ? ' / ' : ' ';
+    items.push({
+      id: `${meta.kind}-${row.index}`,
+      kind: meta.kind,
       startMs: parseSubtitleRange(row.ts).startMs,
       locateIndex: row.index,
       rowIndexes: [row.index],
-      badge: MARK_LABEL.screen,
-      text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
-      reason: reasonFromRow(row),
-    }));
-
-  const soundItems: UnifiedReviewItem[] = rows.filter(isSoundCaptionRow).map(row => ({
-    id: `sound-${row.index}`,
-    kind: 'sound-caption' as const,
-    startMs: parseSubtitleRange(row.ts).startMs,
-    locateIndex: row.index,
-    rowIndexes: [row.index],
-    badge: MARK_LABEL.sound,
-    text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
-    reason: reasonFromRow(row),
-  }));
-
-  const lyricPosLabel = lyricPosition === 'bottom' ? '底部' : '顶部';
-  const lyricItems: UnifiedReviewItem[] = rows.filter(isLyricsRow).map(row => ({
-    id: `lyrics-${row.index}`,
-    kind: 'lyrics' as const,
-    startMs: parseSubtitleRange(row.ts).startMs,
-    locateIndex: row.index,
-    rowIndexes: [row.index],
-    badge: MARK_LABEL.lyrics,
-    text: row.text.replace(/\\N/gi, ' / ').replace(/\s+/g, ' ').trim(),
-    reason: `歌词显示平面 · ${lyricPosLabel}`,
-  }));
-
-  const creditItems: UnifiedReviewItem[] = rows.filter(isCreditRow).map(row => ({
-    id: `credit-${row.index}`,
-    kind: 'credit' as const,
-    startMs: parseSubtitleRange(row.ts).startMs,
-    locateIndex: row.index,
-    rowIndexes: [row.index],
-    badge: MARK_LABEL.credit,
-    text: row.text.replace(/\\N/gi, ' ').replace(/\s+/g, ' ').trim(),
-    reason: '字幕制作署名，不属于影片画面或对白',
-  }));
-
-  return [...screenItems, ...soundItems, ...lyricItems, ...creditItems]
-    .sort((a, b) => a.startMs - b.startMs || a.locateIndex - b.locateIndex);
+      badge: meta.badge,
+      text: row.text.replace(/\\N/gi, joiner).replace(/\s+/g, ' ').trim(),
+      reason: lineKind === 'lyrics'
+        ? `歌词显示平面 · ${lyricPosLabel}`
+        : lineKind === 'credit'
+          ? '字幕制作署名，不属于影片画面或对白'
+          : reasonFromRow(row),
+    });
+  }
+  return items.sort((a, b) => a.startMs - b.startMs || a.locateIndex - b.locateIndex);
 };
 
 export interface AlignmentDiffPanelProps {
@@ -228,8 +187,7 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
 
   const selectedTaskId = useStudioStore((state) => state.selectedTaskId);
-  const customFilename = useStudioStore((state) => state.customFilename);
-  const taskKey = selectedTaskId || customFilename || '_default';
+  const taskKey = reviewTaskKey(selectedTaskId, rows);
   const checkedIdList = useStudioStore((state) => state.mergeReviewCheckedByTask[taskKey] ?? EMPTY_CHECKED_IDS);
   const checkedIds = useMemo(() => new Set(checkedIdList), [checkedIdList]);
   const toggleMergeReviewChecked = useStudioStore((state) => state.toggleMergeReviewChecked);
@@ -281,7 +239,8 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
 
   const handleLocate = (item: UnifiedReviewItem) => {
     const indexes = (item.rowIndexes.length > 0 ? item.rowIndexes : [item.locateIndex])
-      .map(rowIndex => Math.max(0, rowIndex - 1));
+      .map(line => arrayIndexOfLine(rows, line))
+      .filter(idx => idx >= 0);
     const first = indexes[0] ?? 0;
     setActiveItemId(item.id);
     setPreviewIndex(first);
@@ -557,13 +516,13 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
                         <div key={`${item.id}-src-${sourceIndex}`} className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel)] px-2.5 py-2 text-xs leading-5">
                           {source.primary && (
                             <div>
-                              <div className="text-xs font-medium uppercase tracking-[var(--tracking-eyebrow-wide)] text-[var(--v4-accent-strong)]/70">主轨 #{source.primary.cueIndex}</div>
+                              <div className="text-xs font-medium uppercase tracking-[var(--tracking-eyebrow-wide)] text-[var(--v4-accent-strong)]/70">主字幕 #{source.primary.cueIndex}</div>
                               <div className="mt-0.5 whitespace-pre-wrap text-[var(--v4-text-muted)]">{source.primary.text}</div>
                             </div>
                           )}
                           {source.secondary && (
                             <div className={source.primary ? 'mt-1.5 border-t border-[var(--v4-line)] pt-1.5' : ''}>
-                              <div className="text-xs font-medium uppercase tracking-[var(--tracking-eyebrow-wide)] text-[var(--v4-text-faint)]">原文 #{source.secondary.cueIndex}</div>
+                              <div className="text-xs font-medium uppercase tracking-[var(--tracking-eyebrow-wide)] text-[var(--v4-text-faint)]">副字幕 #{source.secondary.cueIndex}</div>
                               <div className="mt-0.5 whitespace-pre-wrap text-[var(--v4-text-faint)]">{source.secondary.text}</div>
                             </div>
                           )}

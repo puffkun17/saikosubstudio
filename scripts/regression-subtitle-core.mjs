@@ -120,7 +120,8 @@ const {
 const { decodeBuffer: decodeBufferP0 } = require(join(outDir, 'utils/textEncoding.js'));
 const { BILINGUAL_SECONDARY_SHARE, isSentenceLevelLatinLine } = require(join(outDir, 'utils/subtitleCore.js'));
 const { analyzeAlignmentDiff, buildMergeReviewQueue, filterMergeReviewQueue } = require(join(outDir, 'utils/timeline/alignmentDiff.js'));
-const { useStudioStore } = require(join(outDir, 'store/useStudioStore.js'));
+const sanitizeForTest = (t) => String(t || '').replace(/[\\/:*?"<>|]/g, '').trim().replace(/\s+/g, '.');
+const { useStudioStore, resolveExportBase } = require(join(outDir, 'store/useStudioStore.js'));
 const { CLIENT_IMPORT_LIMITS, getClientFileIssue } = require(join(outDir, 'utils/importSafety.js'));
 const { assessTvYearFit, shouldDemoteBySeasonSpan } = require(join(outDir, 'utils/tmdbCandidateFit.js'));
 
@@ -379,7 +380,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
 {
   const initialStyle = useStudioStore.getState().customStyle;
   useStudioStore.getState().setTheaterAspect('2.39:1');
-  assert.equal(useStudioStore.getState().customStyle.aspectRatio, '2.39:1', 'Theater aspect changes should also update the exported ASS canvas.');
+  // 画幅只影响预览取景（Derek 2026-10-13）：不写入导出样式。
+  assert.equal(useStudioStore.getState().theaterAspect, '2.39:1');
+  assert.equal(useStudioStore.getState().customStyle.aspectRatio, initialStyle.aspectRatio, 'Theater aspect must not change the exported ASS canvas.');
   useStudioStore.setState({ customStyle: initialStyle, theaterAspect: '16:9' });
 
   const bilingualFile = {
@@ -486,7 +489,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
     [{ index: 1, ts: '00:00:01,000 --> 00:00:02,000', text: '字幕翻译：凌武翎', type: 'credit', cueKind: 'credit' }],
     'smart',
   );
-  assert.equal(smartGone.length, 0, 'Smart mode should strip subtitle credits by default.');
+  // 署名是内容，由署名计划管理；辅助字幕策略不隐去署名（PR #45）。
+  assert.equal(smartGone.length, 1, 'Auxiliary policy must never hide credit lines.');
 }
 
 {
@@ -1673,7 +1677,9 @@ const createTmdbImages = () => ({
   });
   useStudioStore.getState().selectTask('task-2');
   assert.equal(useStudioStore.getState().tmdbData?.id, sharedMetadata.id, 'Sibling episodes from the same title and year should reuse confirmed metadata.');
-  assert.equal(useStudioStore.getState().customFilename, '示例剧.2025.S01E02', 'Reused series metadata should preserve the selected episode number.');
+  // 导出名唯一来源 resolveExportBase：原片名 + 年份 + 集号；TMDB 不再写 customFilename。
+  assert.equal(resolveExportBase(useStudioStore.getState()), 'Example.Show.2025.S01E02', 'Reused series metadata should preserve the selected episode number.');
+  assert.equal(resolveExportBase({ ...useStudioStore.getState(), exportNameMode: 'zh+original' }), '示例剧.Example.Show.2025.S01E02');
 }
 
 {
@@ -2317,9 +2323,9 @@ const createTmdbImages = () => ({
   await useStudioStore.getState().selectTmdbSuggestion(suggestion);
   const state = useStudioStore.getState();
   assert.equal(state.tmdbData?.title, '盗梦空间');
-  assert.equal(state.customFilename, '盗梦空间.2010', 'Applying TMDB must set export/job filename');
-  assert.equal(state.tasks[0]?.title, '盗梦空间.2010', 'Applying TMDB must update task identity title');
-  assert.equal(state.filenameSource, 'tmdb');
+  assert.equal(state.customFilename, '', 'Applying TMDB must not write the manual filename');
+  assert.equal(resolveExportBase(state), `${sanitizeForTest(state.tmdbData?.originalTitle)}.2010`, 'Export name derives from TMDB original title');
+  assert.equal(state.tasks[0]?.title, '盗梦空间', 'Applying TMDB must update task display title');
 }
 
 {

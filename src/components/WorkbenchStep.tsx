@@ -8,6 +8,11 @@ import { EpisodeTabs } from '@/components/Workbench/EpisodeTabs';
 import { SourceMatchPanel, type InspectionMarkFilter } from '@/components/Workbench/SourceMatchPanel';
 import { InspectionMarkGlyph, MARK_FILTERS, MARK_LABEL } from '@/components/Workbench/inspectionMarks';
 import { AuxiliaryPolicy } from '@/components/Workbench/AuxiliaryPolicy';
+import { CreditPanel } from '@/components/Workbench/CreditPanel';
+import { countLineKinds } from '@/core/lineKinds';
+import { taskDisplayTitle } from '@/store/useStudioStore';
+import { reviewTaskKey } from '@/core/reviewKey';
+import { reviewNoticeMessage, reviewNoticeTitle } from '@/components/Global/ReviewNoticeSync';
 import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
 
 import { MergeReviewModal } from '@/components/Workbench/MergeReviewModal';
@@ -33,6 +38,8 @@ export const WorkbenchStep: React.FC = () => {
     tmdbData,
     mergeReviewCheckedByTask,
     setStatusNotice,
+    filenameEpKey,
+    activeTaskTitle,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     customFilename: state.customFilename,
@@ -44,6 +51,8 @@ export const WorkbenchStep: React.FC = () => {
     tmdbData: state.tmdbData,
     mergeReviewCheckedByTask: state.mergeReviewCheckedByTask,
     setStatusNotice: state.setStatusNotice,
+    filenameEpKey: state.filenameEpKey,
+    activeTaskTitle: state.tasks.find((t) => t.id === state.selectedTaskId)?.title ?? '',
   })));
   const { setInfoBar, setForwardAction } = useWorkflowChrome();
 
@@ -74,37 +83,20 @@ export const WorkbenchStep: React.FC = () => {
   );
   const structureCount = alignmentSummary?.entries.length ?? 0;
   const reviewTotal = reviewQueue?.total ?? 0;
-  const reviewTaskKey = selectedTaskId || customFilename || '_default';
+  const reviewKey = reviewTaskKey(selectedTaskId, processedSubs);
   const reviewCheckedCount = useMemo(() => {
     if (!reviewQueue) return 0;
-    const checked = new Set(mergeReviewCheckedByTask[reviewTaskKey] ?? []);
+    const checked = new Set(mergeReviewCheckedByTask[reviewKey] ?? []);
     return reviewQueue.items.reduce((count, item) => count + (checked.has(item.id) ? 1 : 0), 0);
-  }, [reviewQueue, mergeReviewCheckedByTask, reviewTaskKey]);
+  }, [reviewQueue, mergeReviewCheckedByTask, reviewKey]);
   const reviewRemaining = Math.max(0, reviewTotal - reviewCheckedCount);
-  const screenCount = processedSubs?.filter(row => (
-    (row.cueKind === 'screen_text' || row.auxiliary?.category === 'screen_text')
-    && row.cueKind !== 'credit'
-    && row.type !== 'credit'
-  )).length ?? 0;
-  const lyricsCount = processedSubs?.filter(row => (
-    row.type === 'lyrics'
-    || row.cueKind === 'lyrics'
-  )).length ?? 0;
-  const creditCount = processedSubs?.filter(row => (
-    row.type === 'credit'
-    || row.cueKind === 'credit'
-  )).length ?? 0;
-  const soundCount = processedSubs?.filter(row => (
-    row.type !== 'lyrics'
-    && row.cueKind !== 'lyrics'
-    && row.type !== 'credit'
-    && row.cueKind !== 'credit'
-    && (
-      row.cueKind === 'sound_caption'
-      || row.auxiliary?.category === 'ambient_sdh'
-      || row.auxiliary?.category === 'music'
-    )
-  )).length ?? 0;
+  // 所有特殊行计数共用 core/lineKinds：合并后、应用辅助策略之前的行，各类互斥。
+  const lineKinds = useMemo(() => countLineKinds(processedSubs ?? []), [processedSubs]);
+  const screenCount = lineKinds.screen;
+  const lyricsCount = lineKinds.lyrics;
+  const creditCount = lineKinds.credit;
+  const soundCount = lineKinds.sound;
+  const narrationCount = lineKinds.narration;
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -122,7 +114,7 @@ export const WorkbenchStep: React.FC = () => {
       year: tmdbData?.year || undefined,
       localChips: [
         `${processedSubs?.length || 0} 行`,
-        customFilename || tmdbData?.title || '未命名字幕',
+        taskDisplayTitle(tmdbData, filenameEpKey) || activeTaskTitle || '未命名字幕',
         tmdbData ? undefined : '未匹配',
       ].filter((item): item is string => Boolean(item)),
       onBack: () => {
@@ -140,7 +132,7 @@ export const WorkbenchStep: React.FC = () => {
       ),
     });
     return () => setInfoBar(null);
-  }, [processedSubs, customFilename, isSettingsOpen, tmdbData, setInfoBar, setIsSettingsOpen, setWorkflowStep]);
+  }, [processedSubs, customFilename, filenameEpKey, activeTaskTitle, isSettingsOpen, tmdbData, setInfoBar, setIsSettingsOpen, setWorkflowStep]);
 
   useEffect(() => {
     const hasTimeline = Boolean(processedSubs && processedSubs.length > 0);
@@ -154,8 +146,8 @@ export const WorkbenchStep: React.FC = () => {
           setStatusNotice({
             id: 'merge-review-unchecked',
             tone: 'notice',
-            title: `还有 ${reviewRemaining} 项未核对，仍可继续`,
-            message: `合轴待复核已核对 ${reviewCheckedCount} / 共 ${reviewTotal}。可先预览，稍后再回明细核对。`,
+            title: reviewNoticeTitle(reviewRemaining),
+            message: reviewNoticeMessage(reviewCheckedCount, reviewTotal),
           });
         }
         setWorkflowStep(3);
@@ -244,7 +236,7 @@ export const WorkbenchStep: React.FC = () => {
                           </strong>
                           行
                         </span>
-                        {(screenCount > 0 || soundCount > 0 || lyricsCount > 0 || creditCount > 0) && (
+                        {lineKinds.auxiliary > 0 && (
                           <>
                             <span className="text-[var(--v4-line-strong)]">·</span>
                             <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[var(--v4-text-faint)]">
@@ -271,6 +263,9 @@ export const WorkbenchStep: React.FC = () => {
                                   <InspectionMarkGlyph kind="credit" size={7} />
                                   {MARK_LABEL.credit} {creditCount}
                                 </span>
+                              )}
+                              {narrationCount > 0 && (
+                                <span className="inline-flex items-center gap-1">旁白 {narrationCount}</span>
                               )}
                             </span>
                           </>
@@ -300,6 +295,10 @@ export const WorkbenchStep: React.FC = () => {
 
                 <div className="border-t border-[var(--v4-line)]">
                   <AuxiliaryPolicy />
+                </div>
+
+                <div className="border-t border-[var(--v4-line)] empty:hidden">
+                  <CreditPanel />
                 </div>
 
                 <div className="border-t border-[var(--v4-line)]">

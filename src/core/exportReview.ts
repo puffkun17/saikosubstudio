@@ -5,17 +5,19 @@
 import { REVIEW_REASONS, type ReviewReason, type ReviewReasonCode } from './reviewReasons';
 
 export interface ExportReviewInput {
-  rows: { text: string }[];
+  rows: { text: string; index?: number }[];
   hasTmdb: boolean;
   isTv: boolean;
   epKey: string;
-  /** Rows still flagged by the merge review queue (unpaired / suspicious), 0-based. */
+  /** Single-track (unpaired) lines from the merge review queue — 1-based line numbers (row.index). */
   unresolvedRows: number[];
-  /** Secondary statements moved off the timeline (credits plan), 0-based. */
+  /** Secondary statements moved off the timeline (credits plan) — 1-based line numbers. */
   movedStatementRows: number[];
 }
 
 const MAX_CUES = 50;
+/** Every R-xx cue is a 1-based line number (row.index when present), the same number the UI shows. */
+const lineNo = (row: { index?: number }, i: number) => (typeof row.index === 'number' && row.index > 0 ? row.index : i + 1);
 
 export function deriveExportReview(input: ExportReviewInput): ReviewReason[] {
   const out: ReviewReason[] = [];
@@ -25,9 +27,9 @@ export function deriveExportReview(input: ExportReviewInput): ReviewReason[] {
   const bilingual = input.rows.some((r) => /\n|\\N/.test(r.text));
   if (input.rows.length > 0 && !bilingual) add('R-10');
   if (input.movedStatementRows.length) add('R-07', input.movedStatementRows);
-  const positioned = input.rows.flatMap((r, i) => (/\\(?:frz|pos)\(?/i.test(r.text) ? [i] : []));
+  const positioned = input.rows.flatMap((r, i) => (/\\(?:frz|pos)\(?/i.test(r.text) ? [lineNo(r, i)] : []));
   if (positioned.length) add('R-08', positioned);
-  const dialogue = input.rows.flatMap((r, i) => (/(^|\n|\\N)\s*-\s*\S.*(\n|\\N)\s*-\s*\S/.test(r.text) ? [i] : []));
+  const dialogue = input.rows.flatMap((r, i) => (/(^|\n|\\N)\s*-\s*\S.*(\n|\\N)\s*-\s*\S/.test(r.text) ? [lineNo(r, i)] : []));
   if (dialogue.length) add('R-09', dialogue);
   if (input.unresolvedRows.length) add('R-11', input.unresolvedRows);
   return out;

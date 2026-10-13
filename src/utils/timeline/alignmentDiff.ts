@@ -1,4 +1,4 @@
-import type { AlignmentProvenance, SubRow } from '../subtitleCore';
+import { classifyLineKind, type AlignmentProvenance, type SubRow } from '../subtitleCore';
 import { parseSubtitleRange } from './timecode';
 
 export type AlignmentDiffKind = 'expanded-dialogue' | 'coverage-merge' | 'single-track' | 'shifted-match';
@@ -325,7 +325,7 @@ const entryToReviewItem = (entry: AlignmentDiffEntry): MergeReviewItem => {
   } else if (entry.kind === 'shifted-match') {
     const low = typeof confidence === 'number' && confidence < SHIFTED_REVIEW_CONFIDENCE_THRESHOLD;
     reason = low
-      ? `平移配对置信偏低（${Math.round((confidence ?? 0) * 100)}%），建议重点抽查`
+      ? '平移配对不确定，建议重点抽查'
       : '整体平移配对，建议抽查片头片尾是否仍对齐';
     severity = low ? 'review' : 'watch';
   }
@@ -349,6 +349,8 @@ const entryToReviewItem = (entry: AlignmentDiffEntry): MergeReviewItem => {
 const isOtherSuspectRow = (row: SubRow): boolean => {
   const aux = row.auxiliary;
   if (!aux) return false;
+  // 署名行由署名模块认领（第一幕「原署名」），不再进复核队列。
+  if (classifyLineKind(row) === 'credit') return false;
   if (aux.suspicion?.kind === 'needs_review') return true;
   if (typeof aux.confidence === 'number' && aux.confidence < AUXILIARY_REVIEW_CONFIDENCE_THRESHOLD) {
     // Survived into timeline with soft classification — flag for eyes.
@@ -362,7 +364,7 @@ const otherSuspectReason = (row: SubRow): string => {
   if (aux?.suspicion?.detail) return aux.suspicion.detail;
   if (aux?.suspicion?.reasons?.length) return `存疑：${aux.suspicion.reasons.join('、')}`;
   if (typeof aux?.confidence === 'number') {
-    return `辅助分类置信偏低（${Math.round(aux.confidence)}），建议复核`;
+    return '分类不确定，建议复核';
   }
   return '辅助内容存疑，建议复核';
 };

@@ -1,5 +1,6 @@
 'use client';
 
+import { ReviewNoticeSync } from '@/components/Global/ReviewNoticeSync';
 import React from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { AlertTriangle, X } from 'lucide-react';
@@ -55,6 +56,7 @@ export const FeedbackCenter: React.FC = () => {
 
   return (
     <OverlayPortal>
+      <ReviewNoticeSync />
       <div className="feedback-dock" role="region" aria-label="系统提示">
         <AnimatePresence initial={false}>
           {latestNotice && (

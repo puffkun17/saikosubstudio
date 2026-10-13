@@ -8,7 +8,7 @@ import { extractStylesFromAss, type StyleSettings } from '@/utils/subtitleCore';
 import { estimateStyleFromImageFile } from '@/utils/styleFromImage';
 import { isEntryTuned, isFixedPreset, listStyleEntries, type StyleEntry, type StyleTemplateRecord } from '@/utils/styleLibrary';
 import type { ExportPresetId } from '@/utils/exportPresets';
-import { HDR_LEVEL_ORDER, HDR_LEVELS_PROVISIONAL } from '@/utils/hdrPresets';
+import { HDR_LEVELS_PROVISIONAL } from '@/utils/hdrPresets';
 import { InfoHint } from '@/components/ui/InfoHint';
 
 /** Which list entry is in effect, and whether the sliders moved away from it. */
@@ -75,7 +75,6 @@ export const StyleLibrary: React.FC = () => {
     setName('');
   };
 
-  const brightness = s.hdrEnabled ? s.hdrLevel : 'sdr';
 
   return (
     <div className="flex flex-col gap-[var(--ds-gap-section)]" data-testid="style-library">
@@ -151,29 +150,24 @@ export const StyleLibrary: React.FC = () => {
         </div>
       </section>
 
-      <section className="flex flex-col gap-[var(--ds-gap-group)]" aria-label="显示亮度">
+      {/* 「另附 HDR 版」的总开关在导出面板；这里同名只读显示，预览跟随它压暗。 */}
+      <section className="flex flex-col gap-[var(--ds-gap-group)]" aria-label="另附 HDR 版">
         <div className="flex min-h-8 items-center justify-between gap-[var(--ds-gap-group)]">
-          <h4 className="ds-label">显示亮度</h4>
-          <InfoHint label="显示亮度说明" side="left">
-            HDR 屏幕上白字会刺眼。选 HDR 档位后，预览按导出的 HDR 版压暗填充色；导出时另附 HDR 版。
+          <h4 className="ds-label">另附 HDR 版</h4>
+          <InfoHint label="另附 HDR 版说明" side="left">
+            HDR 屏幕上白字会刺眼。在导出面板勾选「另附 HDR 版」并选择档位后，预览按该档位压暗填充色，导出时另附一份 HDR 版。
           </InfoHint>
         </div>
-        <div className="ui-choice-group w-full" role="radiogroup" aria-label="显示亮度">
-          {(['sdr', ...HDR_LEVEL_ORDER] as const).map((id) => (
-            <button
-              key={id}
-              type="button"
-              role="radio"
-              aria-checked={brightness === id}
-              className={`ui-choice flex-1 ${brightness === id ? 'ui-choice--on' : ''}`}
-              title={id === 'sdr' ? '普通屏幕' : HDR_LEVELS_PROVISIONAL[id].hint}
-              onClick={() => (id === 'sdr' ? s.setHdr(false) : s.setHdr(true, id))}
-              data-brightness={id}
-            >
-              {id === 'sdr' ? 'SDR' : `HDR ${HDR_LEVELS_PROVISIONAL[id].label}`}
-            </button>
-          ))}
-        </div>
+        <button
+          type="button"
+          className="ds-select flex items-center justify-between gap-2"
+          onClick={() => window.dispatchEvent(new CustomEvent('saiko:open-dock', { detail: 'export' }))}
+          data-testid="style-hdr-link"
+          title="在导出面板中更改"
+        >
+          <span className="truncate">{s.hdrEnabled ? `开 · ${HDR_LEVELS_PROVISIONAL[s.hdrLevel].label}（预览已按此显示）` : '关'}</span>
+          <span className="ds-meta shrink-0">在导出中更改</span>
+        </button>
       </section>
     </div>
   );
