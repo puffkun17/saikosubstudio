@@ -10,7 +10,7 @@
     "preview": "vite build && wrangler dev --config dist/server/wrangler.json",
     "deploy": "vinext-cloudflare deploy --config dist/server/wrangler.json",
     "dev:next": "next dev",
-    "test:unit": "node --test \"scripts/tests/*.test.mjs\"",
+    "test:unit": "node --test scripts/tests/*.test.mjs",
     "test": "npm run test:core && npm run test:unit"
   },
   "dependencies": {

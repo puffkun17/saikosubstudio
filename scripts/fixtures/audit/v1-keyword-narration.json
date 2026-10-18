@@ -1,0 +1,23 @@
+{
+  "id": "V1",
+  "title": "Parse-time keyword cueKind blocks pairing (P3)",
+  "phase": "P3",
+  "zh": [
+    [0, 2000, "你好。"],
+    [3000, 5000, "我们走吧。"],
+    [6000, 8000, "我没听到任何声音。"],
+    [9000, 11000, "通知大家明天开会。"]
+  ],
+  "en": [
+    [0, 2000, "Hello."],
+    [3000, 5000, "Let's go."],
+    [6000, 8000, "I didn't hear any sound."],
+    [9000, 11000, "Tell everyone the meeting is tomorrow."]
+  ],
+  "expectMergedTexts": [
+    "我没听到任何声音。",
+    "I didn't hear any sound.",
+    "通知大家明天开会。",
+    "Tell everyone the meeting is tomorrow."
+  ]
+}

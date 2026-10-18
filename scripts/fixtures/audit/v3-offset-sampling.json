@@ -1,0 +1,10 @@
+{
+  "id": "V3",
+  "title": "Index-proportional offset sampling with extra EN head cues (P2)",
+  "phase": "P2",
+  "zhCount": 30,
+  "enExtraHead": 8,
+  "offsetMs": 2500,
+  "cueGapMs": 4000,
+  "cueDurMs": 1500
+}

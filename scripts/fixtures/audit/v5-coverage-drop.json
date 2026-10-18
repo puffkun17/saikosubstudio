@@ -1,0 +1,20 @@
+{
+  "id": "V5",
+  "title": "Industrial coverage-merge drops overlapping primary cue",
+  "zh": [
+    [0, 6000, "这是一句很长的中文台词覆盖三句英文"],
+    [4000, 6000, "另一句重叠的中文"]
+  ],
+  "en": [
+    [0, 1900, "First part."],
+    [2000, 3900, "Second part."],
+    [4000, 6000, "Third part."]
+  ],
+  "mustRetain": [
+    "这是一句很长的中文台词覆盖三句英文",
+    "另一句重叠的中文",
+    "First part.",
+    "Second part.",
+    "Third part."
+  ]
+}

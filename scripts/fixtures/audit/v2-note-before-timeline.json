@@ -1,0 +1,16 @@
+{
+  "id": "V2",
+  "title": "Note extraction before timeline evidence (P3)",
+  "phase": "P3",
+  "zh": [
+    [0, 2000, "你好。"],
+    [3000, 5000, "我们走吧。"],
+    [6000, 8630, "泰德 去经理办公室"]
+  ],
+  "en": [
+    [0, 2000, "Hello."],
+    [3000, 5000, "Let's go."],
+    [6000, 8630, "Ted, manager's desk now."]
+  ],
+  "expectMergedContains": ["泰德 去经理办公室", "Ted, manager's desk now."]
+}

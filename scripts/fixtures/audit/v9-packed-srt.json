@@ -1,0 +1,11 @@
+{
+  "id": "V9",
+  "title": "SRT multi-line dual-speaker must keep newlines like ASS",
+  "zhSrtMultiline": "-你去哪\n-回家",
+  "zhAssText": "-你去哪\\N-回家",
+  "en": [
+    [0, 1900, "Where to?"],
+    [2000, 4000, "Home."]
+  ],
+  "expectExpandedTurns": ["你去哪", "回家"]
+}
