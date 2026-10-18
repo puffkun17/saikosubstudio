@@ -1,0 +1,177 @@
+{
+  "sample": "everyday-ass-styled",
+  "primaryCount": 7,
+  "secondaryCount": 5,
+  "standard": [
+    {
+      "index": 1,
+      "ts": "00:00:01,000 --> 00:00:03,500",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 1,
+      "secondaryCue": 1,
+      "groupId": null,
+      "text": "早上好 今天天气还不错\nGood morning. Nice weather today."
+    },
+    {
+      "index": 2,
+      "ts": "00:00:02,000 --> 00:00:05,000",
+      "type": "dialogue",
+      "cueKind": "screen_text",
+      "method": "single-track",
+      "timingSource": "primary",
+      "primaryCue": 2,
+      "secondaryCue": null,
+      "groupId": null,
+      "text": "便利店 二十四小时营业 欢迎光临"
+    },
+    {
+      "index": 3,
+      "ts": "00:00:04,000 --> 00:00:06,500",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 3,
+      "secondaryCue": 2,
+      "groupId": null,
+      "text": "我就随便说说 你别当真\nI'm just saying, don't take it seriously."
+    },
+    {
+      "index": 4,
+      "ts": "00:00:07,000 --> 00:00:11,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 4,
+      "secondaryCue": 3,
+      "groupId": null,
+      "text": "这个周末如果不下雨的话我们就去河边骑车然后在草地上野餐好不好\nIf it doesn't rain this weekend, let's ride along the river and have a picnic on the grass."
+    },
+    {
+      "index": 5,
+      "ts": "00:00:11,500 --> 00:00:15,500",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 5,
+      "secondaryCue": 4,
+      "groupId": null,
+      "text": "我刚刚看了一下 明天早上七点半出发应该来得及 不过今晚要早点睡\nI just checked. If we leave at 7:30 tomorrow morning we'll make it, but we should sleep early tonight."
+    },
+    {
+      "index": 6,
+      "ts": "00:00:16,000 --> 00:00:18,000",
+      "type": "dialogue",
+      "cueKind": "screen_text",
+      "method": "single-track",
+      "timingSource": "primary",
+      "primaryCue": 6,
+      "secondaryCue": null,
+      "groupId": null,
+      "text": "第二天早上"
+    },
+    {
+      "index": 7,
+      "ts": "00:00:18,500 --> 00:00:21,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 7,
+      "secondaryCue": 5,
+      "groupId": null,
+      "text": "闹钟响了三次 我才终于爬起来\nThe alarm went off three times before I finally got up."
+    }
+  ],
+  "industrial": [
+    {
+      "index": 1,
+      "ts": "00:00:01,000 --> 00:00:03,500",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 1,
+      "secondaryCue": 1,
+      "groupId": null,
+      "text": "早上好 今天天气还不错\nGood morning. Nice weather today."
+    },
+    {
+      "index": 2,
+      "ts": "00:00:02,000 --> 00:00:05,000",
+      "type": "dialogue",
+      "cueKind": "screen_text",
+      "method": "single-track",
+      "timingSource": "primary",
+      "primaryCue": 2,
+      "secondaryCue": null,
+      "groupId": null,
+      "text": "便利店 二十四小时营业 欢迎光临"
+    },
+    {
+      "index": 3,
+      "ts": "00:00:04,000 --> 00:00:06,500",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 3,
+      "secondaryCue": 2,
+      "groupId": null,
+      "text": "我就随便说说 你别当真\nI'm just saying, don't take it seriously."
+    },
+    {
+      "index": 4,
+      "ts": "00:00:07,000 --> 00:00:11,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 4,
+      "secondaryCue": 3,
+      "groupId": null,
+      "text": "这个周末如果不下雨的话我们就去河边骑车然后在草地上野餐好不好\nIf it doesn't rain this weekend, let's ride along the river and have a picnic on the grass."
+    },
+    {
+      "index": 5,
+      "ts": "00:00:11,500 --> 00:00:15,500",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 5,
+      "secondaryCue": 4,
+      "groupId": null,
+      "text": "我刚刚看了一下 明天早上七点半出发应该来得及 不过今晚要早点睡\nI just checked. If we leave at 7:30 tomorrow morning we'll make it, but we should sleep early tonight."
+    },
+    {
+      "index": 6,
+      "ts": "00:00:16,000 --> 00:00:18,000",
+      "type": "dialogue",
+      "cueKind": "screen_text",
+      "method": "single-track",
+      "timingSource": "primary",
+      "primaryCue": 6,
+      "secondaryCue": null,
+      "groupId": null,
+      "text": "第二天早上"
+    },
+    {
+      "index": 7,
+      "ts": "00:00:18,500 --> 00:00:21,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 7,
+      "secondaryCue": 5,
+      "groupId": null,
+      "text": "闹钟响了三次 我才终于爬起来\nThe alarm went off three times before I finally got up."
+    }
+  ]
+}

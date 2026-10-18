@@ -1,0 +1,105 @@
+{
+  "sample": "everyday-fr",
+  "primaryCount": 4,
+  "secondaryCount": 4,
+  "standard": [
+    {
+      "index": 1,
+      "ts": "00:00:01,000 --> 00:00:03,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 1,
+      "secondaryCue": 1,
+      "groupId": null,
+      "text": "你能帮我拿一下那个盒子吗\nTu peux me passer cette boîte ?"
+    },
+    {
+      "index": 2,
+      "ts": "00:00:03,500 --> 00:00:06,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 2,
+      "secondaryCue": 2,
+      "groupId": null,
+      "text": "当然可以 放在哪里\nBien sûr. Je la mets où ?"
+    },
+    {
+      "index": 3,
+      "ts": "00:00:06,500 --> 00:00:10,500",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 3,
+      "secondaryCue": 3,
+      "groupId": null,
+      "text": "放在门口的桌子上就好 等一下我下楼的时候顺便带走\nPose-la sur la table près de l'entrée, je la prendrai en descendant tout à l'heure, d'accord ?"
+    },
+    {
+      "index": 4,
+      "ts": "00:00:11,000 --> 00:00:13,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 4,
+      "secondaryCue": 4,
+      "groupId": null,
+      "text": "没问题！\n« Pas de problème ! »"
+    }
+  ],
+  "industrial": [
+    {
+      "index": 1,
+      "ts": "00:00:01,000 --> 00:00:03,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 1,
+      "secondaryCue": 1,
+      "groupId": null,
+      "text": "你能帮我拿一下那个盒子吗\nTu peux me passer cette boîte ?"
+    },
+    {
+      "index": 2,
+      "ts": "00:00:03,500 --> 00:00:06,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 2,
+      "secondaryCue": 2,
+      "groupId": null,
+      "text": "当然可以 放在哪里\nBien sûr. Je la mets où ?"
+    },
+    {
+      "index": 3,
+      "ts": "00:00:06,500 --> 00:00:10,500",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 3,
+      "secondaryCue": 3,
+      "groupId": null,
+      "text": "放在门口的桌子上就好 等一下我下楼的时候顺便带走\nPose-la sur la table près de l'entrée, je la prendrai en descendant tout à l'heure, d'accord ?"
+    },
+    {
+      "index": 4,
+      "ts": "00:00:11,000 --> 00:00:13,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 4,
+      "secondaryCue": 4,
+      "groupId": null,
+      "text": "没问题！\n« Pas de problème ! »"
+    }
+  ]
+}

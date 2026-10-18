@@ -1,0 +1,103 @@
+{
+  "id": "V5",
+  "standard": [
+    {
+      "index": 1,
+      "ts": "00:00:00,000 --> 00:00:01,900",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "coverage-merge",
+      "timingSource": "secondary",
+      "primaryCue": 1,
+      "secondaryCue": 1,
+      "groupId": "cover-1-1-2-3",
+      "text": "这是一句很长的中文台词覆盖三句英文\nFirst part."
+    },
+    {
+      "index": 2,
+      "ts": "00:00:02,000 --> 00:00:03,900",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "coverage-merge",
+      "timingSource": "secondary",
+      "primaryCue": 1,
+      "secondaryCue": 2,
+      "groupId": "cover-1-1-2-3",
+      "text": "这是一句很长的中文台词覆盖三句英文\nSecond part."
+    },
+    {
+      "index": 3,
+      "ts": "00:00:04,000 --> 00:00:06,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "coverage-merge",
+      "timingSource": "secondary",
+      "primaryCue": 1,
+      "secondaryCue": 3,
+      "groupId": "cover-1-1-2-3",
+      "text": "这是一句很长的中文台词覆盖三句英文\nThird part."
+    },
+    {
+      "index": 4,
+      "ts": "00:00:04,000 --> 00:00:06,000",
+      "type": "dialogue",
+      "cueKind": "dialogue",
+      "method": "single-track",
+      "timingSource": "primary",
+      "primaryCue": 2,
+      "secondaryCue": null,
+      "groupId": null,
+      "text": "另一句重叠的中文"
+    }
+  ],
+  "industrial": [
+    {
+      "index": 1,
+      "ts": "00:00:00,000 --> 00:00:01,900",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "coverage-merge",
+      "timingSource": "secondary",
+      "primaryCue": 1,
+      "secondaryCue": 1,
+      "groupId": "cover-1-1-2-3",
+      "text": "这是一句很长的中文台词覆盖三句英文\nFirst part."
+    },
+    {
+      "index": 2,
+      "ts": "00:00:02,000 --> 00:00:03,900",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "coverage-merge",
+      "timingSource": "secondary",
+      "primaryCue": 1,
+      "secondaryCue": 2,
+      "groupId": "cover-1-1-2-3",
+      "text": "这是一句很长的中文台词覆盖三句英文\nSecond part."
+    },
+    {
+      "index": 3,
+      "ts": "00:00:04,000 --> 00:00:06,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "coverage-merge",
+      "timingSource": "secondary",
+      "primaryCue": 1,
+      "secondaryCue": 3,
+      "groupId": "cover-1-1-2-3",
+      "text": "这是一句很长的中文台词覆盖三句英文\nThird part."
+    },
+    {
+      "index": 4,
+      "ts": "00:00:04,000 --> 00:00:06,000",
+      "type": "dialogue",
+      "cueKind": "dialogue",
+      "method": "single-track",
+      "timingSource": "primary",
+      "primaryCue": 2,
+      "secondaryCue": null,
+      "groupId": null,
+      "text": "另一句重叠的中文"
+    }
+  ]
+}

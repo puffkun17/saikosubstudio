@@ -1,0 +1,79 @@
+{
+  "id": "V6",
+  "standard": [
+    {
+      "index": 1,
+      "ts": "00:00:00,000 --> 00:00:02,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 1,
+      "secondaryCue": 1,
+      "groupId": null,
+      "text": "第一句。\nOne."
+    },
+    {
+      "index": 2,
+      "ts": "00:00:02,000 --> 00:00:04,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 2,
+      "secondaryCue": 2,
+      "groupId": null,
+      "text": "第二句。\nTwo."
+    },
+    {
+      "index": 3,
+      "ts": "00:00:04,000 --> 00:00:06,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 3,
+      "secondaryCue": 3,
+      "groupId": null,
+      "text": "第三句。\nThree."
+    }
+  ],
+  "industrial": [
+    {
+      "index": 1,
+      "ts": "00:00:00,000 --> 00:00:02,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 1,
+      "secondaryCue": 1,
+      "groupId": null,
+      "text": "第一句。\nOne."
+    },
+    {
+      "index": 2,
+      "ts": "00:00:02,000 --> 00:00:04,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 2,
+      "secondaryCue": 2,
+      "groupId": null,
+      "text": "第二句。\nTwo."
+    },
+    {
+      "index": 3,
+      "ts": "00:00:04,000 --> 00:00:06,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 3,
+      "secondaryCue": 3,
+      "groupId": null,
+      "text": "第三句。\nThree."
+    }
+  ]
+}

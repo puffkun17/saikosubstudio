@@ -1,0 +1,153 @@
+{
+  "sample": "everyday-es",
+  "primaryCount": 6,
+  "secondaryCount": 6,
+  "standard": [
+    {
+      "index": 1,
+      "ts": "00:00:01,000 --> 00:00:03,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 1,
+      "secondaryCue": 1,
+      "groupId": null,
+      "text": "早上好 你睡得怎么样\nBuenos días. ¿Qué tal dormiste?"
+    },
+    {
+      "index": 2,
+      "ts": "00:00:03,500 --> 00:00:06,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 2,
+      "secondaryCue": 2,
+      "groupId": null,
+      "text": "还不错 就是有点冷\nBien, pero tengo un poco de frío."
+    },
+    {
+      "index": 3,
+      "ts": "00:00:06,500 --> 00:00:10,500",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 3,
+      "secondaryCue": 3,
+      "groupId": null,
+      "text": "我们先去楼下吃早饭吧 吃完再决定今天要不要去河边走走\nVamos a desayunar abajo primero y después decidimos si hoy damos un paseo por el río, ¿vale?"
+    },
+    {
+      "index": 4,
+      "ts": "00:00:11,000 --> 00:00:13,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 4,
+      "secondaryCue": 4,
+      "groupId": null,
+      "text": "好主意！我去拿外套\n¡Buena idea! Voy por el abrigo."
+    },
+    {
+      "index": 5,
+      "ts": "00:00:13,500 --> 00:00:16,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 5,
+      "secondaryCue": 5,
+      "groupId": null,
+      "text": "天哪 今天外面真的好冷\n¡Ay! ÁNIMO, AÚN ES TEMPRANO. ¿Ñoño, yo? ¡NUNCA!"
+    },
+    {
+      "index": 6,
+      "ts": "00:00:16,500 --> 00:00:19,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 6,
+      "secondaryCue": 6,
+      "groupId": null,
+      "text": "你要不要喝点热巧克力\n¿Quieres un chocolate caliente? El pingüino de la taza es mío."
+    }
+  ],
+  "industrial": [
+    {
+      "index": 1,
+      "ts": "00:00:01,000 --> 00:00:03,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 1,
+      "secondaryCue": 1,
+      "groupId": null,
+      "text": "早上好 你睡得怎么样\nBuenos días. ¿Qué tal dormiste?"
+    },
+    {
+      "index": 2,
+      "ts": "00:00:03,500 --> 00:00:06,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 2,
+      "secondaryCue": 2,
+      "groupId": null,
+      "text": "还不错 就是有点冷\nBien, pero tengo un poco de frío."
+    },
+    {
+      "index": 3,
+      "ts": "00:00:06,500 --> 00:00:10,500",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 3,
+      "secondaryCue": 3,
+      "groupId": null,
+      "text": "我们先去楼下吃早饭吧 吃完再决定今天要不要去河边走走\nVamos a desayunar abajo primero y después decidimos si hoy damos un paseo por el río, ¿vale?"
+    },
+    {
+      "index": 4,
+      "ts": "00:00:11,000 --> 00:00:13,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 4,
+      "secondaryCue": 4,
+      "groupId": null,
+      "text": "好主意！我去拿外套\n¡Buena idea! Voy por el abrigo."
+    },
+    {
+      "index": 5,
+      "ts": "00:00:13,500 --> 00:00:16,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 5,
+      "secondaryCue": 5,
+      "groupId": null,
+      "text": "天哪 今天外面真的好冷\n¡Ay! ÁNIMO, AÚN ES TEMPRANO. ¿Ñoño, yo? ¡NUNCA!"
+    },
+    {
+      "index": 6,
+      "ts": "00:00:16,500 --> 00:00:19,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 6,
+      "secondaryCue": 6,
+      "groupId": null,
+      "text": "你要不要喝点热巧克力\n¿Quieres un chocolate caliente? El pingüino de la taza es mío."
+    }
+  ]
+}

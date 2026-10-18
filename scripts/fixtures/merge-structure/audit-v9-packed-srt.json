@@ -1,0 +1,58 @@
+{
+  "id": "V9",
+  "parsedPrimaryText": [
+    "-你去哪\n-回家"
+  ],
+  "standard": [
+    {
+      "index": 1,
+      "ts": "00:00:00,000 --> 00:00:01,900",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "expanded-dialogue",
+      "timingSource": "secondary",
+      "primaryCue": 1,
+      "secondaryCue": 1,
+      "groupId": "dialogue-1-1-2",
+      "text": "你去哪\nWhere to?"
+    },
+    {
+      "index": 2,
+      "ts": "00:00:02,000 --> 00:00:04,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "expanded-dialogue",
+      "timingSource": "secondary",
+      "primaryCue": 1,
+      "secondaryCue": 2,
+      "groupId": "dialogue-1-1-2",
+      "text": "回家\nHome."
+    }
+  ],
+  "industrial": [
+    {
+      "index": 1,
+      "ts": "00:00:00,000 --> 00:00:01,900",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "expanded-dialogue",
+      "timingSource": "secondary",
+      "primaryCue": 1,
+      "secondaryCue": 1,
+      "groupId": "dialogue-1-1-2",
+      "text": "你去哪\nWhere to?"
+    },
+    {
+      "index": 2,
+      "ts": "00:00:02,000 --> 00:00:04,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "expanded-dialogue",
+      "timingSource": "secondary",
+      "primaryCue": 1,
+      "secondaryCue": 2,
+      "groupId": "dialogue-1-1-2",
+      "text": "回家\nHome."
+    }
+  ]
+}

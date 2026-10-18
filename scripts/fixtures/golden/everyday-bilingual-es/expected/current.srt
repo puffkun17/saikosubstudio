@@ -15,12 +15,15 @@ Vamos a desayunar abajo primero y después decidimos si hoy damos un paseo por e
 
 4
 00:00:11,000 --> 00:00:13,000
-好主意！我去拿外套 ¡Buena idea! Voy por el abrigo.
+好主意！我去拿外套
+¡Buena idea! Voy por el abrigo.
 
 5
 00:00:13,500 --> 00:00:16,000
-天哪 今天外面真的好冷 ¡Ay! ÁNIMO, AÚN ES TEMPRANO. ¿Ñoño, yo? ¡NUNCA!
+天哪 今天外面真的好冷
+¡Ay! ÁNIMO, AÚN ES TEMPRANO. ¿Ñoño, yo? ¡NUNCA!
 
 6
 00:00:16,500 --> 00:00:19,000
-你要不要喝点热巧克力 ¿Quieres un chocolate caliente? El pingüino de la taza es mío.
+你要不要喝点热巧克力
+¿Quieres un chocolate caliente? El pingüino de la taza es mío.

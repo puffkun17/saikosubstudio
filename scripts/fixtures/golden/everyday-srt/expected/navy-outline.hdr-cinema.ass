@@ -24,7 +24,7 @@ Dialogue: 1,0:00:06.50,0:00:09.00,ZH,,0,0,148,,我睡不着 干脆起来煮点�
 Dialogue: 0,0:00:06.50,0:00:09.00,SEC,,0,0,0,,I couldn't sleep,\Nso I figured I'd make some coffee.
 Dialogue: 1,0:00:09.20,0:00:12.80,ZH,,0,0,148,,你要不要也来一杯 我煮了一大壶\N够我们两个人喝一整个上午
 Dialogue: 0,0:00:09.20,0:00:12.80,SEC,,0,0,0,,Do you want a cup too? I made a big pot,\Nenough for both of us to drink all morning.
-Dialogue: 1,0:00:13.00,0:00:15.00,ZH,,0,0,0,,好啊 - 加不加糖
+Dialogue: 1,0:00:13.00,0:00:15.00,ZH,,0,0,0,,- 好啊 - 加不加糖
 Dialogue: 0,0:00:13.00,0:00:15.00,SEC,,0,0,0,,- Sure. - Sugar?
 Dialogue: 0,0:00:15.20,0:00:17.50,Note,,0,0,0,,{\an8}（水壶鸣响）
 Dialogue: 0,0:00:15.30,0:00:17.60,Note,,0,0,0,,{\an8}[kettle whistling]

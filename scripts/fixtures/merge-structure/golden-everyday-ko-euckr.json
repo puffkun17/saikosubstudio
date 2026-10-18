@@ -1,0 +1,105 @@
+{
+  "sample": "everyday-ko-euckr",
+  "primaryCount": 4,
+  "secondaryCount": 4,
+  "standard": [
+    {
+      "index": 1,
+      "ts": "00:00:01,000 --> 00:00:03,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 1,
+      "secondaryCue": 1,
+      "groupId": null,
+      "text": "今天下班以后要不要一起去散步\n오늘 퇴근하고 같이 산책할래?"
+    },
+    {
+      "index": 2,
+      "ts": "00:00:03,500 --> 00:00:06,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 2,
+      "secondaryCue": 2,
+      "groupId": null,
+      "text": "好啊 我也想出去走走\n좋아, 나도 바람 좀 쐬고 싶었어."
+    },
+    {
+      "index": 3,
+      "ts": "00:00:06,500 --> 00:00:10,500",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 3,
+      "secondaryCue": 3,
+      "groupId": null,
+      "text": "公园旁边新开了一家小面包店 听说他们的牛角包每天下午就卖完了\n공원 옆에 작은 빵집이 새로 생겼는데 크루아상이 매일 오후면 다 팔린대."
+    },
+    {
+      "index": 4,
+      "ts": "00:00:11,000 --> 00:00:13,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 4,
+      "secondaryCue": 4,
+      "groupId": null,
+      "text": "那我们早点出发\n그럼 우리 일찍 출발하자."
+    }
+  ],
+  "industrial": [
+    {
+      "index": 1,
+      "ts": "00:00:01,000 --> 00:00:03,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 1,
+      "secondaryCue": 1,
+      "groupId": null,
+      "text": "今天下班以后要不要一起去散步\n오늘 퇴근하고 같이 산책할래?"
+    },
+    {
+      "index": 2,
+      "ts": "00:00:03,500 --> 00:00:06,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 2,
+      "secondaryCue": 2,
+      "groupId": null,
+      "text": "好啊 我也想出去走走\n좋아, 나도 바람 좀 쐬고 싶었어."
+    },
+    {
+      "index": 3,
+      "ts": "00:00:06,500 --> 00:00:10,500",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 3,
+      "secondaryCue": 3,
+      "groupId": null,
+      "text": "公园旁边新开了一家小面包店 听说他们的牛角包每天下午就卖完了\n공원 옆에 작은 빵집이 새로 생겼는데 크루아상이 매일 오후면 다 팔린대."
+    },
+    {
+      "index": 4,
+      "ts": "00:00:11,000 --> 00:00:13,000",
+      "type": "merged",
+      "cueKind": "dialogue",
+      "method": "exact-match",
+      "timingSource": "primary",
+      "primaryCue": 4,
+      "secondaryCue": 4,
+      "groupId": null,
+      "text": "那我们早点出发\n그럼 우리 일찍 출발하자."
+    }
+  ]
+}
