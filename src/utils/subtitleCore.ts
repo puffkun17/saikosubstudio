@@ -105,6 +105,8 @@ export interface RawSub {
   cueKind?: CueKind;
   cueMeta?: CueClassification;
   auxiliary?: AuxiliaryCueClassification;
+  /** ASS layer (lower wins when deduping identical same-time cues). */
+  layer?: number;
 }
 
 export type { DecodeResult } from './textEncoding';
@@ -876,6 +878,28 @@ export function enhancedSrtCleaner(text: string, isEnglish = false, addLog: (msg
 }
 
 /**
+ * Sort cues by start/end (stable). Used after parse and before merge (V6).
+ * ASS layer is a tie-break so lower layers stay first for later dedupe (V7).
+ */
+export function sortCuesByTime(subs: RawSub[]): RawSub[] {
+  return subs
+    .map((sub, index) => ({
+      sub,
+      index,
+      start: timeToMs(sub.ts.split(' --> ')[0] || ''),
+      end: timeToMs(sub.ts.split(' --> ')[1] || ''),
+      layer: sub.layer ?? 0,
+    }))
+    .sort((a, b) => {
+      if (a.start !== b.start) return a.start - b.start;
+      if (a.end !== b.end) return a.end - b.end;
+      if (a.layer !== b.layer) return a.layer - b.layer;
+      return a.index - b.index;
+    })
+    .map((entry) => entry.sub);
+}
+
+/**
  * Parse SRT text to rows.
  */
 export function parseSrt(text: string): RawSub[] {
@@ -915,7 +939,7 @@ export function parseSrt(text: string): RawSub[] {
       i++;
     }
   }
-  return subtitles;
+  return sortCuesByTime(subtitles);
 }
 
 /**
@@ -969,13 +993,23 @@ export function parseSubtitle(text: string): RawSub[] {
             const rawDiag = stripAssDrawingCommands(fullDiag);
             const cleanDiag = rawDiag.replace(/\\N/g, '\n').replace(/\{[^}]*\}/g, '').trim();
             if (!cleanDiag && rawDiag !== fullDiag) return; // drawing-only event: nothing to show
+            const layerIdx = formatKeys.indexOf('layer') >= 0 ? formatKeys.indexOf('layer') : 0;
+            const layerRaw = (parts[layerIdx] || '').replace(/^Dialogue:\s*/i, '').trim();
+            const layer = Number.parseInt(layerRaw, 10);
             const cueMeta = classifySubtitleCue(rawDiag, { assStyle: parts[styleIdx] || '' });
-            parsed.push({ ts, text: cleanDiag, cueKind: cueMeta.kind, cueMeta, auxiliary: cueMeta.auxiliary });
+            parsed.push({
+              ts,
+              text: cleanDiag,
+              cueKind: cueMeta.kind,
+              cueMeta,
+              auxiliary: cueMeta.auxiliary,
+              layer: Number.isFinite(layer) ? layer : 0,
+            });
           }
         }
       }
     });
-    return parsed;
+    return sortCuesByTime(parsed);
   }
   return parseSrt(text);
 }
@@ -1850,14 +1884,14 @@ export function mergeSubtitles(
   commSubs: RawSub[] = [], 
   addLog: (msg: string, type: 'info' | 'success' | 'error') => void = () => {}
 ): SubRow[] {
-  const zhProc = preprocessMixedContent(zhSubs);
-  const enProc = preprocessMixedContent(enSubs);
+  const zhProc = preprocessMixedContent(sortCuesByTime(zhSubs));
+  const enProc = preprocessMixedContent(sortCuesByTime(enSubs));
   const zhNotes = zhProc.filter(s => s.type === "note");
   const zhDialogues = zhProc.filter(s => s.type === "dialogue");
   const enNotes = enProc.filter(s => s.type === "note");
   const enDialogues = enProc.filter(s => s.type === "dialogue");
   
-  const commProc = commSubs.map(s => ({
+  const commProc = sortCuesByTime(commSubs).map(s => ({
     ...s,
     type: "commentary",
     cueKind: 'commentary' as CueKind
@@ -2023,14 +2057,14 @@ export function alignSubtitlesIndustrial(
   addLog: (msg: string, type: 'info' | 'success' | 'error') => void = () => {},
   options: AlignSubtitlesOptions = {},
 ): SubRow[] {
-  const zhProc = preprocessMixedContent(zhSubs);
-  const enProc = preprocessMixedContent(enSubs);
+  const zhProc = preprocessMixedContent(sortCuesByTime(zhSubs));
+  const enProc = preprocessMixedContent(sortCuesByTime(enSubs));
   const zhNotes = zhProc.filter(s => s.type === "note");
   const zhDialogues = zhProc.filter(s => s.type === "dialogue");
   const enNotes = enProc.filter(s => s.type === "note");
   const enDialogues = enProc.filter(s => s.type === "dialogue");
   
-  const commProc = commSubs.map(s => ({
+  const commProc = sortCuesByTime(commSubs).map(s => ({
     ...s,
     type: "commentary",
     cueKind: 'commentary' as CueKind
