@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { isLyricText, isSubtitleCreditText } from '@/utils/subtitleCore';
@@ -8,14 +8,19 @@ import type { SubRow } from '@/utils/subtitleCore';
 import { Check, ChevronDown, ChevronUp, Pencil, Redo2, Undo2, X } from 'lucide-react';
 import { TimelineControls } from '@/components/Workbench/TimelineControls';
 import { MARK_LABEL, InspectionMarkGlyph, type InspectionMarkKind } from '@/components/Workbench/inspectionMarks';
+import { MarkerRail } from '@/components/Workbench/MarkerRail';
+import { InlineReview } from '@/components/Workbench/InlineReview';
+import type { WorkbenchListController } from '@/components/Workbench/workbenchFocus';
+import { REVIEW_FOCUS_LABEL } from '@/core/workbenchReview';
 
 interface SequenceListProps {
   timelineDurationMs?: number;
+  listController?: WorkbenchListController | null;
 }
 
 const LONG_PRESS_MS = 450;
 
-export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }) => {
+export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, listController = null }) => {
   const {
     processedSubs,
     previewIndex,
@@ -57,6 +62,25 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
   const prevIndexRef = useRef<number>(-1);
   const longPressTimerRef = useRef<number | null>(null);
   const longPressFiredRef = useRef(false);
+  const [visibleRange, setVisibleRange] = useState({ first: 0, last: 20 });
+  const reduceMotion = useSyncExternalStore(
+    (onChange) => {
+      if (typeof window === 'undefined' || !window.matchMedia) return () => {};
+      const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+      mq.addEventListener('change', onChange);
+      return () => mq.removeEventListener('change', onChange);
+    },
+    () => (typeof window !== 'undefined' && window.matchMedia
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false),
+    () => false,
+  );
+
+  const activeReview = listController?.activeItem?.reviewItem ?? null;
+  const activeArrayIndexes = useMemo(
+    () => new Set(listController?.activeItem?.arrayIndexes ?? []),
+    [listController?.activeItem],
+  );
 
   const selectedIndexes = (() => {
     if (multiSelectedIndexes.size > 1) return multiSelectedIndexes;
@@ -80,7 +104,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
       }
     }
 
-    if (previewIndex === prevIndexRef.current && showAllSubs) return;
+    if (previewIndex === prevIndexRef.current && showAllSubs && !listController?.highlightNonce) return;
     prevIndexRef.current = previewIndex;
 
     const timer = setTimeout(() => {
@@ -90,13 +114,43 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
         const containerRect = container.getBoundingClientRect();
         const elRect = el.getBoundingClientRect();
         const scrollTop = container.scrollTop + (elRect.top - containerRect.top) - (containerRect.height / 2) + (elRect.height / 2);
-
-        container.scrollTo({ top: scrollTop, behavior: 'smooth' });
+        const behavior: ScrollBehavior = reduceMotion ? 'auto' : 'smooth';
+        container.scrollTo({ top: scrollTop, behavior });
       }
     }, 60);
 
     return () => clearTimeout(timer);
-  }, [previewIndex, showAllSubs, processedSubs]);
+  }, [previewIndex, showAllSubs, processedSubs, listController?.highlightNonce, reduceMotion]);
+
+  useEffect(() => {
+    const container = listRef.current;
+    if (!container || !processedSubs?.length) return;
+
+    const updateVisible = () => {
+      const rows = container.querySelectorAll<HTMLElement>('[data-wb-row]');
+      if (rows.length === 0) return;
+      const top = container.scrollTop;
+      const bottom = top + container.clientHeight;
+      let first = 0;
+      let last = rows.length - 1;
+      for (let i = 0; i < rows.length; i += 1) {
+        const el = rows[i];
+        const elTop = el.offsetTop;
+        const elBottom = elTop + el.offsetHeight;
+        if (elBottom >= top) { first = Number(el.dataset.wbRow) || i; break; }
+      }
+      for (let i = rows.length - 1; i >= 0; i -= 1) {
+        const el = rows[i];
+        const elTop = el.offsetTop;
+        if (elTop <= bottom) { last = Number(el.dataset.wbRow) || i; break; }
+      }
+      setVisibleRange({ first, last });
+    };
+
+    updateVisible();
+    container.addEventListener('scroll', updateVisible, { passive: true });
+    return () => container.removeEventListener('scroll', updateVisible);
+  }, [processedSubs, showAllSubs]);
 
   const clearLongPress = useCallback(() => {
     if (longPressTimerRef.current != null) {
@@ -213,17 +267,33 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
     </button>
   ) : null;
 
+  const focusedIndexes = listController?.focusedIndexes ?? null;
+  const highlightIndex = listController?.highlightArrayIndex ?? null;
+  const highlightNonce = listController?.highlightNonce ?? 0;
+
   return (
     <div className="v4-panel flex flex-1 flex-col overflow-hidden">
       {total > 0 && (
         <div className="timeline-head flex flex-col gap-2 p-[var(--ds-pad-card)] border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] flex-shrink-0 lg:flex-row lg:items-center lg:gap-4">
             <div className="flex items-center justify-between gap-4 lg:order-2 lg:shrink-0">
-            <div className="min-w-0 flex items-center gap-3">
+            <div className="min-w-0 flex flex-wrap items-center gap-3">
               <span className="ds-label whitespace-nowrap">时间轴</span>
               <span className="ui-meta-row tabular-nums">
                 {isOverlimit && !showAllSubs ? `${LIMIT} / ${total} 行` : `${total} 行`}
                 {selectedIndexes.size > 1 ? ` · 已选 ${selectedIndexes.size}` : ''}
               </span>
+              {listController?.filterStatus ? (
+                <span className="inline-flex flex-wrap items-center gap-1.5 text-xs text-[var(--v4-text-muted)]">
+                  <span>{listController.filterStatus}</span>
+                  <button
+                    type="button"
+                    className="font-semibold text-[var(--v5-green)] underline decoration-2 underline-offset-2 wb-focus-ring rounded"
+                    onClick={listController.onClearFocus}
+                  >
+                    清除
+                  </button>
+                </span>
+              ) : null}
               {isOverlimit && !showAllSubs && (
                 <span className="hidden sm:inline text-xs text-[var(--v4-text-faint)] truncate">
                   当前只显示前 {LIMIT} 行，拖动进度时会自动展开
@@ -259,7 +329,8 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
         </div>
       )}
 
-      <div ref={listRef} className="flex-1 overflow-y-auto">
+      <div className="wb-list-shell">
+      <div ref={listRef} className="wb-list-shell__scroll">
         {visibleSubs.length > 0 ? (
           <div className="flex flex-col relative">
             <div className="sticky top-0 z-20 hidden md:grid grid-cols-[3.75rem_minmax(7.75rem,auto)_minmax(0,1fr)_2rem] items-center gap-2 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-4 py-1 text-xs font-semibold tracking-wide text-[var(--v4-text-muted)] select-none md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] md:gap-3">
@@ -272,6 +343,16 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               const rowIndex = sub.index - 1;
               const isActive = previewIndex === rowIndex;
               const isSelected = selectedIndexes.has(rowIndex);
+              const isDimmed = Boolean(focusedIndexes && focusedIndexes.size > 0 && !focusedIndexes.has(rowIndex));
+              const isPassedMark = Boolean(listController?.passedArrayIndexes.has(rowIndex));
+              const showInline = Boolean(
+                activeReview
+                && activeArrayIndexes.has(rowIndex)
+                && rowIndex === (activeArrayIndexes.size ? Math.max(...Array.from(activeArrayIndexes)) : -1)
+                && !listController?.checkedReviewIds.has(activeReview.id),
+              );
+              const isSweep = highlightIndex === rowIndex && highlightNonce > 0;
+              const inActiveGroup = activeArrayIndexes.has(rowIndex);
               const normalizedText = sub.text.replace(/\\N/gi, '\n');
               const parts = normalizedText.split('\n');
               const zhText = parts[0] || '';
@@ -327,15 +408,20 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
               const endTime = sub.ts.split(' --> ')[1]?.replace(',', '.').trim() || '';
 
-              const rowClass = `group relative grid grid-cols-[2.5rem_minmax(0,1fr)_1.75rem] md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] items-center gap-2 md:gap-3 py-1.5 px-3 md:px-4 border-b border-[var(--v4-line)] cursor-pointer select-none text-left overflow-hidden transition-colors duration-150
+              const rowClass = `wb-row group relative grid grid-cols-[2.5rem_minmax(0,1fr)_1.75rem] md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] items-center gap-2 md:gap-3 py-1.5 px-3 md:px-4 border-b border-[var(--v4-line)] cursor-pointer select-none text-left overflow-hidden transition-colors duration-150
                 ${isActive ? 'glass-lens-active' : isSelected ? 'bg-[var(--v4-accent-soft)]/55' : 'bg-transparent hover:bg-[var(--v4-panel-muted)]'}
                 ${(isLyric || isCredit) && !isActive && !isSelected ? 'bg-[var(--v4-panel-muted)]/50' : ''}
+                ${isDimmed ? 'dim' : ''}
+                ${isPassedMark ? 'done' : ''}
+                ${isSweep && !reduceMotion ? 'sweep' : ''}
+                ${inActiveGroup && showInline ? 'border-l-[3px] border-l-[var(--wb-cat-review)]' : ''}
                 ${sub.index > 30 ? 'timeline-row-deferred' : ''}`;
 
               return (
+                <React.Fragment key={sub.index}>
                 <div
-                  key={sub.index}
                   id={`wb-row-${rowIndex}`}
+                  data-wb-row={rowIndex}
                   onClick={(event) => {
                     if (longPressFiredRef.current) {
                       longPressFiredRef.current = false;
@@ -387,7 +473,13 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                       aria-label={rowMarkKind || isAuxiliarySemantic || alignmentBadge ? rowMarkTitle : undefined}
                       aria-hidden={!rowMarkKind && !isAuxiliarySemantic && !alignmentBadge}
                     >
-                      {rowMarkKind ? (
+                      {isPassedMark ? (
+                        <span className="wb-chk" aria-label="已核对">✓</span>
+                      ) : focusedIndexes?.has(rowIndex) && (listController?.focus === 'review' || listController?.focus === 'structure') ? (
+                        <span className="wb-mk" title={REVIEW_FOCUS_LABEL.structure} />
+                      ) : focusedIndexes?.has(rowIndex) && listController?.focus === 'suspect' ? (
+                        <span className="wb-mk ring" title={REVIEW_FOCUS_LABEL.suspect} />
+                      ) : rowMarkKind ? (
                         <InspectionMarkGlyph kind={rowMarkKind} size={10} />
                       ) : (isAuxiliarySemantic || alignmentBadge) ? (
                         <span className="inline-flex h-3 min-w-3 items-center justify-center rounded-[var(--radius-xs)] border border-[var(--v4-line-strong)] px-0.5 font-mono text-[8px] font-semibold leading-none text-[var(--v4-text-faint)]">
@@ -485,6 +577,26 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
                     )}
                   </div>
                 </div>
+                {showInline && activeReview && listController ? (
+                  <InlineReview
+                    item={activeReview}
+                    row={sub}
+                    checked={Boolean(listController.checkedReviewIds.has(activeReview.id))}
+                    onMarkReviewed={() => listController.onMarkReviewed(activeReview.id)}
+                    onConfirmCategory={(kind) => listController.onConfirmCategory(activeReview, kind)}
+                    onIgnore={() => listController.onIgnore(activeReview.id)}
+                    onEdit={() => beginEditing(sub)}
+                  />
+                ) : null}
+                {listController?.focus === 'screen' && inActiveGroup && listController.activeItem?.id === `screen-${sub.index}` ? (
+                  <div className="wb-peek">
+                    <span className="swatch" aria-hidden="true" />
+                    <span>
+                      标题告示 · 招牌、短信、标题卡等画面文字 · 只影响列表筛选，不改导出
+                    </span>
+                  </div>
+                ) : null}
+                </React.Fragment>
               );
             })}
 
@@ -514,6 +626,17 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs }
             当前没有可预览的字幕
           </div>
         )}
+      </div>
+      {listController && total > 0 ? (
+        <MarkerRail
+          totalLines={total}
+          hits={listController.railHits}
+          focus={listController.focus}
+          firstVisibleArrayIndex={visibleRange.first}
+          lastVisibleArrayIndex={visibleRange.last}
+          onJump={listController.onJumpToArrayIndex}
+        />
+      ) : null}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./cta-elevation.css";
 import "./ds.css";
+import "./workbench-b7.css";
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import { SystemTray } from "@/components/Global/SystemTray";

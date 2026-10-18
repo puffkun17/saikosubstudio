@@ -28,7 +28,7 @@ export const MARK_LABEL: Record<InspectionMarkKind, string> = {
   screen: '标题告示',
   sound: 'SDH',
   lyrics: '歌词',
-  credit: '署名信息',
+  credit: '人员署名',
 };
 
 /** 五轨 ridgeline 纵向位置（配合 h-11 轨道） */

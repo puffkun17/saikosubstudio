@@ -11,6 +11,8 @@ import { detectSdhByContent, splitAssByLanguageStyles, titleKeyOf } from '../cor
 import { detectLanguageByContent } from '../utils/subtitleCore';
 import { reviewTaskKey } from '../core/reviewKey';
 import { classifyLineKind } from '../core/lineKinds';
+import { applyLineKindOverride } from '../core/workbenchReview';
+import type { LineKind } from '../utils/subtitleCore';
 import { mergeWorkerAvailable, runMergeJob, runMergeJobInThread } from '../core/mergeClient';
 import type { MergeJobEvent, MergeJobInput, MergeJobResult } from '../core/mergeJob';
 import type { AlignmentFallbackInfo } from '../utils/subtitleCore';
@@ -328,6 +330,8 @@ export interface StudioState {
   editSubtitleText: (index: number, text: string) => void;
   undoSubtitleEdit: () => void;
   redoSubtitleEdit: () => void;
+  /** Override a row's line classification (工作台「类别待定」确认). */
+  setLineKind: (index: number, kind: Exclude<LineKind, 'credit'>) => void;
   setMergeReviewChecked: (taskKey: string, ids: string[]) => void;
   toggleMergeReviewChecked: (taskKey: string, id: string) => void;
   markMergeReviewChecked: (taskKey: string, id: string) => void;
@@ -802,6 +806,18 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       editHistory: [...state.editHistory, { index, before: row.text, after: text }].slice(-50),
       editFuture: [],
     }));
+  },
+
+  setLineKind: (index, kind) => {
+    const { processedSubs } = get();
+    if (!processedSubs) return;
+    const row = processedSubs.find((s) => s.index === index);
+    if (!row) return;
+    const next = applyLineKindOverride(row, kind);
+    if (next === row) return;
+    set({
+      processedSubs: processedSubs.map((s) => (s.index === index ? next : s)),
+    });
   },
 
   undoSubtitleEdit: () => {
