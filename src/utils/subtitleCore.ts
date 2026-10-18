@@ -906,7 +906,8 @@ export function parseSrt(text: string): RawSub[] {
       }
       
       if (contentLines.length > 0) {
-        const cueText = contentLines.join(" ");
+        // Keep newlines so dual-speaker SRT ("-A\n-B") matches ASS \N packing (V9).
+        const cueText = contentLines.join("\n");
         const cueMeta = classifySubtitleCue(cueText, { timingLine: line });
         subtitles.push({ ts: timestamp, text: cueText, cueKind: cueMeta.kind, cueMeta, auxiliary: cueMeta.auxiliary });
       }
