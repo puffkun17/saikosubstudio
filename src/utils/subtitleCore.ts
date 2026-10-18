@@ -900,6 +900,30 @@ export function sortCuesByTime(subs: RawSub[]): RawSub[] {
 }
 
 /**
+ * Drop identical same-time same-text cues (ASS glow+body layers). Keeps the
+ * lowest layer thanks to sortCuesByTime ordering (V7). Distinct text is kept.
+ */
+export function dedupeIdenticalCues(subs: RawSub[]): RawSub[] {
+  const sorted = sortCuesByTime(subs);
+  const out: RawSub[] = [];
+  const seen = new Set<string>();
+  for (const sub of sorted) {
+    const start = timeToMs(sub.ts.split(' --> ')[0] || '');
+    const end = timeToMs(sub.ts.split(' --> ')[1] || '');
+    const key = `${start}|${end}|${sub.text}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(sub);
+  }
+  return out;
+}
+
+/** Parse-time / merge-entry normalization: time sort + identical-cue dedupe. */
+export function normalizeParsedCues(subs: RawSub[]): RawSub[] {
+  return dedupeIdenticalCues(subs);
+}
+
+/**
  * Parse SRT text to rows.
  */
 export function parseSrt(text: string): RawSub[] {
@@ -939,7 +963,7 @@ export function parseSrt(text: string): RawSub[] {
       i++;
     }
   }
-  return sortCuesByTime(subtitles);
+  return normalizeParsedCues(subtitles);
 }
 
 /**
@@ -1009,7 +1033,7 @@ export function parseSubtitle(text: string): RawSub[] {
         }
       }
     });
-    return sortCuesByTime(parsed);
+    return normalizeParsedCues(parsed);
   }
   return parseSrt(text);
 }
@@ -1884,14 +1908,14 @@ export function mergeSubtitles(
   commSubs: RawSub[] = [], 
   addLog: (msg: string, type: 'info' | 'success' | 'error') => void = () => {}
 ): SubRow[] {
-  const zhProc = preprocessMixedContent(sortCuesByTime(zhSubs));
-  const enProc = preprocessMixedContent(sortCuesByTime(enSubs));
+  const zhProc = preprocessMixedContent(normalizeParsedCues(zhSubs));
+  const enProc = preprocessMixedContent(normalizeParsedCues(enSubs));
   const zhNotes = zhProc.filter(s => s.type === "note");
   const zhDialogues = zhProc.filter(s => s.type === "dialogue");
   const enNotes = enProc.filter(s => s.type === "note");
   const enDialogues = enProc.filter(s => s.type === "dialogue");
   
-  const commProc = sortCuesByTime(commSubs).map(s => ({
+  const commProc = normalizeParsedCues(commSubs).map(s => ({
     ...s,
     type: "commentary",
     cueKind: 'commentary' as CueKind
@@ -2057,14 +2081,14 @@ export function alignSubtitlesIndustrial(
   addLog: (msg: string, type: 'info' | 'success' | 'error') => void = () => {},
   options: AlignSubtitlesOptions = {},
 ): SubRow[] {
-  const zhProc = preprocessMixedContent(sortCuesByTime(zhSubs));
-  const enProc = preprocessMixedContent(sortCuesByTime(enSubs));
+  const zhProc = preprocessMixedContent(normalizeParsedCues(zhSubs));
+  const enProc = preprocessMixedContent(normalizeParsedCues(enSubs));
   const zhNotes = zhProc.filter(s => s.type === "note");
   const zhDialogues = zhProc.filter(s => s.type === "dialogue");
   const enNotes = enProc.filter(s => s.type === "note");
   const enDialogues = enProc.filter(s => s.type === "dialogue");
   
-  const commProc = sortCuesByTime(commSubs).map(s => ({
+  const commProc = normalizeParsedCues(commSubs).map(s => ({
     ...s,
     type: "commentary",
     cueKind: 'commentary' as CueKind
