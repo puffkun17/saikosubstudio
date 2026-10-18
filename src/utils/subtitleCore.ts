@@ -1060,7 +1060,12 @@ function extractDialogueAndNotes(text: string): Extraction {
       notes.push(note);
       dialogue = dialogue.replace(note, '').trim();
     }
-    dialogue = dialogue.replace(/\s+/g, ' ').replace(/^[^\w\u4e00-\u9fff]+/, '').replace(/[^\w\u4e00-\u9fff]+$/, '');
+    dialogue = dialogue.replace(/\s+/g, ' ');
+    // Only strip edge punctuation after real note markers were peeled off.
+    // Dialogue-only cues must keep original punctuation (V8).
+    if (notes.length > 0) {
+      dialogue = dialogue.replace(/^[^\w\u4e00-\u9fff]+/, '').replace(/[^\w\u4e00-\u9fff]+$/, '');
+    }
     if (notes.length > 0 && !dialogue) return { dialogue: "", notes: notes.join(" "), type: "note" };
     if (notes.length > 0 && dialogue) return { dialogue, notes: notes.join(" "), type: "mixed" };
     return { dialogue, notes: "", type: "dialogue" };
