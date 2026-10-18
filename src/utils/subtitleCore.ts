@@ -2102,8 +2102,20 @@ export function alignSubtitlesIndustrial(
 
   for (let pathIndex = 0; pathIndex < path.length; pathIndex++) {
     const step = path[pathIndex];
-    if (step.enIdx !== null && skippedEn.has(step.enIdx)) continue;
-    if (step.zhIdx !== null && skippedZh.has(step.zhIdx)) continue;
+    // Coverage/expand marks counterpart idxs as skipped so they are not paired again.
+    // Never `continue` the whole step when only one side was consumed — emit the other
+    // side as single-track (V5: overlapping primary was previously dropped).
+    const enSkipped = step.enIdx !== null && skippedEn.has(step.enIdx);
+    const zhSkipped = step.zhIdx !== null && skippedZh.has(step.zhIdx);
+    if (enSkipped || zhSkipped) {
+      if (!zhSkipped && step.zhIdx !== null) {
+        mergedDialogues.push(createSingleTrackRow(zhDialogues[step.zhIdx], 'primary'));
+      }
+      if (!enSkipped && step.enIdx !== null) {
+        mergedDialogues.push(createSingleTrackRow(enDialogues[step.enIdx], 'secondary'));
+      }
+      continue;
+    }
 
     const expanded = tryExpandPackedDialogueAtPath(path, pathIndex, zhDialogues, enDialogues);
     if (expanded) {
