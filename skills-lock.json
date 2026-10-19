@@ -33,6 +33,12 @@
       "commitHash": "81d0af2f6d4b32d791fb26caa82b17603ef4d807",
       "computedHash": "4d46bb0f98fee1a22e59c87eeba7c84d3cd24358e6e89949e0b237b969bb075b",
       "note": "Slim local adaptation (MIT attribution); not a full vendor copy"
+    },
+    "a11y-lite": {
+      "source": "local",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/a11y-lite/SKILL.md",
+      "computedHash": "01ad2ea67633c67ddfc9d90142da2561b7c0d0640fe63093f73d09002d50aa44"
     }
   }
 }
