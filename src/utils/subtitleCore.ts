@@ -208,10 +208,30 @@ export interface StyleSettings {
 export { decodeBuffer } from './textEncoding';
 
 /**
+ * Strip ASS override blocks and decorative HTML for language detection / bilingual
+ * splitting only. Does NOT mutate export text.
+ *
+ * - Removes `{\...}` (e.g. `{\fn微软雅黑\fs14}`) so CJK font names cannot fake zh.
+ * - Removes `<font>`, `<b>`, `<u>` (and closers).
+ * - Keeps `<i>` / `</i>` as a structural signal (off-screen voice / lyrics).
+ * - Normalizes ASS `\N` to real newlines for line-oriented detectors.
+ */
+export function stripMarkupForDetection(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/\{[^}]*\}/g, '')
+    .replace(/<\/?(?:font|b|u)(?:\s[^>]*)?>/gi, '')
+    .replace(/\\N/gi, '\n')
+    .replace(/\\n/g, '\n');
+}
+
+/**
  * Determine language from text content.
  */
 export function detectLanguageByContent(text: string): SubtitleLanguage {
   if (!text) return "unknown";
+  // Detection view only — font tags / bold markup must not skew CJK vs Latin.
+  text = stripMarkupForDetection(text);
 
   const kanaCount = (text.match(/[\u3040-\u30ff\u31f0-\u31ff]/g) || []).length;
   if (kanaCount >= 2) return 'ja';
@@ -2882,15 +2902,18 @@ export function safeTimeToMs(t: unknown): number {
 
 export function splitSingleBilingualText(text: string): string {
   if (!text) return "";
-  
-  if (text.includes('\n') || text.includes('\\N') || text.includes('\\n')) {
-    return text;
+  // Split on a detection view (tags stripped) so `{\fn微软雅黑\fs14}English` cannot fake zh.
+  // Original cue text in Subfile / export paths is untouched.
+  const view = stripMarkupForDetection(text);
+
+  if (view.includes('\n')) {
+    return view;
   }
 
-  const hasZh = /[一-龥]/.test(text);
-  const hasEn = /[a-zA-Z]/.test(text);
+  const hasZh = /[一-龥]/.test(view);
+  const hasEn = /[a-zA-Z]/.test(view);
   if (!hasZh || !hasEn) {
-    return text;
+    return view;
   }
 
   const latinWords = (value: string): string[] => value.match(/[A-Za-z]+(?:'[A-Za-z]+)?/g) || [];
@@ -2903,7 +2926,7 @@ export function splitSingleBilingualText(text: string): string {
   };
   const isSubtitleLikeChinese = (value: string): boolean => hanChars(value) >= 2;
 
-  const zhFirstMatch = text.match(/^([\s\S]*?[一-龥][，。！？）】」；：”’"'.,!?\s-]*)([A-Za-z][\s\S]*)$/);
+  const zhFirstMatch = view.match(/^([\s\S]*?[一-龥][，。！？）】」；：”’"'.,!?\s-]*)([A-Za-z][\s\S]*)$/);
   if (zhFirstMatch) {
     const zhPart = zhFirstMatch[1].trim();
     const enPart = zhFirstMatch[2].trim();
@@ -2914,7 +2937,7 @@ export function splitSingleBilingualText(text: string): string {
     }
   }
 
-  const enFirstMatch = text.match(/^([A-Za-z][\s\S]*?[A-Za-z][，。！？）】」；：”"'.,!?\s-]*)([一-龥][\s\S]*)$/);
+  const enFirstMatch = view.match(/^([A-Za-z][\s\S]*?[A-Za-z][，。！？）】」；：”"'.,!?\s-]*)([一-龥][\s\S]*)$/);
   if (enFirstMatch) {
     const enPart = enFirstMatch[1].trim();
     const zhPart = enFirstMatch[2].trim();
@@ -2923,7 +2946,7 @@ export function splitSingleBilingualText(text: string): string {
     }
   }
 
-  return text;
+  return view;
 }
 
 type CueLanguage = 'zh' | 'foreign' | 'mixed' | 'unknown';
