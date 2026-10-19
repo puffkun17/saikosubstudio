@@ -29,7 +29,8 @@ export const IngestStep: React.FC = () => {
 
   return (
     <div className="ingest-shell relative z-0 flex h-full w-full flex-1 flex-col overflow-y-auto px-[var(--ds-page-x)] py-[var(--ds-gap-section)]">
-      <AnimatePresence mode="wait">
+      {/* initial={false}: returning to 导入 remounts IngestStep; do not fade the empty shell in again. */}
+      <AnimatePresence mode="wait" initial={false}>
         {shellState === 'ready' ? (
           <motion.div 
             key="ready-state"
@@ -47,7 +48,7 @@ export const IngestStep: React.FC = () => {
         ) : (
           <motion.div 
             key="handoff-state"
-            initial={{ opacity: 0, y: 6 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}

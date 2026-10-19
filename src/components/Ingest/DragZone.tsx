@@ -337,7 +337,7 @@ const describeTrack = (file: Subfile) => {
 
 export const DragZone: React.FC = () => {
   const [confirmOriginal, setConfirmOriginal] = React.useState(false);
-  const { isDragging, setIsDragging, processFiles, addLog, setIngestClearing, isOfficialSubtitle, setIsOfficialSubtitle, isOriginalWork, setIsOriginalWork, setStatusNotice, statusNotices, dismissStatusNotice } = useStudioStore(useShallow((state) => ({
+  const { isDragging, setIsDragging, processFiles, addLog, setIngestClearing, isOfficialSubtitle, setIsOfficialSubtitle, isOriginalWork, setIsOriginalWork, setStatusNotice, statusNotices } = useStudioStore(useShallow((state) => ({
     isOriginalWork: state.isOriginalWork,
     setIsOriginalWork: state.setIsOriginalWork,
     isDragging: state.isDragging,
@@ -349,8 +349,8 @@ export const DragZone: React.FC = () => {
     setIsOfficialSubtitle: state.setIsOfficialSubtitle,
     setStatusNotice: state.setStatusNotice,
     statusNotices: state.statusNotices,
-    dismissStatusNotice: state.dismissStatusNotice,
   })));
+  /** Gate notice is shown once as SystemTray callout; here we only highlight the drop well. */
   const gateNotice = [...statusNotices]
     .reverse()
     .find((notice) => notice.id === 'workflow-gated');
@@ -1285,43 +1285,12 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
           {queuedItems.length === 0 ? (
             <motion.div
               key="empty"
-              initial={shouldReduceMotion ? false : { opacity: 0 }}
+              initial={false}
               animate={{ opacity: 1 }}
               exit={shouldReduceMotion ? undefined : { opacity: 0, transition: { duration: 0.14 } }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
               className="ingest-local-add"
             >
-              <AnimatePresence initial={false}>
-                {gateNotice && (
-                  <motion.div
-                    key={`${gateNotice.id}-${gateNotice.createdAt}`}
-                    role="status"
-                    aria-live="polite"
-                    initial={shouldReduceMotion ? false : { opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={shouldReduceMotion ? undefined : { opacity: 0, y: -4 }}
-                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                    className="ingest-gate-banner mb-3 w-full max-w-xl px-1"
-                  >
-                    <div className="flex items-start gap-2 rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--v5-orange)_34%,var(--v4-line-strong))] bg-[color-mix(in_srgb,var(--v4-panel-muted)_92%,transparent)] px-3.5 py-2.5">
-                      <div className="min-w-0 flex-1 text-left">
-                        <p className="text-sm font-semibold leading-5 text-[var(--v4-text)]">{gateNotice.title}</p>
-                        {gateNotice.message && (
-                          <p className="mt-0.5 text-xs leading-5 text-[var(--v4-text-muted)] md:text-sm">{gateNotice.message}</p>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        aria-label="关闭提示"
-                        onClick={() => dismissStatusNotice(gateNotice.id)}
-                        className="v4-focus-ring grid h-7 w-7 shrink-0 place-items-center rounded-md text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]"
-                      >
-                        <X className="h-3.5 w-3.5" aria-hidden="true" />
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
               <div className="ingest-local-add__copy">
                 {!tapFirst && (
                   <span className="ingest-local-add__cue" aria-hidden="true">

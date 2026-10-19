@@ -556,10 +556,6 @@ body {
   transition: border-color 220ms var(--v5-ease), box-shadow 220ms var(--v5-ease);
 }
 
-.ingest-gate-banner {
-  align-self: center;
-}
-
 /* Hover：虚线加深，仍低于 dragging（仅桌面拖放示意） */
 .ingest-stage.is-empty:not(.ingest-stage--tap-first):hover:not(.is-dragging) .ingest-local-add {
   border-color: color-mix(

@@ -13,7 +13,7 @@ const CONTEXTUAL_NOTICE_IDS = new Set([
   'media-identity',
   /**
    * Nav step gate (meta '2' workbench / meta '3' preview) + in-flow continue.
-   * Rendered by SystemTray (near tabs) and DragZone banner — not the floating dock.
+   * Rendered once by SystemTray (near tabs) — not the floating dock, not an ingest banner.
    */
   'workflow-gated',
   'forward-action-blocked',
@@ -36,7 +36,7 @@ const noticeStyles = {
  * Floating dock = strong notices + errors only.
  * Soft info/success logs flip in the bottom tray marquee.
  * Media-match notices render inline in SourceIdentityStrip.
- * workflow-gated meta '2'/'3' stay contextual (SystemTray + DropZone), same path for both.
+ * workflow-gated meta '2'/'3' stay contextual (SystemTray callout only).
  */
 export const FeedbackCenter: React.FC = () => {
   const {
