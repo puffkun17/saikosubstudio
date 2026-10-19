@@ -20,6 +20,12 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { CLIENT_IMPORT_LIMITS, getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
 import { partitionIngestPaths, type IgnoredIngestEntry } from '@/utils/ingestJunk';
 import {
+  buildImportSummary,
+  createEmptyImportSummary,
+  summarizeImportForChip,
+  type ImportSummary,
+} from '@/utils/importSummary';
+import {
   extractLocalArchiveSubtitles,
   listLocalArchiveSubtitles,
   LocalArchiveError,
@@ -375,6 +381,7 @@ export const DragZone: React.FC = () => {
   const [ingestPhase, setIngestPhase] = useState<IngestPhase>('idle');
   const [ingestMessage, setIngestMessage] = useState(PHASE_COPY.idle);
   const [resultChips, setResultChips] = useState<string[]>([]);
+  const [importSummary, setImportSummary] = useState<ImportSummary>(createEmptyImportSummary);
   const [queuedItems, setQueuedItems] = useState<PreflightItem[]>([]);
   const [queueIssue, setQueueIssue] = useState<string | null>(null);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
@@ -794,6 +801,7 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
     }
 
     setResultChips([]);
+    setImportSummary(createEmptyImportSummary());
 
     const validItems = preflight.filter(item => item.accepted);
     const rejectedItems = preflight.filter(item => !item.accepted);
@@ -902,13 +910,32 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
         sourceArchiveCount > 0 ? `${sourceArchiveCount} 个字幕包` : '',
         ignoredInArchive.length > 0 ? `已忽略 ${ignoredInArchive.length} 个杂项` : '',
       ].filter(Boolean);
-      setResultChips(chips);
+      const summary = buildImportSummary({
+        ignored: ignoredInArchive,
+        tracks: detectedFiles.map((file) => ({
+          name: file.name,
+          lang: file.lang,
+          encoding: file.encoding,
+          encodingConfidence: file.encodingConfidence,
+          isBilingual: file.isBilingual,
+        })),
+      });
+      setImportSummary(summary);
+      const summaryChip = summarizeImportForChip(summary);
+      setResultChips(summaryChip ? [...chips, summaryChip] : chips);
       if (ignoredInArchive.length > 0) {
         const sample = ignoredInArchive.slice(0, 3).map((entry) => entry.name.split('/').pop() || entry.name).join('、');
         addLog(
           `已忽略 ${ignoredInArchive.length} 个杂项文件${sample ? `（如 ${sample}${ignoredInArchive.length > 3 ? '…' : ''}）` : ''}`,
           'info',
         );
+      }
+      for (const item of summary.needsAttention) {
+        if (item.kind === 'low_confidence_encoding') {
+          addLog(`编码不确定（${item.detail}）：${item.name}`, 'info');
+        } else if (item.kind === 'zh_only_package') {
+          addLog('仅检测到中文轨，缺少原文轨，无法自动双语合并', 'info');
+        }
       }
 
       phaseStartedAt = Date.now();
@@ -1379,6 +1406,18 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
                   <p className="mt-1 text-sm font-medium tabular-nums text-[var(--v4-text-muted)] md:text-[15px]">
                     {queueStatsLine}
                   </p>
+                  {(importSummary.autoHandled.length > 0 || importSummary.needsAttention.length > 0) && (
+                    <p
+                      className="mt-2 inline-flex max-w-full items-center rounded-md px-2 py-0.5 text-xs font-medium"
+                      style={{ background: '#ef8d5f', color: '#1a3d37' }}
+                      title={[
+                        ...importSummary.autoHandled.map((i) => `自动：${i.name}`),
+                        ...importSummary.needsAttention.map((i) => `待确认：${i.name}`),
+                      ].slice(0, 8).join('\n')}
+                    >
+                      {summarizeImportForChip(importSummary)}
+                    </p>
+                  )}
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 md:gap-2.5">
                   <label className="inline-flex h-10 cursor-pointer items-center gap-2 px-1 text-sm font-medium text-[var(--v4-text-muted)] md:h-11 md:text-[15px]">
