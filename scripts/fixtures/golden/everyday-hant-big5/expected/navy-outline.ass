@@ -23,8 +23,8 @@ Dialogue: 1,0:00:06.50,0:00:09.00,ZH,,0,0,148,,我睡不著 乾脆起來煮點�
 Dialogue: 0,0:00:06.50,0:00:09.00,SEC,,0,0,0,,I couldn't sleep,\Nso I figured I'd make some coffee.
 Dialogue: 1,0:00:09.20,0:00:12.80,ZH,,0,0,148,,你要不要也來一杯 我煮了一大壺\N夠我們兩個人喝一整個上午
 Dialogue: 0,0:00:09.20,0:00:12.80,SEC,,0,0,0,,Do you want a cup too? I made a big pot,\Nenough for both of us to drink all morning.
-Dialogue: 1,0:00:13.00,0:00:15.00,ZH,,0,0,0,,- 好啊 - 加不加糖
-Dialogue: 0,0:00:13.00,0:00:15.00,SEC,,0,0,0,,- Sure. - Sugar?
+Dialogue: 1,0:00:13.00,0:00:15.00,ZH,,0,0,148,,- 好啊 - 加不加糖
+Dialogue: 0,0:00:13.00,0:00:15.00,SEC,,0,0,0,,- Sure.\N- Sugar?
 Dialogue: 1,0:00:18.00,0:00:21.50,ZH,,0,0,148,,樓下那家店的手機殼打八折\N我昨天順手買了一個
 Dialogue: 0,0:00:18.00,0:00:21.50,SEC,,0,0,0,,The shop downstairs has phone cases\Nat 20% off, so I grabbed one yesterday.
 Dialogue: 1,0:00:22.00,0:00:25.00,ZH,,0,0,148,,一共是128.50元 比網上便宜了差不多30塊
@@ -36,5 +36,5 @@ Dialogue: 0,0:00:33.30,0:00:35.10,SEC,,0,0,0,,I might move closer to work next m
 Dialogue: 1,0:00:35.50,0:00:37.00,ZH,,0,0,0,,真的嗎
 Dialogue: 0,0:00:35.50,0:00:37.00,SEC,,0,0,0,,Really?
 Dialogue: 1,0:00:37.20,0:00:40.00,ZH,,0,0,148,,嗯 每天通勤兩個小時 實在是太累了
-Dialogue: 0,0:00:37.20,0:00:40.00,SEC,,0,0,0,,Yeah. Two hours of commuting\Nevery day is just too much.
+Dialogue: 0,0:00:37.20,0:00:40.00,SEC,,0,0,0,,Yeah. Two hours of commuting every day\Nis just too much.
 Dialogue: 0,0:00:40.60,0:00:43.60,Lyrics_EN,,0,0,0,,♪ The rain keeps falling outside ♪

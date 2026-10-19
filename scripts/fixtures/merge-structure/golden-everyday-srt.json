@@ -37,7 +37,7 @@
       "primaryCue": 3,
       "secondaryCue": 2,
       "groupId": null,
-      "text": "我睡不着 干脆起来煮点咖啡\nI couldn't sleep, so I figured I'd make some coffee."
+      "text": "我睡不着 干脆起来煮点咖啡\nI couldn't sleep,\nso I figured I'd make some coffee."
     },
     {
       "index": 4,
@@ -49,7 +49,7 @@
       "primaryCue": 4,
       "secondaryCue": 3,
       "groupId": null,
-      "text": "你要不要也来一杯 我煮了一大壶 够我们两个人喝一整个上午\nDo you want a cup too? I made a big pot, enough for both of us to drink all morning."
+      "text": "你要不要也来一杯 我煮了一大壶 够我们两个人喝一整个上午\nDo you want a cup too? I made a big pot,\nenough for both of us to drink all morning."
     },
     {
       "index": 5,
@@ -61,7 +61,7 @@
       "primaryCue": 5,
       "secondaryCue": 4,
       "groupId": null,
-      "text": "- 好啊 - 加不加糖\n- Sure. - Sugar?"
+      "text": "- 好啊 - 加不加糖\n- Sure.\n- Sugar?"
     },
     {
       "index": 6,
@@ -97,7 +97,7 @@
       "primaryCue": 7,
       "secondaryCue": 6,
       "groupId": null,
-      "text": "楼下那家店的新iPhone壳打八折 我昨天顺手买了一个\nThe shop downstairs has phone cases at 20% off, so I grabbed one yesterday."
+      "text": "楼下那家店的新iPhone壳打八折 我昨天顺手买了一个\nThe shop downstairs has phone cases at 20% off,\nso I grabbed one yesterday."
     },
     {
       "index": 9,
@@ -109,7 +109,7 @@
       "primaryCue": 8,
       "secondaryCue": 7,
       "groupId": null,
-      "text": "一共是128.50元 比网上便宜了差不多30块\nIt came to 128.50 in total, about 30 cheaper than online."
+      "text": "一共是128.50元 比网上便宜了差不多30块\nIt came to 128.50 in total,\nabout 30 cheaper than online."
     },
     {
       "index": 10,
@@ -121,7 +121,7 @@
       "primaryCue": 9,
       "secondaryCue": 8,
       "groupId": null,
-      "text": "说明书上写着去 https://example.com/help/setup?step=2 下载App\nThe manual says to go to https://example.com/help/setup?step=2 and get the app."
+      "text": "说明书上写着去 https://example.com/help/setup?step=2 下载App\nThe manual says to go to\nhttps://example.com/help/setup?step=2 and get the app."
     },
     {
       "index": 11,
@@ -193,7 +193,7 @@
       "primaryCue": 13,
       "secondaryCue": 13,
       "groupId": null,
-      "text": "嗯 每天通勤两个小时 实在是太累了\nYeah. Two hours of commuting every day is just too much."
+      "text": "嗯 每天通勤两个小时 实在是太累了\nYeah. Two hours of commuting every day\nis just too much."
     },
     {
       "index": 17,
@@ -327,7 +327,7 @@
       "primaryCue": 3,
       "secondaryCue": 2,
       "groupId": null,
-      "text": "我睡不着 干脆起来煮点咖啡\nI couldn't sleep, so I figured I'd make some coffee."
+      "text": "我睡不着 干脆起来煮点咖啡\nI couldn't sleep,\nso I figured I'd make some coffee."
     },
     {
       "index": 4,
@@ -339,7 +339,7 @@
       "primaryCue": 4,
       "secondaryCue": 3,
       "groupId": null,
-      "text": "你要不要也来一杯 我煮了一大壶 够我们两个人喝一整个上午\nDo you want a cup too? I made a big pot, enough for both of us to drink all morning."
+      "text": "你要不要也来一杯 我煮了一大壶 够我们两个人喝一整个上午\nDo you want a cup too? I made a big pot,\nenough for both of us to drink all morning."
     },
     {
       "index": 5,
@@ -351,7 +351,7 @@
       "primaryCue": 5,
       "secondaryCue": 4,
       "groupId": null,
-      "text": "- 好啊 - 加不加糖\n- Sure. - Sugar?"
+      "text": "- 好啊 - 加不加糖\n- Sure.\n- Sugar?"
     },
     {
       "index": 6,
@@ -387,7 +387,7 @@
       "primaryCue": 7,
       "secondaryCue": 6,
       "groupId": null,
-      "text": "楼下那家店的新iPhone壳打八折 我昨天顺手买了一个\nThe shop downstairs has phone cases at 20% off, so I grabbed one yesterday."
+      "text": "楼下那家店的新iPhone壳打八折 我昨天顺手买了一个\nThe shop downstairs has phone cases at 20% off,\nso I grabbed one yesterday."
     },
     {
       "index": 9,
@@ -399,7 +399,7 @@
       "primaryCue": 8,
       "secondaryCue": 7,
       "groupId": null,
-      "text": "一共是128.50元 比网上便宜了差不多30块\nIt came to 128.50 in total, about 30 cheaper than online."
+      "text": "一共是128.50元 比网上便宜了差不多30块\nIt came to 128.50 in total,\nabout 30 cheaper than online."
     },
     {
       "index": 10,
@@ -411,7 +411,7 @@
       "primaryCue": 9,
       "secondaryCue": 8,
       "groupId": null,
-      "text": "说明书上写着去 https://example.com/help/setup?step=2 下载App\nThe manual says to go to https://example.com/help/setup?step=2 and get the app."
+      "text": "说明书上写着去 https://example.com/help/setup?step=2 下载App\nThe manual says to go to\nhttps://example.com/help/setup?step=2 and get the app."
     },
     {
       "index": 11,
@@ -483,7 +483,7 @@
       "primaryCue": 13,
       "secondaryCue": 13,
       "groupId": null,
-      "text": "嗯 每天通勤两个小时 实在是太累了\nYeah. Two hours of commuting every day is just too much."
+      "text": "嗯 每天通勤两个小时 实在是太累了\nYeah. Two hours of commuting every day\nis just too much."
     },
     {
       "index": 17,

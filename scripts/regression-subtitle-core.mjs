@@ -548,9 +548,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
     noopLog,
   );
   assert.deepEqual(merged.map(row => row.text), [
-    '这是你所期望走的路吗?\nAlors Mathieu, ça se passe comme vous voulez ?',
+    '这是你所期望走的路吗?\nAlors Mathieu, ça se passe\ncomme vous voulez ?',
     "正是\nJe l'espère.",
-  ], 'Fast merge must retain the same conservative dialogue expansion as industrial alignment.');
+  ], 'Fast merge must retain the same conservative dialogue expansion as industrial alignment (visual \\n kept).');
 }
 
 {

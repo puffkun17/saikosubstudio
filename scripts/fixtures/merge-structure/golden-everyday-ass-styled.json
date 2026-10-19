@@ -13,7 +13,7 @@
       "primaryCue": 1,
       "secondaryCue": 1,
       "groupId": null,
-      "text": "早上好 今天天气还不错\nGood morning. Nice weather today."
+      "text": "早上好 今天天气还不错\nGood morning.\nNice weather today."
     },
     {
       "index": 2,
@@ -25,7 +25,7 @@
       "primaryCue": 2,
       "secondaryCue": null,
       "groupId": null,
-      "text": "便利店 二十四小时营业 欢迎光临"
+      "text": "便利店\n二十四小时营业\n欢迎光临"
     },
     {
       "index": 3,
@@ -61,7 +61,7 @@
       "primaryCue": 5,
       "secondaryCue": 4,
       "groupId": null,
-      "text": "我刚刚看了一下 明天早上七点半出发应该来得及 不过今晚要早点睡\nI just checked. If we leave at 7:30 tomorrow morning we'll make it, but we should sleep early tonight."
+      "text": "我刚刚看了一下\n明天早上七点半出发应该来得及\n不过今晚要早点睡\nI just checked. If we leave at 7:30 tomorrow morning we'll make it, but we should sleep early tonight."
     },
     {
       "index": 6,
@@ -99,7 +99,7 @@
       "primaryCue": 1,
       "secondaryCue": 1,
       "groupId": null,
-      "text": "早上好 今天天气还不错\nGood morning. Nice weather today."
+      "text": "早上好 今天天气还不错\nGood morning.\nNice weather today."
     },
     {
       "index": 2,
@@ -111,7 +111,7 @@
       "primaryCue": 2,
       "secondaryCue": null,
       "groupId": null,
-      "text": "便利店 二十四小时营业 欢迎光临"
+      "text": "便利店\n二十四小时营业\n欢迎光临"
     },
     {
       "index": 3,
@@ -147,7 +147,7 @@
       "primaryCue": 5,
       "secondaryCue": 4,
       "groupId": null,
-      "text": "我刚刚看了一下 明天早上七点半出发应该来得及 不过今晚要早点睡\nI just checked. If we leave at 7:30 tomorrow morning we'll make it, but we should sleep early tonight."
+      "text": "我刚刚看了一下\n明天早上七点半出发应该来得及\n不过今晚要早点睡\nI just checked. If we leave at 7:30 tomorrow morning we'll make it, but we should sleep early tonight."
     },
     {
       "index": 6,

@@ -11,19 +11,19 @@
       "overflow": 0
     },
     "plex-srt.srt": {
-      "rewrapped": 7,
-      "overflow": 0
-    },
-    "libass-ass.ass": {
       "rewrapped": 5,
       "overflow": 0
     },
+    "libass-ass.ass": {
+      "rewrapped": 4,
+      "overflow": 0
+    },
     "navy-outline.ass": {
-      "rewrapped": 7,
+      "rewrapped": 4,
       "overflow": 0
     },
     "generic-srt.srt": {
-      "rewrapped": 7,
+      "rewrapped": 5,
       "overflow": 0
     }
   }

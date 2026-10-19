@@ -42,7 +42,6 @@ export function classifyJunkIngestPath(path: string): IgnoredIngestEntry | null 
   if (!normalized) return null;
   const parts = normalized.split('/').filter(Boolean);
   const base = parts[parts.length - 1] || '';
-  const name = base || normalized;
 
   if (parts.some((part) => part === '__MACOSX' || part.startsWith('__MACOSX'))) {
     return { name: normalized, reason: 'macosx' };

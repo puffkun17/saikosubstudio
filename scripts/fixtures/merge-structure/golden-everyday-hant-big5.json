@@ -37,7 +37,7 @@
       "primaryCue": 3,
       "secondaryCue": 2,
       "groupId": null,
-      "text": "我睡不著 乾脆起來煮點咖啡\nI couldn't sleep, so I figured I'd make some coffee."
+      "text": "我睡不著 乾脆起來煮點咖啡\nI couldn't sleep,\nso I figured I'd make some coffee."
     },
     {
       "index": 4,
@@ -49,7 +49,7 @@
       "primaryCue": 4,
       "secondaryCue": 3,
       "groupId": null,
-      "text": "你要不要也來一杯 我煮了一大壺 夠我們兩個人喝一整個上午\nDo you want a cup too? I made a big pot, enough for both of us to drink all morning."
+      "text": "你要不要也來一杯 我煮了一大壺 夠我們兩個人喝一整個上午\nDo you want a cup too? I made a big pot,\nenough for both of us to drink all morning."
     },
     {
       "index": 5,
@@ -61,7 +61,7 @@
       "primaryCue": 5,
       "secondaryCue": 4,
       "groupId": null,
-      "text": "- 好啊 - 加不加糖\n- Sure. - Sugar?"
+      "text": "- 好啊 - 加不加糖\n- Sure.\n- Sugar?"
     },
     {
       "index": 6,
@@ -73,7 +73,7 @@
       "primaryCue": 6,
       "secondaryCue": 5,
       "groupId": null,
-      "text": "樓下那家店的手機殼打八折 我昨天順手買了一個\nThe shop downstairs has phone cases at 20% off, so I grabbed one yesterday."
+      "text": "樓下那家店的手機殼打八折 我昨天順手買了一個\nThe shop downstairs has phone cases at 20% off,\nso I grabbed one yesterday."
     },
     {
       "index": 7,
@@ -85,7 +85,7 @@
       "primaryCue": 7,
       "secondaryCue": 6,
       "groupId": null,
-      "text": "一共是128.50元 比網上便宜了差不多30塊\nIt came to 128.50 in total, about 30 cheaper than online."
+      "text": "一共是128.50元 比網上便宜了差不多30塊\nIt came to 128.50 in total,\nabout 30 cheaper than online."
     },
     {
       "index": 8,
@@ -133,7 +133,7 @@
       "primaryCue": 10,
       "secondaryCue": 10,
       "groupId": null,
-      "text": "嗯 每天通勤兩個小時 實在是太累了\nYeah. Two hours of commuting every day is just too much."
+      "text": "嗯 每天通勤兩個小時 實在是太累了\nYeah. Two hours of commuting every day\nis just too much."
     },
     {
       "index": 12,
@@ -183,7 +183,7 @@
       "primaryCue": 3,
       "secondaryCue": 2,
       "groupId": null,
-      "text": "我睡不著 乾脆起來煮點咖啡\nI couldn't sleep, so I figured I'd make some coffee."
+      "text": "我睡不著 乾脆起來煮點咖啡\nI couldn't sleep,\nso I figured I'd make some coffee."
     },
     {
       "index": 4,
@@ -195,7 +195,7 @@
       "primaryCue": 4,
       "secondaryCue": 3,
       "groupId": null,
-      "text": "你要不要也來一杯 我煮了一大壺 夠我們兩個人喝一整個上午\nDo you want a cup too? I made a big pot, enough for both of us to drink all morning."
+      "text": "你要不要也來一杯 我煮了一大壺 夠我們兩個人喝一整個上午\nDo you want a cup too? I made a big pot,\nenough for both of us to drink all morning."
     },
     {
       "index": 5,
@@ -207,7 +207,7 @@
       "primaryCue": 5,
       "secondaryCue": 4,
       "groupId": null,
-      "text": "- 好啊 - 加不加糖\n- Sure. - Sugar?"
+      "text": "- 好啊 - 加不加糖\n- Sure.\n- Sugar?"
     },
     {
       "index": 6,
@@ -219,7 +219,7 @@
       "primaryCue": 6,
       "secondaryCue": 5,
       "groupId": null,
-      "text": "樓下那家店的手機殼打八折 我昨天順手買了一個\nThe shop downstairs has phone cases at 20% off, so I grabbed one yesterday."
+      "text": "樓下那家店的手機殼打八折 我昨天順手買了一個\nThe shop downstairs has phone cases at 20% off,\nso I grabbed one yesterday."
     },
     {
       "index": 7,
@@ -231,7 +231,7 @@
       "primaryCue": 7,
       "secondaryCue": 6,
       "groupId": null,
-      "text": "一共是128.50元 比網上便宜了差不多30塊\nIt came to 128.50 in total, about 30 cheaper than online."
+      "text": "一共是128.50元 比網上便宜了差不多30塊\nIt came to 128.50 in total,\nabout 30 cheaper than online."
     },
     {
       "index": 8,
@@ -279,7 +279,7 @@
       "primaryCue": 10,
       "secondaryCue": 10,
       "groupId": null,
-      "text": "嗯 每天通勤兩個小時 實在是太累了\nYeah. Two hours of commuting every day is just too much."
+      "text": "嗯 每天通勤兩個小時 實在是太累了\nYeah. Two hours of commuting every day\nis just too much."
     },
     {
       "index": 12,

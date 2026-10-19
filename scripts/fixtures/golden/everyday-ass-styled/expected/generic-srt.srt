@@ -1,11 +1,14 @@
 1
 00:00:01,000 --> 00:00:03,500
 早上好 今天天气还不错
-Good morning. Nice weather today.
+Good morning.
+Nice weather today.
 
 2
 00:00:02,000 --> 00:00:05,000
-便利店 二十四小时营业 欢迎光临
+便利店
+二十四小时营业
+欢迎光临
 
 3
 00:00:04,000 --> 00:00:06,500
@@ -21,8 +24,8 @@ the river and have a picnic on the grass.
 
 5
 00:00:11,500 --> 00:00:15,500
-我刚刚看了一下 明天早上七点半出发应
-该来得及 不过今晚要早点睡
+我刚刚看了一下明天早上七点半出发应
+该来得及不过今晚要早点睡
 I just checked. If we leave at 7:30 tomorrow morning
 we'll make it, but we should sleep early tonight.
 
