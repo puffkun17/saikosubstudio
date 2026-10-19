@@ -6,9 +6,15 @@
  * Instead we decode with every candidate that succeeds and score how natural the result looks.
  */
 
+export type EncodingConfidence = 'high' | 'low';
+
 export interface DecodeResult {
   text: string;
   encoding: string;
+  /** High = BOM / strict UTF-8 / clear UTF-16 / strong legacy score; low = weak legacy or fallback. */
+  confidence: EncodingConfidence;
+  /** Legacy-candidate score (when applicable); higher is more natural CJK/Hangul text. */
+  score?: number;
 }
 
 /** Candidate legacy encodings, in tie-break order (WHATWG labels; supported by browsers and Node). */
@@ -84,43 +90,64 @@ const guessBomlessUtf16 = (arr: Uint8Array): 'utf-16le' | 'utf-16be' | null => {
   return null;
 };
 
+/** Legacy decode is high-confidence when the winner looks natural and clearly beats the runner-up. */
+const LEGACY_HIGH_SCORE = 0.12;
+const LEGACY_HIGH_MARGIN = 0.04;
+
 /**
  * Decode subtitle bytes: BOM → UTF-16 (BOM-less) → strict UTF-8 → best-scoring legacy encoding
- * among GBK/GB18030, Big5, Shift-JIS and EUC-KR.
+ * among GBK/GB18030, Big5, Shift-JIS and EUC-KR. Uses browser/Workers TextDecoder only.
  */
 export function decodeBuffer(buffer: ArrayBuffer | Uint8Array): DecodeResult {
   const arr = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
 
   if (arr.length >= 2) {
-    if (arr[0] === 0xFF && arr[1] === 0xFE) return { text: new TextDecoder('utf-16le').decode(arr), encoding: 'utf-16le (BOM)' };
-    if (arr[0] === 0xFE && arr[1] === 0xFF) return { text: new TextDecoder('utf-16be').decode(arr), encoding: 'utf-16be (BOM)' };
+    if (arr[0] === 0xFF && arr[1] === 0xFE) {
+      return { text: new TextDecoder('utf-16le').decode(arr), encoding: 'utf-16le (BOM)', confidence: 'high' };
+    }
+    if (arr[0] === 0xFE && arr[1] === 0xFF) {
+      return { text: new TextDecoder('utf-16be').decode(arr), encoding: 'utf-16be (BOM)', confidence: 'high' };
+    }
   }
   if (arr.length >= 3 && arr[0] === 0xEF && arr[1] === 0xBB && arr[2] === 0xBF) {
-    return { text: new TextDecoder('utf-8').decode(arr), encoding: 'utf-8 (BOM)' };
+    return { text: new TextDecoder('utf-8').decode(arr), encoding: 'utf-8 (BOM)', confidence: 'high' };
   }
 
   const utf16 = guessBomlessUtf16(arr);
   if (utf16) {
     const text = tryDecode(arr, utf16);
-    if (text !== null) return { text, encoding: utf16 };
+    if (text !== null) return { text, encoding: utf16, confidence: 'high' };
   }
 
   // Valid multi-byte UTF-8 is practically never produced by legacy CJK encodings.
   const utf8 = tryDecode(arr, 'utf-8');
-  if (utf8 !== null) return { text: utf8, encoding: 'utf-8' };
+  if (utf8 !== null) return { text: utf8, encoding: 'utf-8', confidence: 'high' };
 
   let best: DecodeResult | null = null;
   let bestScore = -Infinity;
+  let secondScore = -Infinity;
   for (const candidate of LEGACY_CANDIDATES) {
     const text = tryDecode(arr, candidate.label);
     if (text === null) continue;
     const score = scoreDecodedText(text);
     if (score > bestScore + 1e-9) {
-      best = { text, encoding: candidate.name };
+      secondScore = bestScore;
+      best = { text, encoding: candidate.name, confidence: 'low', score };
       bestScore = score;
+    } else if (score > secondScore + 1e-9) {
+      secondScore = score;
     }
   }
-  if (best) return best;
+  if (best) {
+    const margin = bestScore - (Number.isFinite(secondScore) ? secondScore : -Infinity);
+    const confidence: EncodingConfidence =
+      bestScore >= LEGACY_HIGH_SCORE && margin >= LEGACY_HIGH_MARGIN ? 'high' : 'low';
+    return { ...best, confidence, score: bestScore };
+  }
 
-  return { text: new TextDecoder('utf-8').decode(arr), encoding: 'utf-8 (fallback)' };
+  return {
+    text: new TextDecoder('utf-8').decode(arr),
+    encoding: 'utf-8 (fallback)',
+    confidence: 'low',
+  };
 }

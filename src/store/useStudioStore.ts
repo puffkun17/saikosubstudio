@@ -67,6 +67,10 @@ export interface Subfile {
   size: number;
   /** 导入来源：松散文件 / ZIP / RAR·7Z / 文件夹 */
   importSource?: 'file' | 'zip' | 'archive' | 'folder';
+  /** Detected text encoding from decodeBuffer (e.g. gbk, utf-16le, utf-8). */
+  encoding?: string;
+  /** High = silent conversion; low = surface in import summary for review. */
+  encodingConfidence?: 'high' | 'low';
   /** SDH detected from content ([sound] cues / SPEAKER: labels), not just the filename. */
   isSdh?: boolean;
   /** Virtual track split out of one bilingual ASS by style names (Dial_CH / Dial_JP). */

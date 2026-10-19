@@ -481,9 +481,9 @@ export const DragZone: React.FC = () => {
       let names: string[] = [];
       if (item.kind === 'zip') {
         const zip = await JSZip.loadAsync(item.file);
-        names = Object.values(zip.files)
-          .filter(entry => !entry.dir && isSubtitleExtension(getExtension(entry.name)))
-          .map(entry => entry.name.split('/').pop() || entry.name);
+        const paths = Object.values(zip.files).filter((entry) => !entry.dir).map((entry) => entry.name);
+        const { subtitles } = partitionIngestPaths(paths, (path) => isSubtitleExtension(getExtension(path)));
+        names = subtitles.map((path) => path.split('/').pop() || path);
       } else if (item.kind === 'archive') {
         const listed = await listLocalArchiveSubtitles(item.file, {
           maxEntries: CLIENT_IMPORT_LIMITS.maxArchiveEntries,
@@ -618,13 +618,12 @@ export const DragZone: React.FC = () => {
     setQueueIssue(null);
   };
 
-  const readAndDecodeFile = (file: File): Promise<string> => {
+  const readAndDecodeFile = (file: File): Promise<ReturnType<typeof decodeBuffer>> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
         try {
-          const decoded = decodeBuffer(reader.result as ArrayBuffer);
-          resolve(decoded.text);
+          resolve(decodeBuffer(reader.result as ArrayBuffer));
         } catch (err) {
           reject(err);
         }
@@ -683,6 +682,8 @@ export const DragZone: React.FC = () => {
           isCommentary: /(commentary|comment|director|解说|导轨)/i.test(zipEntry.name),
           size: decoded.text.length,
           importSource: 'zip',
+          encoding: decoded.encoding,
+          encodingConfidence: decoded.confidence,
         };
         zipDetectedFiles.push(subfile);
         zipSummaries.push({
@@ -723,19 +724,21 @@ export const DragZone: React.FC = () => {
       });
 
       for (const extractedFile of files) {
-        const text = await readAndDecodeFile(extractedFile);
-        const detected = detectSubtitleLanguage(extractedFile.name, text);
+        const decoded = await readAndDecodeFile(extractedFile);
+        const detected = detectSubtitleLanguage(extractedFile.name, decoded.text);
         const ext = getExtension(extractedFile.name);
         const subfile: Subfile = {
           id: `archive_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
           name: extractedFile.name,
-          text,
+          text: decoded.text,
           lang: detected.lang,
           languagePair: detected.languagePair,
           isBilingual: detected.isBilingual,
           isCommentary: /(commentary|comment|director|解说|导轨)/i.test(extractedFile.name),
           size: extractedFile.size,
           importSource: 'archive',
+          encoding: decoded.encoding,
+          encodingConfidence: decoded.confidence,
         };
         detectedFiles.push(subfile);
         summaries.push({
@@ -846,19 +849,21 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
         ignoredInArchive.push(...await processLocalArchiveFile(file, detectedFiles, summaries));
       } else {
         try {
-          const text = await readAndDecodeFile(file);
-          const detected = detectSubtitleLanguage(file.name, text);
+          const decoded = await readAndDecodeFile(file);
+          const detected = detectSubtitleLanguage(file.name, decoded.text);
           const ext = getExtension(file.name);
           const subfile: Subfile = {
             id: `file_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
             name: file.name,
-            text,
+            text: decoded.text,
             lang: detected.lang,
             languagePair: detected.languagePair,
             isBilingual: detected.isBilingual,
             isCommentary: /(commentary|comment|director|解说|导轨)/i.test(file.name),
-            size: text.length,
+            size: decoded.text.length,
             importSource: item.folderName ? 'folder' : 'file',
+            encoding: decoded.encoding,
+            encodingConfidence: decoded.confidence,
           };
           detectedFiles.push(subfile);
           summaries.push({

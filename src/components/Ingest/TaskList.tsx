@@ -116,13 +116,12 @@ export const TaskList: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const readAndDecodeFile = (file: File): Promise<string> => {
+  const readAndDecodeFile = (file: File): Promise<ReturnType<typeof decodeBuffer>> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
         try {
-          const decoded = decodeBuffer(reader.result as ArrayBuffer);
-          resolve(decoded.text);
+          resolve(decodeBuffer(reader.result as ArrayBuffer));
         } catch (err) {
           reject(err);
         }
@@ -151,19 +150,21 @@ export const TaskList: React.FC = () => {
           continue;
         }
         try {
-          const text = await readAndDecodeFile(file);
-          const detected = detectSubtitleLanguage(file.name, text);
+          const decoded = await readAndDecodeFile(file);
+          const detected = detectSubtitleLanguage(file.name, decoded.text);
 
           detectedFiles.push({
             id: `file_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
             name: file.name,
-            text,
+            text: decoded.text,
             lang: detected.lang,
             languagePair: detected.languagePair,
             isBilingual: detected.isBilingual,
             isCommentary: /(commentary|comment|director|解说|导轨)/i.test(file.name),
-            size: text.length,
+            size: decoded.text.length,
             importSource: 'file',
+            encoding: decoded.encoding,
+            encodingConfidence: decoded.confidence,
           });
         } catch (error: unknown) {
           const msg = error instanceof Error ? error.message : String(error);
