@@ -337,7 +337,7 @@ const describeTrack = (file: Subfile) => {
 
 export const DragZone: React.FC = () => {
   const [confirmOriginal, setConfirmOriginal] = React.useState(false);
-  const { isDragging, setIsDragging, processFiles, addLog, setIngestClearing, isOfficialSubtitle, setIsOfficialSubtitle, isOriginalWork, setIsOriginalWork, setStatusNotice, statusNotices } = useStudioStore(useShallow((state) => ({
+  const { isDragging, setIsDragging, processFiles, addLog, setIngestClearing, isOfficialSubtitle, setIsOfficialSubtitle, isOriginalWork, setIsOriginalWork, setStatusNotice, dismissStatusNotice } = useStudioStore(useShallow((state) => ({
     isOriginalWork: state.isOriginalWork,
     setIsOriginalWork: state.setIsOriginalWork,
     isDragging: state.isDragging,
@@ -348,12 +348,8 @@ export const DragZone: React.FC = () => {
     isOfficialSubtitle: state.isOfficialSubtitle,
     setIsOfficialSubtitle: state.setIsOfficialSubtitle,
     setStatusNotice: state.setStatusNotice,
-    statusNotices: state.statusNotices,
+    dismissStatusNotice: state.dismissStatusNotice,
   })));
-  /** Gate notice is shown once as SystemTray callout; here we only highlight the drop well. */
-  const gateNotice = [...statusNotices]
-    .reverse()
-    .find((notice) => notice.id === 'workflow-gated');
   const { setForwardAction, setBottomStatus } = useWorkflowChrome();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -388,11 +384,6 @@ export const DragZone: React.FC = () => {
   const [isAccepting, setIsAccepting] = useState(false);
   const addMenuRef = useRef<HTMLDivElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!gateNotice || queuedItems.length > 0) return;
-    dropZoneRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [gateNotice?.createdAt, gateNotice, queuedItems.length]);
 
   const setPhase = (phase: IngestPhase, message = PHASE_COPY[phase]) => {
     setIngestPhase(phase);
@@ -930,6 +921,18 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
           'info',
         );
       }
+      if (summary.needsAttention.length > 0) {
+        const lines = summary.needsAttention.map((item) => item.detail || item.name).slice(0, 3);
+        setStatusNotice({
+          id: 'import-attention',
+          tone: 'warning',
+          title: '导入需要确认',
+          message: lines.join(' · '),
+          channel: 'inline',
+        });
+      } else {
+        dismissStatusNotice('import-attention');
+      }
       for (const item of summary.needsAttention) {
         if (item.kind === 'low_confidence_encoding') {
           addLog(`编码不确定（${item.detail}）：${item.name}`, 'info');
@@ -1270,7 +1273,7 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
       data-ingest-drop-zone
       className={`ingest-drop-zone group/outer flex w-full flex-col ${
         queuedItems.length === 0 ? 'ingest-drop-zone--empty flex-1' : 'items-center py-1 md:py-2'
-      } ${gateNotice && queuedItems.length === 0 ? 'ingest-drop-zone--gate-hint' : ''}`}
+      }`}
       onDragOver={handleDragOver}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
@@ -1332,6 +1335,7 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
               >
                 <button
                   type="button"
+                  data-ingest-add-cta
                   onClick={() => fileInputRef.current?.click()}
                   className="ui-action ui-action--secondary ingest-local-add__entry"
                 >
@@ -1340,6 +1344,7 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
                 </button>
                 <button
                   type="button"
+                  data-ingest-add-cta
                   onClick={handleFolderPick}
                   aria-disabled={!folderPickSupported || undefined}
                   title={folderPickSupported ? '选择文件夹' : FOLDER_UNSUPPORTED_HINT}

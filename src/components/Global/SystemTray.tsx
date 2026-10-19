@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Archive, ArrowLeft, Menu, PenLine, RotateCcw, Scale, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
@@ -181,8 +181,6 @@ export const SystemTray = () => {
     setLibraryOpen,
     setWorkflowStep,
     setStatusNotice,
-    statusNotices,
-    dismissStatusNotice,
   } = useStudioStore(useShallow((state) => ({
     workflowStep: state.workflowStep,
     restartSystem: state.restartSystem,
@@ -195,36 +193,38 @@ export const SystemTray = () => {
     setLibraryOpen: state.setLibraryOpen,
     setWorkflowStep: state.setWorkflowStep,
     setStatusNotice: state.setStatusNotice,
-    statusNotices: state.statusNotices,
-    dismissStatusNotice: state.dismissStatusNotice,
   })));
-  const gateNotice = [...statusNotices]
-    .reverse()
-    .find((notice) => notice.id === 'workflow-gated');
   const isInfoPage = pathname === '/about' || pathname === '/feedback';
   const showLibrary = !isInfoPage;
   /** Narrow studio: workflow lives in bottom tray; status deck yields. */
   const showBottomWorkflow = isNarrowChrome && !isInfoPage;
   const showTopWorkflow = !isNarrowChrome && !isInfoPage;
 
-  /** Quiet auto-clear so the anchored gate callout does not linger. */
-  useEffect(() => {
-    if (!gateNotice) return;
-    const timer = window.setTimeout(() => {
-      dismissStatusNotice('workflow-gated');
-    }, 4500);
-    return () => window.clearTimeout(timer);
-  }, [gateNotice?.createdAt, dismissStatusNotice, gateNotice]);
-
+  /** Stay on Import: highlight add-files CTA; toast carries the copy (no tray callout). */
   const focusIngestDropZone = () => {
     if (typeof document === 'undefined') return;
     const zone = document.querySelector<HTMLElement>('[data-ingest-drop-zone]');
     if (!zone) return;
     zone.scrollIntoView({ behavior: 'smooth', block: 'center' });
     zone.setAttribute('data-gate-hint', 'true');
+    const entries = zone.querySelectorAll<HTMLElement>('.ingest-local-add__entry, [data-ingest-add-cta]');
+    entries.forEach((el) => el.setAttribute('data-gate-cta', 'true'));
     window.setTimeout(() => {
       zone.removeAttribute('data-gate-hint');
+      entries.forEach((el) => el.removeAttribute('data-gate-cta'));
     }, 2200);
+  };
+
+  const emitGateToast = (title: string, message: string, meta: string) => {
+    setStatusNotice({
+      id: 'gate-no-files',
+      tone: 'notice',
+      title,
+      message,
+      meta,
+      channel: 'toast',
+      durationMs: 3000,
+    });
   };
 
   const confirmLeaveSession = (href: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -250,13 +250,11 @@ export const SystemTray = () => {
 
     if (targetStep === 2) {
       if (!hasWorkbenchData) {
-        setStatusNotice({
-          id: 'workflow-gated',
-          tone: 'notice',
-          title: hasUploadData ? '导入尚未完成' : '请先添加字幕',
-          message: hasUploadData ? '在导入页点「开始合轴」后可进入工作台。' : '添加并整理文件后可进入工作台。',
-          meta: '2',
-        });
+        emitGateToast(
+          hasUploadData ? '导入尚未完成' : '请先添加字幕',
+          hasUploadData ? '在导入页点「开始合轴」后可进入工作台。' : '添加并整理文件后可进入工作台。',
+          '2',
+        );
         focusIngestDropZone();
         return;
       }
@@ -266,15 +264,13 @@ export const SystemTray = () => {
 
     if (targetStep === 3) {
       if (!hasWorkbenchData) {
-        setStatusNotice({
-          id: 'workflow-gated',
-          tone: 'notice',
-          title: '请先添加字幕',
-          message: hasUploadData
+        emitGateToast(
+          '请先添加字幕',
+          hasUploadData
             ? '在工作台确认轨道后，再打开预览。'
             : '加入文件并整理后，再进入工作台与预览。',
-          meta: '3',
-        });
+          '3',
+        );
         if (!hasUploadData) focusIngestDropZone();
         return;
       }
@@ -357,50 +353,6 @@ export const SystemTray = () => {
         </div>
       </div>
 
-      <AnimatePresence>
-        {gateNotice && (
-          <motion.aside
-            key={`${gateNotice.id}-${gateNotice.createdAt}-${variant}`}
-            role="status"
-            aria-live="polite"
-            data-gate-meta={gateNotice.meta || undefined}
-            initial={{ opacity: 0, y: variant === 'top' ? -4 : 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: variant === 'top' ? -2 : 2 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className={`workflow-gate-callout absolute z-[calc(var(--z-nav)+1)] ${
-              variant === 'top'
-                ? (
-                  gateNotice.meta === '3'
-                    ? 'left-auto right-0 top-[calc(100%+0.4rem)] w-[min(18rem,calc(100vw-2rem))]'
-                    : gateNotice.meta === '2'
-                      ? 'left-1/2 top-[calc(100%+0.4rem)] w-[min(18rem,calc(100vw-2rem))] -translate-x-1/2'
-                      : 'left-0 top-[calc(100%+0.4rem)] w-[min(18rem,calc(100vw-2rem))]'
-                )
-                : 'bottom-[calc(100%+0.45rem)] left-1/2 w-[min(22rem,calc(100vw-1.5rem))] -translate-x-1/2'
-            }`}
-          >
-            <div className="rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--v5-green)_22%,var(--v4-line-strong))] bg-[color-mix(in_srgb,var(--v5-panel)_97%,transparent)] px-3 py-2.5 shadow-[var(--elevation-2)] backdrop-blur-md">
-              <div className="flex items-start gap-2">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold leading-5 text-[var(--v4-text)]">{gateNotice.title}</p>
-                  {gateNotice.message && (
-                    <p className="mt-0.5 text-xs leading-5 text-[var(--v4-text-muted)]">{gateNotice.message}</p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  aria-label="关闭提示"
-                  onClick={() => dismissStatusNotice(gateNotice.id)}
-                  className="v4-focus-ring grid h-7 w-7 shrink-0 place-items-center rounded-md text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]"
-                >
-                  <X className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
     </div>
   );
 

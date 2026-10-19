@@ -8,6 +8,7 @@ import { TaskList } from '@/components/Ingest/TaskList';
 import { TmdbPanel } from '@/components/Ingest/TmdbPanel';
 import { SourceIdentityStrip } from '@/components/Ingest/SourceIdentityStrip';
 import { motion, AnimatePresence } from 'framer-motion';
+import { InlineMessageBar } from '@/components/Global/InlineMessageBar';
 
 export const IngestStep: React.FC = () => {
   const { 
@@ -29,6 +30,7 @@ export const IngestStep: React.FC = () => {
 
   return (
     <div className="ingest-shell relative z-0 flex h-full w-full flex-1 flex-col overflow-y-auto px-[var(--ds-page-x)] py-[var(--ds-gap-section)]">
+      <InlineMessageBar className="mx-auto mb-3 w-full max-w-[1180px]" />
       {/* initial={false}: returning to 导入 remounts IngestStep; do not fade the empty shell in again. */}
       <AnimatePresence mode="wait" initial={false}>
         {shellState === 'ready' ? (

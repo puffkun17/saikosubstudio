@@ -14,6 +14,7 @@ import { reviewNoticeMessage, reviewNoticeTitle } from '@/components/Global/Revi
 import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
 import { MergeReviewModal } from '@/components/Workbench/MergeReviewModal';
 import { motion, AnimatePresence } from 'framer-motion';
+import { InlineMessageBar } from '@/components/Global/InlineMessageBar';
 import { buildMergeReviewQueue, type MergeReviewItem } from '@/utils/timeline/alignmentDiff';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import { useUiModalFocus } from '@/hooks/useUiModalFocus';
@@ -351,6 +352,7 @@ export const WorkbenchStep: React.FC = () => {
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         <div className="flex-1 p-[var(--ds-gap-group)] min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
           <div className="max-w-[1280px] w-full flex-1 min-h-0 flex flex-col gap-[var(--ds-gap-group)] overflow-hidden">
+            <InlineMessageBar />
             <EpisodeTabs />
             {processedSubs && processedSubs.length > 0 && (
               <ReviewCard

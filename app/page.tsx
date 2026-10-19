@@ -20,6 +20,14 @@ export default function Home() {
     initializeLibrary();
   }, [initializeLibrary]);
 
+  // E2E / Playwright hooks — read-only access to the studio store.
+  useEffect(() => {
+    (window as unknown as { __SAIKO_STORE__?: typeof useStudioStore }).__SAIKO_STORE__ = useStudioStore;
+    return () => {
+      delete (window as unknown as { __SAIKO_STORE__?: typeof useStudioStore }).__SAIKO_STORE__;
+    };
+  }, []);
+
   return (
     <main className="app-workspace flex-1 w-full h-full overflow-hidden flex flex-col font-sans relative">
       <div className="flex-1 w-full h-full flex flex-col overflow-hidden">

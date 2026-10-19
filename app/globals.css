@@ -694,13 +694,14 @@ body {
 }
 
 /*
- * Floating tips: bottom-center only (errors / strong notices).
- * Soft info/success live in SoftLogMarquee (bottom tray).
+ * Toast dock (Fluent Toast usage → our tokens).
+ * Mobile: above bottom tab bar, centered. Desktop: bottom-right corner.
+ * Soft info/success also flip in SoftLogMarquee (bottom tray).
  */
 .feedback-dock {
   pointer-events: none;
   position: fixed;
-  bottom: calc(var(--tray-h) + 0.75rem);
+  bottom: calc(var(--tray-h) + 0.75rem + env(safe-area-inset-bottom, 0px));
   left: 50%;
   z-index: var(--z-feedback);
   display: flex;
@@ -710,10 +711,22 @@ body {
   gap: 0.5rem;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 844px) {
   .feedback-dock {
+    left: auto;
+    right: 1rem;
     bottom: calc(var(--tray-h) + 1rem);
+    width: min(22rem, calc(100vw - 2rem));
+    transform: none;
   }
+}
+
+/* Gate: briefly pulse the add-files CTAs (toast carries the copy). */
+.ingest-local-add__entry[data-gate-cta='true'],
+[data-ingest-add-cta][data-gate-cta='true'] {
+  outline: 2px solid color-mix(in srgb, var(--v5-orange) 70%, transparent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--v5-orange) 22%, transparent);
 }
 
 /* PWA update notice: small, corner-anchored, never blocks the workspace. */

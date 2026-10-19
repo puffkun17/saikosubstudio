@@ -1,23 +1,16 @@
 'use client';
 
 import { ReviewNoticeSync } from '@/components/Global/ReviewNoticeSync';
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { AlertTriangle, X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { useStudioStore } from '@/store/useStudioStore';
+import {
+  resolveNoticeChannel,
+  useStudioStore,
+  type StatusNotice,
+} from '@/store/useStudioStore';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
-
-const CONTEXTUAL_NOTICE_IDS = new Set([
-  'media-match',
-  'media-identity',
-  /**
-   * Nav step gate (meta '2' workbench / meta '3' preview) + in-flow continue.
-   * Rendered once by SystemTray (near tabs) — not the floating dock, not an ingest banner.
-   */
-  'workflow-gated',
-  'forward-action-blocked',
-]);
 
 const errorLogStyle = {
   shell: 'border-[color-mix(in_srgb,var(--v5-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-danger)]',
@@ -32,11 +25,78 @@ const noticeStyles = {
   alert: 'border-[color-mix(in_srgb,var(--v5-danger)_32%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-danger)]',
 } as const;
 
+const DEFAULT_TOAST_MS = 4200;
+const GATE_TOAST_MS = 3000;
+
+function toastDuration(notice: StatusNotice): number {
+  if (typeof notice.durationMs === 'number') return notice.durationMs;
+  if (notice.id === 'gate-no-files' || notice.id.startsWith('gate-')) return GATE_TOAST_MS;
+  return DEFAULT_TOAST_MS;
+}
+
+const ToastItem: React.FC<{
+  notice: StatusNotice;
+  onDismiss: (id: string) => void;
+  reduceMotion: boolean | null;
+}> = ({ notice, onDismiss, reduceMotion }) => {
+  const [paused, setPaused] = useState(false);
+  const remainingRef = useRef(toastDuration(notice));
+  const startedRef = useRef(0);
+
+  useEffect(() => {
+    remainingRef.current = toastDuration(notice);
+    startedRef.current = Date.now();
+  }, [notice]);
+
+  useEffect(() => {
+    if (paused) return;
+    startedRef.current = Date.now();
+    const timer = window.setTimeout(() => {
+      onDismiss(notice.id);
+    }, remainingRef.current);
+    return () => window.clearTimeout(timer);
+  }, [paused, notice.id, notice.createdAt, onDismiss]);
+
+  return (
+    <motion.aside
+      data-notice-channel="toast"
+      data-notice-id={notice.id}
+      aria-label="当前状态"
+      aria-live="polite"
+      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={reduceMotion ? undefined : { opacity: 0, y: 6 }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      onMouseEnter={() => {
+        remainingRef.current = Math.max(400, remainingRef.current - (Date.now() - startedRef.current));
+        setPaused(true);
+      }}
+      onMouseLeave={() => setPaused(false)}
+      className={`ui-toast pointer-events-auto border p-[var(--ds-pad-card)] backdrop-blur-md ${noticeStyles[notice.tone]}`}
+    >
+      <div className="flex items-start gap-2.5">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold leading-5">{notice.title}</p>
+          {notice.message && (
+            <p className="mt-1 text-sm leading-5 text-current/78">{notice.message}</p>
+          )}
+        </div>
+        <button
+          type="button"
+          aria-label="关闭提示"
+          onClick={() => onDismiss(notice.id)}
+          className="v4-focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-md text-current/45 transition-colors hover:bg-white/[0.06] hover:text-current"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </motion.aside>
+  );
+};
+
 /**
- * Floating dock = strong notices + errors only.
- * Soft info/success logs flip in the bottom tray marquee.
- * Media-match notices render inline in SourceIdentityStrip.
- * workflow-gated meta '2'/'3' stay contextual (SystemTray callout only).
+ * Toast dock only (Fluent Toast usage → our visuals).
+ * Inline MessageBars and contextual surfaces render elsewhere.
  */
 export const FeedbackCenter: React.FC = () => {
   const {
@@ -50,49 +110,21 @@ export const FeedbackCenter: React.FC = () => {
   })));
   const shouldReduceMotion = useReducedMotion();
 
-  const floatingNotices = statusNotices.filter((notice) => !CONTEXTUAL_NOTICE_IDS.has(notice.id));
-  const latestNotice = floatingNotices[floatingNotices.length - 1];
-  const pendingNoticeCount = floatingNotices.length;
+  const toasts = statusNotices.filter((notice) => resolveNoticeChannel(notice) === 'toast');
 
   return (
     <OverlayPortal>
       <ReviewNoticeSync />
-      <div className="feedback-dock" role="region" aria-label="系统提示">
+      <div className="feedback-dock" role="region" aria-label="系统提示" data-testid="toast-dock">
         <AnimatePresence initial={false}>
-          {latestNotice && (
-            <motion.aside
-              key={`${latestNotice.id}-${latestNotice.createdAt}`}
-              aria-label="当前状态"
-              aria-live="polite"
-              initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={shouldReduceMotion ? undefined : { opacity: 0, y: 6 }}
-              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className={`ui-toast pointer-events-auto border p-[var(--ds-pad-card)] backdrop-blur-md ${noticeStyles[latestNotice.tone]}`}
-            >
-              <div className="flex items-start gap-2.5">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold leading-5">{latestNotice.title}</p>
-                    {pendingNoticeCount > 1 && (
-                      <span className="shrink-0 text-xs tabular-nums text-current/55">+{pendingNoticeCount - 1}</span>
-                    )}
-                  </div>
-                  {latestNotice.message && (
-                    <p className="mt-1 text-sm leading-5 text-current/78">{latestNotice.message}</p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  aria-label="关闭提示"
-                  onClick={() => dismissStatusNotice(latestNotice.id)}
-                  className="v4-focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-md text-current/45 transition-colors hover:bg-white/[0.06] hover:text-current"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </motion.aside>
-          )}
+          {toasts.map((notice) => (
+            <ToastItem
+              key={notice.id}
+              notice={notice}
+              onDismiss={dismissStatusNotice}
+              reduceMotion={shouldReduceMotion}
+            />
+          ))}
         </AnimatePresence>
 
         <aside aria-label="重要提示" className="flex flex-col gap-2">

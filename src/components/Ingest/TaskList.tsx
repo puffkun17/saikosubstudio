@@ -388,6 +388,7 @@ export const TaskList: React.FC = () => {
             tone: 'warning',
             title: '无法按双语合轴继续',
             message: '当前像是两套中文主语言字幕，不是双语对。请补上英语等副字幕再合轴；或取消副字幕，按单语整理/导出。',
+            channel: 'inline',
           });
           return;
         }
