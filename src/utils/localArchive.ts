@@ -5,12 +5,16 @@
  * and `worker-src 'self'`, or the worker never becomes ready and open() hangs.
  */
 
+import { isJunkIngestPath, partitionIngestPaths, type IgnoredIngestEntry } from './ingestJunk';
+
 export interface LocalArchiveLimits {
   maxEntries: number;
   maxSubtitleEntries: number;
   maxSubtitleBytes: number;
   maxUncompressedBytes: number;
 }
+
+export type { IgnoredIngestEntry };
 
 export class LocalArchiveError extends Error {
   constructor(
@@ -156,7 +160,7 @@ const openArchive = async (archiveFile: File): Promise<ArchiveReader> => {
 export const listLocalArchiveSubtitles = async (
   archiveFile: File,
   limits: Pick<LocalArchiveLimits, 'maxEntries' | 'maxSubtitleEntries'>,
-): Promise<{ names: string[]; ignoredEntries: number }> => runExclusive(async () => {
+): Promise<{ names: string[]; ignoredEntries: number; ignored: IgnoredIngestEntry[] }> => runExclusive(async () => {
   let reader: ArchiveReader | null = null;
   try {
     reader = await openArchive(archiveFile);
@@ -165,17 +169,16 @@ export const listLocalArchiveSubtitles = async (
       throw new LocalArchiveError('limits', `压缩包条目超过 ${limits.maxEntries} 项`);
     }
 
-    const subtitleEntries = entries.filter((entry) => {
-      const name = entryName(entry);
-      return Boolean(name) && subtitleExtension(name);
-    });
-    if (subtitleEntries.length > limits.maxSubtitleEntries) {
+    const paths = entries.map((entry) => entryName(entry)).filter(Boolean);
+    const { subtitles, ignored } = partitionIngestPaths(paths, subtitleExtension);
+    if (subtitles.length > limits.maxSubtitleEntries) {
       throw new LocalArchiveError('limits', `字幕轨超过 ${limits.maxSubtitleEntries} 条`);
     }
 
     return {
-      names: subtitleEntries.map((entry) => basenameFromArchivePath(entryName(entry))).filter(Boolean),
-      ignoredEntries: entries.length - subtitleEntries.length,
+      names: subtitles.map((path) => basenameFromArchivePath(path)).filter(Boolean),
+      ignoredEntries: ignored.length,
+      ignored,
     };
   } catch (error) {
     if (error instanceof LocalArchiveError) throw error;
@@ -192,7 +195,7 @@ export const listLocalArchiveSubtitles = async (
 export const extractLocalArchiveSubtitles = async (
   archiveFile: File,
   limits: LocalArchiveLimits,
-): Promise<{ files: File[]; ignoredEntries: number }> => runExclusive(async () => {
+): Promise<{ files: File[]; ignoredEntries: number; ignored: IgnoredIngestEntry[] }> => runExclusive(async () => {
   let reader: ArchiveReader | null = null;
   try {
     reader = await openArchive(archiveFile);
@@ -204,12 +207,20 @@ export const extractLocalArchiveSubtitles = async (
       throw new LocalArchiveError('limits', `压缩包条目超过 ${limits.maxEntries} 项`);
     }
 
-    const subtitleEntries = entries.filter((entry) => {
-      const name = entryName(entry);
-      return Boolean(name) && subtitleExtension(name);
-    });
+    const namedEntries = entries
+      .map((entry) => ({ entry, path: entryName(entry) }))
+      .filter((item) => Boolean(item.path));
+    const { subtitles, ignored } = partitionIngestPaths(
+      namedEntries.map((item) => item.path),
+      subtitleExtension,
+    );
+    const subtitleSet = new Set(subtitles);
+    const subtitleEntries = namedEntries
+      .filter((item) => subtitleSet.has(item.path))
+      .map((item) => item.entry);
+
     if (subtitleEntries.length === 0) {
-      return { files: [], ignoredEntries: entries.length };
+      return { files: [], ignoredEntries: ignored.length, ignored };
     }
     if (subtitleEntries.length > limits.maxSubtitleEntries) {
       throw new LocalArchiveError('limits', `字幕轨超过 ${limits.maxSubtitleEntries} 条`);
@@ -228,6 +239,8 @@ export const extractLocalArchiveSubtitles = async (
     for (const entry of subtitleEntries) {
       const compressedFile = entry.file;
       if (!compressedFile || typeof compressedFile === 'string') continue;
+      // Defense in depth: skip AppleDouble / __MACOSX even if partition missed a path form.
+      if (isJunkIngestPath(compressedFile.name)) continue;
       try {
         const extracted = await withTimeout(compressedFile.extract(), EXTRACT_TIMEOUT_MS, `解压 ${compressedFile.name}`);
         extractedBytes += extracted.size;
@@ -244,7 +257,7 @@ export const extractLocalArchiveSubtitles = async (
       }
     }
 
-    return { files, ignoredEntries: entries.length - subtitleEntries.length };
+    return { files, ignoredEntries: ignored.length, ignored };
   } catch (error) {
     if (error instanceof LocalArchiveError) throw error;
     const message = error instanceof Error ? error.message : '无法读取压缩包';

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { CLIENT_IMPORT_LIMITS, getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
+import { partitionIngestPaths, type IgnoredIngestEntry } from '@/utils/ingestJunk';
 import {
   extractLocalArchiveSubtitles,
   listLocalArchiveSubtitles,
@@ -633,32 +634,40 @@ export const DragZone: React.FC = () => {
     });
   };
 
-  const processZipFile = async (zipFile: File, detectedFiles: Subfile[], summaries: TrackSummary[]) => {
+  const processZipFile = async (
+    zipFile: File,
+    detectedFiles: Subfile[],
+    summaries: TrackSummary[],
+  ): Promise<IgnoredIngestEntry[]> => {
     try {
       const zip = await JSZip.loadAsync(zipFile);
       const entries = Object.values(zip.files).filter(entry => !entry.dir);
       if (entries.length > CLIENT_IMPORT_LIMITS.maxArchiveEntries) {
         addLog(`字幕包条目过多，最多允许 ${CLIENT_IMPORT_LIMITS.maxArchiveEntries} 项：${zipFile.name}`, 'error');
-        return 0;
+        return [];
       }
 
-      const subtitleEntries = entries.filter(entry => isSubtitleExtension(getExtension(entry.name)));
-      if (subtitleEntries.length > CLIENT_IMPORT_LIMITS.maxArchiveSubtitleEntries) {
+      const { subtitles: subtitlePaths, ignored } = partitionIngestPaths(
+        entries.map((entry) => entry.name),
+        (path) => isSubtitleExtension(getExtension(path)),
+      );
+      if (subtitlePaths.length > CLIENT_IMPORT_LIMITS.maxArchiveSubtitleEntries) {
         addLog(`字幕包内字幕轨过多，最多允许 ${CLIENT_IMPORT_LIMITS.maxArchiveSubtitleEntries} 条：${zipFile.name}`, 'error');
-        return 0;
+        return ignored;
       }
 
+      const subtitleSet = new Set(subtitlePaths);
+      const subtitleEntries = entries.filter((entry) => subtitleSet.has(entry.name));
       const zipDetectedFiles: Subfile[] = [];
       const zipSummaries: TrackSummary[] = [];
       let decodedBytes = 0;
-      const ignoredCount = entries.length - subtitleEntries.length;
 
       for (const zipEntry of subtitleEntries) {
         const buffer = await zipEntry.async('arraybuffer');
         decodedBytes += buffer.byteLength;
         if (buffer.byteLength > CLIENT_IMPORT_LIMITS.maxSubtitleBytes || decodedBytes > CLIENT_IMPORT_LIMITS.maxArchiveUncompressedBytes) {
           addLog(`字幕包解压后体积超出安全限制，已拒绝导入：${zipFile.name}`, 'error');
-          return ignoredCount;
+          return ignored;
         }
 
         const decoded = decodeBuffer(buffer);
@@ -692,17 +701,21 @@ export const DragZone: React.FC = () => {
         detectedFiles.push(...zipDetectedFiles);
         summaries.push(...zipSummaries);
       }
-      return ignoredCount;
+      return ignored;
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
       addLog(`字幕包读取失败：${message}`, "error");
-      return 0;
+      return [];
     }
   };
 
-  const processLocalArchiveFile = async (archiveFile: File, detectedFiles: Subfile[], summaries: TrackSummary[]) => {
+  const processLocalArchiveFile = async (
+    archiveFile: File,
+    detectedFiles: Subfile[],
+    summaries: TrackSummary[],
+  ): Promise<IgnoredIngestEntry[]> => {
     try {
-      const { files, ignoredEntries } = await extractLocalArchiveSubtitles(archiveFile, {
+      const { files, ignored } = await extractLocalArchiveSubtitles(archiveFile, {
         maxEntries: CLIENT_IMPORT_LIMITS.maxArchiveEntries,
         maxSubtitleEntries: CLIENT_IMPORT_LIMITS.maxArchiveSubtitleEntries,
         maxSubtitleBytes: CLIENT_IMPORT_LIMITS.maxSubtitleBytes,
@@ -736,7 +749,7 @@ export const DragZone: React.FC = () => {
       }
 
       if (files.length === 0) addLog(`字幕包内未检测到可用字幕：${archiveFile.name}`, 'error');
-      return ignoredEntries;
+      return ignored;
     } catch (error: unknown) {
       const message = error instanceof LocalArchiveError
         ? error.code === 'encrypted'
@@ -748,7 +761,7 @@ export const DragZone: React.FC = () => {
           ? `压缩包无法读取：${error.message}`
           : '压缩包无法读取，请先在本地解压后导入';
       addLog(`${message}：${archiveFile.name}`, 'error');
-      return 0;
+      return [];
     }
   };
 
@@ -818,7 +831,7 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
 
     const detectedFiles: Subfile[] = [];
     const summaries: TrackSummary[] = [];
-    let ignoredInArchiveCount = 0;
+    const ignoredInArchive: IgnoredIngestEntry[] = [];
 
     setResultChips([`${preflight.length} 个文件`, `${validItems.length} 个可整理`]);
     await holdPhaseFloor(ceremonyStartedAt, phaseStartedAt);
@@ -828,9 +841,9 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
     for (const item of validItems) {
       const file = item.file;
       if (item.kind === 'zip') {
-        ignoredInArchiveCount += await processZipFile(file, detectedFiles, summaries);
+        ignoredInArchive.push(...await processZipFile(file, detectedFiles, summaries));
       } else if (item.kind === 'archive') {
-        ignoredInArchiveCount += await processLocalArchiveFile(file, detectedFiles, summaries);
+        ignoredInArchive.push(...await processLocalArchiveFile(file, detectedFiles, summaries));
       } else {
         try {
           const text = await readAndDecodeFile(file);
@@ -882,9 +895,16 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
         srtCount > 0 ? `${srtCount} 条标准字幕轨` : '',
         bilingualCount > 0 ? `${bilingualCount} 条双语轨` : '',
         sourceArchiveCount > 0 ? `${sourceArchiveCount} 个字幕包` : '',
-        ignoredInArchiveCount > 0 ? `已忽略 ${ignoredInArchiveCount} 个非字幕资源` : '',
+        ignoredInArchive.length > 0 ? `已忽略 ${ignoredInArchive.length} 个杂项` : '',
       ].filter(Boolean);
       setResultChips(chips);
+      if (ignoredInArchive.length > 0) {
+        const sample = ignoredInArchive.slice(0, 3).map((entry) => entry.name.split('/').pop() || entry.name).join('、');
+        addLog(
+          `已忽略 ${ignoredInArchive.length} 个杂项文件${sample ? `（如 ${sample}${ignoredInArchive.length > 3 ? '…' : ''}）` : ''}`,
+          'info',
+        );
+      }
 
       phaseStartedAt = Date.now();
       setPhase('binding');
