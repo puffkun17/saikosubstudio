@@ -524,8 +524,13 @@ export function cleanSubtitleContent(text: string, isEnglish = false): string {
     cleaned = cleaned.replace(/^[A-Z\s]+:\s*/, '');
   }
   
-  // Collapse ordinary whitespace only: no-break spaces (French « », ?, !) are typography, not layout.
-  cleaned = cleaned.replace(/[^\S\u00a0\u202f]+/g, ' ').trim();
+  // Collapse ordinary spaces/tabs only — keep real newlines so ASS \N (already turned into \n
+  // by parseSubtitle) and SRT multi-line cues survive for packed-dialogue expansion (V9).
+  cleaned = cleaned
+    .replace(/\r\n|\r/g, '\n')
+    .replace(/[^\S\n\u00a0\u202f]+/g, ' ')
+    .replace(/[ \t\u00a0\u202f]*\n[ \t\u00a0\u202f]*/g, '\n')
+    .trim();
   return cleaned;
 }
 
