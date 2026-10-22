@@ -163,7 +163,6 @@ export interface StudioState {
   tmdbData: TmdbMetadata | null;
   tmdbBackdrop: string | null;
   isSearchingTmdb: boolean;
-  isTemplateLab: boolean;
   customStyle: StyleSettings;
   customTemplates: CustomTemplate[];
   logs: LogEntry[];
@@ -177,7 +176,6 @@ export interface StudioState {
   sceneBackground: string;
   theaterAspect: string;
   showGuides: boolean;
-  lang: 'zh' | 'en';
   jumpLineVal: string;
   tmdbManualOpen: boolean;
   tmdbManualInput: TmdbManualInput;
@@ -200,9 +198,6 @@ export interface StudioState {
   detectedAttributions: SubtitleAttribution[];
   creatorCredit: string;
   appendCreatorCredit: boolean;
-  /** Formal credits (翻译：…) stay on the timeline. Deep switch only; off = moved to the end, still credited. */
-  keepOriginalCredit: boolean;
-  setKeepOriginalCredit: (keep: boolean) => void;
   /** 本批导入是否标记为官方字幕（写入 ASS 声明）。 */
   isOfficialSubtitle: boolean;
   /** 导入来源「原创」：默认关；只有开启时第二幕才能编辑署名（保留 / 改字）。与「官方」互斥。 */
@@ -210,8 +205,6 @@ export interface StudioState {
   setIsOriginalWork: (on: boolean) => void;
   /** 制作声明：写入 ASS Script Info 前缀。 */
   creditDeclaration: CreditDeclaration;
-  /** 字幕后署名时间位置。 */
-  creditPlacement: 'after-last' | 'before-end';
   /** 放映厅关灯模式：压暗全局界面，只保留放映区。 */
   isLightsOff: boolean;
   /** 字幕文本编辑历史（跨组件持久，抽屉开关不丢栈）。 */
@@ -229,11 +222,9 @@ export interface StudioState {
   setAppendCreatorCredit: (enabled: boolean) => void;
   setIsOfficialSubtitle: (official: boolean) => void;
   setCreditDeclaration: (declaration: CreditDeclaration) => void;
-  setCreditPlacement: (placement: 'after-last' | 'before-end') => void;
   setLibraryOpen: (open: boolean) => void;
   setWorkflowStep: (step: number) => void;
   setIngestClearing: (clearing: boolean) => void;
-  setLang: (lang: 'zh' | 'en') => void;
   addLog: (msg: string, type?: 'info' | 'success' | 'error') => void;
   clearLogs: () => void;
   setStatusNotice: (notice: Omit<StatusNotice, 'createdAt'>) => void;
@@ -247,7 +238,6 @@ export interface StudioState {
   setSelectedTaskId: (id: string | null) => void;
   setTmdbData: (data: TmdbMetadata | null) => void;
   setTmdbBackdrop: (url: string | null) => void;
-  setIsTemplateLab: (val: boolean) => void;
   setCustomStyle: (style: StyleSettings) => void;
   saveCustomTemplate: (name: string, opts?: { styles: Partial<StyleSettings>; source?: StyleTemplateRecord['source'] }) => void;
   /** Select an entry of the unified 「样式」 list (fixed preset, saved, imported, source). Also used for 重置. */

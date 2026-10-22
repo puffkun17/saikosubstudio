@@ -15,8 +15,6 @@ export type StyleSlice = Pick<
   | 'hdrEnabled'
   | 'hdrLevel'
   | 'setHdr'
-  | 'isTemplateLab'
-  | 'setIsTemplateLab'
   | 'customStyle'
   | 'customTemplates'
   | 'activePreset'
@@ -30,9 +28,8 @@ export type StyleSlice = Pick<
 >;
 
 /** Per-slice reset partial for cancelCurrentUpload / restartSystem (S3). */
-export function resetStyle(kind: 'cancel' | 'restart'): Partial<StudioState> {
-  if (kind === 'cancel') return {};
-  return { isTemplateLab: false };
+export function resetStyle(_kind: 'cancel' | 'restart'): Partial<StudioState> {
+  return {};
 }
 
 export const createStyleSlice: StateCreator<StudioState, [], [], StyleSlice> = (set, get) => ({
@@ -57,8 +54,6 @@ export const createStyleSlice: StateCreator<StudioState, [], [], StyleSlice> = (
     set({ hdrEnabled, hdrLevel });
     try { localStorage.setItem('saiko_export_hdr', hdrEnabled ? hdrLevel : `off:${hdrLevel}`); } catch { /* ignore */ }
   },
-  isTemplateLab: false,
-  setIsTemplateLab: (isTemplateLab) => set({ isTemplateLab }),
   customStyle: {
     zhFontSize: 20, enFontSize: 12, zhColor: '#FFFFFF', enColor: '#B0B0B0', zhOutline: '#4B5563', enOutline: '#000000', enScale: 90, maxLenZh: 20, maxLenEn: 80, marginV: 20, resolution: '1080p', aspectRatio: '16:9', globalScale: 1.0, lyricFontSize: 16, lyricColor: '#E6E6FA', lyricItalic: true, lyricPosition: 'top', auxiliaryMode: 'keep',
     // 字体家族默认（系统级，跨平台较稳）

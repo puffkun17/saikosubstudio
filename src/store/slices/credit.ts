@@ -5,18 +5,14 @@ export type CreditSlice = Pick<
   StudioState,
   | 'creatorCredit'
   | 'appendCreatorCredit'
-  | 'keepOriginalCredit'
-  | 'setKeepOriginalCredit'
   | 'isOfficialSubtitle'
   | 'isOriginalWork'
   | 'creditDeclaration'
-  | 'creditPlacement'
   | 'setCreatorCredit'
   | 'setAppendCreatorCredit'
   | 'setIsOfficialSubtitle'
   | 'setIsOriginalWork'
   | 'setCreditDeclaration'
-  | 'setCreditPlacement'
 >;
 
 /** Per-slice reset partial for cancelCurrentUpload / restartSystem (S3). */
@@ -26,7 +22,6 @@ export function resetCredit(kind: 'cancel' | 'restart'): Partial<StudioState> {
     isOfficialSubtitle: false,
     isOriginalWork: false,
     creditDeclaration: 'none',
-    creditPlacement: 'after-last',
     creatorCredit: '',
     appendCreatorCredit: false,
   };
@@ -35,12 +30,9 @@ export function resetCredit(kind: 'cancel' | 'restart'): Partial<StudioState> {
 export const createCreditSlice: StateCreator<StudioState, [], [], CreditSlice> = (set) => ({
   creatorCredit: '',
   appendCreatorCredit: false,
-  keepOriginalCredit: true,
-  setKeepOriginalCredit: (keepOriginalCredit) => set({ keepOriginalCredit }),
   isOfficialSubtitle: false,
   isOriginalWork: false,
   creditDeclaration: 'none',
-  creditPlacement: 'after-last',
   setCreatorCredit: (creatorCredit) => set({ creatorCredit }),
   setAppendCreatorCredit: (appendCreatorCredit) => set({ appendCreatorCredit }),
   setIsOfficialSubtitle: (isOfficialSubtitle) => set((state) => ({ isOfficialSubtitle, isOriginalWork: isOfficialSubtitle ? false : state.isOriginalWork })),
@@ -52,5 +44,4 @@ export const createCreditSlice: StateCreator<StudioState, [], [], CreditSlice> =
     creditDeclaration: isOriginalWork ? 'original' : 'none',
   })),
   setCreditDeclaration: (creditDeclaration) => set({ creditDeclaration }),
-  setCreditPlacement: (creditPlacement) => set({ creditPlacement }),
 });

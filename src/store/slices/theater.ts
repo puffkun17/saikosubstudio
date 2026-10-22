@@ -12,7 +12,6 @@ export type TheaterSlice = Pick<
   | 'showGuides'
   | 'tempShowGuides'
   | 'isLightsOff'
-  | 'lang'
   | 'setPreviewClockMs'
   | 'setIsPreviewPlaying'
   | 'setSceneBackground'
@@ -20,7 +19,6 @@ export type TheaterSlice = Pick<
   | 'setShowGuides'
   | 'setTempShowGuides'
   | 'setLightsOff'
-  | 'setLang'
   | 'triggerTempGuides'
 >;
 
@@ -38,7 +36,6 @@ export const createTheaterSlice: StateCreator<StudioState, [], [], TheaterSlice>
   showGuides: false,
   tempShowGuides: false,
   isLightsOff: false,
-  lang: 'zh',
   setPreviewClockMs: (previewClockMs) => set({ previewClockMs }),
   setIsPreviewPlaying: (isPreviewPlaying) => set({ isPreviewPlaying }),
   setSceneBackground: (sceneBackground) => set({ sceneBackground }),
@@ -47,7 +44,6 @@ export const createTheaterSlice: StateCreator<StudioState, [], [], TheaterSlice>
   setShowGuides: (showGuides) => set({ showGuides }),
   setTempShowGuides: (tempShowGuides) => set({ tempShowGuides }),
   setLightsOff: (isLightsOff) => set({ isLightsOff }),
-  setLang: (lang) => set({ lang }),
   triggerTempGuides: () => {
     set({ tempShowGuides: true });
     if (tempShowTimeoutId) {

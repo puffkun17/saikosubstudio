@@ -85,14 +85,10 @@ function seedWorkbench(overrides = {}) {
     tmdbManualOpen: true,
     statusNotices: [{ id: 'n1', message: 'hi', tone: 'info', createdAt: 1 }],
     logs: [{ id: 1, message: 'old', type: 'info', createdAt: 1, fading: false }],
-    isTemplateLab: true,
     isOfficialSubtitle: true,
     creditDeclaration: 'translated',
-    creditPlacement: 'before-end',
     creatorCredit: 'Nias',
     appendCreatorCredit: true,
-    keepOriginalCredit: false,
-    lang: 'en',
     isLightsOff: true,
     libraryList: [],
     ...overrides,
@@ -211,8 +207,7 @@ test('cancelCurrentUpload clears the pinned field set (S3 per-slice reset)', () 
   assert.equal(before.borrowedVideoName, 'Show.S01E01.mkv');
   assert.equal(before.previewClockMs, 1234);
   assert.equal(before.locateGroupIndexes[0], 0);
-  assert.equal(before.lang, 'en');
-  assert.equal(before.keepOriginalCredit, false);
+  assert.equal(before.creatorCredit, 'Nias');
 
   useStudioStore.getState().cancelCurrentUpload();
   const s = useStudioStore.getState();
@@ -238,14 +233,11 @@ test('cancelCurrentUpload clears the pinned field set (S3 per-slice reset)', () 
   assert.equal(s.filenameEpKey, '');
   assert.equal(s.borrowedVideoName, null);
   assert.deepEqual(s.locateGroupIndexes, []);
-  // Still NOT cleared by cancel (credit/style/theater clock/lang):
+  // Still NOT cleared by cancel (credit fields / theater clock):
   assert.equal(s.previewClockMs, 1234);
   assert.equal(s.isPreviewPlaying, true);
-  assert.equal(s.isTemplateLab, true);
-  assert.equal(s.creditPlacement, 'before-end');
   assert.equal(s.creatorCredit, 'Nias');
-  assert.equal(s.lang, 'en');
-  assert.equal(s.keepOriginalCredit, false);
+  assert.equal(s.appendCreatorCredit, true);
 });
 
 test('restartSystem clears the pinned field set (S3 per-slice reset)', () => {
@@ -267,7 +259,6 @@ test('restartSystem clears the pinned field set (S3 per-slice reset)', () => {
   assert.equal(s.tmdbData, null);
   assert.equal(s.tmdbBackdrop, null);
   assert.deepEqual(s.tmdbBackdropList, []);
-  assert.equal(s.isTemplateLab, false);
   // restart clears then addLog("已重启…") — pin: only that one info log remains
   assert.equal(s.logs.length, 1);
   assert.match(s.logs[0].msg, /已重启/);
@@ -277,7 +268,6 @@ test('restartSystem clears the pinned field set (S3 per-slice reset)', () => {
   assert.equal(s.isOfficialSubtitle, false);
   assert.equal(s.isOriginalWork, false);
   assert.equal(s.creditDeclaration, 'none');
-  assert.equal(s.creditPlacement, 'after-last');
   assert.equal(s.creatorCredit, '');
   assert.equal(s.appendCreatorCredit, false);
   // S3: TMDB suggestion/search + ingest ep/borrowed + locate also reset
@@ -289,11 +279,9 @@ test('restartSystem clears the pinned field set (S3 per-slice reset)', () => {
   assert.equal(s.filenameEpKey, '');
   assert.equal(s.borrowedVideoName, null);
   assert.deepEqual(s.locateGroupIndexes, []);
-  // Still NOT cleared by restart (theater clock / lang / keepOriginalCredit):
+  // Still NOT cleared by restart (theater clock):
   assert.equal(s.previewClockMs, 1234);
   assert.equal(s.isPreviewPlaying, true);
-  assert.equal(s.lang, 'en');
-  assert.equal(s.keepOriginalCredit, false);
 });
 
 test('S8: selectTask clears stuck isSearchingTmdb when new task skips search', async () => {
