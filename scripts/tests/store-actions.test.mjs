@@ -296,6 +296,31 @@ test('restartSystem clears the pinned field set (S3 per-slice reset)', () => {
   assert.equal(s.keepOriginalCredit, false);
 });
 
+test('S8: selectTask clears stuck isSearchingTmdb when new task skips search', async () => {
+  const fA = makeFile('f-a', 'Show.S01E01.chs.srt');
+  const fB = makeFile('f-b', 'Show.S01E02.chs.srt');
+  useStudioStore.setState({
+    isSearchingTmdb: true,
+    tmdbSuggestions: [{ id: 1, media_type: 'tv', title: 'X' }],
+    uploadedFiles: [fA, fB],
+    tasks: [
+      { id: 'task-a', title: 'A', epKey: 'S01E01', zh: fA, en: null, commentary: null, status: 'partial', files: [fA] },
+      {
+        id: 'task-b', title: 'B', epKey: 'S01E02', zh: fB, en: null, commentary: null, status: 'partial', files: [fB],
+        tmdbData: { title: 'Show', year: '2022' }, tmdbBackdrop: null, tmdbBackdropList: [],
+      },
+    ],
+    selectedTaskId: 'task-a',
+    files: { zh: fA, en: null, commentary: null },
+    tmdbData: null,
+  });
+  assert.equal(useStudioStore.getState().isSearchingTmdb, true);
+  useStudioStore.getState().selectTask('task-b');
+  // task-b already has metadata → no deferred search; spinner must not stick
+  assert.equal(useStudioStore.getState().isSearchingTmdb, false);
+  assert.equal(useStudioStore.getState().selectedTaskId, 'task-b');
+});
+
 test('deleteTask and removeFileFromTask (by file name today)', async () => {
   const fZh = makeFile('f-zh', 'Show.S01E01.chs.srt');
   const fEn = makeFile('f-en', 'Show.S01E01.eng.srt', '1\n00:00:01,000 --> 00:00:02,000\nHello\n');

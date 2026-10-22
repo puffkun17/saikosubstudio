@@ -444,7 +444,9 @@ export const createMediaTmdbSlice: StateCreator<StudioState, [], [], MediaTmdbSl
       });
       if (!silent) get().addLog(`影片信息匹配失败: ${message}`, 'error');
     } finally {
-      if (isCurrentRequest()) set({ isSearchingTmdb: false });
+      // Clear spinner if we still own the search slot, even after a task switch (S8).
+      // Result application still uses isCurrentRequest() (request id + selected task).
+      if (requestId === tmdbSearchRequestId) set({ isSearchingTmdb: false });
     }
   },
   searchTmdbManual: async (query, type, year) => {

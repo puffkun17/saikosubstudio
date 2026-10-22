@@ -135,12 +135,14 @@ export const createIngestSlice: StateCreator<StudioState, [], [], IngestSlice> =
     const inheritedBackdrop = reusableTask?.tmdbBackdrop || inheritedMetadata?.backdropUrl || null;
     const inheritedBackdrops = reusableTask?.tmdbBackdropList || (inheritedBackdrop ? [inheritedBackdrop] : []);
     const resolvedMeta = task.tmdbData || inheritedMetadata;
+    // S8: drop in-flight search spinner on switch; deferred searchTmdb will re-arm if needed.
     set({
       selectedTaskId: taskId,
       files: { zh: task.zh, en: task.en, commentary: task.commentary },
       tmdbData: resolvedMeta,
       tmdbBackdrop: task.tmdbBackdrop || inheritedBackdrop,
       tmdbBackdropList: task.tmdbBackdropList || inheritedBackdrops,
+      isSearchingTmdb: false,
       detectedAttributions: task.files.flatMap(file => extractSubtitleAttributions(file.text)).filter((item, index, all) =>
         all.findIndex(candidate => candidate.role === item.role && candidate.value.toLowerCase() === item.value.toLowerCase()) === index
       )
