@@ -13,7 +13,20 @@ export default defineConfig([
     rules: {
       "react-hooks/set-state-in-effect": "warn",
       "@typescript-eslint/no-this-alias": "warn",
+      // Animation library is motion@14 via motion/react only (AGENTS.md / ui-animation skill).
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "framer-motion",
+              message: "Import from 'motion/react' instead of 'framer-motion'.",
+            },
+          ],
+        },
+      ],
     },
   },
   globalIgnores([".next/**", "out/**", "build/**", "dist/**", "public/**", "next-env.d.ts"]),
 ]);
+
