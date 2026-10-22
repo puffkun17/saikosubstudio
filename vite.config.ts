@@ -1,16 +1,22 @@
 import { defineConfig } from "vite";
-import vinext from "vinext";
+import react from "@vitejs/plugin-react";
 import { cloudflare } from "@cloudflare/vite-plugin";
+import { resolve } from "node:path";
 
-// images.unoptimized is set in next.config.ts, so no image optimizer / IMAGES binding.
 export default defineConfig({
-  plugins: [
-    vinext(),
-    cloudflare({
-      viteEnvironment: {
-        name: "rsc",
-        childEnvironments: ["ssr"],
+  plugins: [react(), cloudflare()],
+  resolve: {
+    alias: {
+      "@": resolve(__dirname, "src"),
+    },
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, "index.html"),
+        about: resolve(__dirname, "about/index.html"),
+        feedback: resolve(__dirname, "feedback/index.html"),
       },
-    }),
-  ],
+    },
+  },
 });

@@ -1,21 +1,24 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  // Cloudflare Workers (via vinext). Replaces the Pages config (pages_build_output_dir).
-  // The old Pages project "saikosubstudio" is kept untouched as rollback until the domain is switched.
+  // Cloudflare Workers + Vite static assets (Switch B). No vinext.
   "name": "saikosubstudio",
   "compatibility_date": "2026-10-12",
   "compatibility_flags": ["nodejs_compat"],
-  // Thin wrapper over vinext/server/fetch-handler: www→apex 301 + HTML Cache-Control: no-cache.
   "main": "./workers/app/entry.ts",
   "assets": {
+    // @cloudflare/vite-plugin emits client assets to dist/client (verify after build).
     "directory": "dist/client",
+    "binding": "ASSETS",
     "not_found_handling": "none",
-    "binding": "ASSETS"
+    // API always hits the Worker; HTML paths too so we can set CSP + no-cache.
+    "run_worker_first": ["/api/*", "/", "/about", "/about/", "/feedback", "/feedback/"]
   },
-  // Same mailer Worker the Pages project used.
   "services": [
     { "binding": "FEEDBACK_MAILER", "service": "saikosubstudio-feedback-mailer" }
+  ],
+  "ratelimits": [
+    { "name": "FEEDBACK_RATE_LIMITER", "namespace_id": "1001", "simple": { "limit": 1, "period": 60 } },
+    { "name": "TMDB_RATE_LIMITER", "namespace_id": "1002", "simple": { "limit": 30, "period": 60 } }
   ]
-  // Secrets: TMDB_API_KEY must be set as a Worker secret (dashboard or `wrangler secret put TMDB_API_KEY`),
-  // never in this file. Local: put it in .dev.vars (gitignored).
+  // Secrets: TMDB_API_KEY via `wrangler secret put` / .dev.vars — never in this file.
 }
