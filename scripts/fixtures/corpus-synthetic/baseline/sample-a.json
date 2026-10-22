@@ -1,8 +1,7 @@
 {
-  "format": 2,
+  "format": 3,
   "sample": "sample-a",
-  "mode": "dual",
-  "rowCount": 2,
+  "pairing": "dual",
   "inputs": [
     {
       "file": "zh.srt",
@@ -13,39 +12,123 @@
       "cues": 2
     }
   ],
-  "loss": {
-    "lost": 0,
-    "perFile": [
-      {
-        "file": "zh.srt",
-        "cues": 2,
-        "lost": 0
+  "modes": {
+    "standard": {
+      "usedMode": "standard",
+      "rowCount": 2,
+      "loss": {
+        "lost": 0,
+        "perFile": [
+          {
+            "file": "zh.srt",
+            "cues": 2,
+            "lost": 0
+          },
+          {
+            "file": "en.srt",
+            "cues": 2,
+            "lost": 0
+          }
+        ]
       },
-      {
-        "file": "en.srt",
-        "cues": 2,
-        "lost": 0
-      }
-    ]
-  },
-  "cues": [
-    {
-      "i": 0,
-      "type": "merged",
-      "cueKind": "dialogue",
-      "ts": "00:00:01,000 --> 00:00:02,500",
-      "start": 1000,
-      "end": 2500,
-      "text": "早上好\nGood morning"
+      "cues": [
+        {
+          "i": 0,
+          "type": "merged",
+          "cueKind": "dialogue",
+          "ts": "00:00:01,000 --> 00:00:02,500",
+          "start": 1000,
+          "end": 2500,
+          "text": "早上好\nGood morning"
+        },
+        {
+          "i": 1,
+          "type": "merged",
+          "cueKind": "dialogue",
+          "ts": "00:00:03,000 --> 00:00:04,500",
+          "start": 3000,
+          "end": 4500,
+          "text": "我们出发吧\nLet's go"
+        }
+      ]
     },
-    {
-      "i": 1,
-      "type": "merged",
-      "cueKind": "dialogue",
-      "ts": "00:00:03,000 --> 00:00:04,500",
-      "start": 3000,
-      "end": 4500,
-      "text": "我们出发吧\nLet's go"
+    "industrial": {
+      "usedMode": "industrial",
+      "rowCount": 2,
+      "loss": {
+        "lost": 0,
+        "perFile": [
+          {
+            "file": "zh.srt",
+            "cues": 2,
+            "lost": 0
+          },
+          {
+            "file": "en.srt",
+            "cues": 2,
+            "lost": 0
+          }
+        ]
+      },
+      "cues": [
+        {
+          "i": 0,
+          "type": "merged",
+          "cueKind": "dialogue",
+          "ts": "00:00:01,000 --> 00:00:02,500",
+          "start": 1000,
+          "end": 2500,
+          "text": "早上好\nGood morning"
+        },
+        {
+          "i": 1,
+          "type": "merged",
+          "cueKind": "dialogue",
+          "ts": "00:00:03,000 --> 00:00:04,500",
+          "start": 3000,
+          "end": 4500,
+          "text": "我们出发吧\nLet's go"
+        }
+      ]
+    },
+    "auto": {
+      "usedMode": "standard",
+      "rowCount": 2,
+      "loss": {
+        "lost": 0,
+        "perFile": [
+          {
+            "file": "zh.srt",
+            "cues": 2,
+            "lost": 0
+          },
+          {
+            "file": "en.srt",
+            "cues": 2,
+            "lost": 0
+          }
+        ]
+      },
+      "cues": [
+        {
+          "i": 0,
+          "type": "merged",
+          "cueKind": "dialogue",
+          "ts": "00:00:01,000 --> 00:00:02,500",
+          "start": 1000,
+          "end": 2500,
+          "text": "早上好\nGood morning"
+        },
+        {
+          "i": 1,
+          "type": "merged",
+          "cueKind": "dialogue",
+          "ts": "00:00:03,000 --> 00:00:04,500",
+          "start": 3000,
+          "end": 4500,
+          "text": "我们出发吧\nLet's go"
+        }
+      ]
     }
-  ]
+  }
 }

@@ -1,5 +1,18 @@
 # Decision Log
 
+## 2026-10-22 (TMDB matching project)
+
+Filename-only matching (no subtitle-content verification). Two name classes: random/timestamp IDs → no TMDB, manual; release-name → parse. Look inside archives/folders. Complete elements → exact match; incomplete → narrow and rank for confirmation, never silently wrong. Existing scoring already has threshold / close-score / need-year / lucky. Project = regression set, measure both scorers, merge into one, calibrate thresholds, add context association (same import batch, history, user corrections, outer archive/folder names) with local TMDB cache.
+
+## 2026-10-22 (refactor plan)
+
+Nias 拍板（Dave、Oki 审过）：
+
+- **Store 拆分**：选 C+A——纯逻辑先抽到 `src/core`（`tmdbMatch` / `tmdbSearch` / `taskGrouping` / `noticeChannel`），再在单一 store 内切片；播放时钟不走全局 store、也不按帧重渲染（motion value / 瞬时订阅）。动手前补 edit/undo/redo/delete/reset 测试。修复另开 commit，含 content-id 去重（S2）、schema 校验 localStorage（失败回默认 + error boundary）、删未用字段（`creditPlacement` / `keepOriginalCredit` / `isTemplateLab` / `lang`；`creditPlacement` 随功能再加回）。
+- **否决**：多独立 store（B）；按格式拆 `subtitleCore`。
+- **subtitleCore 分层**：model / analysis / engine / io / product，`subtitleCore.ts` 作 barrel；merge/recognition job 直接 import 层文件；eslint `no-cycle`，subtitle 目录内禁止反向 import barrel；engine 不得 import io/product。
+- **顺序**：motion lint 规则 → harness v3 + 在 791b3c1 上用 8–10 条样本重录 → store 拆分 → TMDB 匹配专项（统一两套 scorer：真实字幕文件名回归集、字幕内容信号、用户纠错、本地 TMDB 缓存；媒体服务器工具不作参考）→ subtitleCore 分层 → 合并行稳定 id（单独修，baseline 忽略）→ switch B → Act 1 → P2。
+
 ## 2026-09-03 (human-assist P0)
 
 - 待复核闭环：概览「待复核 N」可点击打开/聚焦 AlignmentDiffPanel；明细展示 severity（需复核/留意）；会话内「已核对」+「上一项/下一项」；定位高亮整组 `rowIndexes`。

@@ -1,8 +1,7 @@
 {
-  "format": 2,
+  "format": 3,
   "sample": "sample-b",
-  "mode": "dual",
-  "rowCount": 4,
+  "pairing": "dual",
   "inputs": [
     {
       "file": "zh.srt",
@@ -13,57 +12,177 @@
       "cues": 3
     }
   ],
-  "loss": {
-    "lost": 0,
-    "perFile": [
-      {
-        "file": "zh.srt",
-        "cues": 3,
-        "lost": 0
+  "modes": {
+    "standard": {
+      "usedMode": "standard",
+      "rowCount": 4,
+      "loss": {
+        "lost": 0,
+        "perFile": [
+          {
+            "file": "zh.srt",
+            "cues": 3,
+            "lost": 0
+          },
+          {
+            "file": "en.srt",
+            "cues": 3,
+            "lost": 0
+          }
+        ]
       },
-      {
-        "file": "en.srt",
-        "cues": 3,
-        "lost": 0
-      }
-    ]
-  },
-  "cues": [
-    {
-      "i": 0,
-      "type": "dialogue",
-      "cueKind": "dialogue",
-      "ts": "00:00:01,000 --> 00:00:03,000",
-      "start": 1000,
-      "end": 3000,
-      "text": "Credits: corpus baseline"
+      "cues": [
+        {
+          "i": 0,
+          "type": "dialogue",
+          "cueKind": "dialogue",
+          "ts": "00:00:01,000 --> 00:00:03,000",
+          "start": 1000,
+          "end": 3000,
+          "text": "Credits: corpus baseline"
+        },
+        {
+          "i": 1,
+          "type": "credit",
+          "cueKind": "credit",
+          "ts": "00:00:01,000 --> 00:00:03,000",
+          "start": 1000,
+          "end": 3000,
+          "text": "字幕制作：语料基线"
+        },
+        {
+          "i": 2,
+          "type": "merged",
+          "cueKind": "dialogue",
+          "ts": "00:00:04,000 --> 00:00:06,000",
+          "start": 4000,
+          "end": 6000,
+          "text": "第二句中文\nSecond English line"
+        },
+        {
+          "i": 3,
+          "type": "merged",
+          "cueKind": "dialogue",
+          "ts": "00:00:07,000 --> 00:00:09,000",
+          "start": 7000,
+          "end": 9000,
+          "text": "第三句中文\nThird English line"
+        }
+      ]
     },
-    {
-      "i": 1,
-      "type": "credit",
-      "cueKind": "credit",
-      "ts": "00:00:01,000 --> 00:00:03,000",
-      "start": 1000,
-      "end": 3000,
-      "text": "字幕制作：语料基线"
+    "industrial": {
+      "usedMode": "industrial",
+      "rowCount": 4,
+      "loss": {
+        "lost": 0,
+        "perFile": [
+          {
+            "file": "zh.srt",
+            "cues": 3,
+            "lost": 0
+          },
+          {
+            "file": "en.srt",
+            "cues": 3,
+            "lost": 0
+          }
+        ]
+      },
+      "cues": [
+        {
+          "i": 0,
+          "type": "dialogue",
+          "cueKind": "dialogue",
+          "ts": "00:00:01,000 --> 00:00:03,000",
+          "start": 1000,
+          "end": 3000,
+          "text": "Credits: corpus baseline"
+        },
+        {
+          "i": 1,
+          "type": "credit",
+          "cueKind": "credit",
+          "ts": "00:00:01,000 --> 00:00:03,000",
+          "start": 1000,
+          "end": 3000,
+          "text": "字幕制作：语料基线"
+        },
+        {
+          "i": 2,
+          "type": "merged",
+          "cueKind": "dialogue",
+          "ts": "00:00:04,000 --> 00:00:06,000",
+          "start": 4000,
+          "end": 6000,
+          "text": "第二句中文\nSecond English line"
+        },
+        {
+          "i": 3,
+          "type": "merged",
+          "cueKind": "dialogue",
+          "ts": "00:00:07,000 --> 00:00:09,000",
+          "start": 7000,
+          "end": 9000,
+          "text": "第三句中文\nThird English line"
+        }
+      ]
     },
-    {
-      "i": 2,
-      "type": "merged",
-      "cueKind": "dialogue",
-      "ts": "00:00:04,000 --> 00:00:06,000",
-      "start": 4000,
-      "end": 6000,
-      "text": "第二句中文\nSecond English line"
-    },
-    {
-      "i": 3,
-      "type": "merged",
-      "cueKind": "dialogue",
-      "ts": "00:00:07,000 --> 00:00:09,000",
-      "start": 7000,
-      "end": 9000,
-      "text": "第三句中文\nThird English line"
+    "auto": {
+      "usedMode": "industrial",
+      "rowCount": 4,
+      "loss": {
+        "lost": 0,
+        "perFile": [
+          {
+            "file": "zh.srt",
+            "cues": 3,
+            "lost": 0
+          },
+          {
+            "file": "en.srt",
+            "cues": 3,
+            "lost": 0
+          }
+        ]
+      },
+      "cues": [
+        {
+          "i": 0,
+          "type": "dialogue",
+          "cueKind": "dialogue",
+          "ts": "00:00:01,000 --> 00:00:03,000",
+          "start": 1000,
+          "end": 3000,
+          "text": "Credits: corpus baseline"
+        },
+        {
+          "i": 1,
+          "type": "credit",
+          "cueKind": "credit",
+          "ts": "00:00:01,000 --> 00:00:03,000",
+          "start": 1000,
+          "end": 3000,
+          "text": "字幕制作：语料基线"
+        },
+        {
+          "i": 2,
+          "type": "merged",
+          "cueKind": "dialogue",
+          "ts": "00:00:04,000 --> 00:00:06,000",
+          "start": 4000,
+          "end": 6000,
+          "text": "第二句中文\nSecond English line"
+        },
+        {
+          "i": 3,
+          "type": "merged",
+          "cueKind": "dialogue",
+          "ts": "00:00:07,000 --> 00:00:09,000",
+          "start": 7000,
+          "end": 9000,
+          "text": "第三句中文\nThird English line"
+        }
+      ]
     }
-  ]
+  }
 }

@@ -44,8 +44,6 @@ export const TheaterStep: React.FC = () => {
   const {
     processedSubs,
     previewIndex,
-    isTemplateLab,
-    restartSystem,
     setWorkflowStep,
     isSettingsOpen,
     setIsSettingsOpen,
@@ -69,8 +67,6 @@ export const TheaterStep: React.FC = () => {
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     previewIndex: state.previewIndex,
-    isTemplateLab: state.isTemplateLab,
-    restartSystem: state.restartSystem,
     setWorkflowStep: state.setWorkflowStep,
     isSettingsOpen: state.isSettingsOpen,
     setIsSettingsOpen: state.setIsSettingsOpen,
@@ -181,11 +177,7 @@ export const TheaterStep: React.FC = () => {
   }, [isLightsOff]);
 
   const handleBack = () => {
-    if (isTemplateLab) {
-      restartSystem();
-    } else {
-      setWorkflowStep(2);
-    }
+    setWorkflowStep(2);
   };
 
   // 放映厅只保留片源剧照 / 默认影院画面，旧场景配置统一回退到影院模式。
