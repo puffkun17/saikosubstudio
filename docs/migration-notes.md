@@ -1,2 +1,6 @@
 - `src/store/persistence.ts` ↔ `useStudioStore.ts`: `loadHistoryFromIdb` still calls `useStudioStore.getState().customStyle` (circular import; safe because access is deferred until call time).
 - S6: colon-fallback + swapTmdbAlternate now dedupe by `media_type:id` (was bare `id`); candidate lists may keep both a movie and a TV hit that share a numeric id — order can change vs pre-S6 when the second type used to be dropped.
+- SKIP S10 preview clock (motion value / TheaterStep): large UI+store clock redesign, not a small follow-up.
+- SKIP persistence hardening (schema-validate + error boundary + e2e malformed storage): multi-surface, needs dedicated pass.
+- SKIP Ingest DragZone local phase/queue → slice: large UI state move.
+- SKIP PWA worker chunk precache e2e: large infra/e2e scope.

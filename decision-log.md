@@ -1,5 +1,9 @@
 # Decision Log
 
+## 2026-10-22 (TMDB matching project)
+
+Filename-only matching (no subtitle-content verification). Two name classes: random/timestamp IDs → no TMDB, manual; release-name → parse. Look inside archives/folders. Complete elements → exact match; incomplete → narrow and rank for confirmation, never silently wrong. Existing scoring already has threshold / close-score / need-year / lucky. Project = regression set, measure both scorers, merge into one, calibrate thresholds, add context association (same import batch, history, user corrections, outer archive/folder names) with local TMDB cache.
+
 ## 2026-10-22 (refactor plan)
 
 Nias 拍板（Dave、Oki 审过）：
