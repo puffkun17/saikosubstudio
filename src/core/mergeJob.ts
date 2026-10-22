@@ -7,10 +7,10 @@ import {
   measureMergeOrphanRate,
   mergeSubtitles,
   normalizeSingleBilingualRows,
-  parseSubtitle,
   type AlignmentFallbackInfo,
-  type SubRow,
-} from '../utils/subtitleCore';
+} from '../utils/subtitle/engine';
+import { parseSubtitle } from '../utils/subtitle/io';
+import type { SubRow } from '../utils/subtitle/model';
 
 export interface MergeJobInput {
   zhText: string;

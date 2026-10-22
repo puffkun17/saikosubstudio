@@ -27,6 +27,86 @@ export default defineConfig([
       ],
     },
   },
+  {
+    files: ["src/utils/subtitle/**/*.{ts,tsx}", "src/utils/subtitleCore.ts"],
+    rules: {
+      "import/no-cycle": "error",
+    },
+  },
+  {
+    // Layers must not reverse-import the barrel.
+    files: ["src/utils/subtitle/**/*.{ts,tsx}"],
+    ignores: ["src/utils/subtitle/engine.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "framer-motion",
+              message: "Import from 'motion/react' instead of 'framer-motion'.",
+            },
+            {
+              name: "../subtitleCore",
+              message: "subtitle layers must not import the subtitleCore barrel.",
+            },
+            {
+              name: "@/utils/subtitleCore",
+              message: "subtitle layers must not import the subtitleCore barrel.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["**/subtitleCore", "**/subtitleCore.*"],
+              message: "subtitle layers must not import the subtitleCore barrel.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // engine: no io/product + no barrel (must be last so it is not overridden).
+    files: ["src/utils/subtitle/engine.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "framer-motion",
+              message: "Import from 'motion/react' instead of 'framer-motion'.",
+            },
+            {
+              name: "./io",
+              message: "subtitle/engine must not import subtitle/io.",
+            },
+            {
+              name: "./product",
+              message: "subtitle/engine must not import subtitle/product.",
+            },
+            {
+              name: "../subtitleCore",
+              message: "subtitle layers must not import the subtitleCore barrel.",
+            },
+            {
+              name: "@/utils/subtitleCore",
+              message: "subtitle layers must not import the subtitleCore barrel.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["**/subtitle/io", "**/subtitle/product", "**/subtitle/io.*", "**/subtitle/product.*"],
+              message: "subtitle/engine must not import io or product.",
+            },
+            {
+              group: ["**/subtitleCore", "**/subtitleCore.*"],
+              message: "subtitle layers must not import the subtitleCore barrel.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   globalIgnores([".next/**", "out/**", "build/**", "dist/**", "public/**", "next-env.d.ts"]),
 ]);
-
