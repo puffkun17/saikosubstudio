@@ -21,6 +21,9 @@ import { bumpTmdbSelectionRequestId, taskDisplayTitle } from './mediaTmdb';
 
 const normalizeMediaIdentityTitle = (value: string) => cleanFilename(value).toLowerCase().replace(/\s+/g, ' ').trim();
 
+/** Bumped on each runSubtitleMerge so a slower earlier job cannot overwrite within the same task (S9). */
+let mergeRequestId = 0;
+
 const readStoredNameMode = (): NamingMode => {
   try {
     const v = typeof localStorage !== 'undefined' ? localStorage.getItem('saiko_export_name_mode') : null;
@@ -427,15 +430,19 @@ export const createIngestSlice: StateCreator<StudioState, [], [], IngestSlice> =
     get().runSubtitleMerge();
   },
   runSubtitleMerge: () => {
-    const { files, selectedTaskId, tasks, customFilename } = get();
+    const { files, selectedTaskId, tasks } = get();
     const currentTask = tasks.find(t => t.id === selectedTaskId);
     if (!files.zh && !files.en) return;
+
+    const requestId = ++mergeRequestId;
+    const isCurrentMerge = () => requestId === mergeRequestId && get().selectedTaskId === selectedTaskId;
 
     const taskKey = reviewTaskKey(selectedTaskId, get().processedSubs);
     get().clearMergeReviewChecked(taskKey);
     set({ isProcessing: true, processedSubs: null });
     
     const notice = (info: AlignmentFallbackInfo, phase: 'primary' | 'auto-upgrade') => {
+      if (!isCurrentMerge()) return;
       if (info.reason === 'banded') {
         get().setStatusNotice({
           id: 'alignment-banded',
@@ -464,6 +471,7 @@ export const createIngestSlice: StateCreator<StudioState, [], [], IngestSlice> =
       bilingualSingle: Boolean(currentTask?.isBilingualSingle && files.zh),
     };
     const onEvent = (event: MergeJobEvent) => {
+      if (!isCurrentMerge()) return;
       if (event.type === 'log') get().addLog(event.msg, event.tone);
       else if (event.type === 'fallback') notice(event.info, event.phase);
       else if (event.type === 'auto-industrial') {
@@ -476,22 +484,25 @@ export const createIngestSlice: StateCreator<StudioState, [], [], IngestSlice> =
       }
     };
     const apply = (result: MergeJobResult) => {
-      // Ignore stale results if the user switched task while the worker ran.
-      if (get().selectedTaskId !== selectedTaskId) return;
+      // Ignore stale results: task switch OR a newer merge started on the same task (S9).
+      if (!isCurrentMerge()) return;
       set({ processedSubs: result.rows, previewIndex: 0, workflowStep: 2, editHistory: [], editFuture: [] });
       // Clear save point: a finished merge is restorable from 存档 after reload / leaving /.
       get().saveToLibrary();
     };
     const fail = (err: unknown) => {
+      if (!isCurrentMerge()) return;
       const msg = err instanceof Error ? err.message : String(err);
       get().addLog(`[异常] 合并失败: ${msg}`, 'error');
     };
     if (!mergeWorkerAvailable()) {
-      try { apply(runMergeJobInThread(input, onEvent)); } catch (err) { fail(err); } finally { set({ isProcessing: false }); }
+      try { apply(runMergeJobInThread(input, onEvent)); } catch (err) { fail(err); } finally {
+        if (requestId === mergeRequestId) set({ isProcessing: false });
+      }
       return;
     }
     void runMergeJob(input, onEvent).then(apply).catch(fail).finally(() => {
-      set({ isProcessing: false });
+      if (requestId === mergeRequestId) set({ isProcessing: false });
     });
   },
 });
