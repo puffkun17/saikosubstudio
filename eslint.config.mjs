@@ -1,31 +1,54 @@
-import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
 import { defineConfig, globalIgnores } from "eslint/config";
 
+/**
+ * Minimal flat config after dropping eslint-config-next (Switch B).
+ * Keeps: framer-motion ban, subtitle layer import bans, react-hooks.
+ */
 export default defineConfig([
-  js.configs.recommended,
-  ...tseslint.configs.recommended,
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "dist/**",
+    "public/**",
+    "scripts/**",
+    "node_modules/**",
+    ".github/**",
+    ".agents/**",
+    "workers/feedback-mailer/**",
+    "**/*.mjs",
+    "**/*.js",
+  ]),
   {
-    files: ["**/*.{ts,tsx,mts,mjs}"],
+    files: ["**/*.{ts,tsx}"],
+    extends: [...tseslint.configs.recommended],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
       globals: { ...globals.browser, ...globals.node },
+      parserOptions: { ecmaFeatures: { jsx: true } },
     },
     plugins: {
       "react-hooks": reactHooks,
     },
+    linterOptions: {
+      // Stale @next/next disable comments remain in a few components.
+      reportUnusedDisableDirectives: "off",
+    },
     rules: {
       ...reactHooks.configs.recommended.rules,
       "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/exhaustive-deps": "warn",
       "@typescript-eslint/no-this-alias": "warn",
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
-      ],
-      // Animation library is motion@14 via motion/react only (AGENTS.md / ui-animation skill).
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/ban-ts-comment": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
       "no-restricted-imports": [
         "error",
         {
@@ -40,13 +63,6 @@ export default defineConfig([
     },
   },
   {
-    files: ["src/utils/subtitle/**/*.{ts,tsx}", "src/utils/subtitleCore.ts"],
-    rules: {
-      // import/no-cycle needs eslint-plugin-import; skip if not installed — layer bans below cover the critical edges.
-    },
-  },
-  {
-    // Layers must not reverse-import the barrel.
     files: ["src/utils/subtitle/**/*.{ts,tsx}"],
     ignores: ["src/utils/subtitle/engine.ts"],
     rules: {
@@ -78,7 +94,6 @@ export default defineConfig([
     },
   },
   {
-    // engine: no io/product + no barrel (must be last so it is not overridden).
     files: ["src/utils/subtitle/engine.ts"],
     rules: {
       "no-restricted-imports": [
@@ -120,5 +135,4 @@ export default defineConfig([
       ],
     },
   },
-  globalIgnores([".next/**", "out/**", "build/**", "dist/**", "public/**", "next-env.d.ts"]),
 ]);

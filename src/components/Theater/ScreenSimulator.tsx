@@ -278,8 +278,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
         }}
       >
         {/* TV Frame Mask Layer（电视机外壳 PNG，最上层 z-20） */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img 
+                <img 
           src={maskImg} 
           className="absolute inset-0 w-full h-full object-fill pointer-events-none z-20 drop-shadow-2xl" 
           alt="TV Frame Mask" 
