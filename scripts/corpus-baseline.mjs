@@ -3,6 +3,11 @@
  * Corpus baseline harness — runs the real merge pipeline over a directory of
  * subtitle samples, records cue-level outputs, and diffs later runs.
  *
+ * Recording format version 2 adds numeric start/end (ms), per-file input cue
+ * counts, and a loss measure (input cues whose cleaned text is absent from
+ * output within a ±2s window). Older recordings (no format / format ≠ 2) fail
+ * compare with a re-record instruction — they never silently pass.
+ *
  * Usage (Mac / Linux):
  *   # CI / synthetic (committed samples + baselines under the repo):
  *   node scripts/corpus-baseline.mjs
@@ -31,13 +36,19 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { mkdtempSync, rmSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..');
+
+/** Bump when the recording JSON shape or compare semantics change. */
+const FORMAT = 2;
+
+/** Time window (ms) for text-presence loss checks — mirrors runCorpus ±2s. */
+const LOSS_TIME_SLACK_MS = 2000;
 
 function parseArgs(argv) {
   const out = { dir: null, baseline: null, record: false, help: false };
@@ -107,16 +118,58 @@ function listSamples(root) {
     .sort();
 }
 
-function cueFingerprint(row, index) {
+function tsToMsPair(ts, timeToMs) {
+  const parts = String(ts || '').split(/\s*-->\s*/);
+  const startRaw = (parts[0] || '').trim();
+  const endRaw = (parts[1] || '').trim();
+  return [timeToMs(startRaw), timeToMs(endRaw)];
+}
+
+function cueFingerprint(row, index, timeToMs) {
+  const [start, end] = tsToMsPair(row.ts, timeToMs);
   return {
     i: index,
     type: row.type ?? null,
     cueKind: row.cueKind ?? null,
     ts: row.ts ?? null,
-    start: row.start ?? null,
-    end: row.end ?? null,
+    start,
+    end,
     text: row.text ?? '',
   };
+}
+
+/**
+ * Loss: input cues whose cleaned text does not appear in any output row
+ * within ±LOSS_TIME_SLACK_MS. Empty cleaned text is skipped (nothing to keep).
+ * Provenance is not required — text+time is the portable check (see runCorpus).
+ */
+function measureLoss(inputTracks, outputRows, { timeToMs, cleanSubtitleContent }) {
+  const outParsed = outputRows.map((r) => {
+    const [s, e] = tsToMsPair(r.ts, timeToMs);
+    return { s, e, text: r.text || '' };
+  });
+
+  let lost = 0;
+  const perFile = [];
+  for (const track of inputTracks) {
+    let fileLost = 0;
+    for (const cue of track.rows) {
+      const clean = String(cleanSubtitleContent(cue.text || '') || '').trim();
+      if (!clean) continue;
+      const [cs, ce] = tsToMsPair(cue.ts, timeToMs);
+      const present = outParsed.some(
+        (r) => r.s <= ce + LOSS_TIME_SLACK_MS
+          && r.e >= cs - LOSS_TIME_SLACK_MS
+          && r.text.includes(clean),
+      );
+      if (!present) {
+        fileLost += 1;
+        lost += 1;
+      }
+    }
+    perFile.push({ file: track.file, cues: track.rows.length, lost: fileLost });
+  }
+  return { lost, perFile };
 }
 
 function firstDiff(actual, expected) {
@@ -144,11 +197,23 @@ function diffCues(actualCues, expectedCues) {
       changes.push({ index: i, kind: 'removed', expected: e });
       continue;
     }
-    if (a.text !== e.text || a.ts !== e.ts || a.type !== e.type || a.cueKind !== e.cueKind) {
+    const same =
+      a.text === e.text
+      && a.ts === e.ts
+      && a.type === e.type
+      && a.cueKind === e.cueKind
+      && a.start === e.start
+      && a.end === e.end;
+    if (!same) {
       changes.push({ index: i, kind: 'changed', expected: e, actual: a });
     }
   }
   return changes;
+}
+
+function sampleSummary(payload) {
+  const inCues = (payload.inputs || []).reduce((n, t) => n + (t.cues || 0), 0);
+  return `in=${inCues} out=${payload.rowCount} lost=${payload.loss?.lost ?? 0}`;
 }
 
 function main() {
@@ -160,6 +225,8 @@ Env:
   CORPUS_DIR            sample root (default: scripts/fixtures/corpus-synthetic)
   CORPUS_BASELINE_DIR   recording root (default: <dir>/baseline for synthetic;
                         required + must be outside the repo for a real corpus)
+
+Recording format: ${FORMAT} (numeric start/end ms, inputs[], loss).
 `);
     process.exit(0);
   }
@@ -195,7 +262,12 @@ Env:
     alignSubtitlesIndustrial,
     normalizeSingleBilingualRows,
     decodeBuffer,
+    timeToMs,
+    cleanSubtitleContent,
   } = core;
+
+  assert.equal(typeof timeToMs, 'function', 'subtitleCore.timeToMs missing');
+  assert.equal(typeof cleanSubtitleContent, 'function', 'subtitleCore.cleanSubtitleContent missing');
 
   const readTrack = (file) => {
     const buf = readFileSync(file);
@@ -220,29 +292,51 @@ Env:
 
       let rows;
       let mode;
+      /** @type {{ file: string, rows: unknown[] }[]} */
+      let inputTracks = [];
+
       if (zhFile && enFile) {
-        rows = alignSubtitlesIndustrial(parseSubtitle(readTrack(zhFile)), parseSubtitle(readTrack(enFile)));
+        const zhText = readTrack(zhFile);
+        const enText = readTrack(enFile);
+        const zhRows = parseSubtitle(zhText);
+        const enRows = parseSubtitle(enText);
+        rows = alignSubtitlesIndustrial(zhRows, enRows);
         mode = 'dual';
+        inputTracks = [
+          { file: basename(zhFile), rows: zhRows },
+          { file: basename(enFile), rows: enRows },
+        ];
       } else if (bilingualFile) {
-        rows = normalizeSingleBilingualRows(parseSubtitle(readTrack(bilingualFile)));
+        const biText = readTrack(bilingualFile);
+        const biRows = parseSubtitle(biText);
+        rows = normalizeSingleBilingualRows(biRows);
         mode = 'bilingual';
+        inputTracks = [{ file: basename(bilingualFile), rows: biRows }];
       } else {
         console.warn(`skip ${sample}: no zh+secondary or bilingual track`);
         continue;
       }
 
+      const loss = measureLoss(inputTracks, rows, { timeToMs, cleanSubtitleContent });
       const payload = {
+        format: FORMAT,
         sample,
         mode,
         rowCount: rows.length,
-        cues: rows.map((row, i) => cueFingerprint(row, i)),
+        inputs: inputTracks.map((t) => ({ file: t.file, cues: t.rows.length })),
+        loss: {
+          lost: loss.lost,
+          perFile: loss.perFile,
+        },
+        cues: rows.map((row, i) => cueFingerprint(row, i, timeToMs)),
       };
       const outFile = join(baselineDir, `${sample}.json`);
+      const summary = sampleSummary(payload);
 
       if (args.record) {
         writeFileSync(outFile, `${JSON.stringify(payload, null, 2)}\n`);
         recorded += 1;
-        console.log(`recorded ${sample} (${payload.rowCount} cues)`);
+        console.log(`recorded ${sample} (${summary})`);
         continue;
       }
 
@@ -254,17 +348,41 @@ Env:
 
       const expected = JSON.parse(readFileSync(outFile, 'utf8'));
       checked += 1;
-      if (expected.rowCount !== payload.rowCount) {
-        console.error(`FAIL ${sample}: rowCount ${payload.rowCount} !== ${expected.rowCount}`);
+
+      if (expected.format !== FORMAT) {
+        console.error(
+          `FAIL ${sample}: baseline format ${expected.format ?? '(none/v1)'} ≠ ${FORMAT}; `
+          + `re-record with --record (old recordings are not compared)`,
+        );
         failed += 1;
         continue;
       }
+
+      let sampleFailed = false;
+
+      if (expected.rowCount !== payload.rowCount) {
+        console.error(`FAIL ${sample}: rowCount ${payload.rowCount} !== ${expected.rowCount}`);
+        sampleFailed = true;
+      }
+
+      const expectedLost = expected.loss?.lost ?? 0;
+      if (payload.loss.lost > expectedLost) {
+        console.error(
+          `FAIL ${sample}: loss increased ${payload.loss.lost} > ${expectedLost} (recorded)`,
+        );
+        sampleFailed = true;
+      }
+
       const changes = diffCues(payload.cues, expected.cues || []);
       if (changes.length > 0) {
         console.error(`FAIL ${sample}: ${changes.length} cue change(s)`);
         for (const c of changes.slice(0, 8)) {
           if (c.kind === 'changed') {
-            console.error(`  cue ${c.index}: text/ts/type changed`);
+            const timing =
+              c.expected.start !== c.actual.start || c.expected.end !== c.actual.end
+                ? ` start/end ${c.expected.start}–${c.expected.end} → ${c.actual.start}–${c.actual.end}`
+                : '';
+            console.error(`  cue ${c.index}: text/ts/type/timing changed${timing}`);
             console.error(`    was: ${JSON.stringify(c.expected.text)} @ ${c.expected.ts}`);
             console.error(`    now: ${JSON.stringify(c.actual.text)} @ ${c.actual.ts}`);
           } else {
@@ -273,9 +391,14 @@ Env:
         }
         if (changes.length > 8) console.error(`  … +${changes.length - 8} more`);
         console.error(`  json: ${firstDiff(payload, expected).split('\n').slice(0, 4).join('\n  ')}`);
+        sampleFailed = true;
+      }
+
+      if (sampleFailed) {
         failed += 1;
+        console.error(`  summary ${sample}: ${summary}`);
       } else {
-        console.log(`ok ${sample} (${payload.rowCount} cues)`);
+        console.log(`ok ${sample} (${summary})`);
       }
     }
 
