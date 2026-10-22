@@ -7,7 +7,7 @@ import { DragZone } from '@/components/Ingest/DragZone';
 import { TaskList } from '@/components/Ingest/TaskList';
 import { TmdbPanel } from '@/components/Ingest/TmdbPanel';
 import { SourceIdentityStrip } from '@/components/Ingest/SourceIdentityStrip';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { InlineMessageBar } from '@/components/Global/InlineMessageBar';
 
 export const IngestStep: React.FC = () => {

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useWorkflowChromeOptional, type BottomStatusConfig } from '@/components/Global/WorkflowChrome';
 import { SoftLogMarquee } from '@/components/Global/SoftLogMarquee';
 

@@ -1,4 +1,4 @@
-import type { Transition } from 'framer-motion';
+import type { Transition } from 'motion/react';
 
 /**
  * Ridgeline 动效预设 —— 与 globals.css 的 --v5-dur / --v5-ease 对齐。

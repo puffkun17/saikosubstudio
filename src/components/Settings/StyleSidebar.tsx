@@ -7,7 +7,7 @@ import { useStudioStore } from '@/store/useStudioStore';
 import { type StyleSettings } from '@/utils/subtitleCore';
 import { StyleLibrary, useSelectedStyleEntry } from '@/components/Settings/StyleLibrary';
 import { RotateCcw, ALargeSmall, ChevronDown, ChevronUp, FileType, Pipette, Star } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { ColorSampler } from '@/components/Settings/ColorSampler';
 import { resolveEffectiveStyle } from '@/utils/previewStyle';

@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { Image as ImageIcon, Search, LoaderCircle, X, RefreshCw } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { FilmMetaBlock, buildFilmRatings } from '@/components/Ingest/FilmMetaBlock';
 import { resolveFilmTitles } from '@/utils/filmTitles';
 

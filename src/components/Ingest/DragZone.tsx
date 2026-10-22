@@ -16,7 +16,7 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { CLIENT_IMPORT_LIMITS, getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
 import { partitionIngestPaths, type IgnoredIngestEntry } from '@/utils/ingestJunk';
 import {

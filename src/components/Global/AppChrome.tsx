@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { MotionConfig } from 'framer-motion';
+import { MotionConfig } from 'motion/react';
 import { WorkflowChromeProvider } from '@/components/Global/WorkflowChrome';
 
 /** Client shell for workflow info bar (layout stays a Server Component). */

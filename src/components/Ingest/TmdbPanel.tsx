@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, type TmdbSuggestion } from '@/store/useStudioStore';
 import { Search, Image as ImageIcon, Star, Sparkles, X, CheckCircle2, CircleAlert, FileText, Languages } from 'lucide-react';
 import { FilmMetaBlock, buildFilmRatings } from '@/components/Ingest/FilmMetaBlock';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { parseSrt } from '@/utils/subtitleCore';
 import { AssStylePreview } from '@/components/Ingest/AssStylePreview';
 import { useUiModalFocus } from '@/hooks/useUiModalFocus';

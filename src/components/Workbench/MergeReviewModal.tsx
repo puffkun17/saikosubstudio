@@ -2,7 +2,7 @@
 
 import React, { useRef } from 'react';
 import { X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { AlignmentDiffPanel } from '@/components/Workbench/AlignmentDiffPanel';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import { useUiModalFocus } from '@/hooks/useUiModalFocus';

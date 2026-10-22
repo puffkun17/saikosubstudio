@@ -13,7 +13,7 @@ import { reviewNoticeMessage, reviewNoticeTitle } from '@/components/Global/Revi
 import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
 import { resolveFilmTitles } from '@/utils/filmTitles';
 import { MergeReviewModal } from '@/components/Workbench/MergeReviewModal';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { InlineMessageBar } from '@/components/Global/InlineMessageBar';
 import { buildMergeReviewQueue, type MergeReviewItem } from '@/utils/timeline/alignmentDiff';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';

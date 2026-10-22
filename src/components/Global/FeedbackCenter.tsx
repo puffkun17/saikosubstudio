@@ -2,7 +2,7 @@
 
 import { ReviewNoticeSync } from '@/components/Global/ReviewNoticeSync';
 import React, { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { AlertTriangle, X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import {

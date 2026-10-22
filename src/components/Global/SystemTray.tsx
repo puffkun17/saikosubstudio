@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Archive, ArrowLeft, Menu, PenLine, RotateCcw, Scale, X } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';

@@ -6,7 +6,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore, Subfile } from '@/store/useStudioStore';
 import { Check, CircleAlert, GripVertical, Info, Paintbrush, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { parseSrt, decodeBuffer, detectSubtitleLanguage, StyleSettings } from '@/utils/subtitleCore';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { FileFormatIcon, LanguageMark } from '@/components/ui/FileFormatIcon';

@@ -15,7 +15,7 @@ import { SPECIAL_LABEL, specialIndices, pagerOrdinal, stepSpecial, slideIndexFor
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import { ChevronLeft, SlidersHorizontal, SquareArrowRightExit, X } from 'lucide-react';
 import { SubtitleDataSlot, BackdropSlot, StyleSettings } from '@/types/subtitleTypes';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 /**
  * 只有这个小组件按帧订阅播放时钟——

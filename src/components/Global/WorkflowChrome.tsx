@@ -9,7 +9,7 @@ import React, {
   useState,
 } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useStudioStore } from '@/store/useStudioStore';
 
 /** 内容栏内「继续下一步」主操作配置（仅供 WorkflowContinueInFlow）。 */

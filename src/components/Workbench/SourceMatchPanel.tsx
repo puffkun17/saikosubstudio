@@ -3,7 +3,7 @@
 import { classifyLineKind } from '@/core/lineKinds';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, HardDrive, MonitorPlay, XCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { DurationPicker, type DurationValue } from '@/components/ui/duration-picker';
 import type { SubRow } from '@/utils/subtitleCore';
 import { createSourceMatchReport, type SourceMatchFinding, type SourceMatchReport } from '@/utils/timeline/sourceMatch';

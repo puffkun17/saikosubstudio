@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { Trash2, X } from 'lucide-react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { useUiModalFocus } from '@/hooks/useUiModalFocus';
