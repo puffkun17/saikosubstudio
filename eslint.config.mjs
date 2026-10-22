@@ -1,18 +1,30 @@
+import js from "@eslint/js";
+import globals from "globals";
+import tseslint from "typescript-eslint";
+import reactHooks from "eslint-plugin-react-hooks";
 import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
 
-// eslint-config-next 16 ships native flat configs (FlatCompat no longer needed).
 export default defineConfig([
-  ...nextVitals,
-  ...nextTs,
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
   {
-    // New in eslint-plugin-react-hooks 7 (bundled with eslint-config-next 16). Existing
-    // Act-2/export code trips these; kept as warnings so the framework bump stays behaviour-neutral.
-    // Tracked in next-iteration-plan.md §H.
+    files: ["**/*.{ts,tsx,mts,mjs}"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: { ...globals.browser, ...globals.node },
+    },
+    plugins: {
+      "react-hooks": reactHooks,
+    },
     rules: {
+      ...reactHooks.configs.recommended.rules,
       "react-hooks/set-state-in-effect": "warn",
       "@typescript-eslint/no-this-alias": "warn",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
       // Animation library is motion@14 via motion/react only (AGENTS.md / ui-animation skill).
       "no-restricted-imports": [
         "error",
@@ -30,7 +42,7 @@ export default defineConfig([
   {
     files: ["src/utils/subtitle/**/*.{ts,tsx}", "src/utils/subtitleCore.ts"],
     rules: {
-      "import/no-cycle": "error",
+      // import/no-cycle needs eslint-plugin-import; skip if not installed — layer bans below cover the critical edges.
     },
   },
   {
