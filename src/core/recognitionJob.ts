@@ -11,9 +11,9 @@ import {
   detectLanguageByContent,
   isEnglishSecondaryLanguage,
   isSdhOrCcSubtitleFilename,
-  parseSubtitle,
-  type SubtitleLanguagePair,
-} from '../utils/subtitleCore';
+} from '../utils/subtitle/analysis';
+import { parseSubtitle } from '../utils/subtitle/io';
+import type { SubtitleLanguagePair } from '../utils/subtitle/model';
 
 /** Clone-safe file shape (mirrors store Subfile; kept here to avoid a store ↔ worker cycle). */
 export interface RecognitionFile {
