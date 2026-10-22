@@ -1,29 +1,16 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { Image as ImageIcon, Search, LoaderCircle, X, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FilmMetaBlock, buildFilmRatings } from '@/components/Ingest/FilmMetaBlock';
-
-/** 把「原文 + 英文」粘在同一串的标题拆成两行，避免折行糊成一团。 */
-const splitAltTitles = (original?: string | null) => {
-  if (!original?.trim()) return { scriptTitle: null as string | null, latinTitle: null as string | null };
-  const trimmed = original.trim();
-  const mixed = trimmed.match(/^(.+?[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff])\s+([A-Za-z0-9].+)$/);
-  if (mixed) {
-    return { scriptTitle: mixed[1].trim(), latinTitle: mixed[2].trim() };
-  }
-  if (/[A-Za-z]/.test(trimmed) && !/[\u3040-\u30ff\u3400-\u9fff]/.test(trimmed)) {
-    return { scriptTitle: null, latinTitle: trimmed };
-  }
-  return { scriptTitle: trimmed, latinTitle: null };
-};
+import { resolveFilmTitles } from '@/utils/filmTitles';
 
 /**
- * Left rail for media identity — poster, meta, rematch.
- * Stretches with the checklist card; typography sized for scanability.
+ * Work-level identity rail — poster, title (once), episode, overview, rematch.
+ * Task-level counts / CTAs live in the info bar (see TaskList).
  */
 export const SourceIdentityStrip: React.FC = () => {
   const {
@@ -53,17 +40,17 @@ export const SourceIdentityStrip: React.FC = () => {
   const activeTask = tasks.find((task) => task.id === selectedTaskId) || tasks[0];
   const optimisticTitle = customFilename || activeTask?.title || '待匹配影片';
   const needsTitleInput = Boolean(activeTask?.title.includes('待补充片名'));
+  const episodeKey = activeTask?.epKey?.toUpperCase() || null;
 
   const filmNotice = [...statusNotices]
     .reverse()
     .find((notice) => notice.id === 'media-match' || notice.id === 'media-identity');
 
   const showInlineNotice = Boolean(filmNotice && !tmdbData);
-  const displayTitle = tmdbData?.title || optimisticTitle;
-  const { scriptTitle, latinTitle } = splitAltTitles(
-    tmdbData?.originalTitle && tmdbData.originalTitle !== tmdbData.title
-      ? tmdbData.originalTitle
-      : null,
+  const { main: mainTitle, originalScript, originalLatin } = resolveFilmTitles(
+    tmdbData?.title,
+    tmdbData?.originalTitle,
+    optimisticTitle,
   );
   const hasScore = Boolean(tmdbData && tmdbData.voteAverage > 0);
   const genres = tmdbData?.genres ?? [];
@@ -71,8 +58,31 @@ export const SourceIdentityStrip: React.FC = () => {
   const overview = tmdbData?.overview?.trim() || '';
   const rematchLabel = tmdbData ? '手动匹配' : needsTitleInput ? '补充片名' : '搜索影片';
 
+  const overviewRef = useRef<HTMLParagraphElement>(null);
+  const [overviewExpanded, setOverviewExpanded] = useState(false);
+  const [overviewClamped, setOverviewClamped] = useState(false);
+
+  useEffect(() => {
+    setOverviewExpanded(false);
+  }, [overview]);
+
+  useEffect(() => {
+    const el = overviewRef.current;
+    if (!el || overviewExpanded) {
+      setOverviewClamped(false);
+      return;
+    }
+    const measure = () => {
+      setOverviewClamped(el.scrollHeight > el.clientHeight + 1);
+    };
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    ro?.observe(el);
+    return () => ro?.disconnect();
+  }, [overview, overviewExpanded]);
+
   return (
-    <aside className="source-identity-rail v4-panel flex h-full w-full flex-col overflow-hidden">
+    <aside className="source-identity-rail v4-panel flex h-full min-h-0 w-full flex-col overflow-hidden">
       <div className="source-identity-rail__poster relative w-full shrink-0 overflow-hidden border-b border-[var(--v4-line)]">
         <AnimatePresence mode="wait">
           {tmdbData?.posterUrl ? (
@@ -114,29 +124,40 @@ export const SourceIdentityStrip: React.FC = () => {
           <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <h3
-                className="font-display min-w-0 text-[1.2rem] leading-snug text-[var(--v4-text)] md:text-[1.35rem]"
-                title={displayTitle}
+                className="source-identity-rail__title font-display min-w-0 text-[1.15rem] leading-snug text-[var(--v4-text)] md:text-[1.25rem]"
+                title={mainTitle}
               >
-                {displayTitle}
+                {mainTitle}
               </h3>
               {tmdbData?.year ? (
                 <span className="shrink-0 font-mono text-[15px] font-semibold tabular-nums text-[var(--v4-text-muted)]">
                   {tmdbData.year}
                 </span>
               ) : null}
+              {episodeKey ? (
+                <span className="shrink-0 font-mono text-[13px] font-semibold tabular-nums text-[var(--v4-text-muted)]">
+                  {episodeKey}
+                </span>
+              ) : null}
             </div>
 
-            {scriptTitle ? (
-              <p className="prose-serif mt-1.5 truncate text-[14px] text-[var(--v4-text-muted)]" title={scriptTitle}>
-                {scriptTitle}
+            {originalScript ? (
+              <p
+                className="source-identity-rail__alt prose-serif mt-1.5 text-[14px] text-[var(--v4-text-muted)]"
+                title={originalScript}
+              >
+                {originalScript}
               </p>
             ) : null}
-            {latinTitle ? (
-              <p className="mt-0.5 truncate font-mono text-[12.5px] font-medium tracking-wide text-[var(--v4-text-faint)]" title={latinTitle}>
-                {latinTitle}
+            {originalLatin ? (
+              <p
+                className="source-identity-rail__alt mt-0.5 font-mono text-[12.5px] font-medium tracking-wide text-[var(--v4-text-faint)]"
+                title={originalLatin}
+              >
+                {originalLatin}
               </p>
             ) : null}
-            {!tmdbData && !scriptTitle && !latinTitle ? (
+            {!tmdbData && !originalScript && !originalLatin ? (
               <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
                 用于命名与预览背景，可稍后补充。
               </p>
@@ -153,9 +174,23 @@ export const SourceIdentityStrip: React.FC = () => {
           </div>
 
           {overview ? (
-            <p className="source-identity-rail__overview ds-body prose-serif">
-              {overview}
-            </p>
+            <div className="source-identity-rail__overview-wrap">
+              <p
+                ref={overviewRef}
+                className={`source-identity-rail__overview ds-body prose-serif ${overviewExpanded ? '' : 'line-clamp-3'}`}
+              >
+                {overview}
+              </p>
+              {(overviewClamped || overviewExpanded) && (
+                <button
+                  type="button"
+                  className="mt-1 text-xs font-semibold text-[var(--v4-accent-strong)] hover:underline"
+                  onClick={() => setOverviewExpanded((v) => !v)}
+                >
+                  {overviewExpanded ? '收起' : '展开'}
+                </button>
+              )}
+            </div>
           ) : null}
 
           <AnimatePresence initial={false}>

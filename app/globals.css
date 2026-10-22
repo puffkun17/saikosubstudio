@@ -1575,13 +1575,15 @@ body {
 
 .source-identity-rail {
   align-self: stretch;
-  min-height: 100%;
+  min-height: 0;
+  height: 100%;
 }
 
-/* Keep poster box true 2:3; never force a shorter height that crops the art. */
+/* Keep poster 2:3, but clamp height so Import ready-state fits one desktop screen. */
 .source-identity-rail__poster {
   aspect-ratio: 2 / 3;
   width: 100%;
+  max-height: min(36vh, 220px);
   background: var(--v4-panel-muted);
 }
 
@@ -1590,11 +1592,32 @@ body {
   object-position: center;
 }
 
+.source-identity-rail__title,
+.source-identity-rail__alt {
+  text-wrap: balance;
+}
+
+@media (min-width: 1024px) {
+  .source-identity-rail__poster {
+    max-height: min(32vh, 200px);
+  }
+}
+
+@media (min-width: 1024px) and (min-height: 900px) {
+  .source-identity-rail__poster {
+    max-height: min(40vh, 260px);
+  }
+}
+
 @media (max-width: 1023px) {
   .source-identity-rail__poster {
-    /* Still full poster, just capped width-driven height on narrow screens */
-    max-width: 12rem;
+    max-width: 10rem;
+    max-height: none;
     margin-inline: auto;
+  }
+
+  .ingest-shell--ready {
+    overflow-y: auto;
   }
 }
 

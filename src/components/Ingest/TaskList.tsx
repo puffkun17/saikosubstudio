@@ -82,8 +82,6 @@ export const TaskList: React.FC = () => {
     alignmentMode,
     setAlignmentMode,
     setTmdbManualOpen,
-    tmdbData,
-    isSearchingTmdb,
     isOfficialSubtitle,
     setStatusNotice,
   } = useStudioStore(useShallow((state) => ({
@@ -108,8 +106,6 @@ export const TaskList: React.FC = () => {
     alignmentMode: state.alignmentMode,
     setAlignmentMode: state.setAlignmentMode,
     setTmdbManualOpen: state.setTmdbManualOpen,
-    tmdbData: state.tmdbData,
-    isSearchingTmdb: state.isSearchingTmdb,
     isOfficialSubtitle: state.isOfficialSubtitle,
     setStatusNotice: state.setStatusNotice,
   })));
@@ -398,22 +394,11 @@ export const TaskList: React.FC = () => {
     return () => setForwardAction(null);
   }, [activeTask, canProceed, edgeLabel, isProcessing, runSubtitleMerge, sameScriptPairBound, setForwardAction, setStatusNotice]);
 
-  const identityTitle = (() => {
-    if (!activeTask) return '核对清单';
-    if (tmdbData?.title) return tmdbData.title;
-    if (needsTitleInput) return '片名待确认';
-    const raw = activeTask.title.replace(/待补充片名.*/g, '').trim();
-    if (activeTask.epKey) {
-      const withoutEp = raw.replace(new RegExp(activeTask.epKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), '').replace(/[.\-_]+$/g, '').trim();
-      if (withoutEp) return withoutEp;
-    }
-    return raw || '字幕任务';
-  })();
-
-  const identityYear = tmdbData?.year || undefined;
-  const identityBadges = [
-    activeTask?.epKey?.toUpperCase(),
-  ].filter((item): item is string => Boolean(item));
+  /**
+   * Task bar is task-scoped only (counts / source / actions).
+   * Show title, year, and episode live on SourceIdentityStrip (work card).
+   */
+  const taskBarTitle = '本次导入';
 
   const trackFormatSummary = (() => {
     if (!activeTask) return '';
@@ -451,11 +436,7 @@ export const TaskList: React.FC = () => {
     return parts.join(' · ');
   })();
 
-  const identityLocalChips = [
-    // 过程态仍在本地层；成功匹配改由片源卡 Powered by TMDB 表达
-    !tmdbData && isSearchingTmdb ? '匹配中' : null,
-    !tmdbData && needsTitleInput ? '待补充片名' : null,
-    !tmdbData && !isSearchingTmdb && !needsTitleInput ? '未匹配' : null,
+  const taskBarMeta = [
     `${tasks.length} 个任务`,
     trackFormatSummary,
     ...trackSourceSummary.split(' · ').filter(Boolean),
@@ -467,10 +448,8 @@ export const TaskList: React.FC = () => {
       return;
     }
     setInfoBar({
-      title: identityTitle,
-      year: identityYear,
-      badges: identityBadges,
-      localChips: identityLocalChips,
+      title: taskBarTitle,
+      localChips: taskBarMeta,
       actions: (
         <>
           {pendingCancelUpload ? (
@@ -510,6 +489,9 @@ export const TaskList: React.FC = () => {
             <Plus className="h-4 w-4" />
             继续添加
           </button>
+          <span data-testid="ingest-primary-cta" className="inline-flex">
+            <WorkflowContinueInFlow className="min-w-[8.5rem] justify-center" />
+          </span>
           {pendingDeleteId === activeTask.id ? (
             <>
               <button
@@ -544,10 +526,7 @@ export const TaskList: React.FC = () => {
     return () => setInfoBar(null);
   }, [
     activeTask,
-    identityTitle,
-    identityYear,
-    identityBadges,
-    identityLocalChips,
+    taskBarMeta,
     tasks.length,
     pendingCancelUpload,
     pendingDeleteId,
@@ -564,11 +543,11 @@ export const TaskList: React.FC = () => {
   ));
 
   return (
-    <div className="v4-panel ds-card relative flex h-full w-full max-w-[760px] flex-col gap-[var(--ds-gap-section)] lg:max-w-none">
+    <div className="v4-panel ds-card relative flex h-full min-h-0 w-full max-w-[760px] flex-col gap-[var(--ds-gap-group)] lg:max-w-none">
 
       {/* Task tab switcher (if multiple tasks exist) */}
       {tasks.length > 1 && (
-        <div className="flex gap-2 pb-2 border-b border-[var(--v4-line)] overflow-x-auto scrollbar-none flex-shrink-0">
+        <div className="flex shrink-0 gap-2 overflow-x-auto border-b border-[var(--v4-line)] pb-2 scrollbar-none">
           {tasks.map(t => {
             const isActive = t.id === activeTask.id;
             return (
@@ -587,8 +566,8 @@ export const TaskList: React.FC = () => {
         </div>
       )}
 
-      {/* Main workspace — hug content; sticky dock without stretching voids */}
-      <div className="relative flex min-h-0 flex-col gap-[var(--ds-gap-section)] overflow-x-visible overflow-y-auto pr-1 select-none scrollbar-thin">
+      {/* Inner pane scrolls; primary CTA lives in the task info bar */}
+      <div className="relative flex min-h-0 flex-1 flex-col gap-[var(--ds-gap-group)] overflow-x-visible overflow-y-auto pr-1 select-none scrollbar-thin">
 
         {needsTitleInput && (
           <div className="relative flex flex-shrink-0 items-center gap-2.5 rounded-lg border border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] px-3 py-2.5">
@@ -897,10 +876,6 @@ export const TaskList: React.FC = () => {
 
         </div>
 
-      </div>
-
-      <div className="mt-auto flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-[var(--v4-line)] pt-4">
-        <WorkflowContinueInFlow className="min-w-[9rem] justify-center" />
       </div>
 
       <input

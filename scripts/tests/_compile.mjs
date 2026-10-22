@@ -15,6 +15,7 @@ export function loadCore() {
     'src/utils/ingestJunk.ts',
     'src/utils/importSummary.ts',
     'src/utils/textEncoding.ts',
+    'src/utils/filmTitles.ts',
   ].filter((file) => existsSync(file));
   execFileSync('npx', ['tsc', ...core, ...extras, '--target', 'ES2022', '--module', 'commonjs', '--moduleResolution', 'node', '--outDir', out, '--skipLibCheck', '--rootDir', 'src', '--lib', 'ES2022,DOM'], { stdio: 'inherit' });
   const req = createRequire(join(out, 'x.js'));

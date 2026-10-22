@@ -8,10 +8,10 @@ import { EpisodeTabs } from '@/components/Workbench/EpisodeTabs';
 import { ReviewCard } from '@/components/Workbench/ReviewCard';
 import { OverviewDrawer } from '@/components/Workbench/OverviewDrawer';
 import { OutputModeControl } from '@/components/Workbench/OutputModeControl';
-import { taskDisplayTitle } from '@/store/useStudioStore';
 import { reviewTaskKey } from '@/core/reviewKey';
 import { reviewNoticeMessage, reviewNoticeTitle } from '@/components/Global/ReviewNoticeSync';
 import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
+import { resolveFilmTitles } from '@/utils/filmTitles';
 import { MergeReviewModal } from '@/components/Workbench/MergeReviewModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { InlineMessageBar } from '@/components/Global/InlineMessageBar';
@@ -289,12 +289,18 @@ export const WorkbenchStep: React.FC = () => {
   }, [isReviewModalOpen, isSettingsOpen, setIsSettingsOpen, showBackConfirm, overviewOpen]);
 
   useEffect(() => {
+    const workTitle = resolveFilmTitles(
+      tmdbData?.title,
+      tmdbData?.originalTitle,
+      activeTaskTitle || customFilename || '字幕调校',
+    ).main;
     setInfoBar({
-      title: tmdbData?.title || customFilename || '字幕调校',
+      // Title + year + ep once in the bar; line count is the only chip (no second title).
+      title: workTitle,
       year: tmdbData?.year || undefined,
+      badges: filenameEpKey ? [filenameEpKey.toUpperCase()] : undefined,
       localChips: [
         lineCountLabel(processedSubs, auxMode),
-        taskDisplayTitle(tmdbData, filenameEpKey) || activeTaskTitle || '未命名字幕',
         tmdbData ? undefined : '未匹配',
       ].filter((item): item is string => Boolean(item)),
       onBack: () => setWorkflowStep(1),
