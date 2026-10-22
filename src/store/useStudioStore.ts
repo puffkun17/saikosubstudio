@@ -7,12 +7,9 @@ import { createStyleSlice } from './slices/style';
 import { createTheaterSlice } from './slices/theater';
 import { createHistorySlice } from './slices/history';
 import { createWorkbenchSlice } from './slices/workbench';
-import {
-  createMediaTmdbSlice,
-  invalidateTmdbRequests,
-  taskDisplayTitle,
-} from './slices/mediaTmdb';
+import { createMediaTmdbSlice, taskDisplayTitle } from './slices/mediaTmdb';
 import { createIngestSlice } from './slices/ingest';
+import { createSessionSlice } from './session';
 
 export {
   CONTEXTUAL_NOTICE_IDS,
@@ -59,72 +56,5 @@ export const useStudioStore = create<StudioState>()((set, get, api) => ({
   ...createWorkbenchSlice(set, get, api),
   ...createMediaTmdbSlice(set, get, api),
   ...createIngestSlice(set, get, api),
-  cancelCurrentUpload: () => {
-    invalidateTmdbRequests();
-    set({
-      workflowStep: 1,
-      isIngestClearing: false,
-      files: { zh: null, en: null, commentary: null },
-      customFilename: '',
-      filenameSource: 'unknown',
-      uploadedFiles: [],
-      tasks: [],
-      selectedTaskId: null,
-      tmdbData: null,
-      tmdbBackdrop: null,
-      tmdbBackdropList: [],
-      tmdbSuggestions: [],
-      tmdbAlternateSuggestion: null,
-      selectedSuggestion: null,
-      tmdbManualOpen: false,
-      isSearchingTmdb: false,
-      processedSubs: null,
-      previewIndex: 0,
-      showAllSubs: false,
-      showAssHint: false,
-      foundAssStyle: null,
-      isProcessing: false,
-      statusNotices: [],
-      detectedAttributions: [],
-      editHistory: [],
-      editFuture: [],
-      mergeReviewCheckedByTask: {},
-      isLightsOff: false
-    });
-    get().addLog("已取消导入", "info");
-  },
-  restartSystem: () => {
-    invalidateTmdbRequests();
-    set({
-      workflowStep: 1,
-      isIngestClearing: false,
-      files: { zh: null, en: null, commentary: null },
-      customFilename: '',
-      filenameSource: 'unknown',
-      uploadedFiles: [],
-      tasks: [],
-      selectedTaskId: null,
-      tmdbData: null,
-      tmdbBackdrop: null,
-      tmdbBackdropList: [],
-      isTemplateLab: false,
-      logs: [],
-      statusNotices: [],
-      previewIndex: 0,
-      processedSubs: null,
-      showAllSubs: false,
-      detectedAttributions: [],
-      editHistory: [],
-      editFuture: [],
-      mergeReviewCheckedByTask: {},
-      isLightsOff: false,
-      isOfficialSubtitle: false,
-      isOriginalWork: false,
-      creditDeclaration: 'none',
-      creditPlacement: 'after-last',
-      creatorCredit: '',
-      appendCreatorCredit: false,
-    });
-    get().addLog("已重启工作流，准备新导入", "info");
-  },
+  ...createSessionSlice(set, get, api),
 }));
