@@ -1,11 +1,12 @@
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
+import { importX } from "eslint-plugin-import-x";
 import { defineConfig, globalIgnores } from "eslint/config";
 
 /**
  * Minimal flat config after dropping eslint-config-next (Switch B).
- * Keeps: framer-motion ban, subtitle layer import bans, react-hooks.
+ * Keeps: framer-motion ban, subtitle layer import bans + no-cycle, react-hooks.
  */
 export default defineConfig([
   globalIgnores([
@@ -60,6 +61,16 @@ export default defineConfig([
           ],
         },
       ],
+    },
+  },
+  {
+    // PR #48 boundary: import/no-cycle on subtitle layers + barrel (via import-x).
+    files: ["src/utils/subtitle/**/*.{ts,tsx}", "src/utils/subtitleCore.ts"],
+    plugins: {
+      import: importX,
+    },
+    rules: {
+      "import/no-cycle": "error",
     },
   },
   {
