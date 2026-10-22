@@ -3,10 +3,13 @@
  * Corpus baseline harness — runs the real merge pipeline over a directory of
  * subtitle samples, records cue-level outputs, and diffs later runs.
  *
- * Recording format version 2 adds numeric start/end (ms), per-file input cue
- * counts, and a loss measure (input cues whose cleaned text is absent from
- * output within a ±2s window). Older recordings (no format / format ≠ 2) fail
- * compare with a re-record instruction — they never silently pass.
+ * Recording format version 3 runs each dual-track sample through three paths
+ * (standard mergeSubtitles, industrial alignSubtitlesIndustrial, and
+ * executeMergeJob with mode:'standard' so auto industrial upgrade can fire),
+ * plus single-file bilingual via executeMergeJob. Non-deterministic fields
+ * (e.g. elapsedMs from Date.now) are never recorded. Older recordings
+ * (format ≠ 3) fail compare with a re-record instruction — they never
+ * silently pass.
  *
  * Usage (Mac / Linux):
  *   # CI / synthetic (committed samples + baselines under the repo):
@@ -22,7 +25,7 @@
  *   node scripts/corpus-baseline.mjs --dir … --baseline … --record
  *
  * Pairing: each sample folder needs zh.(srt|ass) + one of en|ja|ko|fr|es|pt.(srt|ass),
- * or a single bilingual.(srt|ass).
+ * or a single bilingual.(srt|ass). Sample dir layout is unchanged across formats.
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -45,10 +48,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..');
 
 /** Bump when the recording JSON shape or compare semantics change. */
-const FORMAT = 2;
+const FORMAT = 3;
 
 /** Time window (ms) for text-presence loss checks — mirrors runCorpus ±2s. */
 const LOSS_TIME_SLACK_MS = 2000;
+
+/** Dual-track algorithm modes recorded per sample (format 3). */
+const DUAL_MODES = ['standard', 'industrial', 'auto'];
 
 function parseArgs(argv) {
   const out = { dir: null, baseline: null, record: false, help: false };
@@ -84,6 +90,7 @@ function loadMergeCore() {
     'src/utils/exportPresets.ts',
     'src/utils/hdrPresets.ts',
     'src/utils/textEncoding.ts',
+    'src/core/mergeJob.ts',
   ];
   execFileSync(
     'npx',
@@ -100,11 +107,13 @@ function loadMergeCore() {
     ],
     { stdio: 'inherit', cwd: REPO_ROOT },
   );
-  const core = createRequire(join(out, 'x.js'))('./utils/subtitleCore.js');
+  const requireFromOut = createRequire(join(out, 'x.js'));
+  const core = requireFromOut('./utils/subtitleCore.js');
+  const mergeJob = requireFromOut('./core/mergeJob.js');
   const cleanup = () => {
     try { rmSync(out, { recursive: true, force: true }); } catch { /* ignore */ }
   };
-  return { core, cleanup };
+  return { core, mergeJob, cleanup };
 }
 
 function pickTrack(dir, lang) {
@@ -211,9 +220,80 @@ function diffCues(actualCues, expectedCues) {
   return changes;
 }
 
+/** Build a deterministic per-mode recording (no elapsedMs / wall-clock fields). */
+function modePayload(rows, usedMode, inputTracks, helpers) {
+  const { timeToMs, cleanSubtitleContent } = helpers;
+  const loss = measureLoss(inputTracks, rows, { timeToMs, cleanSubtitleContent });
+  return {
+    usedMode,
+    rowCount: rows.length,
+    loss: {
+      lost: loss.lost,
+      perFile: loss.perFile,
+    },
+    cues: rows.map((row, i) => cueFingerprint(row, i, timeToMs)),
+  };
+}
+
 function sampleSummary(payload) {
   const inCues = (payload.inputs || []).reduce((n, t) => n + (t.cues || 0), 0);
-  return `in=${inCues} out=${payload.rowCount} lost=${payload.loss?.lost ?? 0}`;
+  const modeParts = Object.entries(payload.modes || {}).map(([name, m]) => {
+    const used = m.usedMode && m.usedMode !== name ? `→${m.usedMode}` : '';
+    return `${name}${used}:out=${m.rowCount}/lost=${m.loss?.lost ?? 0}`;
+  });
+  return `in=${inCues} ${modeParts.join(' ')}`;
+}
+
+function compareMode(sample, modeName, actual, expected) {
+  let failed = false;
+  if (!expected) {
+    console.error(`FAIL ${sample}/${modeName}: missing in baseline`);
+    return true;
+  }
+  if (!actual) {
+    console.error(`FAIL ${sample}/${modeName}: missing in actual run`);
+    return true;
+  }
+  if (expected.usedMode !== actual.usedMode) {
+    console.error(
+      `FAIL ${sample}/${modeName}: usedMode ${actual.usedMode} !== ${expected.usedMode}`,
+    );
+    failed = true;
+  }
+  if (expected.rowCount !== actual.rowCount) {
+    console.error(
+      `FAIL ${sample}/${modeName}: rowCount ${actual.rowCount} !== ${expected.rowCount}`,
+    );
+    failed = true;
+  }
+  const expectedLost = expected.loss?.lost ?? 0;
+  if ((actual.loss?.lost ?? 0) > expectedLost) {
+    console.error(
+      `FAIL ${sample}/${modeName}: loss increased ${actual.loss.lost} > ${expectedLost} (recorded)`,
+    );
+    failed = true;
+  }
+  const changes = diffCues(actual.cues || [], expected.cues || []);
+  if (changes.length > 0) {
+    console.error(`FAIL ${sample}/${modeName}: ${changes.length} cue change(s)`);
+    for (const c of changes.slice(0, 8)) {
+      if (c.kind === 'changed') {
+        const timing =
+          c.expected.start !== c.actual.start || c.expected.end !== c.actual.end
+            ? ` start/end ${c.expected.start}–${c.expected.end} → ${c.actual.start}–${c.actual.end}`
+            : '';
+        console.error(`  cue ${c.index}: text/ts/type/timing changed${timing}`);
+        console.error(`    was: ${JSON.stringify(c.expected.text)} @ ${c.expected.ts}`);
+        console.error(`    now: ${JSON.stringify(c.actual.text)} @ ${c.actual.ts}`);
+      } else {
+        console.error(`  cue ${c.index}: ${c.kind}`);
+      }
+    }
+    if (changes.length > 8) console.error(`  … +${changes.length - 8} more`);
+    console.error(`  json: ${firstDiff(actual, expected).split('\n').slice(0, 4).join('\n  ')}`);
+    failed = true;
+  }
+  return failed;
 }
 
 function main() {
@@ -226,7 +306,11 @@ Env:
   CORPUS_BASELINE_DIR   recording root (default: <dir>/baseline for synthetic;
                         required + must be outside the repo for a real corpus)
 
-Recording format: ${FORMAT} (numeric start/end ms, inputs[], loss).
+Recording format: ${FORMAT}
+  Dual samples → modes.standard / modes.industrial / modes.auto
+    (auto = executeMergeJob mode:'standard', may upgrade to industrial)
+  Bilingual samples → modes.bilingual (executeMergeJob bilingualSingle)
+  Non-deterministic fields (elapsedMs, etc.) are omitted from recordings.
 `);
     process.exit(0);
   }
@@ -256,24 +340,31 @@ Recording format: ${FORMAT} (numeric start/end ms, inputs[], loss).
     process.exit(2);
   }
 
-  const { core, cleanup } = loadMergeCore();
+  const { core, mergeJob, cleanup } = loadMergeCore();
   const {
     parseSubtitle,
     alignSubtitlesIndustrial,
-    normalizeSingleBilingualRows,
+    mergeSubtitles,
     decodeBuffer,
     timeToMs,
     cleanSubtitleContent,
   } = core;
+  const { executeMergeJob } = mergeJob;
 
   assert.equal(typeof timeToMs, 'function', 'subtitleCore.timeToMs missing');
   assert.equal(typeof cleanSubtitleContent, 'function', 'subtitleCore.cleanSubtitleContent missing');
+  assert.equal(typeof mergeSubtitles, 'function', 'subtitleCore.mergeSubtitles missing');
+  assert.equal(typeof executeMergeJob, 'function', 'mergeJob.executeMergeJob missing');
+
+  const helpers = { timeToMs, cleanSubtitleContent };
 
   const readTrack = (file) => {
     const buf = readFileSync(file);
     if (typeof decodeBuffer === 'function') return decodeBuffer(buf).text;
     return buf.toString('utf8');
   };
+
+  const noopEmit = () => {};
 
   try {
     mkdirSync(baselineDir, { recursive: true });
@@ -290,8 +381,9 @@ Recording format: ${FORMAT} (numeric start/end ms, inputs[], loss).
       const enFile = ['en', 'ja', 'ko', 'fr', 'es', 'pt'].map((lang) => pickTrack(sampleDir, lang)).find(Boolean);
       const bilingualFile = pickTrack(sampleDir, 'bilingual');
 
-      let rows;
-      let mode;
+      /** @type {Record<string, ReturnType<typeof modePayload>>} */
+      let modes = {};
+      let pairing;
       /** @type {{ file: string, rows: unknown[] }[]} */
       let inputTracks = [];
 
@@ -300,35 +392,59 @@ Recording format: ${FORMAT} (numeric start/end ms, inputs[], loss).
         const enText = readTrack(enFile);
         const zhRows = parseSubtitle(zhText);
         const enRows = parseSubtitle(enText);
-        rows = alignSubtitlesIndustrial(zhRows, enRows);
-        mode = 'dual';
+        pairing = 'dual';
         inputTracks = [
           { file: basename(zhFile), rows: zhRows },
           { file: basename(enFile), rows: enRows },
         ];
+
+        const standardRows = mergeSubtitles(zhRows, enRows);
+        modes.standard = modePayload(standardRows, 'standard', inputTracks, helpers);
+
+        const industrialRows = alignSubtitlesIndustrial(zhRows, enRows);
+        modes.industrial = modePayload(industrialRows, 'industrial', inputTracks, helpers);
+
+        // Real product path: start standard; may auto-upgrade to industrial.
+        // elapsedMs (Date.now) is intentionally dropped — never recorded.
+        const autoResult = executeMergeJob(
+          {
+            zhText,
+            enText,
+            commentaryText: '',
+            mode: 'standard',
+            bilingualSingle: false,
+          },
+          noopEmit,
+        );
+        modes.auto = modePayload(autoResult.rows, autoResult.usedMode, inputTracks, helpers);
       } else if (bilingualFile) {
         const biText = readTrack(bilingualFile);
         const biRows = parseSubtitle(biText);
-        rows = normalizeSingleBilingualRows(biRows);
-        mode = 'bilingual';
+        pairing = 'bilingual';
         inputTracks = [{ file: basename(bilingualFile), rows: biRows }];
+
+        const biResult = executeMergeJob(
+          {
+            zhText: biText,
+            enText: '',
+            commentaryText: '',
+            mode: 'standard',
+            bilingualSingle: true,
+          },
+          noopEmit,
+        );
+        modes.bilingual = modePayload(biResult.rows, biResult.usedMode, inputTracks, helpers);
       } else {
         console.warn(`skip ${sample}: no zh+secondary or bilingual track`);
         continue;
       }
 
-      const loss = measureLoss(inputTracks, rows, { timeToMs, cleanSubtitleContent });
       const payload = {
         format: FORMAT,
         sample,
-        mode,
-        rowCount: rows.length,
+        pairing,
         inputs: inputTracks.map((t) => ({ file: t.file, cues: t.rows.length })),
-        loss: {
-          lost: loss.lost,
-          perFile: loss.perFile,
-        },
-        cues: rows.map((row, i) => cueFingerprint(row, i, timeToMs)),
+        modes,
       };
       const outFile = join(baselineDir, `${sample}.json`);
       const summary = sampleSummary(payload);
@@ -360,38 +476,25 @@ Recording format: ${FORMAT} (numeric start/end ms, inputs[], loss).
 
       let sampleFailed = false;
 
-      if (expected.rowCount !== payload.rowCount) {
-        console.error(`FAIL ${sample}: rowCount ${payload.rowCount} !== ${expected.rowCount}`);
+      if (expected.pairing !== payload.pairing) {
+        console.error(`FAIL ${sample}: pairing ${payload.pairing} !== ${expected.pairing}`);
         sampleFailed = true;
       }
 
-      const expectedLost = expected.loss?.lost ?? 0;
-      if (payload.loss.lost > expectedLost) {
+      const expectedModeNames = Object.keys(expected.modes || {}).sort();
+      const actualModeNames = Object.keys(payload.modes).sort();
+      if (JSON.stringify(expectedModeNames) !== JSON.stringify(actualModeNames)) {
         console.error(
-          `FAIL ${sample}: loss increased ${payload.loss.lost} > ${expectedLost} (recorded)`,
+          `FAIL ${sample}: modes [${actualModeNames.join(',')}] !== [${expectedModeNames.join(',')}]`,
         );
         sampleFailed = true;
       }
 
-      const changes = diffCues(payload.cues, expected.cues || []);
-      if (changes.length > 0) {
-        console.error(`FAIL ${sample}: ${changes.length} cue change(s)`);
-        for (const c of changes.slice(0, 8)) {
-          if (c.kind === 'changed') {
-            const timing =
-              c.expected.start !== c.actual.start || c.expected.end !== c.actual.end
-                ? ` start/end ${c.expected.start}–${c.expected.end} → ${c.actual.start}–${c.actual.end}`
-                : '';
-            console.error(`  cue ${c.index}: text/ts/type/timing changed${timing}`);
-            console.error(`    was: ${JSON.stringify(c.expected.text)} @ ${c.expected.ts}`);
-            console.error(`    now: ${JSON.stringify(c.actual.text)} @ ${c.actual.ts}`);
-          } else {
-            console.error(`  cue ${c.index}: ${c.kind}`);
-          }
+      const modeNames = pairing === 'dual' ? DUAL_MODES : ['bilingual'];
+      for (const modeName of modeNames) {
+        if (compareMode(sample, modeName, payload.modes[modeName], expected.modes?.[modeName])) {
+          sampleFailed = true;
         }
-        if (changes.length > 8) console.error(`  … +${changes.length - 8} more`);
-        console.error(`  json: ${firstDiff(payload, expected).split('\n').slice(0, 4).join('\n  ')}`);
-        sampleFailed = true;
       }
 
       if (sampleFailed) {
