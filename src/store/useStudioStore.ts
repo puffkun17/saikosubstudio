@@ -7,9 +7,9 @@ import { DEFAULT_EXPORT_PRESET_ID, getExportPreset, type ExportPresetId } from '
 import { DEFAULT_HDR_LEVEL, isHdrLevelId, type HdrLevelId } from '../utils/hdrPresets';
 import { clearAllLocalData, deleteTask, listMerged, listTasks, purgeExpiredSources, purgeExpiredTasks, putHistoryEntry } from '../core/taskStore';
 import { decideSameEpisode, type EpisodeCandidate } from '../core/sameEpisode';
-import { derivedFileId, historyIdFor, identityFromStorageKey, mintTaskId, workIdentityFromFileName } from '../core/identity';
-import { detectSdhByContent, splitAssByLanguageStyles, titleKeyOf } from '../core/recognition';
-import { detectLanguageByContent } from '../utils/subtitleCore';
+import { historyIdFor, identityFromStorageKey, mintTaskId, workIdentityFromFileName } from '../core/identity';
+import { titleKeyOf } from '../core/recognition';
+import { executeRecognitionJob } from '../core/recognitionJob';
 import { reviewTaskKey } from '../core/reviewKey';
 import { classifyLineKind } from '../core/lineKinds';
 import { applyLineKindOverride } from '../core/workbenchReview';
@@ -20,7 +20,7 @@ import type { AlignmentFallbackInfo } from '../utils/subtitleCore';
 import { entryTarget, listStyleEntries, snapshotForSave, stripContent, type StyleTemplateRecord } from '../utils/styleLibrary';
 import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, parseSubtitle, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity, isMainPathSecondaryLanguage, isEnglishSecondaryLanguage, isLatinSecondaryLanguage, mainPathPrimaryRank, mainPathSecondaryRank, estimateSubtitleCueCount, isSparseSecondaryTrack, measureMergeOrphanRate, isSdhOrCcSubtitleFilename } from '../utils/subtitleCore';
 import { assessTvYearFit, parseSeasonNumber, parseYearToken, shouldDemoteBySeasonSpan } from '../utils/tmdbCandidateFit';
-import { estimateJsonBytes, readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
+import { readJsonStorage, writeJsonStorage } from '../utils/localPersistence';
 import { tmdbFetch } from '../services/tmdb';
 import {
   compareTmdbRank,
@@ -29,15 +29,18 @@ import {
   rankTmdbCandidates,
 } from '../utils/tmdbSearchRank';
 
-const LIBRARY_STORAGE_KEY = 'nexus_subtitle_library';
+/** Stale keys from pre-downtime builds — cleared on boot, never hydrated. */
+const STALE_LOCAL_KEYS = [
+  'nexus_subtitle_library',
+  'saiko_tmdb_api_key',
+] as const;
 const STYLE_STORAGE_KEY = 'nexus_subtitle_styles_v4';
-const MAX_LIBRARY_ITEMS = 12;
-const MAX_LIBRARY_BYTES = 4_000_000;
 
-const fitLibraryToStorageBudget = (items: LibraryItem[]): LibraryItem[] => {
-  const limited = items.slice(0, MAX_LIBRARY_ITEMS);
-  while (limited.length > 1 && estimateJsonBytes(limited) > MAX_LIBRARY_BYTES) limited.pop();
-  return limited;
+const clearStaleLocalStorage = () => {
+  if (typeof localStorage === 'undefined') return;
+  for (const key of STALE_LOCAL_KEYS) {
+    try { localStorage.removeItem(key); } catch { /* ignore */ }
+  }
 };
 
 /**
@@ -408,7 +411,12 @@ export interface StudioState {
   setHdr: (enabled: boolean, level?: HdrLevelId) => void;
   deleteFromLibrary: (id: string) => void;
   loadFromLibrary: (item: LibraryItem) => void;
-  processFiles: (files: Subfile[]) => void;
+  /**
+   * Group/bind imported files into tasks. Recognition (ASS split / SDH) is sync in-thread here;
+   * UI callers should `await runRecognitionJob` then pass `{ recognized: true }` so the Worker
+   * did the heavy work off the main thread (ceremony timing unchanged).
+   */
+  processFiles: (files: Subfile[], opts?: { recognized?: boolean }) => void;
   runSubtitleMerge: () => void;
   /** Workbench episode tabs: keep this episode's result, open the other one (saved result or fresh merge). */
   switchEpisode: (taskId: string) => void;
@@ -461,7 +469,6 @@ const loadHistoryFromIdb = async (): Promise<LibraryItem[] | null> => {
         customStyle: (extra.customStyle ?? useStudioStore.getState().customStyle) as StyleSettings,
       }];
     });
-    try { localStorage.removeItem(LIBRARY_STORAGE_KEY); } catch { /* ignore */ }
     return list;
   } catch {
     return null;
@@ -482,27 +489,6 @@ const episodeCandidateOf = (file: Subfile): EpisodeCandidate => {
   episodeCandidateCache.set(file, cand);
   return cand;
 };
-
-const expandRecognizedFiles = (files: Subfile[]): Subfile[] => files.flatMap((file) => {
-  const base = { ...file };
-  if (/\.(ass|ssa)$/i.test(file.name) && !file.derivedFrom) {
-    const split = splitAssByLanguageStyles(file.text);
-    // en pairs are already handled by the bilingual-single path; ja/ko were misread as pure Japanese.
-    if (split && split.secondary.lang !== 'en') {
-      const stem = file.name.replace(/\.(ass|ssa)$/i, '');
-      const secondaryLang = split.secondary.lang;
-      const zhLang = detectLanguageByContent(parseSubtitle(split.primary.text).slice(0, 80).map((r) => r.text).join('\n'));
-      return [
-        { ...base, id: derivedFileId(file.id, 'zh'), name: `${stem}.简中.ass`, text: split.primary.text, lang: zhLang === 'zh-TW' ? 'zh-TW' : 'zh-CN', isBilingual: false, languagePair: undefined, derivedFrom: { name: file.name, styles: split.primary.styles } },
-        { ...base, id: derivedFileId(file.id, secondaryLang), name: `${stem}.${secondaryLang === 'ja' ? '日文' : 'kor'}.ass`, text: split.secondary.text, lang: secondaryLang, isBilingual: false, languagePair: undefined, derivedFrom: { name: file.name, styles: split.secondary.styles } },
-      ];
-    }
-  }
-  if (isEnglishSecondaryLanguage(file.lang) && !isSdhOrCcSubtitleFilename(file.name) && detectSdhByContent(parseSubtitle(file.text)).isSdh) {
-    return [{ ...base, isSdh: true }];
-  }
-  return [base];
-});
 
 /** 任务显示名（第二幕底栏、标签）：中文片名 + 集号，例如「幸运女神 S01E01」。不是文件名。 */
 export const taskDisplayTitle = (meta: { title: string; originalTitle?: string } | null | undefined, episodeKey?: string): string =>
@@ -1836,7 +1822,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   initializeLibrary: () => {
     if (typeof window === 'undefined') return;
-    // Planned downtime: do not hydrate history from legacy localStorage; IDB schema wipe owns continuity.
+    clearStaleLocalStorage();
     try {
       const storedPreset = getExportPreset(localStorage.getItem('saiko_export_preset'));
       const storedHdr = localStorage.getItem('saiko_export_hdr') || '';
@@ -2168,7 +2154,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     } catch {
       /* fall through: still clear the legacy key */
     }
-    try { localStorage.removeItem(LIBRARY_STORAGE_KEY); } catch { /* ignore */ }
+    clearStaleLocalStorage();
     set({ libraryList: [] });
     get().addLog('已清空本机历史（任务、合并结果与源字幕）', 'success');
   },
@@ -2224,10 +2210,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     get().addLog(`已载入字幕库项目: ${item.name}`, "success");
   },
 
-  processFiles: (incomingFiles) => {
-    // Recognition pre-pass (core/recognition): split zh+ja/ko style-paired ASS into two virtual
-    // tracks, flag SDH by content. Runs after decode/parse, before grouping.
-    const newFiles = expandRecognizedFiles(incomingFiles);
+  processFiles: (incomingFiles, opts) => {
+    // Recognition pre-pass (ASS style-split + SDH). Prefer Worker via runRecognitionJob in UI,
+    // then pass { recognized: true }. In-thread path keeps Node regression / tests sync.
+    const newFiles = opts?.recognized
+      ? incomingFiles
+      : executeRecognitionJob(incomingFiles).files as Subfile[];
     set(state => {
       // 1. Add new files to uploadedFiles list, checking for duplicates
       const updatedUploadedFiles = [...state.uploadedFiles];

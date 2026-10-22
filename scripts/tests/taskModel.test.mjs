@@ -60,14 +60,12 @@ test('stage transitions are guarded', () => {
   assert.equal(task.stage, 'merged');
 });
 
-test('retention: 30 days default; legacy archive item maps to a finished task', () => {
+test('retention: 30 days default; schema upgrade discards prior stores', () => {
   const now = Date.UTC(2026, 9, 13);
   assert.equal(ts.expiryFor(now) - now, 30 * 86_400_000);
   assert.equal(ts.isExpired({ expiresAt: now }, now), true);
-  const { task, rows } = ts.legacyItemToTask({ id: '42', name: 'The.Bear.2022.S01E01', date: '2026-10-01T00:00:00Z', subs: [{ ts: 'x', text: 'y', index: 0 }] }, now);
-  assert.equal(task.id, 'legacy_42');
-  assert.equal(task.name.state, 'locked');
-  assert.equal(rows.length, 1);
+  assert.equal(ts.shouldDiscardStoresOnUpgrade(1, ts.DB_VERSION), true);
+  assert.equal(ts.shouldDiscardStoresOnUpgrade(0, ts.DB_VERSION), false);
 });
 
 test('review reasons: stable codes, de-duplicated', () => {
