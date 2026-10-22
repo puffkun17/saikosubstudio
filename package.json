@@ -11,7 +11,11 @@
     "deploy": "vinext-cloudflare deploy --config dist/server/wrangler.json",
     "dev:next": "next dev",
     "test:unit": "node --test scripts/tests/*.test.mjs",
-    "test": "npm run test:core && npm run test:unit"
+    "test": "npm run test:core && npm run test:unit",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium",
+    "test:corpus": "node scripts/corpus-baseline.mjs",
+    "test:corpus:record": "node scripts/corpus-baseline.mjs --record"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -36,6 +40,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.63.1",
+    "@playwright/test": "^1.55.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^22",
     "@types/react": "^19",
@@ -45,6 +50,7 @@
     "@vitejs/plugin-rsc": "^0.5.36",
     "eslint": "^9",
     "eslint-config-next": "^16",
+    "playwright": "^1.55.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vercel": "47.0.4",
