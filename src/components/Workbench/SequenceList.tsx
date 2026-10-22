@@ -418,7 +418,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
                 ${sub.index > 30 ? 'timeline-row-deferred' : ''}`;
 
               return (
-                <React.Fragment key={sub.index}>
+                <React.Fragment key={sub.rowId ?? sub.index}>
                 <div
                   id={`wb-row-${rowIndex}`}
                   data-wb-row={rowIndex}

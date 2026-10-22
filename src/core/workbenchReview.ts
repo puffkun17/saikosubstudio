@@ -3,6 +3,7 @@
  * Primary group 「待复核」= merge review queue (structure + other-suspect).
  * Secondary group 「附加字幕」= screen / credit / sound (SDH) line kinds.
  */
+import { rowStableKey } from './identity';
 import { classifyLineKind, type LineKind, type SubRow } from '../utils/subtitleCore';
 import {
   buildMergeReviewQueue,
@@ -171,7 +172,7 @@ export function buildPagerItems(
   rows.forEach((row, arrayIndex) => {
     if (classifyLineKind(row) !== target) return;
     out.push({
-      id: `${focus}-${row.index}`,
+      id: `${focus}-${rowStableKey(row)}`,
       arrayIndex,
       arrayIndexes: [arrayIndex],
       lineNumbers: [row.index],

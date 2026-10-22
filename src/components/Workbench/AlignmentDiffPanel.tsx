@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Captions, Check, ChevronDown, ChevronUp, FileSearch2, LocateFixed, MoveHorizontal, Music2, Rows3, SplitSquareVertical, Star, Volume2 } from 'lucide-react';
 import { describeAuxiliaryReason, type AlignmentProvenance, type SubRow } from '@/utils/subtitleCore';
+import { rowStableKey } from '@/core/identity';
 import { arrayIndexOfLine, classifyLineKind } from '@/core/lineKinds';
 import { reviewTaskKey } from '@/core/reviewKey';
 import {
@@ -146,7 +147,7 @@ const buildAuxItems = (rows: SubRow[], lyricPosition: 'top' | 'bottom'): Unified
     const meta = AUX_KIND_MAP[lineKind];
     const joiner = lineKind === 'lyrics' ? ' / ' : ' ';
     items.push({
-      id: `${meta.kind}-${row.index}`,
+      id: `${meta.kind}-${rowStableKey(row)}`,
       kind: meta.kind,
       startMs: parseSubtitleRange(row.ts).startMs,
       locateIndex: row.index,
