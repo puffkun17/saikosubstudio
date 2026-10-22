@@ -4,6 +4,7 @@
  * re-uploads. Subtitle text never leaves the device (IndexedDB only, see taskStore.ts).
  */
 import type { EpisodeRef } from './episode';
+import { mintTaskId, workIdentityFromEpisode } from './identity';
 import type { ReviewReason } from './reviewReasons';
 
 export type SlotRole = 'primary' | 'secondary' | 'commentary';
@@ -65,13 +66,14 @@ export interface Task {
   credits?: import('./credits').CreditPlan;
 }
 
-let seq = 0;
-export const newTaskId = (now = Date.now()) => `t_${now.toString(36)}_${(seq++).toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+/** Deterministic id from title + episode (see core/identity). `now` kept for call-site compat. */
+export const newTaskId = (fallbackTitle: string, episode: EpisodeRef, _now = Date.now()) =>
+  mintTaskId(workIdentityFromEpisode(fallbackTitle, episode));
 
 export function createTask(input: { episode: EpisodeRef; fallbackTitle: string; slots?: SubtitleSlot[]; now?: number }): Task {
   const now = input.now ?? Date.now();
   const task: Task = {
-    id: newTaskId(now),
+    id: newTaskId(input.fallbackTitle, input.episode, now),
     createdAt: now,
     updatedAt: now,
     stage: 'recognized',

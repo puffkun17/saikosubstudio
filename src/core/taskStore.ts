@@ -3,13 +3,19 @@
  * - `sources`: raw subtitle text per slot, expires after RETENTION_DAYS (default 30).
  * - `tasks`: task records (no subtitle text), history for the later 历史任务 UI.
  * - `clearAllLocalData()`: the one-click clear API.
- * - `migrateLegacyLibrary()`: imports the old localStorage 归档 (nexus_subtitle_library) as finished tasks.
+ *
+ * Schema upgrades are a clean break (planned downtime): on version mismatch all
+ * object stores are dropped and recreated empty — no row migration.
  * Nothing here talks to the network.
  */
 import type { Task } from './taskModel';
 
 export const DB_NAME = 'saiko-tasks';
-export const DB_VERSION = 1;
+/**
+ * v3: stable typed identity (core/identity). Prior versions (v1–v2) are discarded
+ * wholesale on upgrade — empty history, no errors.
+ */
+export const DB_VERSION = 3;
 export const RETENTION_DAYS_DEFAULT = 30;
 const DAY = 86_400_000;
 
@@ -31,20 +37,50 @@ export const expiryFor = (storedAt: number, retentionDays = RETENTION_DAYS_DEFAU
 type IDBF = IDBFactory;
 const factory = (): IDBF | null => (typeof indexedDB === 'undefined' ? null : indexedDB);
 
+/** Pure: true when opening a newer schema should wipe prior stores. */
+export function shouldDiscardStoresOnUpgrade(oldVersion: number, newVersion: number): boolean {
+  return oldVersion > 0 && oldVersion < newVersion;
+}
+
+/** Create the current object-store layout on an empty database. */
+export function createTaskStores(db: IDBDatabase): void {
+  if (!db.objectStoreNames.contains('tasks')) {
+    db.createObjectStore('tasks', { keyPath: 'id' }).createIndex('updatedAt', 'updatedAt');
+  }
+  if (!db.objectStoreNames.contains('sources')) {
+    const s = db.createObjectStore('sources', { keyPath: 'id' });
+    s.createIndex('taskId', 'taskId');
+    s.createIndex('expiresAt', 'expiresAt');
+  }
+  if (!db.objectStoreNames.contains('merged')) db.createObjectStore('merged', { keyPath: 'taskId' });
+  if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
+}
+
+/**
+ * Upgrade handler: discard all stores when oldVersion &lt; newVersion, then recreate.
+ * Returns whether prior data was discarded. Safe on a fresh DB (oldVersion === 0).
+ */
+export function applySchemaUpgrade(
+  db: IDBDatabase,
+  oldVersion: number,
+  newVersion: number = DB_VERSION,
+): { discarded: boolean } {
+  const discarded = shouldDiscardStoresOnUpgrade(oldVersion, newVersion);
+  if (discarded) {
+    for (const name of Array.from(db.objectStoreNames)) {
+      db.deleteObjectStore(name);
+    }
+  }
+  createTaskStores(db);
+  return { discarded };
+}
+
 function open(idb: IDBF | null = factory()): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (!idb) return reject(new Error('IndexedDB unavailable'));
     const req = idb.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains('tasks')) db.createObjectStore('tasks', { keyPath: 'id' }).createIndex('updatedAt', 'updatedAt');
-      if (!db.objectStoreNames.contains('sources')) {
-        const s = db.createObjectStore('sources', { keyPath: 'id' });
-        s.createIndex('taskId', 'taskId');
-        s.createIndex('expiresAt', 'expiresAt');
-      }
-      if (!db.objectStoreNames.contains('merged')) db.createObjectStore('merged', { keyPath: 'taskId' });
-      if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
+    req.onupgradeneeded = (event) => {
+      applySchemaUpgrade(req.result, event.oldVersion, DB_VERSION);
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -150,12 +186,12 @@ export async function storageEstimate(): Promise<{ usage?: number; quota?: numbe
   try { return (await navigator.storage?.estimate?.()) || {}; } catch { return {}; }
 }
 
-/* ---------- legacy archive migration (localStorage → IndexedDB) ---------- */
+/* ---------- legacy archive helpers (unused on load; candidates for deletion) ---------- */
 
 export const LEGACY_LIBRARY_KEY = 'nexus_subtitle_library'; // = LIBRARY_STORAGE_KEY in useStudioStore
 export interface LegacyLibraryItem { id: string; name: string; date: string; subs: unknown[] }
 
-/** Pure mapping, unit-tested. Legacy items become finished tasks with their merged rows. */
+/** Pure mapping. Legacy localStorage items → finished tasks (not called on boot anymore). */
 export function legacyItemToTask(item: LegacyLibraryItem, now = Date.now()): { task: Task; rows: unknown[] } {
   const parsedDate = Date.parse(item.date);
   const ts = Number.isFinite(parsedDate) ? parsedDate : now;
@@ -174,7 +210,10 @@ export function legacyItemToTask(item: LegacyLibraryItem, now = Date.now()): { t
   return { task, rows: Array.isArray(item.subs) ? item.subs : [] };
 }
 
-/** Idempotent: records a meta flag; the old localStorage entry is kept until the UI confirms removal. */
+/**
+ * @deprecated Planned-downtime update no longer imports the old localStorage archive.
+ * Kept for unit tests / manual recovery; safe to delete in a later cleanup.
+ */
 export async function migrateLegacyLibrary(storage: Pick<Storage, 'getItem'> | null = typeof localStorage === 'undefined' ? null : localStorage): Promise<number> {
   if (!storage) return 0;
   const db = await open();
