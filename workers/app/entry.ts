@@ -3,6 +3,9 @@
  * No vinext — CSP / cache / redirects live here.
  */
 
+import { handleFeedbackPost } from "./routes/feedback";
+import { handleTmdbGet } from "./routes/tmdb";
+
 const CANONICAL_HOST = "dualsubs.quest";
 
 const CONTENT_SECURITY_POLICY = [
@@ -14,6 +17,7 @@ const CONTENT_SECURITY_POLICY = [
   "img-src 'self' data: blob: https://image.tmdb.org",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
+  // wasm-unsafe-eval: modern browsers; unsafe-eval: WASM fallback; cloudflareinsights: analytics
   "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' https://static.cloudflareinsights.com",
   "worker-src 'self' blob:",
   "connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com https://static.cloudflareinsights.com",
@@ -29,9 +33,12 @@ const SECURITY_HEADERS: Record<string, string> = {
 
 export type RateLimiter = { limit: (opts: { key: string }) => Promise<{ success: boolean }> };
 
+/** Minimal Fetcher shape (Workers ASSETS / service bindings). */
+export type AssetFetcher = { fetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> };
+
 export type Env = {
-  ASSETS: Fetcher;
-  FEEDBACK_MAILER?: Fetcher;
+  ASSETS: AssetFetcher;
+  FEEDBACK_MAILER?: AssetFetcher;
   TMDB_API_KEY?: string;
   FEEDBACK_RATE_LIMITER?: RateLimiter;
   TMDB_RATE_LIMITER?: RateLimiter;
@@ -63,13 +70,23 @@ function withSecurityHeaders(response: Response, { html }: { html: boolean }): R
   });
 }
 
-/** Map /about and /feedback (and trailing-slash variants) to MPA HTML entries. */
+function isHtmlPath(pathname: string): boolean {
+  return (
+    pathname === "/"
+    || pathname === "/about"
+    || pathname === "/about/"
+    || pathname === "/feedback"
+    || pathname === "/feedback/"
+    || pathname.endsWith(".html")
+  );
+}
+
+/** Map /about and /feedback (no trailing slash) to MPA directory index HTML. */
 function assetRequestFor(request: Request): Request {
   const url = new URL(request.url);
   let path = url.pathname;
   if (path === "/about") path = "/about/";
   else if (path === "/feedback") path = "/feedback/";
-  else if (path === "") path = "/";
   if (path !== url.pathname) {
     url.pathname = path;
     return new Request(url.toString(), request);
@@ -78,33 +95,26 @@ function assetRequestFor(request: Request): Request {
 }
 
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const redirect = canonicalRedirect(request);
     if (redirect) return redirect;
 
     const url = new URL(request.url);
 
-    // API routes are wired in a follow-up commit; stub 404 until then.
-    if (url.pathname === "/api/feedback" || url.pathname.startsWith("/api/tmdb/")) {
-      return new Response(JSON.stringify({ error: "API not yet wired" }), {
-        status: 501,
-        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-      });
+    if (url.pathname === "/api/feedback") {
+      return handleFeedbackPost(request, env);
+    }
+
+    if (url.pathname.startsWith("/api/tmdb/")) {
+      const path = url.pathname.slice("/api/tmdb/".length);
+      return handleTmdbGet(request, env, path);
     }
 
     const assetResponse = await env.ASSETS.fetch(assetRequestFor(request));
     const type = assetResponse.headers.get("content-type") || "";
-    const isHtml = type.startsWith("text/html") || url.pathname === "/" || url.pathname.endsWith(".html")
-      || url.pathname === "/about" || url.pathname === "/about/"
-      || url.pathname === "/feedback" || url.pathname === "/feedback/";
-    if (isHtml || assetResponse.status === 200) {
-      // Always apply CSP on HTML; hashed assets get long-cache via public/_headers.
-      if (type.startsWith("text/html") || url.pathname.endsWith("/") || url.pathname === "/"
-        || url.pathname === "/about" || url.pathname === "/feedback") {
-        return withSecurityHeaders(assetResponse, { html: true });
-      }
+    if (type.startsWith("text/html") || isHtmlPath(url.pathname)) {
+      return withSecurityHeaders(assetResponse, { html: true });
     }
-    void ctx;
     return assetResponse;
   },
 };
