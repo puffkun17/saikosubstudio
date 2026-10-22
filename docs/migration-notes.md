@@ -1,0 +1,1 @@
+- `src/store/persistence.ts` ↔ `useStudioStore.ts`: `loadHistoryFromIdb` still calls `useStudioStore.getState().customStyle` (circular import; safe because access is deferred until call time).
