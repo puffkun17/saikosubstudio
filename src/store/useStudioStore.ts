@@ -38,6 +38,13 @@ import {
   sortScoredCandidates,
   type TmdbMatchContext,
 } from '../core/tmdbMatch';
+import {
+  mergeResults,
+  prepareCleanQuery,
+  runSearch,
+  scriptPartsFromQuery,
+  uniqueQueries,
+} from '../core/tmdbSearch';
 import type {
   CreditDeclaration,
   CustomTemplate,
@@ -87,9 +94,6 @@ export type {
 let tempShowTimeoutId: ReturnType<typeof setTimeout> | null = null;
 let tmdbSearchRequestId = 0;
 let tmdbSelectionRequestId = 0;
-
-const TMDB_CLIENT_CACHE_TTL_MS = 5 * 60_000;
-const tmdbClientCache = new Map<string, { expiresAt: number; results: TmdbSuggestion[] }>();
 
 const normalizeMediaIdentityTitle = (value: string) => cleanFilename(value).toLowerCase().replace(/\s+/g, ' ').trim();
 
@@ -653,72 +657,30 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         || parseSeasonNumber(get().tmdbManualInput.season);
       const querySource = parsed.hasUsableTitle ? rawSearchStr : (searchTitle || searchStr);
       const searchQueries = buildTmdbSearchQueries(querySource, 12);
-      let cleanQuery = searchQueries[0] || searchStr;
-      if (year) {
-        cleanQuery = cleanQuery.replace(year, '');
-      }
-      // Strip episode patterns like S02E01 so TMDB multi-search works for TV shows
-      cleanQuery = cleanQuery.replace(/\bS\d{1,4}E\d{1,4}\b/gi, '').replace(/\bEP\d{1,4}\b/gi, '');
-      cleanQuery = cleanQuery.replace(/[\s.\-_]+/g, ' ').trim();
+      const cleanQuery = prepareCleanQuery(searchQueries[0] || searchStr, year);
+      const { chnPart, engPart } = scriptPartsFromQuery(cleanQuery);
 
-      const chnMatch = cleanQuery.match(/[\u4e00-\u9fff]+/g);
-      const engMatch = cleanQuery.match(/[a-zA-Z]+/g);
-      const chnPart = chnMatch ? chnMatch.join(' ') : '';
-      const engPart = engMatch ? engMatch.join(' ') : '';
+      const runAutoSearch = (q: string, endpoint: 'multi' | 'tv' | 'movie' = 'multi') =>
+        runSearch({ query: q, endpoint, year, mode: 'auto' });
 
-      const runSearch = async (
-        q: string,
-        endpoint: 'multi' | 'tv' | 'movie' = 'multi',
-      ) => {
-        const yearParam = endpoint === 'movie' && year ? `&year=${year}` : '';
-        const url = `search/${endpoint}?query=${encodeURIComponent(q)}&language=zh-CN${yearParam}`;
-        const cached = typeof window !== 'undefined' ? tmdbClientCache.get(url) : undefined;
-        if (cached && cached.expiresAt > Date.now()) return cached.results;
-        const res = await tmdbFetch(url);
-        if (!res.ok) return [];
-        const data = await res.json() as { results?: TmdbSuggestion[] };
-        const searchResults = (data.results || [])
-          .map((item) => ({ ...item, media_type: item.media_type || (endpoint === 'multi' ? item.media_type : endpoint) }))
-          .filter((item) => !item.adult && (item.media_type === 'movie' || item.media_type === 'tv'));
-        if (typeof window !== 'undefined') {
-          tmdbClientCache.set(url, { expiresAt: Date.now() + TMDB_CLIENT_CACHE_TTL_MS, results: searchResults });
-        }
-        return searchResults;
-      };
-
-      const candidateQueries = [...searchQueries, cleanQuery, chnPart, engPart]
-        .map(q => q.trim())
-        .filter((q, index, arr) => q.length >= 2 && arr.indexOf(q) === index);
-      const scoringQueries = [
+      const candidateQueries = uniqueQueries(searchQueries, cleanQuery, chnPart, engPart);
+      const scoringQueries = uniqueQueries(
         parsed.hasUsableTitle ? parsed.title : '',
         fallbackParsed?.hasUsableTitle ? fallbackParsed.title : '',
         searchTitle,
         cleanQuery,
-      ]
-        .map(q => q.trim())
-        .filter((q, index, arr) => q.length >= 2 && arr.indexOf(q) === index);
-
-      const mergeResults = (target: TmdbSuggestion[], incoming: TmdbSuggestion[]) => {
-        const keys = new Set(target.map(item => `${item.media_type}:${item.id}`));
-        incoming.forEach(item => {
-          const key = `${item.media_type}:${item.id}`;
-          if (!keys.has(key)) {
-            target.push(item);
-            keys.add(key);
-          }
-        });
-      };
+      );
 
       const results: TmdbSuggestion[] = [];
       for (const q of candidateQueries) {
         const previousCount = results.length;
         if (isEpisodeQuery) {
-          mergeResults(results, await runSearch(q, 'tv'));
-          mergeResults(results, await runSearch(q, 'multi'));
+          mergeResults(results, await runAutoSearch(q, 'tv'));
+          mergeResults(results, await runAutoSearch(q, 'multi'));
         } else {
-          if (year) mergeResults(results, await runSearch(q, 'movie'));
+          if (year) mergeResults(results, await runAutoSearch(q, 'movie'));
           if (!year || results.length === previousCount) {
-            mergeResults(results, await runSearch(q, 'multi'));
+            mergeResults(results, await runAutoSearch(q, 'multi'));
           }
         }
         if (!isEpisodeQuery && year && q === candidateQueries[0] && results.length > previousCount) break;
@@ -750,7 +712,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             const part1 = words.slice(0, k).join(' ');
             const part2 = words.slice(k).join(' ');
             const colonQuery = `${part1}: ${part2}`;
-            const extraResults = await runSearch(colonQuery, isEpisodeQuery ? 'tv' : 'multi');
+            const extraResults = await runAutoSearch(colonQuery, isEpisodeQuery ? 'tv' : 'multi');
             if (extraResults.length > 0) {
               const existingIds = new Set(results.map((r) => r.id));
               let addedCount = 0;
@@ -921,35 +883,17 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     get().addLog(`正在手动检索 ${type === 'movie' ? '电影' : '剧集'}: ${searchStr}...`, 'info');
     
     try {
-      const runSearchManual = async (q: string) => {
-        // 剧集年份只做客户端筛选：API 的 year 会按首播年硬过滤，会丢掉「发行年/观影年」软匹配。
-        const yearParam = type === 'movie' && year ? `&year=${year}` : '';
-        const url = `search/${type}?query=${encodeURIComponent(q)}&language=zh-CN${yearParam}`;
-        const cached = typeof window !== 'undefined' ? tmdbClientCache.get(url) : undefined;
-        if (cached && cached.expiresAt > Date.now()) return cached.results;
-        const res = await tmdbFetch(url);
-        if (!res.ok) return [];
-        const data = await res.json() as { results?: TmdbSuggestion[] };
-        const searchResults = (data.results || []).filter((item) => !item.adult);
-        if (typeof window !== 'undefined') {
-          tmdbClientCache.set(url, { expiresAt: Date.now() + TMDB_CLIENT_CACHE_TTL_MS, results: searchResults });
-        }
-        return searchResults;
-      };
+      // 剧集年份只做客户端筛选：API 的 year 会按首播年硬过滤，会丢掉「发行年/观影年」软匹配。
+      const runManualSearch = (q: string) =>
+        runSearch({ query: q, endpoint: type, year, mode: 'manual' });
 
       const candidateQueries = buildTmdbSearchQueries(searchStr, 12);
-      const scoringQueries = candidateQueries.length > 0 ? candidateQueries : [searchStr];
+      const scoringQueries = uniqueQueries(candidateQueries.length > 0 ? candidateQueries : [searchStr]);
       const results: TmdbSuggestion[] = [];
-      const seen = new Set<number>();
 
       for (const q of scoringQueries) {
-        const incoming = await runSearchManual(q);
-        incoming.forEach((item) => {
-          if (!seen.has(item.id)) {
-            results.push(item);
-            seen.add(item.id);
-          }
-        });
+        const incoming = await runManualSearch(q);
+        mergeResults(results, incoming);
         if (q !== scoringQueries[0] && incoming.length > 0) break;
         if (results.length >= 10) break;
       }
@@ -965,20 +909,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             const part1 = words.slice(0, k).join(' ');
             const part2 = words.slice(k).join(' ');
             const colonQuery = `${part1}: ${part2}`;
-            const extraResults = await runSearchManual(colonQuery);
-            if (extraResults.length > 0) {
-              let addedCount = 0;
-              extraResults.forEach((r) => {
-                if (!seen.has(r.id)) {
-                  results.push(r);
-                  seen.add(r.id);
-                  addedCount++;
-                }
-              });
-              if (addedCount > 0) {
-                break;
-              }
-            }
+            const extraResults = await runManualSearch(colonQuery);
+            const previousCount = results.length;
+            mergeResults(results, extraResults);
+            if (results.length > previousCount) break;
           }
         }
       }
