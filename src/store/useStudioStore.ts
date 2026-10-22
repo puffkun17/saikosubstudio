@@ -1,32 +1,19 @@
 import { create } from 'zustand';
 import { buildExportBaseFromMeta, type NamingMode } from '../core/taskModel';
-import { ERROR_CODES, codeErrorMessage, rememberErrorCode } from '../core/errorCodes';
-import { DEFAULT_EXPORT_PRESET_ID, getExportPreset, type ExportPresetId } from '../utils/exportPresets';
-import { DEFAULT_HDR_LEVEL, isHdrLevelId, type HdrLevelId } from '../utils/hdrPresets';
-import { clearAllLocalData, deleteTask, putHistoryEntry } from '../core/taskStore';
-import { historyIdFor, identityFromStorageKey, mintTaskId, workIdentityFromFileName } from '../core/identity';
 import { executeRecognitionJob } from '../core/recognitionJob';
 import { reviewTaskKey } from '../core/reviewKey';
-import { classifyLineKind } from '../core/lineKinds';
-import { applyLineKindOverride } from '../core/workbenchReview';
-import type { LineKind } from '../utils/subtitleCore';
+import { historyIdFor } from '../core/identity';
 import { mergeWorkerAvailable, runMergeJob, runMergeJobInThread } from '../core/mergeClient';
 import type { MergeJobEvent, MergeJobInput, MergeJobResult } from '../core/mergeJob';
 import type { AlignmentFallbackInfo } from '../utils/subtitleCore';
-import { entryTarget, listStyleEntries, snapshotForSave, stripContent, type StyleTemplateRecord } from '../utils/styleLibrary';
 import { SubRow, StyleSettings, SubtitleAttribution, SubtitleLanguagePair, smartDetectTitle, mergeSubtitles, alignSubtitlesIndustrial, extractStylesFromAss, extractSubtitleAttributions, cleanFilename, normalizeSingleBilingualRows, parseMediaFilename, buildTmdbSearchQueries, assessMediaIdentity, isMainPathSecondaryLanguage, measureMergeOrphanRate } from '../utils/subtitleCore';
 import { assessTvYearFit, parseSeasonNumber, parseYearToken } from '../utils/tmdbCandidateFit';
-import { readJsonStorage } from '../utils/localPersistence';
 import { tmdbFetch } from '../services/tmdb';
 import {
   compareTmdbRank,
   isHighConfidenceTmdbPick,
   rankTmdbCandidates,
 } from '../utils/tmdbSearchRank';
-import {
-  resolveNoticeChannel,
-  type StatusNotice,
-} from '../core/noticeChannel';
 import {
   evaluateCandidate,
   getConfirmationMessage,
@@ -43,29 +30,20 @@ import {
 } from '../core/tmdbSearch';
 import { groupAndBindFiles } from '../core/taskGrouping';
 import type {
-  CreditDeclaration,
-  CustomTemplate,
-  FilenameSource,
-  LibraryItem,
-  LogEntry,
   StudioState,
   Subfile,
-  SubtitleEditRecord,
-  TaskPair,
   TmdbDetails,
   TmdbImages,
-  TmdbManualInput,
   TmdbMediaType,
   TmdbMetadata,
   TmdbSuggestion,
 } from './types';
-import {
-  STYLE_STORAGE_KEY,
-  clearStaleLocalStorage,
-  libraryItemToTask,
-  loadHistoryFromIdb,
-  persistStyles,
-} from './persistence';
+import { createFeedbackSlice } from './slices/feedback';
+import { createCreditSlice } from './slices/credit';
+import { createStyleSlice } from './slices/style';
+import { createTheaterSlice } from './slices/theater';
+import { createHistorySlice } from './slices/history';
+import { createWorkbenchSlice } from './slices/workbench';
 
 export {
   CONTEXTUAL_NOTICE_IDS,
@@ -88,7 +66,6 @@ export type {
   TmdbSuggestion,
 } from './types';
 
-let tempShowTimeoutId: ReturnType<typeof setTimeout> | null = null;
 let tmdbSearchRequestId = 0;
 let tmdbSelectionRequestId = 0;
 
@@ -118,7 +95,13 @@ export function resolveExportBase(state: Pick<StudioState, 'customFilename' | 'f
   });
 }
 
-export const useStudioStore = create<StudioState>((set, get) => ({
+export const useStudioStore = create<StudioState>()((set, get, api) => ({
+  ...createFeedbackSlice(set, get, api),
+  ...createCreditSlice(set, get, api),
+  ...createStyleSlice(set, get, api),
+  ...createTheaterSlice(set, get, api),
+  ...createHistorySlice(set, get, api),
+  ...createWorkbenchSlice(set, get, api),
   workflowStep: 1,
   isIngestClearing: false,
   files: { zh: null, en: null, commentary: null },
@@ -126,155 +109,28 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   filenameSource: 'unknown',
   filenameEpKey: '',
   borrowedVideoName: null,
-  historyReady: false,
-  exportPresetId: DEFAULT_EXPORT_PRESET_ID,
-  setExportPresetId: (exportPresetId) => {
-    set({ exportPresetId, styleOverrides: {} });
-    try {
-      localStorage.setItem('saiko_export_preset', exportPresetId);
-      localStorage.removeItem('saiko_style_overrides');
-    } catch { /* ignore */ }
-  },
-  styleOverrides: {},
-  setStyleOverrides: (patch) => {
-    const styleOverrides = { ...get().styleOverrides, ...patch };
-    set({ styleOverrides });
-    try { localStorage.setItem('saiko_style_overrides', JSON.stringify(styleOverrides)); } catch { /* ignore */ }
-  },
-  hdrEnabled: false,
-  hdrLevel: DEFAULT_HDR_LEVEL,
-  setHdr: (hdrEnabled, level) => {
-    const hdrLevel = level ?? get().hdrLevel;
-    set({ hdrEnabled, hdrLevel });
-    try { localStorage.setItem('saiko_export_hdr', hdrEnabled ? hdrLevel : `off:${hdrLevel}`); } catch { /* ignore */ }
-  },
   setBorrowedVideoName: (borrowedVideoName) => set({ borrowedVideoName }),
   uploadedFiles: [],
   tasks: [],
   selectedTaskId: null,
-  libraryList: [],
-  isLibraryOpen: false,
+  isDragging: false,
+  isProcessing: false,
+  alignmentMode: 'standard',
   tmdbData: null,
   tmdbBackdrop: null,
   tmdbBackdropList: [],
-  isTemplateLab: false,
-  customStyle: {
-    zhFontSize: 20, enFontSize: 12, zhColor: '#FFFFFF', enColor: '#B0B0B0', zhOutline: '#4B5563', enOutline: '#000000', enScale: 90, maxLenZh: 20, maxLenEn: 80, marginV: 20, resolution: '1080p', aspectRatio: '16:9', globalScale: 1.0, lyricFontSize: 16, lyricColor: '#E6E6FA', lyricItalic: true, lyricPosition: 'top', auxiliaryMode: 'keep',
-    // 字体家族默认（系统级，跨平台较稳）
-    zhFontFamily: 'system-ui, sans-serif',
-    enFontFamily: 'Helvetica Neue, Arial, sans-serif'
-  },
-  customTemplates: [],
-  logs: [],
-  statusNotices: [],
-  previewIndex: 0,
-  locateGroupIndexes: [],
-  previewClockMs: 0,
-  isPreviewPlaying: false,
-  sceneBackground: 'cinema',
-  theaterAspect: '16:9',
-  showGuides: false,
-  lang: 'zh',
-  jumpLineVal: '1',
+  isSearchingTmdb: false,
   tmdbManualOpen: false,
   tmdbManualInput: { title: '', year: '', type: 'movie', season: '1', episode: '1' },
   tmdbSuggestions: [],
   tmdbAlternateSuggestion: null,
   selectedSuggestion: null,
-  isSettingsOpen: false,
-  activePreset: 'classic',
-  isProcessing: false,
-  processedSubs: null,
-  showAllSubs: false,
-  isDragging: false,
-  tempShowGuides: false,
-  showAssHint: false,
-  foundAssStyle: null,
-  refScreenshot: null,
-  isSearchingTmdb: false,
-  alignmentMode: 'standard',
-  detectedAttributions: [],
-  creatorCredit: '',
-  appendCreatorCredit: false,
-  keepOriginalCredit: true,
-  setKeepOriginalCredit: (keepOriginalCredit) => set({ keepOriginalCredit }),
-  isOfficialSubtitle: false,
-  isOriginalWork: false,
-  creditDeclaration: 'none',
-  creditPlacement: 'after-last',
-  isLightsOff: false,
-  editHistory: [],
-  editFuture: [],
-  mergeReviewCheckedByTask: {},
-
   setAlignmentMode: (alignmentMode) => {
     // Mode switch must not wipe ingest; only the next merge consumes the new mode.
     set({ alignmentMode });
   },
-  setCreatorCredit: (creatorCredit) => set({ creatorCredit }),
-  setAppendCreatorCredit: (appendCreatorCredit) => set({ appendCreatorCredit }),
-  setIsOfficialSubtitle: (isOfficialSubtitle) => set((state) => ({ isOfficialSubtitle, isOriginalWork: isOfficialSubtitle ? false : state.isOriginalWork })),
-  setIsOriginalWork: (isOriginalWork) => set((state) => ({
-    isOriginalWork,
-    isOfficialSubtitle: isOriginalWork ? false : state.isOfficialSubtitle,
-    // 原创关闭时，我的署名一并撤下（署名只在原创下可编辑）。
-    appendCreatorCredit: isOriginalWork ? state.appendCreatorCredit : false,
-    creditDeclaration: isOriginalWork ? 'original' : 'none',
-  })),
-  setCreditDeclaration: (creditDeclaration) => set({ creditDeclaration }),
-  setCreditPlacement: (creditPlacement) => set({ creditPlacement }),
-  setLibraryOpen: (isLibraryOpen) => set({ isLibraryOpen }),
   setWorkflowStep: (step) => set({ workflowStep: step }),
   setIngestClearing: (isIngestClearing) => set({ isIngestClearing }),
-  setLang: (lang) => set({ lang }),
-  addLog: (rawMsg, type = 'info') => {
-    const msg = type === 'error' ? codeErrorMessage(rawMsg) : rawMsg;
-    if (type === 'error') {
-      // Errors stay until closed (decided A9): what happened + what to do + E-xx for feedback.
-      const code = rememberErrorCode(msg);
-      get().setStatusNotice({
-        id: `error-${code ?? 'x'}`,
-        tone: 'alert',
-        title: code ? `${ERROR_CODES[code]}（${code}）` : '出错了',
-        message: `${msg.replace(/^\[E-\d{2}\]\s*/, '')}${code ? ' · 反馈时可附上这个代码' : ''}`,
-      });
-    }
-    const id = Date.now() + Math.random();
-    const time = new Date().toLocaleTimeString();
-    set(state => ({
-      logs: [...state.logs.slice(-2), { id, time, msg, type, fade: false }]
-    }));
-    setTimeout(() => {
-      set(state => ({
-        logs: state.logs.map(l => l.id === id ? { ...l, fade: true } : l)
-      }));
-    }, 4200);
-    setTimeout(() => {
-      set(state => ({
-        logs: state.logs.filter(l => l.id !== id)
-      }));
-    }, 5000);
-  },
-  clearLogs: () => set({ logs: [] }),
-  setStatusNotice: (notice) => {
-    set(state => {
-      const nextNotice: StatusNotice = { ...notice, createdAt: Date.now() };
-      const channel = resolveNoticeChannel(nextNotice);
-      const existing = state.statusNotices.filter(item => item.id !== notice.id);
-      // Cap toast stack at 3; inline/contextual are not stacked in the toaster.
-      if (channel === 'toast') {
-        const otherToasts = existing.filter((item) => resolveNoticeChannel(item) === 'toast');
-        const nonToasts = existing.filter((item) => resolveNoticeChannel(item) !== 'toast');
-        const toasts = [...otherToasts, nextNotice].slice(-3);
-        return { statusNotices: [...nonToasts, ...toasts] };
-      }
-      return { statusNotices: [...existing, nextNotice] };
-    });
-  },
-  dismissStatusNotice: (id) => set(state => ({
-    statusNotices: state.statusNotices.filter(item => item.id !== id)
-  })),
-  clearStatusNotices: () => set({ statusNotices: [] }),
   setIsDragging: (isDragging) => set({ isDragging }),
   setCustomFilename: (customFilename, source = 'manual') => set({ customFilename, filenameSource: source }),
   exportNameMode: readStoredNameMode(),
@@ -285,7 +141,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setSelectedTaskId: (selectedTaskId) => set({ selectedTaskId }),
   setTmdbData: (tmdbData) => set({ tmdbData }),
   setTmdbBackdrop: (tmdbBackdrop) => set({ tmdbBackdrop }),
-
   shuffleBackdrop: () => {
     const { tmdbBackdropList, tmdbBackdrop, selectedTaskId } = get();
     if (!tmdbBackdropList || tmdbBackdropList.length <= 1) {
@@ -306,53 +161,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }
     get().addLog("已更换背景图", "success");
   },
-  setIsTemplateLab: (isTemplateLab) => set({ isTemplateLab }),
-  setCustomStyle: (customStyle) => {
-    set({ customStyle });
-    persistStyles(get());
-  },
-  saveCustomTemplate: (name, opts) => {
-    const state = get();
-    const snap = opts
-      ? { presetId: 'current' as ExportPresetId, styles: stripContent(opts.styles) }
-      : snapshotForSave(state.customStyle, state.exportPresetId, state.styleOverrides);
-    const newTemplate: CustomTemplate = { id: `tpl_${Date.now()}`, name, ...snap, source: opts?.source ?? 'saved' };
-    set({ customTemplates: [...state.customTemplates, newTemplate] });
-    get().applyStyleEntry(newTemplate.id);
-  },
-  applyStyleEntry: (id) => {
-    const state = get();
-    const entry = listStyleEntries(state.customTemplates, state.foundAssStyle).find((e) => e.id === id);
-    if (!entry) return;
-    const target = entryTarget(entry, state.customStyle);
-    set({ ...target, activePreset: id });
-    try {
-      localStorage.setItem('saiko_export_preset', target.exportPresetId);
-      localStorage.setItem('saiko_style_overrides', JSON.stringify(target.styleOverrides));
-    } catch { /* ignore */ }
-    persistStyles(get());
-  },
-  deleteCustomTemplate: (id) => {
-    set((state) => {
-      const newTemplates = state.customTemplates.filter(t => t.id !== id);
-      return { customTemplates: newTemplates, activePreset: state.activePreset === id ? 'classic' : state.activePreset };
-    });
-    persistStyles(get());
-  },
-  setActivePreset: (activePreset) => {
-    set({ activePreset });
-    persistStyles(get());
-  },
-  setPreviewIndex: (previewIndex) => set({ previewIndex }),
-  setLocateGroupIndexes: (locateGroupIndexes) => set({ locateGroupIndexes }),
-  setPreviewClockMs: (previewClockMs) => set({ previewClockMs }),
-  setIsPreviewPlaying: (isPreviewPlaying) => set({ isPreviewPlaying }),
-  setSceneBackground: (sceneBackground) => set({ sceneBackground }),
-  // 画幅只影响预览取景，不写入导出样式（导出画面规格由样式决定）。
-  setTheaterAspect: (theaterAspect) => set({ theaterAspect }),
-  setShowGuides: (showGuides) => set({ showGuides }),
-  setTempShowGuides: (tempShowGuides) => set({ tempShowGuides }),
-  setJumpLineVal: (jumpLineVal) => set({ jumpLineVal }),
   setTmdbManualOpen: (tmdbManualOpen) => set({ tmdbManualOpen }),
   setTmdbManualInput: (tmdbManualInput) => set({ tmdbManualInput }),
   setTmdbSuggestions: (tmdbSuggestions) => set({ tmdbSuggestions }),
@@ -381,180 +189,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     const unique = pair.filter((item, index, all) => all.findIndex((x) => x.id === item.id) === index).slice(0, 2);
     if (unique.length > 0) set({ tmdbSuggestions: unique });
   },
-  setIsSettingsOpen: (isSettingsOpen) => set({ isSettingsOpen }),
-  setProcessedSubs: (processedSubs) => {
-    const currentPreview = get().previewIndex;
-    let nextPreview = currentPreview;
-
-    if (!processedSubs || processedSubs.length === 0) {
-      nextPreview = 0;
-    } else if (currentPreview < 0 || currentPreview >= processedSubs.length) {
-      nextPreview = 0;
-    }
-
-    set({ 
-      processedSubs, 
-      previewIndex: nextPreview,
-      jumpLineVal: String(nextPreview + 1)
-    });
-  },
-
-  // 支持直接修改字幕文本
-  updateSubtitleText: (index: number, text: string) => {
-    const { processedSubs, previewIndex, addLog } = get();
-    if (!processedSubs) {
-      addLog("无法修改字幕：processedSubs 为空", "error");
-      return;
-    }
-
-    const updated = processedSubs.map(s => 
-      s.index === index ? { ...s, text } : s
-    );
-
-    // 如果修改的是当前预览的字幕，记录日志
-    if (index - 1 === previewIndex) {
-      addLog(`已更新第 ${index} 行字幕内容`, "success");
-    }
-
-    set({ processedSubs: updated });
-  },
-
-  editSubtitleText: (index, text) => {
-    const { processedSubs } = get();
-    const row = processedSubs?.find(s => s.index === index);
-    if (!row || row.text === text) return;
-    // 署名是内容：只有导入来源为「原创」时才可改（官方 / 转载锁定）。
-    if (classifyLineKind(row) === 'credit' && !get().isOriginalWork) return;
-    get().updateSubtitleText(index, text);
-    set(state => ({
-      editHistory: [...state.editHistory, { index, before: row.text, after: text }].slice(-50),
-      editFuture: [],
-    }));
-  },
-
-  setLineKind: (index, kind) => {
-    const { processedSubs } = get();
-    if (!processedSubs) return;
-    const row = processedSubs.find((s) => s.index === index);
-    if (!row) return;
-    const next = applyLineKindOverride(row, kind);
-    if (next === row) return;
-    set({
-      processedSubs: processedSubs.map((s) => (s.index === index ? next : s)),
-    });
-  },
-
-  undoSubtitleEdit: () => {
-    const { editHistory } = get();
-    const record = editHistory[editHistory.length - 1];
-    if (!record) return;
-    get().updateSubtitleText(record.index, record.before);
-    set(state => ({
-      editHistory: state.editHistory.slice(0, -1),
-      editFuture: [...state.editFuture, record],
-    }));
-  },
-
-  redoSubtitleEdit: () => {
-    const { editFuture } = get();
-    const record = editFuture[editFuture.length - 1];
-    if (!record) return;
-    get().updateSubtitleText(record.index, record.after);
-    set(state => ({
-      editFuture: state.editFuture.slice(0, -1),
-      editHistory: [...state.editHistory, record],
-    }));
-  },
-
-  setMergeReviewChecked: (taskKey, ids) => {
-    if (!taskKey) return;
-    const unique = Array.from(new Set(ids));
-    set(state => ({
-      mergeReviewCheckedByTask: {
-        ...state.mergeReviewCheckedByTask,
-        [taskKey]: unique,
-      },
-    }));
-  },
-
-  toggleMergeReviewChecked: (taskKey, id) => {
-    if (!taskKey || !id) return;
-    set(state => {
-      const current = state.mergeReviewCheckedByTask[taskKey] ?? [];
-      const next = current.includes(id)
-        ? current.filter(item => item !== id)
-        : [...current, id];
-      return {
-        mergeReviewCheckedByTask: {
-          ...state.mergeReviewCheckedByTask,
-          [taskKey]: next,
-        },
-      };
-    });
-  },
-
-  markMergeReviewChecked: (taskKey, id) => {
-    if (!taskKey || !id) return;
-    set(state => {
-      const current = state.mergeReviewCheckedByTask[taskKey] ?? [];
-      if (current.includes(id)) return state;
-      return {
-        mergeReviewCheckedByTask: {
-          ...state.mergeReviewCheckedByTask,
-          [taskKey]: [...current, id],
-        },
-      };
-    });
-  },
-
-  clearMergeReviewChecked: (taskKey) => {
-    if (!taskKey) {
-      set({ mergeReviewCheckedByTask: {} });
-      return;
-    }
-    set(state => {
-      if (!(taskKey in state.mergeReviewCheckedByTask)) return state;
-      const next = { ...state.mergeReviewCheckedByTask };
-      delete next[taskKey];
-      return { mergeReviewCheckedByTask: next };
-    });
-  },
-
-  setLightsOff: (isLightsOff) => set({ isLightsOff }),
-  setShowAllSubs: (showAllSubs) => set({ showAllSubs }),
-  setShowAssHint: (showAssHint) => set({ showAssHint }),
   setTasks: (tasks) => set(state => {
     const nextTasks = typeof tasks === 'function' ? tasks(state.tasks) : tasks;
     return { tasks: nextTasks };
   }),
-  setRefScreenshot: (refScreenshot) => set({ refScreenshot }),
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  triggerTempGuides: () => {
-    set({ tempShowGuides: true });
-    if (tempShowTimeoutId) {
-      clearTimeout(tempShowTimeoutId);
-    }
-    tempShowTimeoutId = setTimeout(() => {
-      set({ tempShowGuides: false });
-    }, 2000);
-  },
-
   searchTmdb: async (query, options) => {
     const requestId = ++tmdbSearchRequestId;
     const taskIdAtStart = get().selectedTaskId;
@@ -851,7 +489,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       if (isCurrentRequest()) set({ isSearchingTmdb: false });
     }
   },
-
   searchTmdbManual: async (query, type, year) => {
     const requestId = ++tmdbSearchRequestId;
     const taskIdAtStart = get().selectedTaskId;
@@ -997,7 +634,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       if (isCurrentRequest()) set({ isSearchingTmdb: false });
     }
   },
-
   selectTmdbSuggestion: async (s, options) => {
     const requestId = ++tmdbSelectionRequestId;
     const silent = options?.silent ?? false;
@@ -1133,37 +769,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       if (!silent) get().addLog(`影片资料获取失败: ${message}`, 'error');
     }
   },
-
-  initializeLibrary: () => {
-    if (typeof window === 'undefined') return;
-    clearStaleLocalStorage();
-    try {
-      const storedPreset = getExportPreset(localStorage.getItem('saiko_export_preset'));
-      const storedHdr = localStorage.getItem('saiko_export_hdr') || '';
-      const level = storedHdr.replace(/^off:/, '');
-      set({
-        exportPresetId: storedPreset.formats.includes('ass') ? storedPreset.id : DEFAULT_EXPORT_PRESET_ID,
-        hdrEnabled: Boolean(storedHdr) && !storedHdr.startsWith('off:') && isHdrLevelId(level),
-        ...(isHdrLevelId(level) ? { hdrLevel: level } : {}),
-      });
-      const storedOverrides = readJsonStorage<unknown>('saiko_style_overrides', {});
-      if (storedOverrides && typeof storedOverrides === 'object' && !Array.isArray(storedOverrides)) {
-        set({ styleOverrides: storedOverrides as Partial<StyleSettings> });
-      }
-    } catch { /* ignore */ }
-    // History lives in IndexedDB (taskStore). Prior schema versions are discarded on open.
-    void loadHistoryFromIdb().then((list) => {
-      if (list) set({ libraryList: list, historyReady: true });
-      else set({ libraryList: [], historyReady: true });
-    });
-    const savedStyles = readJsonStorage<{ preset?: string; style?: Partial<StyleSettings>; templates?: CustomTemplate[] }>(STYLE_STORAGE_KEY, {});
-    if (savedStyles.preset) set({ activePreset: savedStyles.preset });
-    if (savedStyles.style) set({ customStyle: { resolution: '1080p', aspectRatio: '16:9', globalScale: 1.0, lyricFontSize: 16, lyricColor: '#E6E6FA', lyricItalic: true, lyricPosition: 'top', ...savedStyles.style } as StyleSettings });
-    if (Array.isArray(savedStyles.templates)) set({ customTemplates: savedStyles.templates });
-    // TMDB key is now handled server-side via /api/tmdb proxy (no client-side key required).
-    // Old localStorage key 'saiko_tmdb_api_key' is no longer used.
-  },
-
   selectTask: (taskId) => {
     tmdbSelectionRequestId += 1;
     const task = get().tasks.find(t => t.id === taskId);
@@ -1299,7 +904,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       set({ foundAssStyle: null, showAssHint: false });
     }
   },
-
   bindTrack: (taskId, trackKey, fileId) => {
     set(state => {
       const nextTasks = state.tasks.map(t => {
@@ -1346,7 +950,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       return { tasks: nextTasks };
     });
   },
-
   swapPrimaryTracks: (taskId) => {
     set(state => {
       const nextTasks = state.tasks.map(task => {
@@ -1372,7 +975,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     });
     get().addLog('已对调主字幕与副字幕', 'info');
   },
-
   removeFileFromTask: (taskId, fileName) => {
     set(state => {
       const nextFiles = state.uploadedFiles.filter(f => f.name !== fileName);
@@ -1402,7 +1004,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       return { uploadedFiles: nextFiles, tasks: nextTasks };
     });
   },
-
   deleteTask: (taskId) => {
     set(state => {
       const taskToDelete = state.tasks.find(t => t.id === taskId);
@@ -1425,7 +1026,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       return { uploadedFiles: nextFiles, tasks: nextTasks };
     });
   },
-
   cancelCurrentUpload: () => {
     tmdbSearchRequestId += 1;
     tmdbSelectionRequestId += 1;
@@ -1461,69 +1061,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     });
     get().addLog("已取消导入", "info");
   },
-
-  clearHistory: async () => {
-    try {
-      await clearAllLocalData();
-    } catch {
-      /* fall through: still clear the legacy key */
-    }
-    clearStaleLocalStorage();
-    set({ libraryList: [] });
-    get().addLog('已清空本机历史（任务、合并结果与源字幕）', 'success');
-  },
-
-  saveToLibrary: () => {
-    const { processedSubs, customFilename, tmdbData, tmdbBackdrop, tmdbBackdropList, customStyle, libraryList, selectedTaskId } = get();
-    if (!processedSubs || processedSubs.length === 0) return;
-    const name = customFilename
-      || (tmdbData ? [tmdbData.title, tmdbData.year].filter(Boolean).join('.') : '')
-      || '未命名字幕';
-    // One entry per task (re-merging the same task replaces it instead of piling up duplicates).
-    // LibraryItem.id is a storage key; IndexedDB Task.id stays the identity.
-    const taskIdentity = selectedTaskId || mintTaskId(workIdentityFromFileName(name));
-    const historyId = historyIdFor(taskIdentity);
-    const newItem: LibraryItem = {
-      id: historyId,
-      name: name,
-      date: new Date().toLocaleString('zh-CN', { hour12: false }),
-      subs: processedSubs,
-      backdrop: tmdbBackdrop,
-      backdropList: tmdbBackdropList,
-      customStyle: customStyle
-    };
-    set({ libraryList: [newItem, ...libraryList.filter((item) => item.id !== historyId)] });
-    void putHistoryEntry({ ...libraryItemToTask(newItem), id: taskIdentity }, processedSubs, {
-      backdrop: tmdbBackdrop, backdropList: tmdbBackdropList, customStyle,
-    }).then(
-      () => get().addLog(`[历史] 已保存到本机：${name}`, 'success'),
-      (error: unknown) => get().addLog(`本机历史保存失败：${error instanceof Error ? error.message : String(error)}`, 'error'),
-    );
-  },
-
-  deleteFromLibrary: (id) => {
-    set(state => ({ libraryList: state.libraryList.filter(item => item.id !== id) }));
-    const taskIdentity = identityFromStorageKey(id, 'history') || id;
-    void deleteTask(taskIdentity).catch(() => undefined);
-    get().addLog('已删除这条历史', 'info');
-  },
-
-  loadFromLibrary: (item) => {
-    set({
-      processedSubs: item.subs,
-      customFilename: item.name,
-      filenameSource: 'library',
-      tmdbBackdrop: item.backdrop,
-      tmdbBackdropList: item.backdropList || (item.backdrop ? [item.backdrop] : []),
-      customStyle: item.customStyle,
-      previewIndex: 0,
-      workflowStep: 2,
-      editHistory: [],
-      editFuture: []
-    });
-    get().addLog(`已载入字幕库项目: ${item.name}`, "success");
-  },
-
   processFiles: (incomingFiles, opts) => {
     // Recognition pre-pass (ASS style-split + SDH). Prefer Worker via runRecognitionJob in UI,
     // then pass { recognized: true }. In-thread path keeps Node regression / tests sync.
@@ -1553,7 +1090,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
     get().addLog(`已加载/更新 ${newFiles.length} 个文件。当前文件总数: ${uploadedFiles.length}`, 'success');
   },
-
   switchEpisode: (taskId) => {
     const state = get();
     if (taskId === state.selectedTaskId) return;
@@ -1566,7 +1102,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }
     get().runSubtitleMerge();
   },
-
   runSubtitleMerge: () => {
     const { files, selectedTaskId, tasks, customFilename } = get();
     const currentTask = tasks.find(t => t.id === selectedTaskId);
@@ -1635,7 +1170,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       set({ isProcessing: false });
     });
   },
-
   restartSystem: () => {
     tmdbSearchRequestId += 1;
     tmdbSelectionRequestId += 1;
