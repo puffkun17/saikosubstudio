@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Generates sw.js after `vite build` (Switch B / Cloudflare Vite plugin).
- * Precache = app shell HTML + every hashed file under dist/client/assets (or
- * the CF plugin worker assets dir) + local assets the offline import flow needs.
+ * Precache = app shell HTML + every hashed file under dist/client/assets +
+ * local assets the offline import flow needs.
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
@@ -11,21 +11,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const publicDir = join(root, "public");
-
-/** Prefer classic dist/client; fall back to CF plugin worker assets layout. */
-function resolveClientOut() {
-  const candidates = [
-    join(root, "dist/client"),
-    join(root, "dist/saikosubstudio/assets"),
-    join(root, "dist/workers/default/assets"),
-  ];
-  for (const dir of candidates) {
-    if (existsSync(join(dir, "assets")) || existsSync(join(dir, "index.html"))) return dir;
-  }
-  return candidates[0];
-}
-
-const outDir = resolveClientOut();
+const outDir = join(root, "dist/client");
 const assetsDir = join(outDir, "assets");
 
 if (!existsSync(assetsDir)) {
