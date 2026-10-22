@@ -1,3 +1,4 @@
+import { rowStableKey } from '../../core/identity';
 import { classifyLineKind, type AlignmentProvenance, type SubRow } from '../subtitleCore';
 import { parseSubtitleRange } from './timecode';
 
@@ -133,7 +134,7 @@ const makeSingleTrackEntry = (group: TimelineRow[], firstStartMs: number, lastEn
   const rangeLabel = count > 1 ? `连续 ${count} 行` : '1 行';
 
   return {
-    id: `single-${first.row.index}-${last.row.index}`,
+    id: `single-${rowStableKey(first.row)}-${rowStableKey(last.row)}`,
     kind: 'single-track',
     rowIndexes: group.map(item => item.row.index),
     ts: `${first.row.ts} ~ ${last.row.ts}`,
@@ -165,7 +166,7 @@ const makeShiftedMatchEntry = (group: TimelineRow[]): AlignmentDiffEntry => {
     : '';
 
   return {
-    id: `shifted-${first.row.index}-${last.row.index}`,
+    id: `shifted-${rowStableKey(first.row)}-${rowStableKey(last.row)}`,
     kind: 'shifted-match',
     rowIndexes: group.map(item => item.row.index),
     ts: `${first.row.ts} ~ ${last.row.ts}`,
@@ -252,7 +253,7 @@ export function analyzeAlignmentDiff(rows: SubRow[]): AlignmentDiffSummary {
       if (isCoverage) coverageMergeCount += 1;
       else expandedDialogueCount += 1;
       entries.push({
-        id: `${isCoverage ? 'coverage' : 'expanded'}-${row.index}`,
+        id: `${isCoverage ? 'coverage' : 'expanded'}-${rowStableKey(row)}`,
         kind: isCoverage ? 'coverage-merge' : 'expanded-dialogue',
         rowIndexes: [row.index],
         ts: row.ts,
@@ -391,7 +392,7 @@ export function buildMergeReviewQueue(rows: SubRow[]): MergeReviewQueue {
     if (!(endMs > startMs)) continue;
     const sides = getRowSides(row);
     items.push({
-      id: `review-suspect-${row.index}`,
+      id: `review-suspect-${rowStableKey(row)}`,
       category: 'other-suspect',
       rowIndexes: [row.index],
       startMs,

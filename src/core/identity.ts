@@ -25,6 +25,8 @@ export const ID_SCHEME = {
   task: 1,
   file: 1,
   track: 1,
+  /** Merged/workbench cue — content/provenance fingerprint, not display index. */
+  row: 1,
   subver: 1,
   tmdb: 1,
   export: 1,
@@ -185,6 +187,75 @@ export function mintTrackId(parentFileId: string, role: string): string {
 /** @deprecated Prefer mintTrackId — kept as a clear name at ASS-split call sites. */
 export function derivedFileId(parentFileId: string, role: string): string {
   return mintTrackId(parentFileId, role);
+}
+
+/**
+ * Stable id for a merged / workbench row. Fingerprint must NOT include the display
+ * `index` (that is renumbered after sort / insert / delete). Prefer provenance
+ * source cues when present; otherwise ts+text+type.
+ */
+export function rowFingerprint(row: {
+  ts: string;
+  text: string;
+  type?: string;
+  cueKind?: string;
+  /** Preprocess source cue index (1-based) when provenance is absent (notes / bilingual). */
+  sourceIndex?: number;
+  provenance?: {
+    method: string;
+    timingSource?: string;
+    groupId?: string;
+    primary?: { cueIndex: number; ts: string };
+    secondary?: { cueIndex: number; ts: string };
+  };
+}): string {
+  const p = row.provenance;
+  if (p?.primary || p?.secondary || p?.method) {
+    const ref = (r?: { cueIndex: number; ts: string }) =>
+      r ? `${r.cueIndex}|${r.ts}` : '';
+    return [
+      'prov',
+      p.method || '',
+      p.timingSource || '',
+      p.groupId || '',
+      ref(p.primary),
+      ref(p.secondary),
+      // Expanded turns can share the packed primary; text distinguishes them.
+      row.text || '',
+    ].join('\0');
+  }
+  return [
+    'bare',
+    row.type || '',
+    row.cueKind || '',
+    row.ts || '',
+    row.text || '',
+    row.sourceIndex != null ? String(row.sourceIndex) : '',
+  ].join('\0');
+}
+
+export function mintRowId(row: Parameters<typeof rowFingerprint>[0]): string {
+  return mint('row', rowFingerprint(row));
+}
+
+/**
+ * When several rows share one fingerprint in a single result, append #2, #3…
+ * (1st keeps the plain mint). Deterministic; parseId still accepts the body.
+ */
+export function mintRowIdDisambiguated(
+  row: Parameters<typeof rowFingerprint>[0],
+  occurrence: number,
+): string {
+  const base = mintRowId(row);
+  if (occurrence <= 1) return base;
+  const parsed = parseId(base);
+  if (!parsed) return `${base}#${occurrence}`;
+  return formatId({ ...parsed, body: `${parsed.body.split('#')[0]}#${occurrence}` });
+}
+
+/** Prefer rowId for React/review keys; fall back to display index for stale rows. */
+export function rowStableKey(row: { rowId?: string; index: number }): string {
+  return row.rowId || String(row.index);
 }
 
 /* ---------- Storage / React keys (not identity) ---------- */

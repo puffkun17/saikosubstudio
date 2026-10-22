@@ -1,4 +1,5 @@
 /** Subtitle engine: merge / align algorithms. Must not import io or product. */
+import { mintRowIdDisambiguated, rowFingerprint } from '../../core/identity';
 import {
   OFFSET_DIAGNOSIS_POLICY,
   estimateGlobalOffsetFromStarts,
@@ -27,6 +28,33 @@ import {
   isSubtitleCreditText,
   splitSingleBilingualText,
 } from './analysis';
+
+type FinalizableRow = Omit<SubRow, 'index' | 'rowId'> & {
+  index?: number;
+  rowId?: string;
+  sourceIndex?: number;
+};
+
+/**
+ * Assign display index + stable rowId. Equal fingerprints in one result get
+ * deterministic #2, #3… suffixes (occurrence order after sort).
+ */
+function finalizeOutputRows(items: FinalizableRow[]): SubRow[] {
+  const seen = new Map<string, number>();
+  return items.map((item, idx) => {
+    const { sourceIndex, index: _dropIndex, rowId: _dropId, ...rest } = item;
+    const base = { ...rest, type: item.type, cueKind: item.cueKind };
+    const fp = rowFingerprint({ ...base, sourceIndex });
+    const occurrence = (seen.get(fp) || 0) + 1;
+    seen.set(fp, occurrence);
+    return {
+      ...base,
+      index: idx + 1,
+      rowId: mintRowIdDisambiguated({ ...base, sourceIndex }, occurrence),
+    };
+  });
+}
+
 
 function analyzeContentType(text: string): number {
   let score = 0;
@@ -994,21 +1022,23 @@ export function mergeSubtitles(
     j++;
   }
   
-  const result = [...mergedDialogues, ...zhNotes, ...enNotes, ...commProc]
-    .sort((a, b) => timeToMs(a.ts.split(" --> ")[0]) - timeToMs(b.ts.split(" --> ")[0]))
-    .map((item, idx) => {
-      let type = item.type;
-      let cueKind = item.cueKind === 'lyrics' || isLyricText(item.text)
-        ? 'lyrics' as CueKind
-        : (item.cueKind || resolveCueKind(item.text));
-      if (cueKind === 'credit' || (!item.cueKind && isSubtitleCreditText(item.text))) {
-        cueKind = 'credit';
-        type = 'credit';
-      } else if (cueKind === 'lyrics' || isLyricText(item.text)) {
-        type = 'lyrics';
-      }
-      return { ...item, type, cueKind, index: idx + 1 };
-    });
+  const result = finalizeOutputRows(
+    [...mergedDialogues, ...zhNotes, ...enNotes, ...commProc]
+      .sort((a, b) => timeToMs(a.ts.split(" --> ")[0]) - timeToMs(b.ts.split(" --> ")[0]))
+      .map((item) => {
+        let type = item.type;
+        let cueKind = item.cueKind === 'lyrics' || isLyricText(item.text)
+          ? 'lyrics' as CueKind
+          : (item.cueKind || resolveCueKind(item.text));
+        if (cueKind === 'credit' || (!item.cueKind && isSubtitleCreditText(item.text))) {
+          cueKind = 'credit';
+          type = 'credit';
+        } else if (cueKind === 'lyrics' || isLyricText(item.text)) {
+          type = 'lyrics';
+        }
+        return { ...item, type, cueKind };
+      }),
+  );
   
   addLog(`[合并] 处理完成，生成 ${result.length} 条对齐块`, "success");
   return result;
@@ -1178,21 +1208,23 @@ export function alignSubtitlesIndustrial(
     }
   }
   
-  const result = [...mergedDialogues, ...zhNotes, ...enNotes, ...commProc]
-    .sort((a, b) => timeToMs(a.ts.split(" --> ")[0]) - timeToMs(b.ts.split(" --> ")[0]))
-    .map((item, idx) => {
-      let type = item.type;
-      let cueKind = item.cueKind === 'lyrics' || isLyricText(item.text)
-        ? 'lyrics' as CueKind
-        : (item.cueKind || resolveCueKind(item.text));
-      if (cueKind === 'credit' || (!item.cueKind && isSubtitleCreditText(item.text))) {
-        cueKind = 'credit';
-        type = 'credit';
-      } else if (cueKind === 'lyrics' || isLyricText(item.text)) {
-        type = 'lyrics';
-      }
-      return { ...item, type, cueKind, index: idx + 1 };
-    });
+  const result = finalizeOutputRows(
+    [...mergedDialogues, ...zhNotes, ...enNotes, ...commProc]
+      .sort((a, b) => timeToMs(a.ts.split(" --> ")[0]) - timeToMs(b.ts.split(" --> ")[0]))
+      .map((item) => {
+        let type = item.type;
+        let cueKind = item.cueKind === 'lyrics' || isLyricText(item.text)
+          ? 'lyrics' as CueKind
+          : (item.cueKind || resolveCueKind(item.text));
+        if (cueKind === 'credit' || (!item.cueKind && isSubtitleCreditText(item.text))) {
+          cueKind = 'credit';
+          type = 'credit';
+        } else if (cueKind === 'lyrics' || isLyricText(item.text)) {
+          type = 'lyrics';
+        }
+        return { ...item, type, cueKind };
+      }),
+  );
   addLog(`[工业级合并] 处理完成，生成 ${result.length} 条对齐块`, "success");
   return result;
 }
@@ -1209,7 +1241,7 @@ const combineRowCueKind = (...kinds: Array<CueKind | undefined>): CueKind | unde
 };
 
 export function normalizeSingleBilingualRows(rows: RawSub[]): SubRow[] {
-  const result: SubRow[] = [];
+  const drafted: FinalizableRow[] = [];
   let i = 0;
 
   while (i < rows.length) {
@@ -1219,6 +1251,7 @@ export function normalizeSingleBilingualRows(rows: RawSub[]): SubRow[] {
     const currentLang = detectCueLanguage(currentText);
     const nextText = next ? splitSingleBilingualText(next.text) : '';
     const nextLang = next ? detectCueLanguage(nextText) : 'unknown';
+    const sourceIndex = i + 1;
 
     const canFoldPair = next
       && areTimeRangesNearEqual(current.ts, next.ts)
@@ -1227,26 +1260,26 @@ export function normalizeSingleBilingualRows(rows: RawSub[]): SubRow[] {
     if (canFoldPair) {
       const zhText = currentLang === 'zh' ? currentText : nextText;
       const foreignText = currentLang === 'foreign' ? currentText : nextText;
-      result.push({
+      drafted.push({
         ts: current.ts,
         text: `${zhText}\n${foreignText}`,
         type: 'merged',
         cueKind: combineRowCueKind(current.cueKind, next.cueKind),
-        index: result.length + 1,
+        sourceIndex,
       });
       i += 2;
       continue;
     }
 
-    result.push({
+    drafted.push({
       ts: current.ts,
       text: currentText,
       type: currentLang === 'mixed' || currentText.includes('\n') ? 'merged' : 'dialogue',
       cueKind: current.cueKind,
-      index: result.length + 1,
+      sourceIndex,
     });
     i += 1;
   }
 
-  return result;
+  return finalizeOutputRows(drafted);
 }

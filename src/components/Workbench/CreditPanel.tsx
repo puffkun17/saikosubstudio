@@ -68,7 +68,7 @@ export const CreditPanel: React.FC = () => {
       {credits.length > 0 ? (
         <ul className="grid gap-[var(--ds-gap-item)]">
           {credits.map((row) => (
-            <li key={row.index} className="flex flex-wrap items-center gap-2">
+            <li key={row.rowId ?? row.index} className="flex flex-wrap items-center gap-2">
               <span className="ds-meta ds-mono shrink-0">#{row.index} · {row.ts.split(' --> ')[0].replace(',', '.')}</span>
               {editable ? (
                 <>

@@ -21,6 +21,7 @@ Identity is **not** a storage key and **not** a React key. Use `storageKeyFor(id
 | `task` | User job for a work (live TaskPair / history) | same body recipe as `work` in v1 | `mintTaskId` |
 | `file` | Imported subtitle bytes + normalized basename | `hash(normName + NUL + text)` | `mintFileId` |
 | `track` | Virtual track split from one file (e.g. Dial_CH) | `{parentFileBody}#{role}` | `mintTrackId` |
+| `row` | Merged / workbench cue | `hash(provenance\|ts+text+type[+sourceIndex])` — **not** display `index` | `mintRowId` / `rowFingerprint` |
 | `subver` | Reserved: alternate subtitle version of a work | — (not minted yet) | — |
 | `tmdb` | Reserved: TMDB title/ref cache key | — | — |
 | `export` | Reserved: export artifact / preset binding | — | — |

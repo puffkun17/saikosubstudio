@@ -56,7 +56,13 @@ export interface SubRow {
   auxiliary?: AuxiliaryCueClassification;
   alignment?: 'expanded-dialogue' | 'coverage-merge' | 'shifted-match';
   provenance?: AlignmentProvenance;
+  /** 1-based display order after sort — unstable across re-merge. */
   index: number;
+  /**
+   * Stable cue identity (`row.v1.*` via identity.mintRowId). Derived from
+   * provenance / content — not from `index`. Corpus baselines ignore this field.
+   */
+  rowId?: string;
 }
 
 export interface RawSub {
