@@ -4,3 +4,4 @@
 - SKIP persistence hardening (schema-validate + error boundary + e2e malformed storage): multi-surface, needs dedicated pass.
 - SKIP Ingest DragZone local phase/queue → slice: large UI state move.
 - SKIP PWA worker chunk precache e2e: large infra/e2e scope.
+- subtitleCore split (`src/utils/subtitle/`): to keep `engine` free of `io`/`product` and avoid `analysis`↔`io` cycles, shared pure helpers live in `model` (`cleanSubtitleContent`, `sortCuesByTime`, `dedupeIdenticalCues`, `normalizeParsedCues`, `areTimeRangesNearEqual`); bilingual detect that calls `parseSubtitle` (`detectSubtitleLanguage`, `detectSubtitleLanguagePair`, `checkIsBilingual`) lives in `io`; `splitSingleBilingualText` / `isSentenceLevelLatinLine` stay in `analysis`.
