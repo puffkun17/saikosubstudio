@@ -4,6 +4,7 @@ import { secondaryTermFor } from '@/core/trackTerms';
 import React, { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { mintFileId } from '@/core/identity';
+import { runRecognitionJob } from '@/core/recognitionClient';
 import { useStudioStore, Subfile } from '@/store/useStudioStore';
 import { Check, CircleAlert, GripVertical, Info, Paintbrush, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { parseSrt, decodeBuffer, detectSubtitleLanguage, StyleSettings } from '@/utils/subtitleCore';
@@ -171,7 +172,8 @@ export const TaskList: React.FC = () => {
     }
 
     if (detectedFiles.length > 0) {
-      processFiles(detectedFiles);
+      const recognized = await runRecognitionJob(detectedFiles);
+      processFiles(recognized.files as Subfile[], { recognized: true });
     }
   };
 

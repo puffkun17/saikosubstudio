@@ -5,6 +5,7 @@ import { secondaryTermFor } from '@/core/trackTerms';
 import { OriginalConfirmDialog } from '@/components/Ingest/OriginalConfirmDialog';
 import { useShallow } from 'zustand/react/shallow';
 import { mintFileId } from '@/core/identity';
+import { runRecognitionJob } from '@/core/recognitionClient';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
 import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity, isSdhOrCcSubtitleFilename } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
@@ -965,8 +966,9 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
       }
       setResultChips(prev => [...prev.slice(0, 5), displayTitle === '影视数据' ? '影片待确认' : '影片信息已识别']);
 
-      // Establish tasks early so TMDB can run in parallel with the release gate.
-      processFiles(detectedFiles);
+      // Recognition (ASS split / SDH) off the main thread when Workers exist; ceremony floor stays.
+      const recognized = await runRecognitionJob(detectedFiles);
+      processFiles(recognized.files as Subfile[], { recognized: true });
       await holdPhaseFloor(ceremonyStartedAt, phaseStartedAt);
       await waitForCeremonyRelease(ceremonyStartedAt);
 
