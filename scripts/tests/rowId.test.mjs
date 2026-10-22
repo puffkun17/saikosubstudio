@@ -135,3 +135,61 @@ test('same fingerprint → occurrence #2/#3 in finalize order (same-source split
   assert.equal(ids[0], id.mintRowId(twin));
   assert.match(id.parseId(ids[1]).body, /#2$/);
 });
+
+test('re-merge / insert / delete: review ids and rowIds do not shift to other cues', () => {
+  const { buildMergeReviewQueue } = core('utils/timeline/alignmentDiff');
+  const t = timeline(10, 4);
+  const input = {
+    zhText: toSrt(LINES_ZH.slice(0, 10), t),
+    enText: toSrt(LINES_EN.slice(0, 10), timeline(10, 4, 0, 80)),
+    commentaryText: '',
+    mode: 'industrial',
+    bilingualSingle: false,
+  };
+  const first = executeMergeJob(input, () => {});
+  assert.ok(first.rows.every((r) => r.rowId));
+  const queue1 = buildMergeReviewQueue(first.rows);
+  const checked = new Set(queue1.items.slice(0, 3).map((item) => item.id));
+  // Map each checked review id → rowId of its primary row
+  const checkedRowIds = queue1.items
+    .filter((item) => checked.has(item.id))
+    .map((item) => {
+      const row = first.rows.find((r) => r.index === item.rowIndexes[0]);
+      return { reviewId: item.id, rowId: row.rowId, text: row.text };
+    });
+
+  // Re-merge identical input
+  const second = executeMergeJob(input, () => {});
+  assert.deepEqual(second.rows.map((r) => r.rowId), first.rows.map((r) => r.rowId));
+  const queue2 = buildMergeReviewQueue(second.rows);
+  for (const { reviewId, rowId, text } of checkedRowIds) {
+    assert.ok(queue2.items.some((item) => item.id === reviewId), `review id ${reviewId} survived re-merge`);
+    const row = second.rows.find((r) => r.rowId === rowId);
+    assert.ok(row, `rowId ${rowId} survived re-merge`);
+    assert.equal(row.text, text);
+  }
+
+  // Insert a leading cue → display indexes shift; rowIds of original cues stay put.
+  const shifted = [
+    { ...first.rows[0], index: 1, ts: '00:00:00,100 --> 00:00:00,500', text: '【插入】', type: 'note', rowId: 'row.v1.deadbeef00000001' },
+    ...first.rows.map((r, i) => ({ ...r, index: i + 2 })),
+  ];
+  for (const { rowId, text } of checkedRowIds) {
+    const row = shifted.find((r) => r.rowId === rowId);
+    assert.ok(row);
+    assert.equal(row.text, text);
+    assert.notEqual(row.index, first.rows.find((r) => r.rowId === rowId).index);
+  }
+
+  // Delete middle row → remaining rowIds unchanged
+  const without = first.rows.filter((_, i) => i !== 2).map((r, i) => ({ ...r, index: i + 1 }));
+  assert.equal(without.some((r) => r.rowId === first.rows[2].rowId), false);
+  assert.ok(without.every((r, i) => {
+    const orig = first.rows.find((o) => o.rowId === r.rowId);
+    return orig && orig.text === r.text;
+  }));
+
+  // Stale row without rowId: stable key falls back to index (no throw)
+  assert.equal(id.rowStableKey({ index: 7 }), '7');
+  assert.equal(id.rowStableKey({ index: 7, rowId: first.rows[0].rowId }), first.rows[0].rowId);
+});
