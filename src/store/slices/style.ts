@@ -29,6 +29,12 @@ export type StyleSlice = Pick<
   | 'setIsSettingsOpen'
 >;
 
+/** Per-slice reset partial for cancelCurrentUpload / restartSystem (S3). */
+export function resetStyle(kind: 'cancel' | 'restart'): Partial<StudioState> {
+  if (kind === 'cancel') return {};
+  return { isTemplateLab: false };
+}
+
 export const createStyleSlice: StateCreator<StudioState, [], [], StyleSlice> = (set, get) => ({
   exportPresetId: DEFAULT_EXPORT_PRESET_ID,
   setExportPresetId: (exportPresetId) => {

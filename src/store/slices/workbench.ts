@@ -35,6 +35,25 @@ export type WorkbenchSlice = Pick<
   | 'setRefScreenshot'
 >;
 
+/** Per-slice reset partial for cancelCurrentUpload / restartSystem (S3). */
+export function resetWorkbench(kind: 'cancel' | 'restart'): Partial<StudioState> {
+  const shared: Partial<StudioState> = {
+    previewIndex: 0,
+    locateGroupIndexes: [],
+    processedSubs: null,
+    showAllSubs: false,
+    detectedAttributions: [],
+    editHistory: [],
+    editFuture: [],
+    mergeReviewCheckedByTask: {},
+  };
+  // cancel also clears ASS hint state; restart historically left it alone.
+  if (kind === 'cancel') {
+    return { ...shared, showAssHint: false, foundAssStyle: null };
+  }
+  return shared;
+}
+
 export const createWorkbenchSlice: StateCreator<StudioState, [], [], WorkbenchSlice> = (set, get) => ({
   previewIndex: 0,
   locateGroupIndexes: [],

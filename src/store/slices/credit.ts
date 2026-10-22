@@ -19,6 +19,19 @@ export type CreditSlice = Pick<
   | 'setCreditPlacement'
 >;
 
+/** Per-slice reset partial for cancelCurrentUpload / restartSystem (S3). */
+export function resetCredit(kind: 'cancel' | 'restart'): Partial<StudioState> {
+  if (kind === 'cancel') return {};
+  return {
+    isOfficialSubtitle: false,
+    isOriginalWork: false,
+    creditDeclaration: 'none',
+    creditPlacement: 'after-last',
+    creatorCredit: '',
+    appendCreatorCredit: false,
+  };
+}
+
 export const createCreditSlice: StateCreator<StudioState, [], [], CreditSlice> = (set) => ({
   creatorCredit: '',
   appendCreatorCredit: false,

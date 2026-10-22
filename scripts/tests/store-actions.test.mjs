@@ -200,14 +200,13 @@ test('history save/load (in-memory libraryList; IDB may be unavailable in Node)'
   assert.equal(s().libraryList.length, 0);
 });
 
-test('cancelCurrentUpload clears the pinned field set (current behaviour)', () => {
+test('cancelCurrentUpload clears the pinned field set (S3 per-slice reset)', () => {
   seedWorkbench({
     mergeReviewCheckedByTask: { 'task-a': ['r1'] },
     editHistory: [{ index: 1, before: 'a', after: 'b' }],
     editFuture: [{ index: 1, before: 'b', after: 'a' }],
   });
   const before = useStudioStore.getState();
-  // Fields intentionally NOT cleared today (pin for S3 later):
   assert.equal(before.filenameEpKey, 'S01E01');
   assert.equal(before.borrowedVideoName, 'Show.S01E01.mkv');
   assert.equal(before.previewClockMs, 1234);
@@ -235,24 +234,28 @@ test('cancelCurrentUpload clears the pinned field set (current behaviour)', () =
   assert.deepEqual(s.mergeReviewCheckedByTask, {});
   assert.equal(s.isLightsOff, false);
   assert.equal(s.isProcessing, false);
-  // NOT cleared by cancelCurrentUpload today:
-  assert.equal(s.filenameEpKey, 'S01E01');
-  assert.equal(s.borrowedVideoName, 'Show.S01E01.mkv');
+  // S3: ingest + workbench + tmdb suggestion state now reset
+  assert.equal(s.filenameEpKey, '');
+  assert.equal(s.borrowedVideoName, null);
+  assert.deepEqual(s.locateGroupIndexes, []);
+  // Still NOT cleared by cancel (credit/style/theater clock/lang):
   assert.equal(s.previewClockMs, 1234);
   assert.equal(s.isPreviewPlaying, true);
-  assert.deepEqual(s.locateGroupIndexes, [0]);
   assert.equal(s.isTemplateLab, true);
   assert.equal(s.creditPlacement, 'before-end');
   assert.equal(s.creatorCredit, 'Nias');
   assert.equal(s.lang, 'en');
+  assert.equal(s.keepOriginalCredit, false);
 });
 
-test('restartSystem clears the pinned field set (current behaviour)', () => {
+test('restartSystem clears the pinned field set (S3 per-slice reset)', () => {
   seedWorkbench({
     mergeReviewCheckedByTask: { 'task-a': ['r1'] },
     isSearchingTmdb: true,
     tmdbSuggestions: [{ id: 9, media_type: 'movie', title: 'Y' }],
     selectedSuggestion: { id: 9, media_type: 'movie', title: 'Y' },
+    tmdbAlternateSuggestion: { id: 8, media_type: 'movie', title: 'Z' },
+    tmdbManualOpen: true,
   });
   useStudioStore.getState().restartSystem();
   const s = useStudioStore.getState();
@@ -277,15 +280,18 @@ test('restartSystem clears the pinned field set (current behaviour)', () => {
   assert.equal(s.creditPlacement, 'after-last');
   assert.equal(s.creatorCredit, '');
   assert.equal(s.appendCreatorCredit, false);
-  // NOT cleared by restartSystem today:
-  assert.equal(s.isSearchingTmdb, true);
-  assert.equal(s.tmdbSuggestions.length, 1);
-  assert.equal(s.selectedSuggestion?.id, 9);
-  assert.equal(s.filenameEpKey, 'S01E01');
-  assert.equal(s.borrowedVideoName, 'Show.S01E01.mkv');
+  // S3: TMDB suggestion/search + ingest ep/borrowed + locate also reset
+  assert.equal(s.isSearchingTmdb, false);
+  assert.deepEqual(s.tmdbSuggestions, []);
+  assert.equal(s.tmdbAlternateSuggestion, null);
+  assert.equal(s.selectedSuggestion, null);
+  assert.equal(s.tmdbManualOpen, false);
+  assert.equal(s.filenameEpKey, '');
+  assert.equal(s.borrowedVideoName, null);
+  assert.deepEqual(s.locateGroupIndexes, []);
+  // Still NOT cleared by restart (theater clock / lang / keepOriginalCredit):
   assert.equal(s.previewClockMs, 1234);
   assert.equal(s.isPreviewPlaying, true);
-  assert.deepEqual(s.locateGroupIndexes, [0]);
   assert.equal(s.lang, 'en');
   assert.equal(s.keepOriginalCredit, false);
 });

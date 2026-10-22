@@ -24,6 +24,12 @@ export type TheaterSlice = Pick<
   | 'triggerTempGuides'
 >;
 
+/** Per-slice reset partial for cancelCurrentUpload / restartSystem (S3). */
+export function resetTheater(_kind: 'cancel' | 'restart'): Partial<StudioState> {
+  // previewClockMs / isPreviewPlaying stay (S10 owns the clock).
+  return { isLightsOff: false };
+}
+
 export const createTheaterSlice: StateCreator<StudioState, [], [], TheaterSlice> = (set) => ({
   previewClockMs: 0,
   isPreviewPlaying: false,

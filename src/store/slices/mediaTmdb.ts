@@ -77,6 +77,20 @@ export type MediaTmdbSlice = Pick<
   | 'selectTmdbSuggestion'
 >;
 
+/** Per-slice reset partial for cancelCurrentUpload / restartSystem (S3). */
+export function resetMediaTmdb(_kind: 'cancel' | 'restart'): Partial<StudioState> {
+  return {
+    tmdbData: null,
+    tmdbBackdrop: null,
+    tmdbBackdropList: [],
+    tmdbSuggestions: [],
+    tmdbAlternateSuggestion: null,
+    selectedSuggestion: null,
+    tmdbManualOpen: false,
+    isSearchingTmdb: false,
+  };
+}
+
 export const createMediaTmdbSlice: StateCreator<StudioState, [], [], MediaTmdbSlice> = (set, get) => ({
   tmdbData: null,
   tmdbBackdrop: null,

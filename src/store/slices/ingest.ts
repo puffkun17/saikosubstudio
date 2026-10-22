@@ -63,6 +63,23 @@ export type IngestSlice = Pick<
   | 'runSubtitleMerge'
 >;
 
+/** Per-slice reset partial for cancelCurrentUpload / restartSystem (S3). */
+export function resetIngest(_kind: 'cancel' | 'restart'): Partial<StudioState> {
+  return {
+    workflowStep: 1,
+    isIngestClearing: false,
+    files: { zh: null, en: null, commentary: null },
+    customFilename: '',
+    filenameSource: 'unknown',
+    filenameEpKey: '',
+    borrowedVideoName: null,
+    uploadedFiles: [],
+    tasks: [],
+    selectedTaskId: null,
+    isProcessing: false,
+  };
+}
+
 export const createIngestSlice: StateCreator<StudioState, [], [], IngestSlice> = (set, get) => ({
   workflowStep: 1,
   isIngestClearing: false,

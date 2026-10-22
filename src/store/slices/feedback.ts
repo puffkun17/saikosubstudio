@@ -17,6 +17,12 @@ export type FeedbackSlice = Pick<
   | 'clearStatusNotices'
 >;
 
+/** Per-slice reset partial for cancelCurrentUpload / restartSystem (S3). */
+export function resetFeedback(kind: 'cancel' | 'restart'): Partial<StudioState> {
+  if (kind === 'restart') return { logs: [], statusNotices: [] };
+  return { statusNotices: [] };
+}
+
 export const createFeedbackSlice: StateCreator<StudioState, [], [], FeedbackSlice> = (set, get) => ({
   logs: [],
   statusNotices: [],
