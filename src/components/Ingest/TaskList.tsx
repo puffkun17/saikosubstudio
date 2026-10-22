@@ -3,6 +3,7 @@
 import { secondaryTermFor } from '@/core/trackTerms';
 import React, { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { mintFileId } from '@/core/identity';
 import { useStudioStore, Subfile } from '@/store/useStudioStore';
 import { Check, CircleAlert, GripVertical, Info, Paintbrush, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { parseSrt, decodeBuffer, detectSubtitleLanguage, StyleSettings } from '@/utils/subtitleCore';
@@ -150,7 +151,7 @@ export const TaskList: React.FC = () => {
           const detected = detectSubtitleLanguage(file.name, decoded.text);
 
           detectedFiles.push({
-            id: `file_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
+            id: mintFileId(file.name, decoded.text),
             name: file.name,
             text: decoded.text,
             lang: detected.lang,

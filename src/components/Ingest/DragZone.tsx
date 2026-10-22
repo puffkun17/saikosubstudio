@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { secondaryTermFor } from '@/core/trackTerms';
 import { OriginalConfirmDialog } from '@/components/Ingest/OriginalConfirmDialog';
 import { useShallow } from 'zustand/react/shallow';
+import { mintFileId } from '@/core/identity';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
 import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity, isSdhOrCcSubtitleFilename } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
@@ -670,9 +671,10 @@ export const DragZone: React.FC = () => {
         const decoded = decodeBuffer(buffer);
         const detected = detectSubtitleLanguage(zipEntry.name, decoded.text);
         const ext = getExtension(zipEntry.name);
+        const entryName = zipEntry.name.split('/').pop() || zipEntry.name;
         const subfile: Subfile = {
-          id: `zip_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
-          name: zipEntry.name.split('/').pop() || zipEntry.name,
+          id: mintFileId(entryName, decoded.text),
+          name: entryName,
           text: decoded.text,
           lang: detected.lang,
           languagePair: detected.languagePair,
@@ -726,7 +728,7 @@ export const DragZone: React.FC = () => {
         const detected = detectSubtitleLanguage(extractedFile.name, decoded.text);
         const ext = getExtension(extractedFile.name);
         const subfile: Subfile = {
-          id: `archive_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          id: mintFileId(extractedFile.name, decoded.text),
           name: extractedFile.name,
           text: decoded.text,
           lang: detected.lang,
@@ -852,7 +854,7 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
           const detected = detectSubtitleLanguage(file.name, decoded.text);
           const ext = getExtension(file.name);
           const subfile: Subfile = {
-            id: `file_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
+            id: mintFileId(file.name, decoded.text),
             name: file.name,
             text: decoded.text,
             lang: detected.lang,

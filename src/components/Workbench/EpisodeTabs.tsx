@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { historyIdFor } from '@/core/identity';
 import { useStudioStore } from '@/store/useStudioStore';
 
 /**
@@ -23,7 +24,7 @@ export const EpisodeTabs: React.FC = () => {
       {tasks.map((task) => {
         const active = task.id === selectedTaskId;
         const label = task.epKey || task.title;
-        const done = saved.has(`hist_${task.id.replace(/[^\w\u4e00-\u9fff.-]+/g, '_')}`);
+        const done = saved.has(historyIdFor(task.id));
         return (
           <button
             key={task.id}

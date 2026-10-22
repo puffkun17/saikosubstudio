@@ -5,8 +5,9 @@ import { buildExportBaseFromMeta, type NamingMode, type Task } from '../core/tas
 import { ERROR_CODES, codeErrorMessage, rememberErrorCode } from '../core/errorCodes';
 import { DEFAULT_EXPORT_PRESET_ID, getExportPreset, type ExportPresetId } from '../utils/exportPresets';
 import { DEFAULT_HDR_LEVEL, isHdrLevelId, type HdrLevelId } from '../utils/hdrPresets';
-import { clearAllLocalData, deleteTask, listMerged, listTasks, migrateLegacyLibrary, purgeExpiredSources, purgeExpiredTasks, putHistoryEntry } from '../core/taskStore';
+import { clearAllLocalData, deleteTask, listMerged, listTasks, purgeExpiredSources, purgeExpiredTasks, putHistoryEntry } from '../core/taskStore';
 import { decideSameEpisode, type EpisodeCandidate } from '../core/sameEpisode';
+import { derivedFileId, historyIdFor, identityFromStorageKey, mintTaskId, workIdentityFromFileName } from '../core/identity';
 import { detectSdhByContent, splitAssByLanguageStyles, titleKeyOf } from '../core/recognition';
 import { detectLanguageByContent } from '../utils/subtitleCore';
 import { reviewTaskKey } from '../core/reviewKey';
@@ -423,9 +424,6 @@ const tmdbClientCache = new Map<string, { expiresAt: number; results: TmdbSugges
 
 const normalizeMediaIdentityTitle = (value: string) => cleanFilename(value).toLowerCase().replace(/\s+/g, ' ').trim();
 
-/** One history entry per task id (episode). */
-const historyIdFor = (key: string) => `hist_${key.replace(/[^\w\u4e00-\u9fff.-]+/g, '_')}`;
-
 const libraryItemToTask = (item: LibraryItem): Task => {
   const now = Date.now();
   return {
@@ -442,10 +440,9 @@ const libraryItemToTask = (item: LibraryItem): Task => {
   };
 };
 
-/** Load history from IndexedDB (migrating + purging first). Null when IndexedDB is unavailable. */
+/** Load history from IndexedDB (purge first). Null when IndexedDB is unavailable. Schema upgrades wipe prior data. */
 const loadHistoryFromIdb = async (): Promise<LibraryItem[] | null> => {
   try {
-    const migrated = await migrateLegacyLibrary();
     await purgeExpiredTasks();
     await purgeExpiredSources();
     const [tasks, merged] = await Promise.all([listTasks(), listMerged()]);
@@ -455,7 +452,7 @@ const loadHistoryFromIdb = async (): Promise<LibraryItem[] | null> => {
       if (!m || !Array.isArray(m.rows) || m.rows.length === 0) return [];
       const extra = (m.extra || {}) as { backdrop?: string | null; backdropList?: string[] | null; customStyle?: StyleSettings | null };
       return [{
-        id: task.id,
+        id: historyIdFor(task.id),
         name: task.name.value,
         date: new Date(task.updatedAt).toLocaleString('zh-CN', { hour12: false }),
         subs: m.rows as SubRow[],
@@ -464,10 +461,7 @@ const loadHistoryFromIdb = async (): Promise<LibraryItem[] | null> => {
         customStyle: (extra.customStyle ?? useStudioStore.getState().customStyle) as StyleSettings,
       }];
     });
-    // Old archive is now in IndexedDB: remove the localStorage copy (decided A10).
-    if (migrated > 0 || list.length > 0) {
-      try { localStorage.removeItem(LIBRARY_STORAGE_KEY); } catch { /* ignore */ }
-    }
+    try { localStorage.removeItem(LIBRARY_STORAGE_KEY); } catch { /* ignore */ }
     return list;
   } catch {
     return null;
@@ -499,8 +493,8 @@ const expandRecognizedFiles = (files: Subfile[]): Subfile[] => files.flatMap((fi
       const secondaryLang = split.secondary.lang;
       const zhLang = detectLanguageByContent(parseSubtitle(split.primary.text).slice(0, 80).map((r) => r.text).join('\n'));
       return [
-        { ...base, id: `${file.id}#zh`, name: `${stem}.简中.ass`, text: split.primary.text, lang: zhLang === 'zh-TW' ? 'zh-TW' : 'zh-CN', isBilingual: false, languagePair: undefined, derivedFrom: { name: file.name, styles: split.primary.styles } },
-        { ...base, id: `${file.id}#${secondaryLang}`, name: `${stem}.${secondaryLang === 'ja' ? '日文' : 'kor'}.ass`, text: split.secondary.text, lang: secondaryLang, isBilingual: false, languagePair: undefined, derivedFrom: { name: file.name, styles: split.secondary.styles } },
+        { ...base, id: derivedFileId(file.id, 'zh'), name: `${stem}.简中.ass`, text: split.primary.text, lang: zhLang === 'zh-TW' ? 'zh-TW' : 'zh-CN', isBilingual: false, languagePair: undefined, derivedFrom: { name: file.name, styles: split.primary.styles } },
+        { ...base, id: derivedFileId(file.id, secondaryLang), name: `${stem}.${secondaryLang === 'ja' ? '日文' : 'kor'}.ass`, text: split.secondary.text, lang: secondaryLang, isBilingual: false, languagePair: undefined, derivedFrom: { name: file.name, styles: split.secondary.styles } },
       ];
     }
   }
@@ -1842,8 +1836,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   initializeLibrary: () => {
     if (typeof window === 'undefined') return;
-    const savedLibrary = readJsonStorage<unknown>(LIBRARY_STORAGE_KEY, []);
-    if (Array.isArray(savedLibrary)) set({ libraryList: fitLibraryToStorageBudget(savedLibrary as LibraryItem[]) });
+    // Planned downtime: do not hydrate history from legacy localStorage; IDB schema wipe owns continuity.
     try {
       const storedPreset = getExportPreset(localStorage.getItem('saiko_export_preset'));
       const storedHdr = localStorage.getItem('saiko_export_hdr') || '';
@@ -1858,9 +1851,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         set({ styleOverrides: storedOverrides as Partial<StyleSettings> });
       }
     } catch { /* ignore */ }
-    // History lives in IndexedDB (taskStore). Migrate the old localStorage archive once, then drop it.
+    // History lives in IndexedDB (taskStore). Prior schema versions are discarded on open.
     void loadHistoryFromIdb().then((list) => {
       if (list) set({ libraryList: list, historyReady: true });
+      else set({ libraryList: [], historyReady: true });
     });
     const savedStyles = readJsonStorage<{ preset?: string; style?: Partial<StyleSettings>; templates?: CustomTemplate[] }>(STYLE_STORAGE_KEY, {});
     if (savedStyles.preset) set({ activePreset: savedStyles.preset });
@@ -2186,7 +2180,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       || (tmdbData ? [tmdbData.title, tmdbData.year].filter(Boolean).join('.') : '')
       || '未命名字幕';
     // One entry per task (re-merging the same task replaces it instead of piling up duplicates).
-    const historyId = historyIdFor(selectedTaskId || name);
+    // LibraryItem.id is a storage key; IndexedDB Task.id stays the identity.
+    const taskIdentity = selectedTaskId || mintTaskId(workIdentityFromFileName(name));
+    const historyId = historyIdFor(taskIdentity);
     const newItem: LibraryItem = {
       id: historyId,
       name: name,
@@ -2197,7 +2193,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       customStyle: customStyle
     };
     set({ libraryList: [newItem, ...libraryList.filter((item) => item.id !== historyId)] });
-    void putHistoryEntry(libraryItemToTask(newItem), processedSubs, {
+    void putHistoryEntry({ ...libraryItemToTask(newItem), id: taskIdentity }, processedSubs, {
       backdrop: tmdbBackdrop, backdropList: tmdbBackdropList, customStyle,
     }).then(
       () => get().addLog(`[历史] 已保存到本机：${name}`, 'success'),
@@ -2207,7 +2203,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   deleteFromLibrary: (id) => {
     set(state => ({ libraryList: state.libraryList.filter(item => item.id !== id) }));
-    void deleteTask(id).catch(() => undefined);
+    const taskIdentity = identityFromStorageKey(id, 'history') || id;
+    void deleteTask(taskIdentity).catch(() => undefined);
     get().addLog('已删除这条历史', 'info');
   },
 
@@ -2270,12 +2267,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       newFiles.forEach(file => {
         const fileEpKey = parseEpisodeKey(file.name);
         const fileBase = getBaseTitle(file.name).toLowerCase();
+        const work = workIdentityFromFileName(file.name, fileEpKey);
+        const taskId = mintTaskId(work);
 
         // Same-episode grouping (core/sameEpisode): episode number + timeline agreement.
         // Never merges differing episodes; uncertain pairs become a suggestion, not a merge.
         let suggestion: TaskPair['mergeSuggestion'];
         const fileCand = episodeCandidateOf(file);
-        const matchedTask = currentTasks.find(t => {
+        const matchedTask = currentTasks.find((t) => t.id === taskId) || currentTasks.find(t => {
           const sameBase = fileBase
             ? t.files.some(f => getBaseTitle(f.name).toLowerCase() === fileBase)
             : true;
@@ -2298,8 +2297,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           }
         } else {
           const baseName = getBaseTitle(file.name);
-          const newTask = {
-            id: `task_${fileEpKey ? "tv_" + fileEpKey : "movie_" + fileBase}_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,
+          currentTasks.push({
+            id: taskId,
             title: fileEpKey ? `${baseName || '待补充片名'} ${fileEpKey}` : (baseName || '待补充片名'),
             epKey: fileEpKey,
             zh: null,
@@ -2308,8 +2307,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             files: [file],
             status: "unpaired",
             ...(suggestion ? { mergeSuggestion: suggestion } : {}),
-          };
-          currentTasks.push(newTask);
+          });
         }
       });
 
