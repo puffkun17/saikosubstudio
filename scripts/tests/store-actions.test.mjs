@@ -321,14 +321,16 @@ test('S8: selectTask clears stuck isSearchingTmdb when new task skips search', a
   assert.equal(useStudioStore.getState().selectedTaskId, 'task-b');
 });
 
-test('deleteTask and removeFileFromTask (by file name today)', async () => {
+test('deleteTask and removeFileFromTask (prefer content id; name still works)', async () => {
   const fZh = makeFile('f-zh', 'Show.S01E01.chs.srt');
   const fEn = makeFile('f-en', 'Show.S01E01.eng.srt', '1\n00:00:01,000 --> 00:00:02,000\nHello\n');
   const fZh2 = makeFile('f-zh2', 'Show.S01E02.chs.srt');
+  // Same basename, different content id — both must stay until explicitly removed (S2).
+  const fDupName = makeFile('f-dup', 'Show.S01E01.chs.srt', '1\n00:00:01,000 --> 00:00:02,000\n另一版\n');
   useStudioStore.setState({
-    uploadedFiles: [fZh, fEn, fZh2],
+    uploadedFiles: [fZh, fEn, fZh2, fDupName],
     tasks: [
-      { id: 'task-a', title: 'A', epKey: 'S01E01', zh: fZh, en: fEn, commentary: null, status: 'paired', files: [fZh, fEn] },
+      { id: 'task-a', title: 'A', epKey: 'S01E01', zh: fZh, en: fEn, commentary: null, status: 'paired', files: [fZh, fEn, fDupName] },
       { id: 'task-b', title: 'B', epKey: 'S01E02', zh: fZh2, en: null, commentary: null, status: 'partial', files: [fZh2] },
     ],
     selectedTaskId: 'task-a',
@@ -339,17 +341,27 @@ test('deleteTask and removeFileFromTask (by file name today)', async () => {
     filenameEpKey: 'S01E01',
   });
 
-  useStudioStore.getState().removeFileFromTask('task-a', 'Show.S01E01.eng.srt');
+  // Prefer content id
+  useStudioStore.getState().removeFileFromTask('task-a', 'f-en');
   await delay(20);
   let s = useStudioStore.getState();
-  assert.equal(s.uploadedFiles.some((f) => f.name === 'Show.S01E01.eng.srt'), false);
+  assert.equal(s.uploadedFiles.some((f) => f.id === 'f-en'), false);
   assert.equal(s.tasks.find((t) => t.id === 'task-a')?.en, null);
+  // Same-name sibling still present
+  assert.equal(s.uploadedFiles.filter((f) => f.name === 'Show.S01E01.chs.srt').length, 2);
+
+  // Basename still accepted (removes first match by id||name — here unique eng already gone)
+  useStudioStore.getState().removeFileFromTask('task-a', 'f-dup');
+  await delay(20);
+  s = useStudioStore.getState();
+  assert.equal(s.uploadedFiles.some((f) => f.id === 'f-dup'), false);
+  assert.equal(s.uploadedFiles.some((f) => f.id === 'f-zh'), true);
 
   useStudioStore.getState().deleteTask('task-a');
   await delay(20);
   s = useStudioStore.getState();
   assert.equal(s.tasks.some((t) => t.id === 'task-a'), false);
-  assert.equal(s.uploadedFiles.some((f) => f.name === 'Show.S01E01.chs.srt'), false);
+  assert.equal(s.uploadedFiles.some((f) => f.id === 'f-zh'), false);
   // Reselects remaining task via setTimeout(0)
   assert.equal(s.selectedTaskId, 'task-b');
 

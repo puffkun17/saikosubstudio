@@ -216,7 +216,8 @@ export const groupAndBindFiles = (opts: {
 
   const updatedUploadedFiles = [...opts.existingUploadedFiles];
   newFiles.forEach((nf) => {
-    const idx = updatedUploadedFiles.findIndex((u) => u.name === nf.name);
+    // S2: identity is content id (mintFileId), not basename — same name + different text both kept.
+    const idx = updatedUploadedFiles.findIndex((u) => u.id === nf.id);
     if (idx !== -1) {
       updatedUploadedFiles[idx] = nf;
     } else {
@@ -273,11 +274,11 @@ export const groupAndBindFiles = (opts: {
     });
 
     if (matchedTask) {
-      const fileExists = matchedTask.files.some((f) => f.name === file.name);
+      const fileExists = matchedTask.files.some((f) => f.id === file.id);
       if (!fileExists) {
         matchedTask.files = [...matchedTask.files, file];
       } else {
-        matchedTask.files = matchedTask.files.map((f) => (f.name === file.name ? file : f));
+        matchedTask.files = matchedTask.files.map((f) => (f.id === file.id ? file : f));
       }
     } else {
       const baseName = getBaseTitle(file.name);

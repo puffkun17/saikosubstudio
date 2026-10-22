@@ -298,7 +298,8 @@ export interface StudioState {
   selectTask: (taskId: string) => void;
   bindTrack: (taskId: string, trackKey: 'zh' | 'en' | 'commentary', fileId: string) => void;
   swapPrimaryTracks: (taskId: string) => void;
-  removeFileFromTask: (taskId: string, fileName: string) => void;
+  /** Prefer content file id (mintFileId); basename still accepted for older callers. */
+  removeFileFromTask: (taskId: string, fileIdOrName: string) => void;
   deleteTask: (taskId: string) => void;
   cancelCurrentUpload: () => void;
   saveToLibrary: () => void;

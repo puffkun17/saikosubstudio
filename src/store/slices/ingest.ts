@@ -330,21 +330,23 @@ export const createIngestSlice: StateCreator<StudioState, [], [], IngestSlice> =
     }
     get().addLog('已对调主字幕与副字幕', 'info');
   },
-  removeFileFromTask: (taskId, fileName) => {
+  removeFileFromTask: (taskId, fileIdOrName) => {
     const state = get();
-    const nextFiles = state.uploadedFiles.filter((f) => f.name !== fileName);
+    const matches = (f: { id: string; name: string }) => f.id === fileIdOrName || f.name === fileIdOrName;
+    const removed = state.uploadedFiles.find(matches);
+    const nextFiles = state.uploadedFiles.filter((f) => !matches(f));
     const nextTasks = state.tasks.map((t) => {
       if (t.id !== taskId) return t;
-      const zh = t.zh?.name === fileName ? null : t.zh;
-      const en = t.en?.name === fileName ? null : t.en;
-      const comm = t.commentary?.name === fileName ? null : t.commentary;
-      const updated = { ...t, zh, en, commentary: comm, files: t.files.filter((f) => f.name !== fileName) };
+      const zh = t.zh && matches(t.zh) ? null : t.zh;
+      const en = t.en && matches(t.en) ? null : t.en;
+      const comm = t.commentary && matches(t.commentary) ? null : t.commentary;
+      const updated = { ...t, zh, en, commentary: comm, files: t.files.filter((f) => !matches(f)) };
       updated.status = (updated.isBilingualSingle && updated.zh) || (updated.zh && updated.en) ? 'paired' : 'unpaired';
       return updated;
     }).filter((t) => t.zh || t.en || t.commentary);
 
     set({ uploadedFiles: nextFiles, tasks: nextTasks });
-    get().addLog(`已移除文件: ${fileName}`, 'info');
+    get().addLog(`已移除文件: ${removed?.name || fileIdOrName}`, 'info');
 
     setTimeout(() => {
       if (nextTasks.length > 0) {
@@ -366,9 +368,9 @@ export const createIngestSlice: StateCreator<StudioState, [], [], IngestSlice> =
     const state = get();
     const taskToDelete = state.tasks.find((t) => t.id === taskId);
     if (!taskToDelete) return;
-    const fileNamesToRemove = (taskToDelete.files || []).map((f) => f.name);
+    const fileIdsToRemove = new Set((taskToDelete.files || []).map((f) => f.id));
 
-    const nextFiles = state.uploadedFiles.filter((f) => !fileNamesToRemove.includes(f.name));
+    const nextFiles = state.uploadedFiles.filter((f) => !fileIdsToRemove.has(f.id));
     const nextTasks = state.tasks.filter((t) => t.id !== taskId);
 
     set({ uploadedFiles: nextFiles, tasks: nextTasks });
