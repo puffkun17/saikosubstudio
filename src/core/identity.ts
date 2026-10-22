@@ -238,6 +238,26 @@ export function mintRowId(row: Parameters<typeof rowFingerprint>[0]): string {
   return mint('row', rowFingerprint(row));
 }
 
+/**
+ * When several rows share one fingerprint in a single result, append #2, #3…
+ * (1st keeps the plain mint). Deterministic; parseId still accepts the body.
+ */
+export function mintRowIdDisambiguated(
+  row: Parameters<typeof rowFingerprint>[0],
+  occurrence: number,
+): string {
+  const base = mintRowId(row);
+  if (occurrence <= 1) return base;
+  const parsed = parseId(base);
+  if (!parsed) return `${base}#${occurrence}`;
+  return formatId({ ...parsed, body: `${parsed.body.split('#')[0]}#${occurrence}` });
+}
+
+/** Prefer rowId for React/review keys; fall back to display index for stale rows. */
+export function rowStableKey(row: { rowId?: string; index: number }): string {
+  return row.rowId || String(row.index);
+}
+
 /* ---------- Storage / React keys (not identity) ---------- */
 
 export type StorageNamespace = 'history' | 'source' | 'merged' | 'meta';
