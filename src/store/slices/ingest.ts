@@ -232,126 +232,140 @@ export const createIngestSlice: StateCreator<StudioState, [], [], IngestSlice> =
     }
   },
   bindTrack: (taskId, trackKey, fileId) => {
-    set(state => {
-      const nextTasks = state.tasks.map(t => {
-        if (t.id === taskId) {
-          const selectedFile = state.uploadedFiles.find(f => f.id === fileId) || null;
-          const updated = { ...t, [trackKey]: selectedFile };
+    const state = get();
+    let blockedSecondary: { name: string; lang: string } | null = null;
+    let syncFiles: StudioState['files'] | null = null;
 
-          if (trackKey === 'zh') {
-            updated.isBilingualSingle = selectedFile?.lang === 'bilingual';
-            if (updated.isBilingualSingle) {
-              updated.en = null;
-            }
-          } else if (trackKey === 'en') {
-            updated.isBilingualSingle = false;
-            // Manual 原文 bind: en, Latin-alphabet es/fr/pt/de/it, ja/ko. Do not silent-empty; explain others.
-            if (selectedFile && !isMainPathSecondaryLanguage(selectedFile.lang)) {
-              const blockedName = selectedFile.name;
-              const blockedLang = selectedFile.lang;
-              setTimeout(() => {
-                get().setStatusNotice({
-                  id: 'secondary-bind-blocked',
-                  tone: 'notice',
-                  title: '副字幕未绑定',
-                  message: `「${blockedName}」语种为 ${blockedLang}，自动合轴副字幕支持英语、西语、法语、葡语、德语、意语、日语、韩语。请改选文件，或先纠正语种标签。`,
-                });
-              }, 0);
-              updated.en = null;
-            }
-          }
+    const nextTasks = state.tasks.map((t) => {
+      if (t.id !== taskId) return t;
+      const selectedFile = state.uploadedFiles.find((f) => f.id === fileId) || null;
+      const updated = { ...t, [trackKey]: selectedFile };
 
-          updated.status = (updated.isBilingualSingle && updated.zh) || (updated.zh && updated.en) ? 'paired' : 'unpaired';
-          
-          if (t.id === state.selectedTaskId) {
-            setTimeout(() => {
-              set({
-                files: { zh: updated.zh, en: updated.en, commentary: updated.commentary }
-              });
-            }, 0);
-          }
-          return updated;
+      if (trackKey === 'zh') {
+        updated.isBilingualSingle = selectedFile?.lang === 'bilingual';
+        if (updated.isBilingualSingle) {
+          updated.en = null;
         }
-        return t;
-      });
-      return { tasks: nextTasks };
+      } else if (trackKey === 'en') {
+        updated.isBilingualSingle = false;
+        // Manual 原文 bind: en, Latin-alphabet es/fr/pt/de/it, ja/ko. Do not silent-empty; explain others.
+        if (selectedFile && !isMainPathSecondaryLanguage(selectedFile.lang)) {
+          blockedSecondary = { name: selectedFile.name, lang: selectedFile.lang };
+          updated.en = null;
+        }
+      }
+
+      updated.status = (updated.isBilingualSingle && updated.zh) || (updated.zh && updated.en) ? 'paired' : 'unpaired';
+
+      if (t.id === state.selectedTaskId) {
+        syncFiles = { zh: updated.zh, en: updated.en, commentary: updated.commentary };
+      }
+      return updated;
     });
+
+    set({ tasks: nextTasks });
+
+    if (blockedSecondary) {
+      const { name: blockedName, lang: blockedLang } = blockedSecondary;
+      setTimeout(() => {
+        get().setStatusNotice({
+          id: 'secondary-bind-blocked',
+          tone: 'notice',
+          title: '副字幕未绑定',
+          message: `「${blockedName}」语种为 ${blockedLang}，自动合轴副字幕支持英语、西语、法语、葡语、德语、意语、日语、韩语。请改选文件，或先纠正语种标签。`,
+        });
+      }, 0);
+    }
+    if (syncFiles) {
+      const files = syncFiles;
+      setTimeout(() => set({ files }), 0);
+    }
   },
   swapPrimaryTracks: (taskId) => {
-    set(state => {
-      const nextTasks = state.tasks.map(task => {
-        if (task.id !== taskId || task.isBilingualSingle) return task;
-        if (!task.zh || !task.en) return task;
-        const updated = {
-          ...task,
-          zh: task.en,
-          en: task.zh,
-          isBilingualSingle: false,
-          status: 'paired' as const,
-        };
-        if (task.id === state.selectedTaskId) {
-          setTimeout(() => {
-            set({
-              files: { zh: updated.zh, en: updated.en, commentary: updated.commentary },
-            });
-          }, 0);
-        }
-        return updated;
-      });
-      return { tasks: nextTasks };
+    const state = get();
+    let syncFiles: StudioState['files'] | null = null;
+
+    const nextTasks = state.tasks.map((task) => {
+      if (task.id !== taskId || task.isBilingualSingle) return task;
+      if (!task.zh || !task.en) return task;
+      const updated = {
+        ...task,
+        zh: task.en,
+        en: task.zh,
+        isBilingualSingle: false,
+        status: 'paired' as const,
+      };
+      if (task.id === state.selectedTaskId) {
+        syncFiles = { zh: updated.zh, en: updated.en, commentary: updated.commentary };
+      }
+      return updated;
     });
+
+    set({ tasks: nextTasks });
+    if (syncFiles) {
+      const files = syncFiles;
+      setTimeout(() => set({ files }), 0);
+    }
     get().addLog('已对调主字幕与副字幕', 'info');
   },
   removeFileFromTask: (taskId, fileName) => {
-    set(state => {
-      const nextFiles = state.uploadedFiles.filter(f => f.name !== fileName);
-      // Let us update matching task
-      const nextTasks = state.tasks.map(t => {
-        if (t.id === taskId) {
-          const zh = t.zh?.name === fileName ? null : t.zh;
-          const en = t.en?.name === fileName ? null : t.en;
-          const comm = t.commentary?.name === fileName ? null : t.commentary;
-          const updated = { ...t, zh, en, commentary: comm, files: t.files.filter(f => f.name !== fileName) };
-          updated.status = (updated.isBilingualSingle && updated.zh) || (updated.zh && updated.en) ? 'paired' : 'unpaired';
-          return updated;
-        }
-        return t;
-      }).filter(t => t.zh || t.en || t.commentary);
+    const state = get();
+    const nextFiles = state.uploadedFiles.filter((f) => f.name !== fileName);
+    const nextTasks = state.tasks.map((t) => {
+      if (t.id !== taskId) return t;
+      const zh = t.zh?.name === fileName ? null : t.zh;
+      const en = t.en?.name === fileName ? null : t.en;
+      const comm = t.commentary?.name === fileName ? null : t.commentary;
+      const updated = { ...t, zh, en, commentary: comm, files: t.files.filter((f) => f.name !== fileName) };
+      updated.status = (updated.isBilingualSingle && updated.zh) || (updated.zh && updated.en) ? 'paired' : 'unpaired';
+      return updated;
+    }).filter((t) => t.zh || t.en || t.commentary);
 
-      setTimeout(() => {
-        if (nextTasks.length > 0) {
-          const active = nextTasks.find(t => t.id === state.selectedTaskId) || nextTasks[0];
-          get().selectTask(active.id);
-        } else {
-          set({ selectedTaskId: null, files: { zh: null, en: null, commentary: null }, customFilename: '', filenameSource: 'unknown', borrowedVideoName: null, filenameEpKey: '' });
-        }
-      }, 0);
+    set({ uploadedFiles: nextFiles, tasks: nextTasks });
+    get().addLog(`已移除文件: ${fileName}`, 'info');
 
-      get().addLog(`已移除文件: ${fileName}`, 'info');
-      return { uploadedFiles: nextFiles, tasks: nextTasks };
-    });
+    setTimeout(() => {
+      if (nextTasks.length > 0) {
+        const active = nextTasks.find((t) => t.id === state.selectedTaskId) || nextTasks[0];
+        get().selectTask(active.id);
+      } else {
+        set({
+          selectedTaskId: null,
+          files: { zh: null, en: null, commentary: null },
+          customFilename: '',
+          filenameSource: 'unknown',
+          borrowedVideoName: null,
+          filenameEpKey: '',
+        });
+      }
+    }, 0);
   },
   deleteTask: (taskId) => {
-    set(state => {
-      const taskToDelete = state.tasks.find(t => t.id === taskId);
-      if (!taskToDelete) return {};
-      const fileNamesToRemove = (taskToDelete.files || []).map(f => f.name);
-      
-      const nextFiles = state.uploadedFiles.filter(f => !fileNamesToRemove.includes(f.name));
-      const nextTasks = state.tasks.filter(t => t.id !== taskId);
-      
-      setTimeout(() => {
-        if (nextTasks.length > 0) {
-          const active = nextTasks[0];
-          get().selectTask(active.id);
-        } else {
-          set({ selectedTaskId: null, files: { zh: null, en: null, commentary: null }, customFilename: '', filenameSource: 'unknown', borrowedVideoName: null, filenameEpKey: '' });
-        }
-      }, 0);
+    const state = get();
+    const taskToDelete = state.tasks.find((t) => t.id === taskId);
+    if (!taskToDelete) return;
+    const fileNamesToRemove = (taskToDelete.files || []).map((f) => f.name);
 
-      get().addLog(`已删除任务: ${taskToDelete.title}`, 'info');
-      return { uploadedFiles: nextFiles, tasks: nextTasks };
-    });
+    const nextFiles = state.uploadedFiles.filter((f) => !fileNamesToRemove.includes(f.name));
+    const nextTasks = state.tasks.filter((t) => t.id !== taskId);
+
+    set({ uploadedFiles: nextFiles, tasks: nextTasks });
+    get().addLog(`已删除任务: ${taskToDelete.title}`, 'info');
+
+    setTimeout(() => {
+      if (nextTasks.length > 0) {
+        get().selectTask(nextTasks[0].id);
+      } else {
+        set({
+          selectedTaskId: null,
+          files: { zh: null, en: null, commentary: null },
+          customFilename: '',
+          filenameSource: 'unknown',
+          borrowedVideoName: null,
+          filenameEpKey: '',
+        });
+      }
+    }, 0);
   },
   processFiles: (incomingFiles, opts) => {
     // Recognition pre-pass (ASS style-split + SDH). Prefer Worker via runRecognitionJob in UI,
@@ -365,14 +379,13 @@ export const createIngestSlice: StateCreator<StudioState, [], [], IngestSlice> =
       existingTasks: state.tasks,
       newFiles,
     });
+    // Pure set() — notices / selectTask / addLog run after (S1).
     set({ uploadedFiles, tasks });
 
-    // Deferred notices (was setTimeout inside optimizeTaskBindings).
     notices.forEach((notice) => {
       setTimeout(() => get().setStatusNotice(notice), 0);
     });
 
-    // Update selectedTaskId and workflow step if empty
     setTimeout(() => {
       if (tasks.length > 0) {
         const activeId = get().selectedTaskId || tasks[0].id;
