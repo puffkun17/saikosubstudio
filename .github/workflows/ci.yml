@@ -46,3 +46,14 @@ jobs:
 
       - name: Worker bundle dry run
         run: npx wrangler deploy --config dist/server/wrangler.json --dry-run
+
+      - name: Corpus baseline (synthetic samples)
+        run: npm run test:corpus
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Playwright e2e (pages + core path + offline shell)
+        run: npx playwright test
+        env:
+          CI: true

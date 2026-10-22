@@ -42,6 +42,17 @@ Thumbs.db
 # Local scratch / browser profiles / walkthrough fixtures
 tmp/
 
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# Real corpus baselines must never live in-repo (harness also enforces this).
+# Synthetic baselines under scripts/fixtures/corpus-synthetic/baseline/ are committed.
+/corpus-baseline/
+/corpus-baselines/
+
 # Legacy test:core temp files (runner now vendored; kept so stray copies never get committed)
 scripts/_reg_assembled_*.mjs
 /public/sw.js
