@@ -1,4 +1,5 @@
 /** Subtitle engine: merge / align algorithms. Must not import io or product. */
+import { mintRowId } from '../../core/identity';
 import {
   OFFSET_DIAGNOSIS_POLICY,
   estimateGlobalOffsetFromStarts,
@@ -27,6 +28,24 @@ import {
   isSubtitleCreditText,
   splitSingleBilingualText,
 } from './analysis';
+
+/** Assign display index + stable rowId (fingerprint ignores display index). */
+function finalizeOutputRow(
+  item: Omit<SubRow, 'index' | 'rowId'> & {
+    index?: number;
+    rowId?: string;
+    sourceIndex?: number;
+  },
+  idx: number,
+): SubRow {
+  const { sourceIndex, index: _dropIndex, rowId: _dropId, ...rest } = item;
+  const base = { ...rest, type: item.type, cueKind: item.cueKind };
+  return {
+    ...base,
+    index: idx + 1,
+    rowId: mintRowId({ ...base, sourceIndex }),
+  };
+}
 
 function analyzeContentType(text: string): number {
   let score = 0;
@@ -1007,7 +1026,7 @@ export function mergeSubtitles(
       } else if (cueKind === 'lyrics' || isLyricText(item.text)) {
         type = 'lyrics';
       }
-      return { ...item, type, cueKind, index: idx + 1 };
+      return finalizeOutputRow({ ...item, type, cueKind }, idx);
     });
   
   addLog(`[合并] 处理完成，生成 ${result.length} 条对齐块`, "success");
@@ -1191,7 +1210,7 @@ export function alignSubtitlesIndustrial(
       } else if (cueKind === 'lyrics' || isLyricText(item.text)) {
         type = 'lyrics';
       }
-      return { ...item, type, cueKind, index: idx + 1 };
+      return finalizeOutputRow({ ...item, type, cueKind }, idx);
     });
   addLog(`[工业级合并] 处理完成，生成 ${result.length} 条对齐块`, "success");
   return result;
@@ -1227,24 +1246,22 @@ export function normalizeSingleBilingualRows(rows: RawSub[]): SubRow[] {
     if (canFoldPair) {
       const zhText = currentLang === 'zh' ? currentText : nextText;
       const foreignText = currentLang === 'foreign' ? currentText : nextText;
-      result.push({
+      result.push(finalizeOutputRow({
         ts: current.ts,
         text: `${zhText}\n${foreignText}`,
         type: 'merged',
         cueKind: combineRowCueKind(current.cueKind, next.cueKind),
-        index: result.length + 1,
-      });
+      }, result.length));
       i += 2;
       continue;
     }
 
-    result.push({
+    result.push(finalizeOutputRow({
       ts: current.ts,
       text: currentText,
       type: currentLang === 'mixed' || currentText.includes('\n') ? 'merged' : 'dialogue',
       cueKind: current.cueKind,
-      index: result.length + 1,
-    });
+    }, result.length));
     i += 1;
   }
 
