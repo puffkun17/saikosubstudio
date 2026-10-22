@@ -4,8 +4,6 @@ import {
   type AuxiliaryCueCategory,
   type AuxiliaryCueClassification,
   type CueClassification,
-  type CueKind,
-  type CueSuspicion,
   type LatinSecondaryLanguage,
   type MainPathSecondaryLanguage,
   type SubRow,
