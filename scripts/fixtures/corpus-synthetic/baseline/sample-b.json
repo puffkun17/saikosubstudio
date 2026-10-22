@@ -1,0 +1,43 @@
+{
+  "sample": "sample-b",
+  "mode": "dual",
+  "rowCount": 4,
+  "cues": [
+    {
+      "i": 0,
+      "type": "dialogue",
+      "cueKind": "dialogue",
+      "ts": "00:00:01,000 --> 00:00:03,000",
+      "start": null,
+      "end": null,
+      "text": "Credits: corpus baseline"
+    },
+    {
+      "i": 1,
+      "type": "credit",
+      "cueKind": "credit",
+      "ts": "00:00:01,000 --> 00:00:03,000",
+      "start": null,
+      "end": null,
+      "text": "字幕制作：语料基线"
+    },
+    {
+      "i": 2,
+      "type": "merged",
+      "cueKind": "dialogue",
+      "ts": "00:00:04,000 --> 00:00:06,000",
+      "start": null,
+      "end": null,
+      "text": "第二句中文\nSecond English line"
+    },
+    {
+      "i": 3,
+      "type": "merged",
+      "cueKind": "dialogue",
+      "ts": "00:00:07,000 --> 00:00:09,000",
+      "start": null,
+      "end": null,
+      "text": "第三句中文\nThird English line"
+    }
+  ]
+}

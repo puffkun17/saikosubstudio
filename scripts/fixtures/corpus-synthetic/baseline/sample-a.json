@@ -1,0 +1,25 @@
+{
+  "sample": "sample-a",
+  "mode": "dual",
+  "rowCount": 2,
+  "cues": [
+    {
+      "i": 0,
+      "type": "merged",
+      "cueKind": "dialogue",
+      "ts": "00:00:01,000 --> 00:00:02,500",
+      "start": null,
+      "end": null,
+      "text": "早上好\nGood morning"
+    },
+    {
+      "i": 1,
+      "type": "merged",
+      "cueKind": "dialogue",
+      "ts": "00:00:03,000 --> 00:00:04,500",
+      "start": null,
+      "end": null,
+      "text": "我们出发吧\nLet's go"
+    }
+  ]
+}
