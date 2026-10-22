@@ -94,6 +94,11 @@ export interface WorkIdentity {
   titleKey: string;
   /** SxxExx when known; omitted for films / unknown. */
   episodeKey?: string;
+  /**
+   * Disambiguator once TMDB (or year) is known — e.g. `tmdb:tv:136315` or `year:2022`.
+   * Without this, two shows that strip to the same titleKey+episode collide (v1 limitation).
+   */
+  tmdbKey?: string;
 }
 
 export function workIdentityFromFileName(fileName: string, episodeKey?: string | null): WorkIdentity {
@@ -114,13 +119,23 @@ export function workIdentityFromEpisode(fallbackTitle: string, episode: EpisodeR
 
 export function sameWorkIdentity(a: WorkIdentity, b: WorkIdentity): boolean {
   if ((a.titleKey || 'untitled').toLowerCase() !== (b.titleKey || 'untitled').toLowerCase()) return false;
-  return (a.episodeKey?.toUpperCase() || '') === (b.episodeKey?.toUpperCase() || '');
+  if ((a.episodeKey?.toUpperCase() || '') !== (b.episodeKey?.toUpperCase() || '')) return false;
+  return (a.tmdbKey || '') === (b.tmdbKey || '');
+}
+
+/** Build a tmdbKey facet once a TMDB match (or year) is known. */
+export function tmdbKeyFromRef(ref: { mediaType?: string; id?: number; year?: string } | null | undefined): string | undefined {
+  if (!ref) return undefined;
+  if (ref.mediaType && ref.id != null) return `tmdb:${ref.mediaType}:${ref.id}`;
+  if (ref.year) return `year:${ref.year}`;
+  return undefined;
 }
 
 function workBody(work: WorkIdentity): string {
   const title = (work.titleKey || 'untitled').toLowerCase();
   const ep = work.episodeKey ? work.episodeKey.toUpperCase() : 'film';
-  return `${title}\0${ep}`;
+  const tmdb = work.tmdbKey ? `\0${work.tmdbKey}` : '';
+  return `${title}\0${ep}${tmdb}`;
 }
 
 /* ---------- Mint helpers (only place ids are born) ---------- */

@@ -45,6 +45,16 @@ test('track id derives from parent file; storage/react keys stay separate from i
   assert.equal(id.reactKeyFor('task.v1.abc', 'tab'), 'tab:task.v1.abc');
 });
 
+test('tmdbKey facet changes work/task id (same-title disambiguation)', () => {
+  const base = id.workIdentityFromFileName('The.Office.S01E01.srt', 'S01E01');
+  const a = id.mintTaskId(base);
+  const b = id.mintTaskId({ ...base, tmdbKey: id.tmdbKeyFromRef({ mediaType: 'tv', id: 2316 }) });
+  const c = id.mintTaskId({ ...base, tmdbKey: id.tmdbKeyFromRef({ mediaType: 'tv', id: 103 }) });
+  assert.notEqual(a, b);
+  assert.notEqual(b, c);
+  assert.equal(id.tmdbKeyFromRef({ year: '2022' }), 'year:2022');
+});
+
 test('createTask uses mintTaskId (stable across calls)', () => {
   const t1 = tm.createTask({ episode: { season: 1, episode: 1 }, fallbackTitle: 'the bear' });
   const t2 = tm.createTask({ episode: { season: 1, episode: 1 }, fallbackTitle: 'the bear' });

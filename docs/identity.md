@@ -25,9 +25,13 @@ Identity is **not** a storage key and **not** a React key. Use `storageKeyFor(id
 | `tmdb` | Reserved: TMDB title/ref cache key | — | — |
 | `export` | Reserved: export artifact / preset binding | — | — |
 
-**Same task (v1):** same `titleKey` (`recognition.titleKeyOf`) and same `episodeKey` (`SxxExx`, or both absent → film). In-session timeline “same episode” merges attach to the existing task id.
+**Same task (v1):** same `titleKey` (`recognition.titleKeyOf`) and same `episodeKey` (`SxxExx`, or both absent → film), and same optional `tmdbKey`. In-session timeline “same episode” merges attach to the existing task id.
 
 **Same file (v1):** same normalized basename + same text → same `file` id.
+
+### Collision / TMDB disambiguation
+
+Today two different shows that strip to the same `titleKey` + episode (e.g. unrelated “The Office” remakes, or same Chinese title in different years) **collide** on one `task` / `work` id. Once a TMDB match is known, pass `tmdbKey` into `WorkIdentity` (via `tmdbKeyFromRef`: `tmdb:tv:136315` or `year:2022`) so `mintTaskId` / `mintWorkId` include it in the body. Import-time minting still uses title+episode only until TMDB is linked — reminting after link is a later step; the facet is already in the scheme.
 
 ## Future cases (scheme only — not built)
 
