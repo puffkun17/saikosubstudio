@@ -148,7 +148,10 @@ export const createMediaTmdbSlice: StateCreator<StudioState, [], [], MediaTmdbSl
     const nextCurrent = get().selectedSuggestion;
     const nextAlt = get().tmdbAlternateSuggestion;
     const pair = [nextCurrent, nextAlt].filter(Boolean) as TmdbSuggestion[];
-    const unique = pair.filter((item, index, all) => all.findIndex((x) => x.id === item.id) === index).slice(0, 2);
+    // S6: dedupe by media_type:id so movie/tv sharing a numeric id both survive.
+    const unique = pair.filter((item, index, all) =>
+      all.findIndex((x) => `${x.media_type}:${x.id}` === `${item.media_type}:${item.id}`) === index
+    ).slice(0, 2);
     if (unique.length > 0) set({ tmdbSuggestions: unique });
   },
   searchTmdb: async (query, options) => {
@@ -293,10 +296,13 @@ export const createMediaTmdbSlice: StateCreator<StudioState, [], [], MediaTmdbSl
             const colonQuery = `${part1}: ${part2}`;
             const extraResults = await runAutoSearch(colonQuery, isEpisodeQuery ? 'tv' : 'multi');
             if (extraResults.length > 0) {
-              const existingIds = new Set(results.map((r) => r.id));
+              // S6: same key as mergeResults — media_type:id (not bare id).
+              const existingKeys = new Set(results.map((r) => `${r.media_type}:${r.id}`));
               let addedCount = 0;
               extraResults.forEach((r) => {
-                if (!existingIds.has(r.id)) {
+                const key = `${r.media_type}:${r.id}`;
+                if (!existingKeys.has(key)) {
+                  existingKeys.add(key);
                   results.push(r);
                   addedCount++;
                 }
@@ -591,7 +597,8 @@ export const createMediaTmdbSlice: StateCreator<StudioState, [], [], MediaTmdbSl
       });
       get().addLog(`搜索失败: ${message}`, 'error');
     } finally {
-      if (isCurrentRequest()) set({ isSearchingTmdb: false });
+      // Same S8 rule as searchTmdb: own the search slot → clear spinner after task switch.
+      if (requestId === tmdbSearchRequestId) set({ isSearchingTmdb: false });
     }
   },
   selectTmdbSuggestion: async (s, options) => {

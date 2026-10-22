@@ -1,1 +1,2 @@
 - `src/store/persistence.ts` ↔ `useStudioStore.ts`: `loadHistoryFromIdb` still calls `useStudioStore.getState().customStyle` (circular import; safe because access is deferred until call time).
+- S6: colon-fallback + swapTmdbAlternate now dedupe by `media_type:id` (was bare `id`); candidate lists may keep both a movie and a TV hit that share a numeric id — order can change vs pre-S6 when the second type used to be dropped.
