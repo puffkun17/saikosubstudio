@@ -8,8 +8,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useLocationPathname } from "@/hooks/useLocationPathname";
 import { motion, useReducedMotion, useSpring, useTransform } from "motion/react";
 import { cn } from "@/lib/utils";
 
@@ -185,10 +184,10 @@ function NavLabel({
   } as const;
 
   return href ? (
-    <Link href={href} {...props}>
+    <a href={href} {...props}>
       {icon}
       {label}
-    </Link>
+    </a>
   ) : (
     <button type="button" {...props}>
       {icon}
@@ -210,7 +209,7 @@ export function GooeyNav({
   className,
   ...props
 }: GooeyNavProps) {
-  const pathname = usePathname();
+  const pathname = useLocationPathname();
   const reduced = useReducedMotion() ?? false;
 
   const routeIndex = items.findIndex((item) => toItem(item).href === pathname);
