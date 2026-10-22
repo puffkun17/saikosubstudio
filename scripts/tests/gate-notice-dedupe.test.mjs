@@ -35,7 +35,7 @@ describe('gate / notice channel surfaces', () => {
   });
 
   it('globals.css drops unused .ingest-gate-banner rule', () => {
-    const css = read('app/globals.css');
+    const css = read('src/styles/globals.css');
     assert.equal(css.includes('.ingest-gate-banner'), false);
   });
 });

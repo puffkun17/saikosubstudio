@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { FileLock2, MessageSquareText, ShieldCheck } from 'lucide-react';
+import { FileLock2, MessageSquareText, ShieldCheck } from "lucide-react";
 
 const Section = ({
   title,
@@ -61,7 +60,6 @@ export default function AboutPage() {
             <p>本产品使用 TMDB API，但未获 TMDB 认可或认证。</p>
             <p>This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
             <div className="flex items-center gap-3 pt-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/tmdb_logo_blue_square.svg"
                 alt="The Movie Database (TMDB)"
@@ -78,13 +76,13 @@ export default function AboutPage() {
               「提交反馈」页面仅提交你手动填写并确认的反馈类型与正文。开发者不会因此获得你的文件内容、属性信息、本地路径或浏览器诊断信息等个人标识信息。
             </p>
             <p>
-              <Link
+              <a
                 href="/feedback"
                 className="inline-flex items-center gap-1.5 font-semibold text-[var(--v4-accent-strong)] underline-offset-4 hover:underline"
               >
                 <MessageSquareText className="h-4 w-4" aria-hidden="true" />
                 前往反馈页
-              </Link>
+              </a>
             </p>
           </Section>
 

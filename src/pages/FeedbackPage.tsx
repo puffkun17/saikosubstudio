@@ -1,4 +1,3 @@
-'use client';
 
 import { FormEvent, useRef, useState, useSyncExternalStore } from 'react';
 import { ERROR_CODES, LAST_ERROR_KEY, type ErrorCode } from '@/core/errorCodes';

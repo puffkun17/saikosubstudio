@@ -1,4 +1,4 @@
-/* Noto Serif SC is linked from app/layout.tsx (<link>), not @import: bundlers try to resolve public/ URLs. */
+/* Noto Serif SC + Geist are linked from each HTML entry (<link>), not @import: bundlers try to resolve public/ URLs. */
 @import "tailwindcss";
 
 /*

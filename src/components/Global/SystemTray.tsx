@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+
+import { useLocationPathname } from '@/hooks/useLocationPathname';
 import { Archive, ArrowLeft, Menu, PenLine, RotateCcw, Scale, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';
@@ -169,7 +169,7 @@ export const SystemTray = () => {
   const opsMenuRef = useRef<HTMLDivElement>(null);
   useUiModalFocus(pendingReset, resetModalRef, () => setPendingReset(false));
   useUiModalFocus(opsMenuOpen, opsMenuRef, () => setOpsMenuOpen(false));
-  const pathname = usePathname();
+  const pathname = useLocationPathname();
   const isNarrowChrome = useNarrowChrome();
   const {
     workflowStep,
@@ -376,7 +376,7 @@ export const SystemTray = () => {
             )}
           </button>
         )}
-        <Link
+        <a
           href="/about"
           className={trayCtrl}
           title="隐私与版权"
@@ -385,8 +385,8 @@ export const SystemTray = () => {
         >
           <Scale className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
           <span className={trayLabel}>隐私</span>
-        </Link>
-        <Link
+        </a>
+        <a
           href="/feedback"
           className={trayCtrl}
           title="反馈"
@@ -395,7 +395,7 @@ export const SystemTray = () => {
         >
           <PenLine className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
           <span className={trayLabel}>反馈</span>
-        </Link>
+        </a>
       </div>
     </div>
   );
@@ -447,14 +447,14 @@ export const SystemTray = () => {
           )}
 
           {isInfoPage && (
-            <Link
+            <a
               href="/"
               className={`${trayCtrl} text-[var(--v5-orange)]`}
               aria-label="返回首页"
             >
               <ArrowLeft className="h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
               <span className="hidden whitespace-nowrap min-[480px]:inline">返回首页</span>
-            </Link>
+            </a>
           )}
         </div>
 
@@ -548,7 +548,7 @@ export const SystemTray = () => {
                   )}
                 </button>
               )}
-              <Link
+              <a
                 href="/about"
                 className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-[15px] font-semibold text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)]"
                 onClick={(event) => {
@@ -558,8 +558,8 @@ export const SystemTray = () => {
               >
                 <Scale className="h-5 w-5 text-[var(--v4-accent-strong)]" aria-hidden="true" />
                 隐私与版权
-              </Link>
-              <Link
+              </a>
+              <a
                 href="/feedback"
                 className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-[15px] font-semibold text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)]"
                 onClick={(event) => {
@@ -569,7 +569,7 @@ export const SystemTray = () => {
               >
                 <PenLine className="h-5 w-5 text-[var(--v4-accent-strong)]" aria-hidden="true" />
                 反馈
-              </Link>
+              </a>
             </div>
           </div>
         </OverlayPortal>

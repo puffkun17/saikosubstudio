@@ -102,8 +102,7 @@ export const ColorSampler: React.FC = () => {
         ) : (
           <div className="flex flex-col gap-3">
             <div className="relative h-20 rounded-lg overflow-hidden border border-[var(--v4-line)] bg-[var(--v4-canvas)]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img 
+                            <img 
                 src={refScreenshot} 
                 alt="参考剧照预览（用于吸色器对比）" 
                 className="w-full h-full object-cover opacity-75"

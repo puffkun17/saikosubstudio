@@ -18,7 +18,7 @@ export const ServiceWorkerUpdate: React.FC = () => {
   const reloadRequested = useRef(false);
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') return;
+    if (!import.meta.env.PROD) return;
     if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !window.isSecureContext) return;
 
     let registration: ServiceWorkerRegistration | null = null;

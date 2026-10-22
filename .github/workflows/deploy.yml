@@ -1,4 +1,4 @@
-name: Deploy Worker (Cloudflare Workers via vinext)
+name: Deploy Worker (Cloudflare Workers via Vite)
 
 # Push to cf-pages-hosted -> build -> wrangler deploy to Worker "saikosubstudio"
 # (custom domains dualsubs.quest + www.dualsubs.quest, switched 2026-10-13).
@@ -27,10 +27,10 @@ jobs:
         run: npm run build
       - name: Verify output
         run: |
-          test -f dist/server/wrangler.json
+          test -f dist/saikosubstudio/wrangler.json
           test -f dist/client/sw.js
           test -f dist/client/libarchive/libarchive.wasm
-          npx wrangler deploy --config dist/server/wrangler.json --dry-run
+          npx wrangler deploy --config dist/saikosubstudio/wrangler.json --dry-run
 
       - name: Deploy to Workers
         env:
@@ -41,4 +41,4 @@ jobs:
             echo "::warning::CLOUDFLARE_API_TOKEN repo secret not set; skipped deploy (run wrangler deploy manually)."
             exit 0
           fi
-          npx wrangler deploy --config dist/server/wrangler.json
+          npx wrangler deploy --config dist/saikosubstudio/wrangler.json

@@ -1,0 +1,24 @@
+/* Self-hosted Geist (SIL OFL). Replaces geist npm package / next/font.
+ * CSS variables match previous GeistSans.variable / GeistMono.variable class names.
+ */
+
+@font-face {
+  font-family: "Geist Sans";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/fonts/geist/Geist-Variable.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/fonts/geist/GeistMono-Variable.woff2") format("woff2");
+}
+
+:root {
+  --font-geist-sans: "Geist Sans", system-ui, sans-serif;
+  --font-geist-mono: "Geist Mono", ui-monospace, monospace;
+}

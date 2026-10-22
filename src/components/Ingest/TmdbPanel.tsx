@@ -135,8 +135,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
             title="Powered by The Movie Database"
           >
             <span className="text-xs font-medium text-[var(--v4-text-muted)]">Powered by</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/tmdb_logo_blue_square.svg" alt="TMDB Logo" className="h-full w-auto object-contain brightness-100 contrast-110" />
+                        <img src="/tmdb_logo_blue_square.svg" alt="TMDB Logo" className="h-full w-auto object-contain brightness-100 contrast-110" />
           </a>}
         </div>
         {(tmdbData || !needsTitleInput) && (
@@ -478,8 +477,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                             >
                               <div className="h-11 w-8 flex-shrink-0 overflow-hidden rounded bg-[var(--v4-panel)] border border-[var(--v4-line)]">
                                 {posterUrl ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={posterUrl} alt="" className="h-full w-full object-cover" />
+                                                                    <img src={posterUrl} alt="" className="h-full w-full object-cover" />
                                 ) : (
                                   <div className="flex h-full w-full items-center justify-center text-[var(--v4-text-faint)]">
                                     <ImageIcon className="h-4 w-4" />

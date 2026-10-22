@@ -1,17 +1,15 @@
-'use client';
+import React, { useEffect } from "react";
+import { useStudioStore } from "@/store/useStudioStore";
+import "@/workers/registerMergeWorker";
+import "@/workers/registerRecognitionWorker";
+import { IngestStep } from "@/components/IngestStep";
+import { WorkbenchStep } from "@/components/WorkbenchStep";
+import { TheaterStep } from "@/components/TheaterStep";
+import { FeedbackCenter } from "@/components/Global/FeedbackCenter";
+import { HistoryPanel } from "@/components/Global/HistoryPanel";
+import { useSessionLeaveWarning } from "@/hooks/useSessionLeaveWarning";
 
-import React, { useEffect } from 'react';
-import { useStudioStore } from '@/store/useStudioStore';
-import '@/workers/registerMergeWorker';
-import '@/workers/registerRecognitionWorker';
-import { IngestStep } from '@/components/IngestStep';
-import { WorkbenchStep } from '@/components/WorkbenchStep';
-import { TheaterStep } from '@/components/TheaterStep';
-import { FeedbackCenter } from '@/components/Global/FeedbackCenter';
-import { HistoryPanel } from '@/components/Global/HistoryPanel';
-import { useSessionLeaveWarning } from '@/hooks/useSessionLeaveWarning';
-
-export default function Home() {
+export default function HomePage() {
   // 精确订阅：页面根组件绝不能整仓订阅，否则播放时钟每帧都会重渲染全树。
   const workflowStep = useStudioStore((state) => state.workflowStep);
   const initializeLibrary = useStudioStore((state) => state.initializeLibrary);

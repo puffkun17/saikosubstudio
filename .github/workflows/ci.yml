@@ -38,14 +38,13 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Lint
-        # eslint-config-next pinned to 15.5.2; FlatCompat bridges legacy extends.
         run: npm run lint
 
-      - name: Build (vinext → Workers bundle)
+      - name: Build (Vite MPA → Workers bundle)
         run: npm run build
 
       - name: Worker bundle dry run
-        run: npx wrangler deploy --config dist/server/wrangler.json --dry-run
+        run: npx wrangler deploy --config dist/saikosubstudio/wrangler.json --dry-run
 
       - name: Corpus baseline (synthetic samples)
         run: npm run test:corpus

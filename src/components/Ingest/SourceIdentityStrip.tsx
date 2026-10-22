@@ -278,8 +278,7 @@ export const SourceIdentityStrip: React.FC = () => {
               title="This product uses the TMDB API but is not endorsed or certified by TMDB."
             >
               <span>Powered by</span>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+                            <img
                 src="/tmdb_logo_blue_square.svg"
                 alt="TMDB"
                 className="h-5 w-auto object-contain opacity-80"
