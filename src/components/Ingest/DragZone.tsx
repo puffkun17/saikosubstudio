@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { secondaryTermFor } from '@/core/trackTerms';
 import { OriginalConfirmDialog } from '@/components/Ingest/OriginalConfirmDialog';
 import { useShallow } from 'zustand/react/shallow';
 import { mintFileId } from '@/core/identity';
 import { runRecognitionJob } from '@/core/recognitionClient';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
-import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity, isSdhOrCcSubtitleFilename } from '@/utils/subtitleCore';
+import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
 import JSZip from 'jszip';
 import {
   ChevronDown,
@@ -19,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { CLIENT_IMPORT_LIMITS, getClientBatchIssue, getClientFileIssue } from '@/utils/importSafety';
+import { CLIENT_IMPORT_LIMITS, getClientBatchIssue } from '@/utils/importSafety';
 import { partitionIngestPaths, type IgnoredIngestEntry } from '@/utils/ingestJunk';
 import {
   buildImportSummary,
@@ -36,92 +35,26 @@ import {
 import { FileFormatIcon, LanguageMark, resolveFileFormat } from '@/components/ui/FileFormatIcon';
 import { DeleteButton } from '@/components/ui/delete-button';
 import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
-
-type ParseStatus = 'reading' | 'analyzing' | 'success' | 'warning' | 'skipped';
-
-interface ParsingFileState {
-  name: string;
-  size: number;
-  status: ParseStatus;
-  note?: string;
-}
-
-type PreflightKind = 'subtitle' | 'zip' | 'archive' | 'archive-unsupported' | 'too-large' | 'unsupported';
-
-interface ArchiveEntryPreview {
-  name: string;
-  languageLabel: string;
-}
-
-interface PreflightItem {
-  file: File;
-  /** 队列去重键：包含相对路径，同名不同目录的文件不再互斥。 */
-  key: string;
-  name: string;
-  /** 文件夹导入时的本地相对路径（如 `剧集目录/S01/xx.srt`）。 */
-  relativePath?: string;
-  /** 顶层文件夹名——存在时该项归入对应文件夹分组树。 */
-  folderName?: string;
-  extension: string;
-  kind: PreflightKind;
-  label: string;
-  accepted: boolean;
-  note: string;
-  archiveEntries?: ArchiveEntryPreview[];
-  archivePeekStatus?: 'idle' | 'loading' | 'ready' | 'error';
-  archivePeekError?: string;
-}
-
-/** 入队原始记录：拖入目录遍历得到的文件不带 webkitRelativePath，路径单独传递。 */
-interface IncomingFile {
-  file: File;
-  relativePath?: string;
-}
-
-interface TrackSummary {
-  name: string;
-  format: 'ASS' | 'SRT';
-  lang: string;
-  isBilingual: boolean;
-  isCommentary: boolean;
-  source: 'file' | 'zip' | 'archive' | 'folder';
-}
-
-type IngestPhase = 'idle' | 'reading' | 'parsing' | 'binding' | 'metadata' | 'ready' | 'needs_review' | 'error';
-
-const PHASE_STEPS: Array<{ id: IngestPhase; label: string }> = [
-  { id: 'reading', label: '读取' },
-  { id: 'parsing', label: '识轨' },
-  { id: 'binding', label: '归组' },
-  { id: 'metadata', label: '匹配' },
-  { id: 'ready', label: '完成' },
-];
-
-const PHASE_COPY: Record<IngestPhase, string> = {
-  idle: '将字幕文件加入清单',
-  reading: '正在读取文件…',
-  parsing: '正在识别字幕轨…',
-  binding: '正在按集数归组…',
-  metadata: '正在匹配影片资料…',
-  ready: '整理完成，可进入核对',
-  needs_review: '部分轨道或影片信息需要确认',
-  error: '部分内容需要处理',
-};
-
-const formatBytes = (bytes: number) => {
-  if (bytes < 1024) return `${bytes} B`;
-  const units = ['KB', 'MB', 'GB'];
-  let value = bytes / 1024;
-  let unitIndex = 0;
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex += 1;
-  }
-  return `${value >= 100 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
-};
-
-const getQueueKey = (file: File, relativePath?: string) =>
-  `${relativePath || ''}:${file.name}:${file.size}:${file.lastModified}`;
+import {
+  MAX_DROPPED_ENTRIES,
+  PHASE_COPY,
+  PHASE_STEPS,
+  PREFLIGHT_LANGUAGE_LABELS,
+  collectEntryFiles,
+  createPreflightItem,
+  describeTrack,
+  formatBytes,
+  getExtension,
+  isSubtitleExtension,
+  isVideoFile,
+  languagesForItem,
+  leafDelayMs,
+  type IncomingFile,
+  type IngestPhase,
+  type ParsingFileState,
+  type PreflightItem,
+  type TrackSummary,
+} from '@/components/Ingest/dragzone/preflight';
 
 /**
  * Touch-primary / narrow-coarse：不教拖放（手机不是多任务桌面）。
@@ -174,168 +107,6 @@ const useFolderPickSupported = () =>
   useSyncExternalStore(subscribeFolderPick, getFolderPickSupported, () => true);
 
 const FOLDER_UNSUPPORTED_HINT = '当前环境不支持选择文件夹，请改用「选择文件」';
-
-/** 树杈伸展节奏：主干先长，叶枝随后逐条抽出（封顶避免长列表拖沓）。 */
-const leafDelayMs = (index: number) => Math.min(90 + index * 70, 480);
-
-const getExtension = (name: string) => {
-  const idx = name.lastIndexOf('.');
-  return idx >= 0 ? name.slice(idx + 1).toLowerCase() : '';
-};
-
-const isSubtitleExtension = (ext: string) => ext === 'srt' || ext === 'ass';
-const isMultipartArchiveName = (name: string) => /\.part\d+\.rar$|\.r\d{2}$|\.7z\.\d+$/i.test(name);
-
-const PREFLIGHT_LANGUAGE_LABELS = {
-  'zh-CN': '简中',
-  'zh-TW': '繁中',
-  en: '英语',
-  ja: '日语',
-  ko: '韩语',
-  es: '西语',
-  fr: '法语',
-  pt: '葡语',
-  de: '德语',
-  it: '意语',
-  latin: '拉丁文字',
-  bilingual: '双语',
-  commentary: '导评',
-  unknown: '语言待识别',
-} as const;
-
-const createPreflightItem = (file: File, relativePath?: string): PreflightItem => {
-  const extension = getExtension(file.name);
-  const decorate = (
-    item: Omit<PreflightItem, 'key' | 'relativePath' | 'folderName'>,
-  ): PreflightItem => ({
-    ...item,
-    key: getQueueKey(file, relativePath),
-    relativePath,
-    folderName: relativePath && relativePath.includes('/') ? relativePath.split('/')[0] : undefined,
-  });
-
-  const sizeIssue = getClientFileIssue(file);
-  if (sizeIssue) {
-    return decorate({
-      file,
-      name: file.name,
-      extension: extension || 'unknown',
-      kind: 'too-large',
-      label: extension ? extension.toUpperCase() : '未知',
-      accepted: false,
-      note: sizeIssue,
-    });
-  }
-  if (isSubtitleExtension(extension)) {
-    const language = detectLanguageByFilename(file.name);
-    return decorate({
-      file,
-      name: file.name,
-      extension,
-      kind: 'subtitle',
-      label: extension.toUpperCase(),
-      accepted: true,
-      note: `${PREFLIGHT_LANGUAGE_LABELS[language]} · ${extension === 'ass' ? '样式字幕轨' : '标准字幕轨'}`,
-    });
-  }
-  if (extension === 'zip') {
-    return decorate({
-      file,
-      name: file.name,
-      extension,
-      kind: 'zip',
-      label: 'ZIP',
-      accepted: true,
-      note: '正在查看包内字幕…',
-      archivePeekStatus: 'loading',
-      archiveEntries: [],
-    });
-  }
-  if (isMultipartArchiveName(file.name)) {
-    return decorate({
-      file,
-      name: file.name,
-      extension,
-      kind: 'archive-unsupported',
-      label: extension.toUpperCase(),
-      accepted: false,
-      note: '分卷压缩包请先在本地完整解压',
-    });
-  }
-  if (extension === '7z' || extension === 'rar') {
-    return decorate({
-      file,
-      name: file.name,
-      extension,
-      kind: 'archive',
-      label: extension.toUpperCase(),
-      accepted: true,
-      note: '正在查看包内字幕…',
-      archivePeekStatus: 'loading',
-      archiveEntries: [],
-    });
-  }
-  return decorate({
-    file,
-    name: file.name,
-    extension: extension || 'unknown',
-    kind: 'unsupported',
-    label: extension ? extension.toUpperCase() : '未知',
-    accepted: false,
-    note: '已忽略非字幕资源',
-  });
-};
-
-/** 拖入目录时递归收集文件（webkitGetAsEntry），并保留相对路径。 */
-const MAX_DROPPED_ENTRIES = 400;
-
-const collectEntryFiles = async (
-  entry: FileSystemEntry,
-  out: IncomingFile[],
-  budget: { remaining: number },
-): Promise<void> => {
-  if (budget.remaining <= 0) return;
-  if (entry.isFile) {
-    budget.remaining -= 1;
-    const file = await new Promise<File>((resolve, reject) =>
-      (entry as FileSystemFileEntry).file(resolve, reject),
-    ).catch(() => null);
-    if (!file) return;
-    const fullPath = entry.fullPath.replace(/^\//, '');
-    out.push({ file, relativePath: fullPath.includes('/') ? fullPath : undefined });
-    return;
-  }
-  if (entry.isDirectory) {
-    const reader = (entry as FileSystemDirectoryEntry).createReader();
-    // readEntries 每批最多返回 ~100 条，需循环读到空批为止
-    while (budget.remaining > 0) {
-      const batch = await new Promise<FileSystemEntry[]>((resolve, reject) =>
-        reader.readEntries(resolve, reject),
-      ).catch(() => [] as FileSystemEntry[]);
-      if (batch.length === 0) break;
-      for (const child of batch) {
-        await collectEntryFiles(child, out, budget);
-        if (budget.remaining <= 0) break;
-      }
-    }
-  }
-};
-
-const describeTrack = (file: Subfile) => {
-  if (file.isCommentary || file.lang === 'commentary') return '导评轨';
-  if (file.isBilingual || file.lang === 'bilingual') {
-    const labels: Record<string, string> = { 'zh-CN': '简中', 'zh-TW': '繁中', en: '英语', ja: '日语', ko: '韩语', es: '西语', fr: '法语', pt: '葡语', de: '德语', it: '意语', latin: '拉丁文字' };
-    const pair = file.languagePair;
-    return pair ? `${labels[pair.primary]} / ${labels[pair.secondary]} 双语轨` : '双语轨';
-  }
-  if (file.lang === 'zh-CN' || file.lang === 'zh-TW') return '主字幕';
-  if (file.lang === 'en') {
-    return isSdhOrCcSubtitleFilename(file.name) ? '副字幕 · 英语 SDH/CC' : '副字幕 · 英语';
-  }
-  if (['es', 'fr', 'pt', 'de', 'it'].includes(file.lang)) return secondaryTermFor(file.lang);
-  if (['ja', 'ko', 'latin'].includes(file.lang)) return '其他语种轨';
-  return '待确认轨';
-};
 
 export const DragZone: React.FC = () => {
   const [confirmOriginal, setConfirmOriginal] = React.useState(false);
@@ -769,8 +540,6 @@ export const DragZone: React.FC = () => {
     }
   };
 
-const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
-  const isVideoFile = (file: File) => file.type.startsWith('video/') || VIDEO_EXT.test(file.name);
   const handleFilesProcess = async (incomingList?: File[]) => {
     // Video files: only the filename is borrowed for export naming; never read, never counted in the size limit.
     const videoFiles = (incomingList || []).filter(isVideoFile);
@@ -1144,16 +913,6 @@ const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
         formatBytes(totalBytes),
         rejectedItems.length > 0 ? `${rejectedItems.length} 项已忽略` : null,
       ].filter(Boolean).join(' · ');
-
-  const languagesForItem = (item: PreflightItem): string[] => {
-    if (item.archiveEntries && item.archiveEntries.length > 0) {
-      return [...new Set(item.archiveEntries.map((entry) => entry.languageLabel))];
-    }
-    if (item.kind === 'subtitle') {
-      return [PREFLIGHT_LANGUAGE_LABELS[detectLanguageByFilename(item.name)] || '语言待识别'];
-    }
-    return [];
-  };
 
   // 文件夹导入的条目按顶层目录归组，队列渲染为「文件夹 → 子文件」树
   type RenderNode =
