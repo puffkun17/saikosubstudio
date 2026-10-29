@@ -1993,12 +1993,11 @@ button {
 /* Workflow attention: one strong, contextual cue instead of scattered alerts. */
 .action-required-surface {
   border-color: color-mix(in srgb, var(--v4-accent) 55%, transparent) !important;
+  /* Even accent tint + full accent border; no one-sided stripe (impeccable side-tab). */
   background:
-    linear-gradient(90deg, var(--v4-accent-soft), color-mix(in srgb, var(--v4-accent-soft) 30%, transparent) 38%, transparent 72%),
+    linear-gradient(color-mix(in srgb, var(--v4-accent-soft) 60%, transparent), color-mix(in srgb, var(--v4-accent-soft) 60%, transparent)),
     var(--v4-panel-muted);
-  box-shadow:
-    inset 3px 0 0 var(--v4-accent),
-    0 14px 30px color-mix(in srgb, var(--v5-green) 8%, transparent);
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--v5-green) 8%, transparent);
 }
 
 .action-required-marker {
