@@ -1,4 +1,3 @@
-import JSZip from 'jszip';
 import { mintFileId } from '@/core/identity';
 import type { Subfile } from '@/store/useStudioStore';
 import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage } from '@/utils/subtitleCore';
@@ -19,7 +18,10 @@ import {
   type TrackSummary,
 } from '@/components/Ingest/dragzone/preflight';
 
-/** DragZone 压缩包处理：ZIP（jszip）与 RAR / 7Z（本地 libarchive）的预览与解包。 */
+/**
+ * DragZone 压缩包处理：ZIP（jszip）与 RAR / 7Z（本地 libarchive）的预览与解包。
+ * jszip 只在真正碰到 .zip 时按需加载（独立 chunk），不进入导入页首屏包。
+ */
 
 export type IngestLogger = (msg: string, type?: 'info' | 'success' | 'error') => void;
 
@@ -27,6 +29,7 @@ export type IngestLogger = (msg: string, type?: 'info' | 'success' | 'error') =>
 export const peekArchiveEntries = async (item: PreflightItem): Promise<ArchiveEntryPreview[] | null> => {
   let names: string[] = [];
   if (item.kind === 'zip') {
+    const { default: JSZip } = await import('jszip');
     const zip = await JSZip.loadAsync(item.file);
     const paths = Object.values(zip.files).filter((entry) => !entry.dir).map((entry) => entry.name);
     const { subtitles } = partitionIngestPaths(paths, (path) => isSubtitleExtension(getExtension(path)));
@@ -81,6 +84,7 @@ export const processZipFile = async (
   addLog: IngestLogger,
 ): Promise<IgnoredIngestEntry[]> => {
   try {
+    const { default: JSZip } = await import('jszip');
     const zip = await JSZip.loadAsync(zipFile);
     const entries = Object.values(zip.files).filter(entry => !entry.dir);
     if (entries.length > CLIENT_IMPORT_LIMITS.maxArchiveEntries) {
