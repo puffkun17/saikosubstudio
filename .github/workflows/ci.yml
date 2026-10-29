@@ -31,8 +31,11 @@ jobs:
       - name: Unit tests (task model / recognition / credits / worker job)
         run: npm run test:unit
 
-      - name: Typecheck
-        run: npx tsc --noEmit
+      - name: Typecheck (app + worker)
+        run: npm run typecheck
+
+      - name: Worker types up to date (wrangler types --check)
+        run: npx wrangler types workers/worker-configuration.d.ts --check
 
       - name: Lint
         run: npm run lint

@@ -31,17 +31,12 @@ const SECURITY_HEADERS: Record<string, string> = {
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
 };
 
-export type RateLimiter = { limit: (opts: { key: string }) => Promise<{ success: boolean }> };
-
-/** Minimal Fetcher shape (Workers ASSETS / service bindings). */
-export type AssetFetcher = { fetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> };
-
-export type Env = {
-  ASSETS: AssetFetcher;
-  FEEDBACK_MAILER?: AssetFetcher;
+/**
+ * Bindings come from `wrangler types` (workers/worker-configuration.d.ts, regenerate after
+ * editing wrangler.jsonc). Secrets are not in the config, so TMDB_API_KEY is added here.
+ */
+export type Env = Cloudflare.Env & {
   TMDB_API_KEY?: string;
-  FEEDBACK_RATE_LIMITER?: RateLimiter;
-  TMDB_RATE_LIMITER?: RateLimiter;
 };
 
 /** www.dualsubs.quest → https://dualsubs.quest, 301, path + query kept. */

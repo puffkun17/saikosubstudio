@@ -9,6 +9,8 @@
     "dev": "vite dev",
     "build": "vite build && node scripts/pwa/build-sw.mjs",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit && tsc -p workers",
+    "cf-typegen": "wrangler types workers/worker-configuration.d.ts",
     "test:core": "node scripts/regression-subtitle-core.mjs",
     "preview": "npm run build && wrangler dev --config dist/saikosubstudio/wrangler.json",
     "deploy": "npm run build && wrangler deploy --config dist/saikosubstudio/wrangler.json",

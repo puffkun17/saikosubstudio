@@ -20,6 +20,7 @@ export default defineConfig([
     ".github/**",
     ".agents/**",
     "workers/feedback-mailer/**",
+    "workers/worker-configuration.d.ts",
     "**/*.mjs",
     "**/*.js",
   ]),
