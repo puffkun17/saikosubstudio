@@ -267,3 +267,87 @@ export const languagesForItem = (item: PreflightItem): string[] => {
   }
   return [];
 };
+
+/** 队列头部统计行：条目数 · 轨格式 · 来源 · 体积 · 忽略数。 */
+export const summarizeQueue = (
+  queuedItems: PreflightItem[],
+  { isOfficialSubtitle, isOriginalWork }: { isOfficialSubtitle: boolean; isOriginalWork: boolean },
+) => {
+  const rejectedItems = queuedItems.filter(item => !item.accepted);
+  const looseSubtitleCount = queuedItems.filter(item => item.kind === 'subtitle').length;
+  const peekedTrackCount = queuedItems.reduce((sum, item) => sum + (item.archiveEntries?.length || 0), 0);
+  const trackCount = looseSubtitleCount + peekedTrackCount;
+  const archivePeekPending = queuedItems.some(item => (item.kind === 'zip' || item.kind === 'archive') && item.archivePeekStatus === 'loading');
+  const totalBytes = queuedItems.reduce((sum, item) => sum + item.file.size, 0);
+
+  const queueFormatSummary = (() => {
+    let srt = 0;
+    let ass = 0;
+    for (const item of queuedItems) {
+      if (item.kind === 'subtitle') {
+        if (item.extension === 'ass') ass += 1;
+        else srt += 1;
+      }
+      for (const entry of item.archiveEntries || []) {
+        if (/\.ass$/i.test(entry.name)) ass += 1;
+        else srt += 1;
+      }
+    }
+    const parts: string[] = [];
+    if (srt > 0) parts.push(`${srt} SRT`);
+    if (ass > 0) parts.push(`${ass} ASS`);
+    return parts.join(' · ');
+  })();
+
+  const queueSourceSummary = (() => {
+    const hasArchive = queuedItems.some((item) => item.kind === 'zip' || item.kind === 'archive');
+    const hasFolder = queuedItems.some((item) => Boolean(item.folderName));
+    const hasLoose = queuedItems.some((item) => item.kind === 'subtitle' && !item.folderName);
+    const parts: string[] = [];
+    if (hasArchive) parts.push('来自压缩包');
+    if (hasFolder) parts.push('来自文件夹');
+    if (hasLoose && parts.length === 0) parts.push('本地文件');
+    else if (hasLoose && (hasArchive || hasFolder)) parts.push('含本地文件');
+    if (isOfficialSubtitle) parts.unshift('官方字幕');
+    if (isOriginalWork) parts.unshift('原创');
+    return parts.join(' · ');
+  })();
+
+  const queueStatsLine = archivePeekPending && trackCount === 0
+    ? '正在读取…'
+    : [
+        `${queuedItems.length} 项`,
+        queueFormatSummary || (trackCount > 0 ? `${trackCount} 轨` : null),
+        queueSourceSummary,
+        formatBytes(totalBytes),
+        rejectedItems.length > 0 ? `${rejectedItems.length} 项已忽略` : null,
+      ].filter(Boolean).join(' · ');
+
+  return { rejectedItems, queueStatsLine };
+};
+
+// 文件夹导入的条目按顶层目录归组，队列渲染为「文件夹 → 子文件」树
+export type RenderNode =
+  | { type: 'item'; item: PreflightItem }
+  | { type: 'folder'; folder: string; items: PreflightItem[] };
+
+export const buildRenderNodes = (queuedItems: PreflightItem[]): RenderNode[] => {
+  const renderNodes: RenderNode[] = [];
+  {
+    const folderBuckets = new Map<string, PreflightItem[]>();
+    for (const item of queuedItems) {
+      if (item.folderName) {
+        let bucket = folderBuckets.get(item.folderName);
+        if (!bucket) {
+          bucket = [];
+          folderBuckets.set(item.folderName, bucket);
+          renderNodes.push({ type: 'folder', folder: item.folderName, items: bucket });
+        }
+        bucket.push(item);
+      } else {
+        renderNodes.push({ type: 'item', item });
+      }
+    }
+  }
+  return renderNodes;
+};
