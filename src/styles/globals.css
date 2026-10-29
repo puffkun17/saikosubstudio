@@ -100,12 +100,6 @@
   --fmt-unknown-fold: #6B655B;
   --fmt-ink: #FFFFFF;
   --v5-desk-glow: color-mix(in srgb, var(--v5-green) 6%, transparent);
-  --v5-desk-veil: linear-gradient(
-    165deg,
-    color-mix(in srgb, var(--v5-canvas-raised) 96%, transparent) 0%,
-    color-mix(in srgb, var(--v5-cream) 98%, transparent) 48%,
-    var(--v5-cream) 100%
-  );
 
   /*
    * Radius ladder（EP-0.3 TOKEN-005/006/007）
@@ -168,7 +162,6 @@
   --v4-danger: var(--v5-danger);
   --v4-warning: var(--v5-warning);
   --v4-desk-glow: var(--v5-desk-glow);
-  --v4-desk-veil: var(--v5-desk-veil);
   --v4-ease: var(--v5-ease);
   --v4-dur-fast: var(--v5-dur-fast);
   --v4-dur: var(--v5-dur);
@@ -222,7 +215,6 @@
 
   /* Stacking: nav < dim scrim < dropdown < feedback < overlay/modal. Never mount modals inside nav. */
   --z-raised: 10;
-  --z-sticky: 40;
   --z-nav: 50;
   /* 关灯模式遮罩：盖住双托盘与工作区，但让位于 dropdown/feedback/modal。 */
   --z-dim: 60;
@@ -278,32 +270,6 @@ body {
   background: transparent;
 }
 
-/* 副文案 / 元信息：统一中等字重，避免「浅色 + 400」叠出的发虚感。 */
-.text-meta {
-  font-size: var(--type-caption);
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  color: var(--v4-text-muted);
-}
-
-.text-caption {
-  font-size: var(--type-caption);
-  font-weight: 500;
-  letter-spacing: 0.015em;
-  color: var(--v4-text-faint);
-}
-
-.text-eyebrow {
-  font-size: var(--type-caption);
-  font-weight: 700;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
-}
-
-.text-eyebrow--wide {
-  letter-spacing: var(--tracking-eyebrow-wide);
-}
-
 /* 思源宋体 display：仅片名（片源名 / TMDB 结果标题）。空态与关于页大标题走 UI Sans。 */
 .font-display {
   font-family: var(--font-serif);
@@ -324,35 +290,6 @@ body {
   border-radius: var(--radius-md);
   background: var(--v4-panel);
   box-shadow: var(--elevation-0);
-}
-
-/* 密度工具类（EP-0.5 TOKEN-011）— 工作台紧 / 文案区松 */
-.density-panel {
-  padding: var(--space-panel);
-}
-
-.density-panel-x {
-  padding-inline: var(--space-panel);
-}
-
-.density-copy {
-  padding: var(--space-copy);
-}
-
-.density-copy-x {
-  padding-inline: var(--space-copy);
-}
-
-/* Parsing / progress card (not the empty→queue handoff). */
-.ingest-receive-surface {
-  position: relative;
-  isolation: isolate;
-  border: 1px solid var(--v4-line);
-  background:
-    radial-gradient(780px 300px at 50% -8%, var(--v4-desk-glow), transparent 68%),
-    linear-gradient(180deg, color-mix(in srgb, var(--v5-green) 3%, transparent), transparent 38%),
-    var(--v4-panel);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 55%, transparent);
 }
 
 /* Ridgeline twin trays: forest green chrome both ends. */
@@ -390,20 +327,12 @@ body {
 
 /* Narrow chrome (≤843): top essentials only — LOCAL / scale % yield space to wordmark. */
 @media (max-width: 843px) {
-  .system-tray__local-badge {
-    display: none;
-  }
-
   .system-tray__scale-pct {
     display: none;
   }
 
   .system-tray__scale {
     padding-inline: 0.65rem;
-  }
-
-  .system-tray__clock {
-    gap: 0;
   }
 
   /* Bottom workflow segments: readable labels, ≥44px targets */
@@ -547,7 +476,6 @@ body {
 }
 
 /* Workflow gate: quietly draw the eye back to the drop well (not a flash toast). */
-.ingest-drop-zone--gate-hint .ingest-local-add,
 .ingest-drop-zone[data-gate-hint='true'] .ingest-local-add {
   border-color: color-mix(in srgb, var(--v5-orange) 52%, var(--v5-green) 18%);
   box-shadow:
@@ -1162,31 +1090,6 @@ body {
   display: none;
 }
 
-/* Blank fields on cream panels — white rest, orange focus ring, no cream fill. */
-.rd-field {
-  border: 1px solid var(--v4-line);
-  background: #ffffff;
-  color: var(--v4-text);
-  transition:
-    border-color var(--v4-dur-fast) var(--v4-ease),
-    box-shadow var(--v4-dur-fast) var(--v4-ease),
-    background-color var(--v4-dur-fast) var(--v4-ease);
-}
-
-.rd-field::placeholder {
-  color: var(--v4-text-faint);
-}
-
-.rd-field:hover {
-  border-color: var(--v4-line-strong);
-}
-
-.rd-field:focus {
-  border-color: var(--v4-accent);
-  background: #ffffff;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--v4-accent) 45%, transparent);
-}
-
 /*
  * Affordance taxonomy — keep these three visually distinct:
  *   .ui-meta*     静态信息（不可点）
@@ -1621,18 +1524,8 @@ body {
   }
 }
 
-.ui-overlay {
-  z-index: var(--z-overlay);
-}
-
 .ui-modal-layer {
   z-index: var(--z-modal);
-}
-
-
-.v4-panel-muted {
-  border: 1px solid var(--v4-line);
-  background: var(--v4-panel-muted);
 }
 
 .v4-focus-ring:focus-visible {
@@ -1642,14 +1535,6 @@ body {
 
 .font-mono {
   letter-spacing: 0.01em;
-}
-
-.status-clock {
-  font-family: "SFMono-Regular", "Cascadia Mono", "Roboto Mono", "IBM Plex Mono", ui-monospace, monospace;
-  font-variant-numeric: tabular-nums slashed-zero;
-  font-feature-settings: "tnum" 1, "zero" 1;
-  letter-spacing: var(--tracking-eyebrow-wide);
-  text-shadow: 0 0 12px rgba(154, 170, 211, 0.12);
 }
 
 .timeline-row-deferred {
@@ -1663,19 +1548,11 @@ body {
     padding-bottom: var(--ds-gap-section);
   }
 
-  .ingest-heading {
-    margin-bottom: 1rem;
-  }
-
   .ingest-empty,
   .ingest-drop-zone {
     gap: 0.75rem;
     padding-top: 0;
     padding-bottom: 0;
-  }
-
-  .ingest-drop-stage {
-    min-height: 220px;
   }
 
   .ingest-stage.is-empty {
@@ -1841,41 +1718,6 @@ button {
 }
 
 /* 播放条毛玻璃；图标钮仅半透明底，避免嵌套 backdrop 发糊 */
-/* 关灯：顶栏醒目灯控，像影院调光钮——暖橙微光，不抢导出主按钮。 */
-.theater-lights-action {
-  border-color: color-mix(in srgb, var(--v5-orange) 58%, transparent);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--v5-orange) 22%, transparent),
-      color-mix(in srgb, var(--v5-orange) 10%, transparent)
-    );
-  color: color-mix(in srgb, var(--v5-orange) 88%, #fff);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--v5-orange) 12%, transparent),
-    0 0 22px color-mix(in srgb, var(--v5-orange) 16%, transparent);
-}
-
-.theater-lights-action:hover {
-  border-color: color-mix(in srgb, var(--v5-orange) 78%, transparent);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--v5-orange) 30%, transparent),
-      color-mix(in srgb, var(--v5-orange) 14%, transparent)
-    );
-  color: #fff4e8;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--v5-orange) 22%, transparent),
-    0 0 28px color-mix(in srgb, var(--v5-orange) 24%, transparent);
-}
-
-.theater-lights-action--on {
-  border-color: color-mix(in srgb, var(--v5-cream) 28%, transparent);
-  background: color-mix(in srgb, #0a0e0d 70%, transparent);
-  color: var(--v4-accent-strong);
-  box-shadow: 0 0 16px color-mix(in srgb, var(--v5-orange) 10%, transparent);
-}
 
 .theater-system-chrome {
   max-width: 100%;
@@ -1966,12 +1808,6 @@ button {
   }
 }
 
-.subtitle-marquee {
-  min-width: max-content;
-  animation: subtitleMarquee 11s ease-in-out infinite;
-  will-change: transform;
-}
-
 .hover-marquee {
   min-width: 0;
   overflow: hidden;
@@ -1990,22 +1826,6 @@ button {
   will-change: transform;
 }
 
-/* Workflow attention: one strong, contextual cue instead of scattered alerts. */
-.action-required-surface {
-  border-color: color-mix(in srgb, var(--v4-accent) 55%, transparent) !important;
-  /* Even accent tint + full accent border; no one-sided stripe (impeccable side-tab). */
-  background:
-    linear-gradient(color-mix(in srgb, var(--v4-accent-soft) 60%, transparent), color-mix(in srgb, var(--v4-accent-soft) 60%, transparent)),
-    var(--v4-panel-muted);
-  box-shadow: 0 14px 30px color-mix(in srgb, var(--v5-green) 8%, transparent);
-}
-
-.action-required-marker {
-  background: var(--v4-accent);
-  box-shadow: 0 0 0 5px var(--v4-accent-soft), 0 0 16px color-mix(in srgb, var(--v5-accent) 22%, transparent);
-  animation: actionBeacon 2.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-}
-
 .action-required-button {
   background: var(--v4-accent);
   border: 1px solid color-mix(in srgb, var(--v4-accent-strong) 40%, transparent);
@@ -2018,22 +1838,9 @@ button {
   box-shadow: 0 10px 24px rgba(224, 120, 69, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
-.action-required-button:focus-visible,
-.action-required-surface:focus-within {
+.action-required-button:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--v4-accent) 80%, transparent);
   outline-offset: 3px;
-}
-
-.action-bypass-button {
-  border: 1px solid var(--v4-line);
-  background: var(--v4-panel-muted);
-  color: var(--v4-text-muted);
-}
-
-.action-bypass-button:hover {
-  border-color: var(--v4-line-strong);
-  background: var(--v4-panel);
-  color: var(--v4-text);
 }
 
 @keyframes actionBeacon {
@@ -2052,14 +1859,8 @@ button {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  .subtitle-marquee {
-    animation: none;
-  }
   .hover-marquee:hover .hover-marquee-content,
   .hover-marquee:focus-within .hover-marquee-content {
-    animation: none;
-  }
-  .action-required-marker {
     animation: none;
   }
 }
@@ -2169,37 +1970,6 @@ button {
   margin: 0;
 }
 
-.glass-panel-ar {
-  background: var(--v4-panel-raised);
-  border: 1px solid var(--v4-line-strong);
-  box-shadow: var(--elevation-2);
-}
-
-.glass-btn-ar {
-  background: var(--v4-panel-muted);
-  border: 1px solid var(--v4-line);
-  color: var(--v4-text-muted);
-  border-radius: var(--radius-sm);
-  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.glass-btn-ar:hover {
-  background: var(--v4-panel);
-  color: var(--v4-text);
-  border-color: var(--v4-line-strong);
-}
-
-.glass-btn-ar:active {
-  background: var(--v4-accent-soft);
-}
-
-.glass-btn-ar-active {
-  background: var(--v4-accent-soft) !important;
-  border-color: color-mix(in srgb, var(--v4-accent) 45%, transparent) !important;
-  color: var(--v4-accent-strong) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
-}
-
 /* Range input — Ridgeline cream panels */
 .glass-slider-input {
   -webkit-appearance: none;
@@ -2256,13 +2026,6 @@ button {
   box-shadow: 0 0 10px color-mix(in srgb, var(--v5-orange) 28%, transparent);
 }
 
-/* Glass recessed slot */
-.glass-slot-inset {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.03);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.55);
-}
-
 .glass-lens-active {
   background: color-mix(in srgb, var(--v5-orange) 8%, transparent) !important;
   box-shadow: inset 4px 0 0 var(--v5-orange);
@@ -2295,17 +2058,9 @@ button {
     height: 100% !important;
     overflow: hidden !important;
   }
-  .desktop-panel-fit-visible {
-    height: 100% !important;
-    overflow: visible !important;
-  }
 }
 @media (max-width: 1023px), (max-height: 799px) {
   .desktop-panel-fit-hidden {
-    height: auto !important;
-    overflow: visible !important;
-  }
-  .desktop-panel-fit-visible {
     height: auto !important;
     overflow: visible !important;
   }
@@ -2322,5 +2077,5 @@ button {
 .review-check--on {
   background: var(--v4-accent);
   border-color: var(--v4-accent);
-  color: var(--v4-on-accent, #fff);
+  color: var(--v4-accent-ink);
 }
