@@ -50,7 +50,7 @@ export {
   normalizeParsedCues,
 } from './subtitle/model';
 
-export type { LineKind, LineKindRow } from './subtitle/analysis';
+export type { LineKind } from './subtitle/analysis';
 
 export {
   stripMarkupForDetection,
@@ -70,11 +70,8 @@ export {
   isLyricText,
   isSubtitleCreditText,
   extractSubtitleAttributions,
-  cleanAttributionValue,
   classifyLineKind,
-  isSentenceLikeDialogue,
   splitSingleBilingualText,
-  detectCueLanguage,
   BILINGUAL_SECONDARY_SHARE,
   BILINGUAL_SECONDARY_SHARE_WITH_HINT,
   isSentenceLevelLatinLine,

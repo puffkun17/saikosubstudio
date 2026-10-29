@@ -445,5 +445,3 @@ export function detectSubtitleLanguagePair(text: string, name = ''): SubtitleLan
   const secondaryLanguage = detectLanguageByContent(secondaryText.join('\n'));
   return { primary, secondary: isLatinSecondaryLanguage(secondaryLanguage) ? secondaryLanguage : 'en' };
 }
-
-export { sortCuesByTime, dedupeIdenticalCues, normalizeParsedCues, cleanSubtitleContent } from './model';

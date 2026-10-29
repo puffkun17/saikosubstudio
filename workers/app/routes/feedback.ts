@@ -1,4 +1,5 @@
 import type { Env } from "../entry";
+import { warnMissingBinding } from "../warn";
 
 type FeedbackCategory = "issue" | "idea" | "other";
 type FeedbackPayload = { category?: unknown; message?: unknown };
@@ -30,6 +31,8 @@ export async function handleFeedbackPost(request: Request, env: Env): Promise<Re
   if (env.FEEDBACK_RATE_LIMITER) {
     const { success } = await env.FEEDBACK_RATE_LIMITER.limit({ key: address });
     if (!success) return json({ error: "提交频率过高，请稍后再试。" }, 429);
+  } else {
+    warnMissingBinding("FEEDBACK_RATE_LIMITER", "requests are not rate limited");
   }
 
   let payload: FeedbackPayload;

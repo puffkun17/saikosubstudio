@@ -26,9 +26,6 @@ function isBypassed(request, url) {
   if (/(^|\.)tmdb\.org$|(^|\.)themoviedb\.org$/i.test(url.hostname)) return true;
   if (BYPASS_PATH_PREFIXES.some((p) => url.pathname.startsWith(p))) return true;
   if (request.headers.has('range')) return true;
-  // Next.js RSC / prefetch payloads: let them hit the network; on failure Next falls
-  // back to a hard navigation, which the navigation handler serves from cache.
-  if (url.searchParams.has('_rsc') || request.headers.get('RSC') === '1') return true;
   return false;
 }
 
@@ -77,17 +74,6 @@ async function matchAny(request, options) {
   const own = await caches.match(request, { cacheName: PRECACHE, ...options });
   if (own) return own;
   return caches.match(request, options);
-}
-
-async function cacheFirst(request) {
-  const hit = await matchAny(request);
-  if (hit) return hit;
-  const res = await fetch(request);
-  if (cacheable(res)) {
-    const cache = await caches.open(RUNTIME);
-    cache.put(request, res.clone());
-  }
-  return res;
 }
 
 async function staleWhileRevalidate(event, request) {
@@ -141,10 +127,6 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') {
     event.respondWith(networkFirstNavigation(event, request, url));
-    return;
-  }
-  if (url.pathname.startsWith('/_next/static/')) {
-    event.respondWith(cacheFirst(request));
     return;
   }
   if (STATIC_EXT.test(url.pathname)) {
