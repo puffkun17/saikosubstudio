@@ -21,10 +21,10 @@ execFileSync('npx', [
   '--module',
   'commonjs',
   '--moduleResolution',
-  'node',
+  'bundler',
   '--outDir',
   outDir,
-  '--skipLibCheck',
+  '--skipLibCheck', '--ignoreConfig',
 ], { stdio: 'inherit' });
 
 const require = createRequire(import.meta.url);
