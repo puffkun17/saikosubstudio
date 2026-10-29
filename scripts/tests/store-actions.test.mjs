@@ -33,8 +33,8 @@ execFileSync(
   'npx',
   [
     'tsc', 'src/store/useStudioStore.ts',
-    '--target', 'ES2020', '--module', 'commonjs', '--moduleResolution', 'node',
-    '--outDir', out, '--skipLibCheck', '--esModuleInterop',
+    '--target', 'ES2020', '--module', 'commonjs', '--moduleResolution', 'bundler',
+    '--outDir', out, '--skipLibCheck', '--ignoreConfig', '--esModuleInterop',
   ],
   { stdio: 'inherit' },
 );

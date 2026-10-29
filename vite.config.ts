@@ -12,12 +12,12 @@ export default defineConfig({
       "@": resolve(root, "src"),
     },
   },
-  // MPA HTML inputs must be scoped to `client` — root build.rollupOptions is
+  // MPA HTML inputs must be scoped to `client` — root build.rolldownOptions is
   // inherited by the Worker environment and breaks `vite build`.
   environments: {
     client: {
       build: {
-        rollupOptions: {
+        rolldownOptions: {
           input: {
             main: resolve(root, "index.html"),
             about: resolve(root, "about/index.html"),

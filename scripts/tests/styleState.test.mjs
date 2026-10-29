@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 const out = mkdtempSync(join(tmpdir(), 'saiko-style-'));
-execFileSync('npx', ['tsc', 'src/utils/previewStyle.ts', 'src/utils/styleFromImage.ts', '--target', 'ES2022', '--module', 'commonjs', '--moduleResolution', 'node', '--outDir', out, '--skipLibCheck', '--rootDir', 'src', '--lib', 'ES2022,DOM', '--noEmitOnError', 'false'], { stdio: 'ignore' });
+execFileSync('npx', ['tsc', 'src/utils/previewStyle.ts', 'src/utils/styleFromImage.ts', '--target', 'ES2022', '--module', 'commonjs', '--moduleResolution', 'bundler', '--outDir', out, '--skipLibCheck', '--ignoreConfig', '--rootDir', 'src', '--lib', 'ES2022,DOM', '--noEmitOnError', 'false'], { stdio: 'ignore' });
 const req = createRequire(join(out, 'x.js'));
 const { resolveEffectiveStyle, resolvePreviewStyle } = req('./utils/previewStyle.js');
 const { estimateStyleFromPixels } = req('./utils/styleFromImage.js');
@@ -60,7 +60,7 @@ test('navy stacked layout follows user overrides (export == preview)', () => {
 });
 
 test('style library: one list, entries apply as preset/base, tuning detected, reset clears', () => {
-  execFileSync('npx', ['tsc', 'src/utils/styleLibrary.ts', '--target', 'ES2022', '--module', 'commonjs', '--moduleResolution', 'node', '--outDir', out, '--skipLibCheck', '--rootDir', 'src', '--lib', 'ES2022,DOM'], { stdio: 'ignore' });
+  execFileSync('npx', ['tsc', 'src/utils/styleLibrary.ts', '--target', 'ES2022', '--module', 'commonjs', '--moduleResolution', 'bundler', '--outDir', out, '--skipLibCheck', '--ignoreConfig', '--rootDir', 'src', '--lib', 'ES2022,DOM'], { stdio: 'ignore' });
   const L = req('./utils/styleLibrary.js');
   const tpl = [{ id: 't1', name: 'mine', styles: { zhColor: '#FF0000', auxiliaryMode: 'clean' } }, { id: 't2', name: 'navy+', presetId: 'navy-outline', styles: { zhFontSize: 30 } }];
   const entries = L.listStyleEntries(tpl, { zhColor: '#00FF00' });

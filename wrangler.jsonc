@@ -2,9 +2,12 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   // Cloudflare Workers + Vite static assets (Switch B). No vinext.
   "name": "saikosubstudio",
-  "compatibility_date": "2026-10-12",
+  "compatibility_date": "2026-10-23",
   "compatibility_flags": ["nodejs_compat"],
   "main": "./workers/app/entry.ts",
+  // Workers Logs (all requests sampled) + source-mapped stack traces.
+  "observability": { "enabled": true, "logs": { "head_sampling_rate": 1 } },
+  "upload_source_maps": true,
   "assets": {
     // @cloudflare/vite-plugin emits client assets to dist/client (verify after build).
     "directory": "dist/client",

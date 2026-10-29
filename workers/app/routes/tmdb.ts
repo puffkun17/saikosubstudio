@@ -1,4 +1,5 @@
 import type { Env } from "../entry";
+import { warnMissingBinding } from "../warn";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const SEARCH_PATH = /^search\/(multi|movie|tv)$/;
@@ -82,6 +83,8 @@ export async function handleTmdbGet(request: Request, env: Env, path: string): P
         { "Cache-Control": "no-store", "Retry-After": "60" },
       );
     }
+  } else {
+    warnMissingBinding("TMDB_RATE_LIMITER", "requests are not rate limited");
   }
 
   const incomingUrl = new URL(request.url);

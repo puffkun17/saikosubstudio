@@ -1,0 +1,16 @@
+{
+  // Worker code type-checks against workerd runtime types (no DOM lib).
+  // Regenerate worker-configuration.d.ts with `npm run cf-typegen` after editing wrangler.jsonc.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["esnext"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "types": ["./worker-configuration.d.ts", "node"]
+  },
+  "include": ["app/**/*.ts"]
+}
