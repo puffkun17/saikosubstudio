@@ -56,3 +56,22 @@ jobs:
         run: npx playwright test
         env:
           CI: true
+
+  design-detect:
+    # Deterministic UI anti-pattern scan (impeccable). Exit 2 = findings, 1 = could not scan; both fail the job.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: impeccable detect (src)
+        run: npx --yes impeccable@4.8.0 detect --github src
+        env:
+          DO_NOT_TRACK: 1
