@@ -41,7 +41,6 @@
   /* Chrome heights */
   --ds-bar-h: 48px;
   --ds-control-h: 32px;
-  --ds-hit-min: 32px;
 }
 
 @media (max-width: 640px) {
@@ -98,7 +97,6 @@
 }
 .export-menu__download:hover { background: var(--v5-accent-soft); }
 .export-menu__download:disabled { cursor: wait; opacity: .6; }
-.export-menu--on-dark { box-shadow: 0 12px 40px rgba(0,0,0,.45); }
 
 /* Labeled chrome entry (icon + text). Icon-only buttons are reserved for universal actions. */
 .ds-entry {
@@ -107,15 +105,6 @@
   font-size: var(--ds-fs-meta); font-weight: var(--ds-fw-medium); color: var(--ds-ink-2);
 }
 .ds-entry:hover { background: var(--v5-accent-soft); color: var(--ds-ink); }
-
-/* Two-column form grid: fixed label column, controls right (属性信息 etc.) */
-.ds-form { display: grid; grid-template-columns: 96px minmax(0, 1fr); column-gap: var(--ds-space-4); row-gap: var(--ds-gap-group); align-items: start; }
-.ds-form__label { padding-top: 6px; font-size: var(--ds-fs-meta); font-weight: var(--ds-fw-medium); line-height: var(--ds-lh-tight); color: var(--ds-ink-2); }
-.ds-form__control { min-width: 0; }
-@media (max-width: 640px) {
-  .ds-form { grid-template-columns: minmax(0, 1fr); row-gap: var(--ds-space-1); }
-  .ds-form__control { margin-bottom: var(--ds-space-2); }
-}
 
 /* 对齐方式: compact two-option choice, one line each */
 .align-choice__item {
@@ -166,7 +155,7 @@
 .ds-well { padding: var(--ds-pad-well); border-radius: var(--radius-sm); } /* inside an 8px card: inner ≤ outer (concentric-safe) */
 
 /* ── Popovers: solid surface + elevation, never glass (spec §6.2) ─────────── */
-.ui-menu, .export-menu, .ds-popover {
+.ui-menu, .export-menu {
   background: var(--v5-panel-raised) !important;
   border: 1px solid var(--v5-line-strong, rgba(26,61,55,.18));
   box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.22);
@@ -261,7 +250,6 @@ select, .ds-select { text-align: left; text-align-last: left; padding-left: var(
 input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]), textarea {
   padding-left: var(--ds-ctl-px); padding-right: var(--ds-ctl-px); text-align: left; }
 .ds-dock__head { padding: var(--ds-panel-pad); }
-.ui-menu, .export-menu, .ds-popover { --ds-menu-row-px: var(--ds-ctl-px); }
 /* 样式参数 sliders: 8 inside a control, 12 between controls, 16 between sections */
 .ds-slider { display: flex; flex-direction: column; gap: var(--ds-gap-item); }
 .ds-slider__head { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-gap-group);
