@@ -91,6 +91,8 @@ export const formatBytes = (bytes: number) => {
 export const getQueueKey = (file: File, relativePath?: string) =>
   `${relativePath || ''}:${file.name}:${file.size}:${file.lastModified}`;
 
+export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 /** 树杈伸展节奏：主干先长，叶枝随后逐条抽出（封顶避免长列表拖沓）。 */
 export const leafDelayMs = (index: number) => Math.min(90 + index * 70, 480);
 
