@@ -268,7 +268,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
 
       {/* Outer wrapper constrained to the TV Mask's Aspect Ratio */}
       <div 
-        className="screen-sim-frame fade-in-up relative z-0 flex items-center justify-center overflow-hidden rounded-sm border border-[var(--v4-line-strong)] shadow-[var(--elevation-3-dim)]"
+        className="screen-sim-frame fade-in-up relative z-0 flex items-center justify-center overflow-hidden rounded-sm border border-[var(--v4-line-strong)]"
         style={{
           aspectRatio: maskAspect,
           maxWidth: '100%',
@@ -280,7 +280,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
         {/* TV Frame Mask Layer（电视机外壳 PNG，最上层 z-20） */}
                 <img 
           src={maskImg} 
-          className="absolute inset-0 w-full h-full object-fill pointer-events-none z-20 drop-shadow-2xl" 
+          className="absolute inset-0 w-full h-full object-fill pointer-events-none z-20" 
           alt="TV Frame Mask" 
         />
 
@@ -326,7 +326,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
           )}
 
           {subtitle.status === 'loading' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-30 select-none bg-black/60 backdrop-blur-xs">
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-30 select-none bg-[var(--pt-scrim)]">
               <div className="w-6 h-6 border-2 border-accent-neon border-t-transparent rounded-full animate-spin mb-3" />
               <span className="text-white/55 text-sm font-medium">
                 {subtitle.progress ? `字幕载入中 ${Math.round(subtitle.progress * 100)}%` : '正在载入字幕'}
@@ -371,11 +371,8 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
             style={{
               bottom: `${paddingBottomCqh}cqh`,
               opacity: (guides.show || guides.temp) ? 1 : 0,
-              borderColor: isMagnetic ? 'var(--v5-orange)' : 'color-mix(in srgb, var(--v5-orange) 55%, transparent)',
+              borderColor: isMagnetic ? 'var(--accent-text)' : 'color-mix(in srgb, var(--accent-text) 55%, transparent)',
               borderStyle: isMagnetic ? 'solid' : 'dashed',
-              boxShadow: isMagnetic
-                ? '0 0 14px color-mix(in srgb, var(--v5-orange) 55%, transparent)'
-                : '0 0 10px color-mix(in srgb, var(--v5-orange) 22%, transparent)',
             }}
           >
             <span className="absolute left-3 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-xs font-semibold tracking-[var(--tracking-eyebrow-wide)] text-[var(--v5-orange-strong)]">

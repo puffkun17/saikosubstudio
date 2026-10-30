@@ -1,7 +1,7 @@
 # SaikoSubStudio 设计基础 · Paper Ledger
 
-> 状态：草案（`design/paper-tokens` 分支）。本文件将取代根目录现有的 `DESIGN.md`（Ridgeline 奶油/森林绿/橘）。
-> 旧的 `DESIGN.md`、`DESIGN_AUDIT.md`、`DESIGN_BACKLOG.md`、`DESIGN_PLAN.md` 之后统一移到 `docs/design-archive/`，届时本文件移到仓库根目录。现在先不动它们。
+> 状态：已接线（`design/paper-tokens`）。本文件取代旧的 Ridgeline（奶油/森林绿/橘）`DESIGN.md`。
+> 旧的 `DESIGN.md`、`DESIGN_AUDIT.md`、`DESIGN_BACKLOG.md`、`DESIGN_PLAN.md` 已归档到 `docs/design-archive/`，只作历史参考。
 >
 > Token 源文件：`src/styles/paper-tokens.css` · 旧变量映射：`docs/design/token-mapping.md` · 对比度脚本：`docs/design/contrast.py` · 预览：`docs/design/preview.html`
 
@@ -86,7 +86,7 @@ SaikoSubStudio 是一个字幕工作台：导入（Ingest）→ 校对与编辑�
 
 ### 3.7 局部深色表面（没有系统暗色模式）
 
-App 不跟随 `prefers-color-scheme`。深色只出现在两个局部，用属性切换，组件不需要改写：
+App 不跟随 `prefers-color-scheme`。默认就是浅色纸面（`:root` 与 `[data-paper="sheet"]` 相同；sheet 用来在深色局部里重新放一块浅纸）。深色只出现在两个局部，用属性切换，组件不需要改写：
 
 - `[data-paper="chrome"]` 墨绿托盘（顶栏/步骤条）：底 `#1F3A33`，字 `#F2ECE1`（10.44）、muted `#C4CCC2`（7.46）、强调字 `#F0B3BE`（6.95）、控件边 `#7F998F`（3.37）、焦点 `#A9C8EA`（7.09）。**当前步骤 = 奶油纸片 `#FAF7F0` + 墨字（16.23）**，不再用橘色填充。绿色只在这里出现。
 - `[data-paper="theater"]` 关灯放映：底 `#121110`/`#1A1917`/`#23211E`，字 `#EEE8DC`（15.46/14.40/13.16）、muted `#A39B8E`（≥5.84）、强调提亮为 `#D06276`（按钮，深字 5.17）与 `#E59AAA`（文字 ≥7.29）；状态色各自提亮，均 ≥5.8。
@@ -179,8 +179,8 @@ App 不跟随 `prefers-color-scheme`。深色只出现在两个局部，用属�
 ## 9. 不在本次范围
 
 - 字幕样式本身（`--lang-*`、`--fmt-*`、烧录预设的颜色）是用户内容的身份色，不迁移到这套 token。
-- 工作台分类色（`--wb-cat-*`）先保留，下一步再评估是否收进 `--state-*`。
-- 接线（在 `globals.css` 里把 `--v4-*` / `--v5-*` 别名到新 token）另开一步，见 `token-mapping.md`。
+- 工作台分类色（`--wb-cat-*`，含 review 的 `#B8433C`）是数据编码，本次保留不动，记录在 `docs/migration-notes.md`；以后再评估是否收进 `--state-*`。
+- 旧名 `--v4-*` / `--v5-*` 现在只是指向新 token 的别名（`src/styles/globals.css`），映射见 `docs/design/token-mapping.md`；逐个改名是后续工作。
 
 ---
 

@@ -556,9 +556,9 @@ export const TaskList: React.FC = () => {
             return (
               <button
                 key={t.id}
-                className={`max-w-[220px] cursor-pointer truncate rounded-[var(--radius-xl)] border px-4 py-2 font-sans text-sm transition-all
+                className={`max-w-[220px] cursor-pointer truncate rounded-md border px-4 py-2 font-sans text-sm transition-all
                   ${isActive
-                    ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] font-semibold text-[var(--v4-accent-strong)] shadow-[var(--glow-accent)]'
+                    ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] font-semibold text-[var(--v4-accent-strong)]'
                     : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)]'}`}
                 onClick={() => selectTask(t.id)}
               >
@@ -752,7 +752,7 @@ export const TaskList: React.FC = () => {
                             initial={{ opacity: 0.85, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1.03 }}
                             transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
-                            className="flex items-center gap-2 rounded-[var(--radius-xl)] border border-[var(--v4-accent)]/40 bg-[var(--v4-panel-raised)] px-3 py-2.5 shadow-[var(--elevation-2)] backdrop-blur-md"
+                            className="flex items-center gap-2 rounded-[var(--radius-xl)] border border-[var(--v4-accent)]/40 bg-[var(--v4-panel-raised)] px-3 py-2.5 shadow-[var(--pt-elev-float)]"
                             style={{ height: dragCardSize.h }}
                           >
                             <FileFormatIcon name={dragFile.name} size="md" />
@@ -840,7 +840,7 @@ export const TaskList: React.FC = () => {
 
           {/* Configuration & Process Dock — sticky when ASS style decision is present */}
           {foundAssStyle && (
-          <div className="sticky bottom-0 z-10 flex flex-col gap-[var(--ds-gap-item)] overflow-visible border-t border-[var(--v4-line)] bg-[var(--v4-panel)]/95 pt-[var(--ds-gap-group)] backdrop-blur-sm">
+          <div className="sticky bottom-0 z-10 flex flex-col gap-[var(--ds-gap-item)] overflow-visible border-t border-[var(--v4-line)] bg-[var(--v4-panel)] pt-[var(--ds-gap-group)]">
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}

@@ -218,7 +218,7 @@ export const FileFormatIcon: React.FC<FileFormatIconProps> = ({
 
   return (
     <span className={`inline-flex shrink-0 items-center gap-1.5 ${className}`} title={tip}>
-      <span style={{ width: px, height: px }} className="inline-block drop-shadow-[0_1px_1.5px_color-mix(in_srgb,var(--v5-green)_22%,transparent)]">
+      <span style={{ width: px, height: px }} className="inline-block">
         <AdobeFileGlyph format={resolved} />
       </span>
       {showLabel && (
@@ -312,7 +312,7 @@ const LANG_VISUAL: Record<string, LangVisual> = {
   unknown: { label: '待识别', face: 'var(--lang-unknown-face)', ink: 'var(--lang-unknown-ink)', mark: '?' },
 };
 
-/** 表面自适应的芯片配色：随 data-surface（cream/forest）自动取得可读对比。 */
+/** 表面自适应的芯片配色：随 data-paper（sheet/chrome/theater）自动取得可读对比。 */
 const chipSurfaceStyle = (face: string): React.CSSProperties => ({
   borderColor: `color-mix(in srgb, ${face} 48%, var(--v4-line-strong))`,
   background: `color-mix(in srgb, ${face} 12%, transparent)`,

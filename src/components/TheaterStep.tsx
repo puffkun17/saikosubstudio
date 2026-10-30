@@ -264,7 +264,7 @@ export const TheaterStep: React.FC = () => {
   }
 
   return (
-    <div data-surface="forest" className="relative flex h-full w-full flex-1 flex-col overflow-hidden">
+    <div data-paper="chrome" className="relative flex h-full w-full flex-1 flex-col overflow-hidden">
       
       {/* 顶部导航栏 */}
       <div className="relative z-[var(--z-raised)] flex flex-col gap-2 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-3 py-2 md:px-6">
@@ -295,7 +295,10 @@ export const TheaterStep: React.FC = () => {
       </div>
 
       {/* 主体：关灯时整块（预览 + 夜光侧栏）提到暗幕之上 */}
-        <div className={`flex-1 flex min-h-0 flex-col overflow-hidden relative lg:flex-row ${isLightsOff ? 'lights-off-stage' : ''}`}>
+        <div
+          data-paper={isLightsOff ? 'theater' : undefined}
+          className={`flex-1 flex min-h-0 flex-col overflow-hidden relative lg:flex-row ${isLightsOff ? 'lights-off-stage' : ''}`}
+        >
         {/* L0 舞台：隔离内部 z，避免电视框压过样式面板 */}
         <div className="relative z-[var(--z-theater-stage)] isolate flex min-w-0 flex-1 flex-col items-center justify-center gap-3 p-3 md:p-5 xl:p-6">
           <div className="flex-1 w-full min-h-0 flex items-center justify-center">
@@ -362,7 +365,7 @@ export const TheaterStep: React.FC = () => {
 
         {/* 停靠面板：文档流内的兄弟节点（不是浮层），预览随之缩小、保持比例、不被遮挡。 */}
         {dock && (
-          <aside id="theater-dock" data-surface="forest" className="theater-style-shell ds-dock" aria-label={DOCK_TITLES[dock]}>
+          <aside id="theater-dock" data-paper={isLightsOff ? 'theater' : 'chrome'} className="theater-style-shell ds-dock" aria-label={DOCK_TITLES[dock]}>
             <header className="ds-dock__head">
               <h3 className="ds-head">{DOCK_TITLES[dock]}</h3>
               <button type="button" className="ui-action ui-action--secondary ui-action--icon" aria-label="关闭面板" onClick={() => { setDock(null); setIsSettingsOpen(false); }}>
@@ -411,9 +414,10 @@ export const TheaterStep: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 4 }}
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              data-paper="theater"
               className="lights-off-exit-tip pointer-events-none fixed bottom-8 left-1/2 z-[calc(var(--z-dim)+1)] w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 text-center"
             >
-              <span className="inline-flex items-center rounded-[var(--radius-md)] border border-white/10 bg-black/70 px-3 py-1.5 text-xs font-medium tracking-wide text-white/90 shadow-[var(--elevation-2)] backdrop-blur-sm">
+              <span className="inline-flex items-center rounded-[var(--radius-md)] border border-[var(--rule-hair)] bg-[var(--paper-raised)] px-3 py-1.5 text-xs font-medium tracking-wide text-[var(--ink-strong)] shadow-[var(--pt-elev-float)]">
                 点击空白处、按 Esc 或 L 退出关灯
               </span>
             </motion.div>

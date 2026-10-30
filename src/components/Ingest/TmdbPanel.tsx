@@ -355,7 +355,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                       <input
                         id="tmdb-title-input"
                         type="text"
-                        className={`v4-focus-ring w-full rounded-lg border bg-[var(--v4-panel-muted)] py-2.5 pl-10 pr-3 text-sm text-[var(--v4-text)] outline-none transition-all ${needsTitleInput ? 'border-[var(--v4-accent)]/35 focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]' : 'border-[var(--v4-line)] focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]'}`}
+                        className={`v4-focus-ring w-full rounded-md border bg-[var(--v4-panel-muted)] py-2.5 pl-10 pr-3 text-sm text-[var(--v4-text)] outline-none transition-all ${needsTitleInput ? 'border-[var(--v4-accent)]/35 focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]' : 'border-[var(--v4-line)] focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]'}`}
                         value={tmdbManualInput.title}
                         onChange={e => setTmdbManualInput({ ...tmdbManualInput, title: e.target.value })}
                         placeholder="输入电影或剧集名称"
@@ -371,7 +371,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                       类型
                       <select
                         id="tmdb-type-input"
-                        className="v4-focus-ring cursor-pointer rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2 text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]"
+                        className="v4-focus-ring cursor-pointer rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-2 text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]"
                         value={tmdbManualInput.type}
                         onChange={e => setTmdbManualInput({ ...tmdbManualInput, type: e.target.value as 'movie' | 'tv' })}
                       >
@@ -387,7 +387,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                         min="1888"
                         max="2100"
                         inputMode="numeric"
-                        className={`v4-focus-ring w-full rounded-lg border bg-[var(--v4-panel-muted)] px-3 py-2 font-mono text-sm tabular-nums text-[var(--v4-text)] outline-none transition-all placeholder:text-[var(--v4-text-faint)] focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)] ${
+                        className={`v4-focus-ring w-full rounded-md border bg-[var(--v4-panel-muted)] px-3 py-2 font-mono text-sm tabular-nums text-[var(--v4-text)] outline-none transition-all placeholder:text-[var(--v4-text-faint)] focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)] ${
                           tmdbManualInput.type === 'tv' && !tmdbManualInput.year.trim()
                             ? 'border-[var(--v4-accent)]/35'
                             : 'border-[var(--v4-line)]'
@@ -403,7 +403,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                   {tmdbManualInput.type === 'tv' && (
                     <div className="grid grid-cols-2 gap-2" role="group" aria-labelledby="episode-location-label">
                       <span id="episode-location-label" className="sr-only">集数定位</span>
-                      <label className="flex min-w-0 items-center rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] transition-colors focus-within:border-[var(--v4-accent)]">
+                      <label className="flex min-w-0 items-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] transition-colors focus-within:border-[var(--v4-accent)]">
                         <span className="shrink-0 pl-2.5 text-xs text-[var(--v4-text-faint)]">第</span>
                         <input
                           type="number"
@@ -417,7 +417,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                         />
                         <span className="shrink-0 border-l border-[var(--v4-line)] px-2.5 py-1 text-xs font-medium text-[var(--v4-accent-strong)]">季</span>
                       </label>
-                      <label className="flex min-w-0 items-center rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] transition-colors focus-within:border-[var(--v4-accent)]">
+                      <label className="flex min-w-0 items-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] transition-colors focus-within:border-[var(--v4-accent)]">
                         <span className="shrink-0 pl-2.5 text-xs text-[var(--v4-text-faint)]">第</span>
                         <input
                           type="number"
@@ -436,7 +436,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
 
                   <button
                     type="submit"
-                    className={`v4-focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg text-sm font-semibold transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${shouldHighlightSearch ? 'action-required-button' : 'bg-[var(--v4-accent)] text-[var(--v4-accent-ink)] hover:bg-[var(--v4-accent-strong)]'}`}
+                    className={`v4-focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-md text-sm font-semibold transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${shouldHighlightSearch ? 'action-required-button' : 'bg-[var(--v4-accent)] text-[var(--v4-accent-ink)] hover:bg-[var(--v4-accent-strong)]'}`}
                     disabled={isSearchingTmdb || isApplyingSuggestion || !tmdbManualInput.title.trim()}
                   >
                     {isSearchingTmdb ? (
@@ -468,7 +468,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                               key={s.id}
                               type="button"
                               aria-pressed={isChosen}
-                              className={`v4-focus-ring flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition-all
+                              className={`v4-focus-ring flex w-full cursor-pointer items-center gap-2.5 rounded-md border px-2.5 py-2 text-left transition-all
                               ${isChosen
                                   ? 'border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] shadow-[inset_2px_0_0_var(--v4-accent)]'
                                   : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] hover:bg-[var(--v4-accent-soft)]'

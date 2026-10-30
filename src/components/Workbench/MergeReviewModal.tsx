@@ -33,7 +33,7 @@ export const MergeReviewModal: React.FC<MergeReviewModalProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-3 backdrop-blur-sm sm:p-4"
+            className="ui-modal-layer fixed inset-0 grid place-items-center bg-[var(--pt-scrim)] p-3 sm:p-4"
             onClick={(event) => {
               if (event.target === event.currentTarget) onClose();
             }}

@@ -20,16 +20,16 @@ const WORKFLOW_STEPS = [
 
 /**
  * Narrow chrome breakpoint: below this, workflow steps leave the top tray
- * and become equal segments in the bottom forest tray. ≥844 keeps desktop top tabs.
+ * and become equal segments in the bottom green tray. ≥844 keeps desktop top tabs.
  */
 const NARROW_CHROME_MQ = '(max-width: 843px)';
 
 const trayChrome =
-  'flex h-[var(--tray-h)] w-full items-center gap-2.5 border-[var(--v4-line)] px-3 backdrop-blur-md transition-colors duration-300 sm:px-4 md:px-5';
+  'flex h-[var(--tray-h)] w-full items-center gap-2.5 border-[var(--v4-line)] px-3 transition-colors duration-300 sm:px-4 md:px-5';
 
 /** Icon+label control: never squash copy — hide label via container query instead. */
 const trayCtrl =
-  'system-tray__ctrl v4-focus-ring inline-flex h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-[length:var(--ds-fs-meta)] font-medium transition-colors';
+  'system-tray__ctrl v4-focus-ring inline-flex h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-2.5 text-[length:var(--ds-fs-meta)] font-medium transition-colors';
 
 /**
  * Labels appear from available deck width (parent @container), not control width —
@@ -116,12 +116,12 @@ const WorkflowStepButton: React.FC<WorkflowStepButtonProps> = ({
         type="button"
         onClick={() => onSelect(step.id)}
         className={`system-tray__workflow-seg v4-focus-ring relative flex min-h-11 min-w-0 flex-1 cursor-pointer items-center justify-center px-2 text-[length:var(--type-control)] font-bold tracking-wide transition-colors
-          ${index > 0 ? 'border-l border-[color:color-mix(in_srgb,var(--v5-cream)_12%,transparent)]' : ''}
+          ${index > 0 ? 'border-l border-[var(--rule-hair)]' : ''}
           ${isFilled
-            ? 'text-[var(--v5-green)]'
+            ? 'text-[var(--chrome-active-ink)]'
             : disabled
-              ? 'cursor-help text-[color:color-mix(in_srgb,var(--v5-cream)_65%,transparent)]'
-              : 'text-[color:color-mix(in_srgb,var(--v5-cream)_78%,transparent)] hover:text-[var(--tray-ink)]'}
+              ? 'cursor-help text-[var(--ink-muted)]'
+              : 'text-[var(--ink-body)] hover:text-[var(--ink-strong)]'}
           ${isActive ? 'underline decoration-2 underline-offset-4' : ''}`}
         aria-current={isActive ? 'step' : undefined}
         aria-disabled={disabled || undefined}
@@ -138,12 +138,12 @@ const WorkflowStepButton: React.FC<WorkflowStepButtonProps> = ({
       type="button"
       onClick={() => onSelect(step.id)}
       className={`v4-focus-ring relative flex cursor-pointer items-center justify-center px-1 text-[length:var(--type-control)] font-bold tracking-wide transition-colors
-        ${index > 0 ? 'border-l border-[color:color-mix(in_srgb,var(--v5-green)_12%,transparent)]' : ''}
+        ${index > 0 ? 'border-l border-[var(--rule-hair)]' : ''}
         ${isFilled
-          ? 'text-[var(--v5-green)]'
+          ? 'text-[var(--chrome-active-ink)]'
           : disabled
-            ? 'cursor-help text-[color:color-mix(in_srgb,var(--v5-cream)_65%,transparent)]'
-            : 'text-[color:color-mix(in_srgb,var(--v5-cream)_78%,transparent)] hover:text-[var(--tray-ink)]'}
+            ? 'cursor-help text-[var(--ink-muted)]'
+            : 'text-[var(--ink-body)] hover:text-[var(--ink-strong)]'}
         ${isActive ? 'underline decoration-2 underline-offset-4' : ''}`}
       aria-current={isActive ? 'step' : undefined}
       aria-disabled={disabled || undefined}
@@ -326,7 +326,7 @@ export const SystemTray = () => {
         aria-label="工作流程进度"
       >
         <motion.div
-          className="absolute inset-y-0 left-0 bg-[var(--v5-orange)]"
+          className="absolute inset-y-0 left-0 bg-[var(--chrome-active-bg)]"
           initial={false}
           animate={{ width: `${(workflowStep / WORKFLOW_STEPS.length) * 100}%` }}
           transition={{ type: 'spring', stiffness: 280, damping: 28 }}
@@ -370,7 +370,7 @@ export const SystemTray = () => {
             <Archive className="system-tray__accent h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
             <span className={trayLabel}>历史</span>
             {libraryCount > 0 && (
-              <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-[color-mix(in_srgb,var(--v5-orange)_22%,transparent)] px-1.5 py-0.5 text-xs font-semibold text-[var(--v5-orange)]">
+              <span className="inline-flex min-w-5 items-center justify-center rounded-[var(--pt-radius-sm)] bg-[var(--accent-soft)] px-1.5 py-0.5 text-xs font-semibold text-[var(--accent-text)]">
                 {libraryCount}
               </span>
             )}
@@ -405,6 +405,7 @@ export const SystemTray = () => {
       {/* ── Top: menu + brand + (desktop) workflow + essentials ─────────── */}
       <nav
         aria-label="全局导航"
+        data-paper="chrome"
         className={`system-tray system-tray--top fixed top-0 z-[var(--z-nav)] justify-between border-b ${trayChrome}`}
         data-chrome={isNarrowChrome ? 'narrow' : 'wide'}
       >
@@ -426,10 +427,10 @@ export const SystemTray = () => {
           <button
             type="button"
             onClick={() => handleStepClick(1)}
-            className="v4-focus-ring flex h-11 min-w-0 shrink cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg text-[20px] font-semibold leading-none tracking-tight text-[var(--v5-cream)] transition-colors duration-150 hover:text-white sm:gap-2.5 sm:text-[22px] md:text-[24px]"
+            className="v4-focus-ring flex h-11 min-w-0 shrink cursor-pointer items-center gap-2 whitespace-nowrap rounded-md text-[20px] font-semibold leading-none tracking-tight text-[var(--ink-strong)] transition-colors duration-150 hover:text-[var(--ink-body)] sm:gap-2.5 sm:text-[22px] md:text-[24px]"
             aria-label="返回导入页"
           >
-            <BrandMark className="h-9 w-9 shrink-0 rounded-[var(--radius-md)] shadow-[var(--elevation-1-dim)] sm:h-10 sm:w-10" />
+            <BrandMark className="h-9 w-9 shrink-0 rounded-[var(--radius-md)] sm:h-10 sm:w-10" />
             {isNarrowChrome ? (
               <>
                 <span className="hidden whitespace-nowrap min-[360px]:inline min-[420px]:hidden">Saiko</span>
@@ -441,7 +442,7 @@ export const SystemTray = () => {
           </button>
 
           {showTopWorkflow && (
-            <div className="flex min-w-0 flex-1 items-center border-l border-[color:color-mix(in_srgb,var(--v5-cream)_12%,transparent)] pl-2 sm:pl-3">
+            <div className="flex min-w-0 flex-1 items-center border-l border-[var(--rule-hair)] pl-2 sm:pl-3">
               {workflowCluster('top')}
             </div>
           )}
@@ -449,7 +450,7 @@ export const SystemTray = () => {
           {isInfoPage && (
             <a
               href="/"
-              className={`${trayCtrl} text-[var(--v5-orange)]`}
+              className={`${trayCtrl} text-[var(--accent-text)]`}
               aria-label="返回首页"
             >
               <ArrowLeft className="h-5 w-5 shrink-0 stroke-[2.25]" aria-hidden="true" />
@@ -488,6 +489,7 @@ export const SystemTray = () => {
       <div
         role="toolbar"
         aria-label="操作台"
+        data-paper="chrome"
         className={`system-tray system-tray--bottom fixed bottom-0 z-[var(--z-nav)] border-t ${trayChrome}`}
         data-chrome={isNarrowChrome ? 'narrow' : 'wide'}
       >
@@ -508,7 +510,7 @@ export const SystemTray = () => {
       {opsMenuOpen && showBottomWorkflow && (
         <OverlayPortal>
           <div
-            className="ui-modal-layer fixed inset-0 z-[var(--z-modal)] bg-black/55 backdrop-blur-sm"
+            className="ui-modal-layer fixed inset-0 z-[var(--z-modal)] bg-[var(--pt-scrim)]"
             onClick={(event) => {
               if (event.target === event.currentTarget) setOpsMenuOpen(false);
             }}
@@ -578,7 +580,7 @@ export const SystemTray = () => {
       {pendingReset && (
         <OverlayPortal>
           <div
-            className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
+            className="ui-modal-layer fixed inset-0 grid place-items-center bg-[var(--pt-scrim)] p-4"
             onClick={(event) => {
               if (event.target === event.currentTarget) setPendingReset(false);
             }}

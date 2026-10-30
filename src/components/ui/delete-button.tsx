@@ -168,7 +168,7 @@ export function DeleteButton({
       data-slot="delete-button"
       data-state={open ? "open" : "closed"}
       data-status={status}
-      className={cn("relative h-12 rounded-2xl", SURFACE, GLYPH, className)}
+      className={cn("relative h-12 rounded-md", SURFACE, GLYPH, className)}
       animate={{ width: open ? TILE + PANEL : TILE }}
       transition={timing(WIDTH)}
       onKeyDown={(event) => {
@@ -189,7 +189,7 @@ export function DeleteButton({
         whileTap={reduced ? undefined : { scale: 0.94 }}
         transition={TAP}
         className={cn(
-          "relative z-10 grid h-12 w-12 place-items-center rounded-2xl",
+          "relative z-10 grid h-12 w-12 place-items-center rounded-md",
           FOCUS,
         )}
       >
@@ -253,7 +253,7 @@ export function DeleteButton({
             key="panel"
             style={{ width: PANEL }}
             className={cn(
-              "absolute inset-y-0 right-0 flex items-center justify-center gap-2 rounded-2xl",
+              "absolute inset-y-0 right-0 flex items-center justify-center gap-2 rounded-md",
               RECESS,
             )}
             variants={reduced ? undefined : panelMotion}
