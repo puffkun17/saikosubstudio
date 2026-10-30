@@ -78,7 +78,6 @@
   - 进入工作台（VT 开）：p50 16.7 / p95 33.3 / max 33.4 ms，>33 ms 0%；VT 从开始到结束 377–403 ms
   - 进入工作台（`?vt=off`）：p95 33.5 / max 116.7 ms，>33 ms 6.6%
   - 结论：交接每次约多掉 2 帧（>33 ms），没有长卡顿；先保留开关默认打开。若真机更差，方案 C = 关 `STAGE_SHARED_HANDOFF`。
-- 既有问题（与本轮无关，只记录）：单元测试 `A3: deferred auto match` 偶发失败（`selectTask must not start its own search` 1 !== 0），在未改动的代码上 3 次也会失败 1 次。
 
 ### 下周从这里开始
 1. 交接掉帧：先在真机 / 4x 下看是哪一帧长（首帧测量？），试只给可见行挂 layoutId；不行就走方案 C（关开关）。
@@ -87,6 +86,5 @@
 4. 第 2 页「更多文件」入口。
 5. 仪式 token 编排。
 6. 压缩包内同路径重名条目的 objectId 冲突。
-7. 修 `A3` 偶发失败的单元测试。
-8. ViewTransition 实测 377–403 ms，比 0.25 s 动画长（含快照和一次 setTimeout）；看能否去掉 setTimeout。
+7. ViewTransition 实测 377–403 ms，比 0.25 s 动画长（含快照和一次 setTimeout）；看能否去掉 setTimeout。
 

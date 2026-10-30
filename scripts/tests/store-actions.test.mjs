@@ -365,8 +365,10 @@ test('deleteTask and removeFileFromTask (prefer content id; name still works)', 
 test('A3: deferred auto match — processFiles waits for the ceremony; 429 surfaces without a notice', async () => {
   const realFetch = globalThis.fetch;
   let calls = 0;
-  globalThis.fetch = async () => {
-    calls += 1;
+  // Count only this test's own query: a delayed search left over from an earlier test
+  // (e.g. `query=Show`) can land inside the 80 ms window and is not selectTask's doing.
+  globalThis.fetch = async (url) => {
+    if (String(url).includes('Ratelimit')) calls += 1;
     return {
       ok: false,
       status: 429,
