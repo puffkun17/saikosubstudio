@@ -23,3 +23,6 @@
 - `--v4-*` / `--v5-*` remain as aliases in `globals.css` (`:root, [data-paper]`); the rename sweep is a follow-up. `--glow-*` and `--elevation-*-dim` resolve to `none`/neutral and can be deleted once nothing references them.
 - `.ingest-halo-root` class is still applied in `QueueTree.tsx` but no longer has styles (glow removed); harmless, can be dropped.
 - `--lang-*` / `--fmt-*` (subtitle identity colours) intentionally not touched.
+- Mobile workbench info bar (390px): the title is truncated to "S." because `.workflow-info-bar` is a fixed single row (`--info-bar-h`) holding back + title + `OutputModeControl` + 「打开预览」. Already present on 98730de (cf-pages-hosted), not introduced by paper tokens. A fix needs a layout change (two-row info bar on narrow screens, or moving the output switch out of the bar), so it is left for a separate pass.
+- `/feedback` top tray still highlights 「导入」 as the current step, because the workflow step indicator reflects store `workflowStep` (default 1) even on non-workflow pages. Recorded only, not fixed here.
+- Tray step indicator (top + mobile bottom) now marks only the current step (cream sheet slides under it); the old "steps passed" progress fill is gone, so a non-current step never looks selected. The old fill behaviour was already on 98730de (orange fill for steps ≤ current).

@@ -107,7 +107,6 @@ const WorkflowStepButton: React.FC<WorkflowStepButtonProps> = ({
   variant,
 }) => {
   const isActive = workflowStep === step.id;
-  const isFilled = step.id <= workflowStep;
   const gatedHint = step.id === 2 ? '导入完成（点「开始合轴」）后可进入' : step.id === 3 ? '进入工作台后可预览' : undefined;
 
   if (variant === 'bottom') {
@@ -117,7 +116,7 @@ const WorkflowStepButton: React.FC<WorkflowStepButtonProps> = ({
         onClick={() => onSelect(step.id)}
         className={`system-tray__workflow-seg v4-focus-ring relative flex min-h-11 min-w-0 flex-1 cursor-pointer items-center justify-center px-2 text-[length:var(--type-control)] font-bold tracking-wide transition-colors
           ${index > 0 ? 'border-l border-[var(--rule-hair)]' : ''}
-          ${isFilled
+          ${isActive
             ? 'text-[var(--chrome-active-ink)]'
             : disabled
               ? 'cursor-help text-[var(--ink-muted)]'
@@ -139,7 +138,7 @@ const WorkflowStepButton: React.FC<WorkflowStepButtonProps> = ({
       onClick={() => onSelect(step.id)}
       className={`v4-focus-ring relative flex cursor-pointer items-center justify-center px-1 text-[length:var(--type-control)] font-bold tracking-wide transition-colors
         ${index > 0 ? 'border-l border-[var(--rule-hair)]' : ''}
-        ${isFilled
+        ${isActive
           ? 'text-[var(--chrome-active-ink)]'
           : disabled
             ? 'cursor-help text-[var(--ink-muted)]'
@@ -325,10 +324,14 @@ export const SystemTray = () => {
         role="group"
         aria-label="工作流程进度"
       >
+        {/* 只标当前页：奶油纸片滑到当前步骤下面；其余步骤一律同底（托盘绿 + 分隔线），不再用「已走过」填充。 */}
         <motion.div
-          className="absolute inset-y-0 left-0 bg-[var(--chrome-active-bg)]"
+          className="absolute inset-y-0 bg-[var(--chrome-active-bg)]"
           initial={false}
-          animate={{ width: `${(workflowStep / WORKFLOW_STEPS.length) * 100}%` }}
+          animate={{
+            left: `${(Math.max(workflowStep, 1) - 1) / WORKFLOW_STEPS.length * 100}%`,
+            width: `${100 / WORKFLOW_STEPS.length}%`,
+          }}
           transition={{ type: 'spring', stiffness: 280, damping: 28 }}
           aria-hidden="true"
         />
