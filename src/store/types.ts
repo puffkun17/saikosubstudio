@@ -17,6 +17,8 @@ export interface Subfile {
   text: string;
   lang: string;
   languagePair?: SubtitleLanguagePair;
+  /** Act 1 舞台 objectId（core/stageObjects）：仅 UI 连续性，不进导出。 */
+  sourceObjectId?: string;
   isBilingual: boolean;
   isCommentary: boolean;
   size: number;

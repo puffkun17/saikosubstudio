@@ -2,6 +2,8 @@ import type { Subfile } from '@/store/useStudioStore';
 import { secondaryTermFor } from '@/core/trackTerms';
 import { detectLanguageByFilename, isSdhOrCcSubtitleFilename } from '@/utils/subtitleCore';
 import { getClientFileIssue } from '@/utils/importSafety';
+import { stageObjectId } from '@/core/stageObjects';
+import { detectLanguagePairByFilename, type FilenameLanguagePair } from '@/core/filenameLanguagePair';
 
 /** DragZone 预检：队列条目类型、常量与纯函数（无 React、无 I/O 副作用）。 */
 
@@ -19,12 +21,18 @@ export type PreflightKind = 'subtitle' | 'zip' | 'archive' | 'archive-unsupporte
 export interface ArchiveEntryPreview {
   name: string;
   languageLabel: string;
+  /** 文件名里的双语标记（EN&CHS / chs_eng / 简英 …）；有则显示「简+En 双语」牌。 */
+  languagePair?: FilenameLanguagePair;
+  /** 稳定对象 id：父包 objectId + 包内路径（core/stageObjects）。 */
+  objectId?: string;
 }
 
 export interface PreflightItem {
   file: File;
   /** 队列去重键：包含相对路径，同名不同目录的文件不再互斥。 */
   key: string;
+  /** 舞台对象 id（core/stageObjects）：本次清单 ↔ 暂存区 ↔ 解码后的 Subfile 都用它。 */
+  objectId: string;
   name: string;
   /** 文件夹导入时的本地相对路径（如 `剧集目录/S01/xx.srt`）。 */
   relativePath?: string;
@@ -124,10 +132,11 @@ export const PREFLIGHT_LANGUAGE_LABELS = {
 export const createPreflightItem = (file: File, relativePath?: string): PreflightItem => {
   const extension = getExtension(file.name);
   const decorate = (
-    item: Omit<PreflightItem, 'key' | 'relativePath' | 'folderName'>,
+    item: Omit<PreflightItem, 'key' | 'objectId' | 'relativePath' | 'folderName'>,
   ): PreflightItem => ({
     ...item,
     key: getQueueKey(file, relativePath),
+    objectId: stageObjectId(getQueueKey(file, relativePath)),
     relativePath,
     folderName: relativePath && relativePath.includes('/') ? relativePath.split('/')[0] : undefined,
   });
@@ -145,7 +154,7 @@ export const createPreflightItem = (file: File, relativePath?: string): Prefligh
     });
   }
   if (isSubtitleExtension(extension)) {
-    const language = detectLanguageByFilename(file.name);
+    const language = languageSpecForName(file.name);
     return decorate({
       file,
       name: file.name,
@@ -153,7 +162,7 @@ export const createPreflightItem = (file: File, relativePath?: string): Prefligh
       kind: 'subtitle',
       label: extension.toUpperCase(),
       accepted: true,
-      note: `${PREFLIGHT_LANGUAGE_LABELS[language]} · ${extension === 'ass' ? '样式字幕轨' : '标准字幕轨'}`,
+      note: `${language.label} · ${extension === 'ass' ? '样式字幕轨' : '标准字幕轨'}`,
     });
   }
   if (extension === 'zip') {
@@ -258,12 +267,32 @@ export const describeTrack = (file: Subfile) => {
 export const VIDEO_EXT = /\.(mkv|mp4|m4v|mov|avi|webm|ts|m2ts|wmv|flv)$/i;
 export const isVideoFile = (file: File) => file.type.startsWith('video/') || VIDEO_EXT.test(file.name);
 
-export const languagesForItem = (item: PreflightItem): string[] => {
+/** 一条轨在列表里的语言：中文名，双语时带上配对（牌面显示 简+En）。 */
+export interface LanguageSpec {
+  label: string;
+  pair?: FilenameLanguagePair;
+}
+
+/** 只看文件名：双语标记优先，其次单语种；都没有 = 待识别。 */
+export const languageSpecForName = (name: string): LanguageSpec => {
+  const pair = detectLanguagePairByFilename(name);
+  if (pair) return { label: PREFLIGHT_LANGUAGE_LABELS.bilingual, pair };
+  return { label: PREFLIGHT_LANGUAGE_LABELS[detectLanguageByFilename(name)] || '语言待识别' };
+};
+
+const specKey = (spec: LanguageSpec) => (spec.pair ? `${spec.pair.primary}+${spec.pair.secondary}` : spec.label);
+
+export const languagesForItem = (item: PreflightItem): LanguageSpec[] => {
   if (item.archiveEntries && item.archiveEntries.length > 0) {
-    return [...new Set(item.archiveEntries.map((entry) => entry.languageLabel))];
+    const seen = new Map<string, LanguageSpec>();
+    for (const entry of item.archiveEntries) {
+      const spec: LanguageSpec = { label: entry.languageLabel, pair: entry.languagePair };
+      if (!seen.has(specKey(spec))) seen.set(specKey(spec), spec);
+    }
+    return [...seen.values()];
   }
   if (item.kind === 'subtitle') {
-    return [PREFLIGHT_LANGUAGE_LABELS[detectLanguageByFilename(item.name)] || '语言待识别'];
+    return [languageSpecForName(item.name)];
   }
   return [];
 };

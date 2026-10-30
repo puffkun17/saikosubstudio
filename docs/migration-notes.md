@@ -51,3 +51,12 @@
 - Plan B pieces **not** in this draft: persistent stage shell / `layoutStage` coordinates; cross-zone long-move animation (`MOTION_S.longMove` is defined but unused); multi-work grouping + hint + staging area (暂存区); 「更多文件」 picker on page 2; post-merge prompt.
 - Pre-existing (not changed here): filename-only language detection (`archive.ts` → `detectLanguageByFilename`) returns 待识别 for bilingual tags such as `EN&CHS` / `EN&CHT`. Already the case on e1b1e41.
 - `.ingest-queue-footer` is `position: sticky; bottom: 0` on < 768 px. It works because `.ingest-shell` is the scroll container and ends above the bottom tray; if that container changes, re-check the sticky bar.
+
+## DragZone list v3 / 方案 B 骨架（feat/dragzone-list-v2）
+
+- 双语文件名尾缀：新增 `src/core/filenameLanguagePair.ts`，`EN&CHS`、`EN&CHT`、`CHS&EN`、`chs_eng`、`简英` 等相邻配对识别为双语（简+En / 繁+En），不再落到「待识别」。zh+zh、zh+ja/ko、非相邻 token 不算配对；裸 `de/it/es` 不作为第二语言。`utils/subtitle/io.ts` 的 `detectSubtitleLanguagePair` 在文件名有配对时补 primary 并打开 hint。corpus 基线 0 差异（sample-a、sample-b）。
+- 稳定 objectId：`src/core/stageObjects.ts`。队列项 `obj:<hash12>`，压缩包条目 `<parent>/<hash8>`（按条目路径），`Subfile.sourceObjectId` 贯通到处理结果。
+- 舞台：`useIngestStage`（内存 zustand）持有 `queuedItems / stagedItems`。行为变化：清单在 DragZone 卸载后保留，只有「整理文件」成功后才清空。`IngestStep` 包在 `LayoutGroup id="act1-stage"`，区域标记 `data-stage-zone=intake|current|staging|ledger`。
+- 动效：跨区域长距离移动 0.35 s（`MOTION_S.longMove`，springNoBounce），其余保持 0.25 s；reduced motion 下只做 0.15 s 透明度。
+- 多作品提示 + 暂存区：按片名分组（`core/workGrouping.ts`），≥2 部时在清单顶部提示；选一部后其余进入暂存区。暂存区在清单非空时位于清单顶部，清单空时位于拖放井上方并提示「继续整理？」。「整理文件」行为不变（提示打开时仍整理当前全部清单）。
+- 已知遗留：Act1→Act2 共享元素 / ViewTransition（仍是 `AnimatePresence mode="wait"`）；layoutStage 坐标函数；混合压缩包按条目拆分；第 2 页「更多文件」入口；仪式 token 编排；压缩包内同路径重名条目 objectId 冲突。

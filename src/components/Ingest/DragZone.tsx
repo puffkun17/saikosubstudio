@@ -26,6 +26,10 @@ import {
 import { useIngestPipeline } from '@/components/Ingest/dragzone/useIngestPipeline';
 import { QueueTree } from '@/components/Ingest/dragzone/QueueTree';
 import { QueueActionBar } from '@/components/Ingest/dragzone/QueueActionBar';
+import { StagingTray } from '@/components/Ingest/dragzone/StagingTray';
+import { MultiWorkNotice } from '@/components/Ingest/dragzone/MultiWorkNotice';
+import { useIngestStage } from '@/store/useIngestStage';
+import { groupQueueByWork, workSignature } from '@/core/workGrouping';
 
 export const DragZone: React.FC = () => {
   const [confirmOriginal, setConfirmOriginal] = React.useState(false);
@@ -77,6 +81,45 @@ export const DragZone: React.FC = () => {
     removeQueuedFile,
     removeFolderGroup,
   } = useIngestPipeline();
+
+  // 暂存区（plan B）：与本次清单同住舞台 store，页面切换不丢。
+  const { stagedItems, multiWorkDismissed, stageObjects, unstageObjects, clearStaged, dismissMultiWork } = useIngestStage(
+    useShallow((state) => ({
+      stagedItems: state.stagedItems,
+      multiWorkDismissed: state.multiWorkDismissed,
+      stageObjects: state.stageObjects,
+      unstageObjects: state.unstageObjects,
+      clearStaged: state.clearStaged,
+      dismissMultiWork: state.dismissMultiWork,
+    })),
+  );
+  const archivePeekPending = queuedItems.some((item) => (item.kind === 'zip' || item.kind === 'archive') && item.archivePeekStatus === 'loading');
+  const workGrouping = React.useMemo(() => groupQueueByWork(
+    queuedItems
+      .filter((item) => item.accepted)
+      .map((item) => ({
+        objectId: item.objectId,
+        names: item.archiveEntries && item.archiveEntries.length > 0 ? item.archiveEntries.map((entry) => entry.name) : [item.name],
+      })),
+  ), [queuedItems]);
+  // 包内预览还没回来时不提示（包名常常只有片名，等轨名到了再判断，避免提示闪一下又变）。
+  const showMultiWork = !archivePeekPending
+    && workGrouping.isMultiWork
+    && multiWorkDismissed !== workSignature(workGrouping);
+  // 暂存区放在视线里：清单空时在拖放井上方（「继续整理？」提示），清单非空时在清单顶部（提示块下面）。
+  const stagingTray = (
+    <StagingTray
+      stagedItems={stagedItems}
+      queueEmpty={queuedItems.length === 0}
+      onUnstage={(objectId) => unstageObjects([objectId])}
+      onUnstageAll={() => unstageObjects()}
+      onClear={clearStaged}
+    />
+  );
+  const stageAllButWork = (workKey: string) => {
+    const others = workGrouping.works.filter((work) => work.key !== workKey).flatMap((work) => work.objectIds);
+    stageObjects(others);
+  };
 
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -191,6 +234,7 @@ export const DragZone: React.FC = () => {
     <div
       ref={dropZoneRef}
       data-ingest-drop-zone
+      data-stage-zone="intake"
       className={`ingest-drop-zone group/outer flex w-full flex-col ${
         queuedItems.length === 0 ? 'ingest-drop-zone--empty flex-1' : 'items-center py-1 md:py-2'
       }`}
@@ -199,6 +243,7 @@ export const DragZone: React.FC = () => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      {queuedItems.length === 0 && stagingTray}
       <div
         className={`ingest-stage relative z-10 select-none ${
           queuedItems.length > 0 ? 'has-queue px-3 py-4 md:px-4 md:py-6' : 'is-empty'
@@ -286,6 +331,7 @@ export const DragZone: React.FC = () => {
               exit={shouldReduceMotion ? undefined : { opacity: 0 }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
               className="ingest-queue flex flex-col text-left"
+              data-stage-zone="current"
             >
               {!tapFirst && isDragging && (
                 <p className="mb-4 px-1 text-sm font-medium text-[var(--v4-accent-strong)] md:text-base">
@@ -343,6 +389,17 @@ export const DragZone: React.FC = () => {
                   )}
                 </div>
               </header>
+
+              {showMultiWork && (
+                <MultiWorkNotice
+                  key={workSignature(workGrouping)}
+                  grouping={workGrouping}
+                  onConfirm={stageAllButWork}
+                  onKeepAll={() => dismissMultiWork(workSignature(workGrouping))}
+                />
+              )}
+
+              {stagingTray}
 
               <QueueTree
                 queuedItems={queuedItems}

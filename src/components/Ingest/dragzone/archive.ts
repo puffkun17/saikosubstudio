@@ -1,6 +1,7 @@
 import { mintFileId } from '@/core/identity';
+import { archiveEntryObjectId } from '@/core/stageObjects';
 import type { Subfile } from '@/store/useStudioStore';
-import { decodeBuffer, detectLanguageByFilename, detectSubtitleLanguage } from '@/utils/subtitleCore';
+import { decodeBuffer, detectSubtitleLanguage } from '@/utils/subtitleCore';
 import { CLIENT_IMPORT_LIMITS } from '@/utils/importSafety';
 import { partitionIngestPaths, type IgnoredIngestEntry } from '@/utils/ingestJunk';
 import {
@@ -9,8 +10,8 @@ import {
   LocalArchiveError,
 } from '@/utils/localArchive';
 import {
-  PREFLIGHT_LANGUAGE_LABELS,
   describeTrack,
+  languageSpecForName,
   getExtension,
   isSubtitleExtension,
   type ArchiveEntryPreview,
@@ -44,10 +45,15 @@ export const peekArchiveEntries = async (item: PreflightItem): Promise<ArchiveEn
     return null;
   }
 
-  const archiveEntries: ArchiveEntryPreview[] = names.map(name => ({
-    name,
-    languageLabel: PREFLIGHT_LANGUAGE_LABELS[detectLanguageByFilename(name)],
-  }));
+  const archiveEntries: ArchiveEntryPreview[] = names.map((name) => {
+    const spec = languageSpecForName(name);
+    return {
+      name,
+      languageLabel: spec.label,
+      languagePair: spec.pair,
+      objectId: archiveEntryObjectId(item.objectId, name),
+    };
+  });
   return archiveEntries;
 };
 
@@ -82,6 +88,8 @@ export const processZipFile = async (
   detectedFiles: Subfile[],
   summaries: TrackSummary[],
   addLog: IngestLogger,
+  /** 父条目的舞台 objectId；有则给每条轨写 sourceObjectId。 */
+  parentObjectId?: string,
 ): Promise<IgnoredIngestEntry[]> => {
   try {
     const { default: JSZip } = await import('jszip');
@@ -129,6 +137,7 @@ export const processZipFile = async (
         isCommentary: /(commentary|comment|director|解说|导轨)/i.test(zipEntry.name),
         size: decoded.text.length,
         importSource: 'zip',
+        sourceObjectId: parentObjectId ? archiveEntryObjectId(parentObjectId, entryName) : undefined,
         encoding: decoded.encoding,
         encodingConfidence: decoded.confidence,
       };
@@ -162,6 +171,8 @@ export const processLocalArchiveFile = async (
   detectedFiles: Subfile[],
   summaries: TrackSummary[],
   addLog: IngestLogger,
+  /** 父条目的舞台 objectId；有则给每条轨写 sourceObjectId。 */
+  parentObjectId?: string,
 ): Promise<IgnoredIngestEntry[]> => {
   try {
     const { files, ignored } = await extractLocalArchiveSubtitles(archiveFile, {
@@ -185,6 +196,7 @@ export const processLocalArchiveFile = async (
         isCommentary: /(commentary|comment|director|解说|导轨)/i.test(extractedFile.name),
         size: extractedFile.size,
         importSource: 'archive',
+        sourceObjectId: parentObjectId ? archiveEntryObjectId(parentObjectId, extractedFile.name) : undefined,
         encoding: decoded.encoding,
         encodingConfidence: decoded.confidence,
       };

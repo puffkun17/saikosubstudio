@@ -7,7 +7,7 @@ import { DragZone } from '@/components/Ingest/DragZone';
 import { TaskList } from '@/components/Ingest/TaskList';
 import { TmdbPanel } from '@/components/Ingest/TmdbPanel';
 import { SourceIdentityStrip } from '@/components/Ingest/SourceIdentityStrip';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
 import { InlineMessageBar } from '@/components/Global/InlineMessageBar';
 
 export const IngestStep: React.FC = () => {
@@ -38,10 +38,14 @@ export const IngestStep: React.FC = () => {
     >
       <InlineMessageBar className="mx-auto mb-2 w-full max-w-[1180px] shrink-0 md:mb-3" />
       {/* initial={false}: returning to 导入 remounts IngestStep; do not fade the empty shell in again. */}
+      {/* Act 1 舞台（plan B 骨架）：所有区共用一个 LayoutGroup，objectId 作 layoutId 跨区接续。
+          第 1 页 → 第 2 页仍是 mode="wait" 交接；共享元素过渡在后续 PR（见 PR #61 说明）。 */}
+      <LayoutGroup id="act1-stage">
       <AnimatePresence mode="wait" initial={false}>
         {shellState === 'ready' ? (
           <motion.div 
             key="ready-state"
+            data-stage-zone="ledger"
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
@@ -66,6 +70,7 @@ export const IngestStep: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      </LayoutGroup>
 
     </div>
   );

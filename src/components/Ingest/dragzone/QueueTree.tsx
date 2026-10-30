@@ -6,12 +6,13 @@ import { motion } from 'motion/react';
 import { FileFormatIcon, LanguageMark, resolveFileFormat } from '@/components/ui/FileFormatIcon';
 import { MiddleTruncate } from '@/components/ui/MiddleTruncate';
 import { splitSharedPrefix } from '@/core/sharedNamePrefix';
-import { EASE_OUT, MOTION_S } from '@/core/motion';
+import { EASE_OUT, MOTION_S, springNoBounce } from '@/core/motion';
 import {
   buildRenderNodes,
   formatBytes,
   languagesForItem,
   leafDelayMs,
+  type LanguageSpec,
   type PreflightItem,
 } from '@/components/Ingest/dragzone/preflight';
 
@@ -22,8 +23,14 @@ import {
  */
 const TRACK_GRID = 'grid grid-cols-[auto_minmax(0,1fr)_4.75rem_auto] items-center gap-2.5 md:grid-cols-[auto_minmax(0,1fr)_5.5rem_auto] md:gap-3.5';
 
-/** 动效：一般 0.25 s 上限（DESIGN.md §7），列表里没有远距离移动。 */
+/** 动效：一般 0.25 s 上限（DESIGN.md §7）。跨区（本次清单 ↔ 暂存区）远距离移动用 longMove 0.35 s。 */
 const LEAF_S = MOTION_S.slow;
+const LONG_MOVE = springNoBounce(MOTION_S.longMove);
+
+/** 舞台对象：同一个 objectId 在清单与暂存区之间移动时用 layoutId 接上；减少动效时不做位移。 */
+const stageObjectProps = (objectId: string, reduce: boolean | null) => (reduce
+  ? {}
+  : { layoutId: objectId, layout: 'position' as const });
 
 /** 一组文件名的显示名：有共同前缀就只显示尾巴，否则显示全名。 */
 export const groupDisplayNames = (names: string[]) => {
@@ -57,7 +64,7 @@ export const TrackUnit = ({
   title?: string;
   accepted: boolean;
   note?: string;
-  languageLabels: string[];
+  languageLabels: LanguageSpec[];
   onRemove?: () => void;
 }) => (
   <div className={TRACK_GRID} data-track-unit>
@@ -75,8 +82,13 @@ export const TrackUnit = ({
     </div>
     {languageLabels.length > 0 ? (
       <span className="flex min-w-0 flex-wrap items-center justify-start gap-1 md:gap-1.5" data-lang-col>
-        {languageLabels.map((label) => (
-          <LanguageMark key={`${keyName}:${label}`} label={label} size="md" />
+        {languageLabels.map((spec) => (
+          <LanguageMark
+            key={`${keyName}:${spec.pair ? `${spec.pair.primary}+${spec.pair.secondary}` : spec.label}`}
+            label={spec.label}
+            languagePair={spec.pair}
+            size="md"
+          />
         ))}
       </span>
     ) : (
@@ -115,7 +127,8 @@ export const ArchiveSubtree = ({
       )}
       {item.archiveEntries?.map((entry, entryIndex) => (
         <motion.div
-          key={`${item.key}:${entry.name}`}
+          key={entry.objectId ?? `${item.key}:${entry.name}`}
+          data-stage-object={entry.objectId}
           initial={shouldReduceMotion ? false : { opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{
@@ -132,7 +145,7 @@ export const ArchiveSubtree = ({
             displayName={display[entryIndex]}
             title={entry.name}
             accepted={true}
-            languageLabels={[entry.languageLabel]}
+            languageLabels={[{ label: entry.languageLabel, pair: entry.languagePair }]}
           />
         </motion.div>
       ))}
@@ -165,6 +178,7 @@ export const QueueTree = ({
             duration: shouldReduceMotion ? 0 : MOTION_S.slow,
             delay: shouldReduceMotion ? 0 : Math.min(nodeIndex * 0.05, 0.2),
             ease: EASE_OUT,
+            layout: LONG_MOVE,
           },
         };
 
@@ -215,13 +229,16 @@ export const QueueTree = ({
                   const subPath = subPaths[leafIndex];
                   return (
                     <motion.div
-                      key={item.key}
+                      key={item.objectId}
+                      {...stageObjectProps(item.objectId, shouldReduceMotion)}
+                      data-stage-object={item.objectId}
                       initial={shouldReduceMotion ? false : { opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{
                         duration: shouldReduceMotion ? 0 : LEAF_S,
                         delay: shouldReduceMotion ? 0 : leafDelayMs(leafIndex) / 1000,
                         ease: EASE_OUT,
+                        layout: LONG_MOVE,
                       }}
                       className="ingest-halo-leaf min-w-0 py-1.5 md:py-2"
                       style={{ '--leaf-delay': `${leafDelayMs(leafIndex)}ms` } as React.CSSProperties}
@@ -252,7 +269,13 @@ export const QueueTree = ({
         // 单独字幕文件：与包内轨同级的「轨单元」，不升格成壳
         if (!isArchive && item.kind === 'subtitle') {
           return (
-            <motion.div key={item.key} {...landing} className="min-w-0 rounded-md px-0.5 py-1 md:py-1.5">
+            <motion.div
+              key={item.objectId}
+              {...landing}
+              {...stageObjectProps(item.objectId, shouldReduceMotion)}
+              data-stage-object={item.objectId}
+              className="min-w-0 rounded-md px-0.5 py-1 md:py-1.5"
+            >
               <TrackUnit
                 keyName={item.key}
                 name={item.name}
@@ -267,7 +290,13 @@ export const QueueTree = ({
         }
 
         return (
-          <motion.div key={item.key} {...landing} className="min-w-0">
+          <motion.div
+            key={item.objectId}
+            {...landing}
+            {...stageObjectProps(item.objectId, shouldReduceMotion)}
+            data-stage-object={item.objectId}
+            className="min-w-0"
+          >
             <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 md:gap-4">
               <div className="ingest-halo-root">
                 <FileFormatIcon format={resolveFileFormat(item.name)} size="md" />

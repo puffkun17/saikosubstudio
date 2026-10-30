@@ -1,4 +1,5 @@
 /** Subtitle I/O: parse, clean, normalize wrappers, language detect that needs parse. */
+import { detectLanguagePairByFilename } from '../../core/filenameLanguagePair';
 import {
   type RawSub,
   type StyleSettings,
@@ -424,9 +425,13 @@ export function detectSubtitleLanguagePair(text: string, name = ''): SubtitleLan
   if (zhCn + zhTw === 0) return undefined;
 
   // 简中优先：无文件名提示时，平局取 zh-CN。
+  // 文件名双语标记（EN&CHT / chs_eng / 繁英）里的中文一侧也算文件名提示。
+  const filenamePair = name ? detectLanguagePairByFilename(name) : null;
   const primary: 'zh-CN' | 'zh-TW' = filenameLang === 'zh-TW' || filenameLang === 'zh-CN'
     ? filenameLang
-    : zhCn >= zhTw ? 'zh-CN' : 'zh-TW';
+    : filenamePair
+      ? filenamePair.primary
+      : zhCn >= zhTw ? 'zh-CN' : 'zh-TW';
 
   // Secondary = every sentence-level Latin line (English or es / fr / pt / de / it, decided per file
   // below); kana / Hangul lines only count against the pair (zh + ja / ko is a two-file job).
@@ -437,7 +442,7 @@ export function detectSubtitleLanguagePair(text: string, name = ''): SubtitleLan
   if (cjkForeignCount > latinSentenceLines) return undefined;
 
   // Substantial share: a real bilingual file carries a secondary sentence for most Chinese cues.
-  const hint = filenameLang === 'bilingual' || /(双语|雙語|中英|中西|中法|中葡|中德|中意|bilingual|dual[-_.\s]?sub)/i.test(name);
+  const hint = filenameLang === 'bilingual' || Boolean(filenamePair) || /(双语|雙語|中英|中西|中法|中葡|中德|中意|bilingual|dual[-_.\s]?sub)/i.test(name);
   const threshold = hint ? BILINGUAL_SECONDARY_SHARE_WITH_HINT : BILINGUAL_SECONDARY_SHARE;
   if (secondaryRows < Math.min(2, zhRows) || secondaryRows / Math.max(1, zhRows) < threshold) return undefined;
 
