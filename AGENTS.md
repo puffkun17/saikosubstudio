@@ -2,9 +2,10 @@
 
 ## Design source of truth
 
-- Product/visual rules: `DESIGN.md`
-- Tokens: `app/globals.css` (`--v5-*`). Brand orange `#ef8d5f`, forest `#1a3d37`. **No new palettes.**
-- Selected / active chrome: **orange fill + forest green text** (same pair as the workflow stepper fill).
+- Product/visual rules: `DESIGN.md` (Paper Ledger). Old Ridgeline docs are archived in `docs/design-archive/` (history only).
+- Tokens: `src/styles/paper-tokens.css` (source of truth). `src/styles/globals.css` keeps the legacy `--v4-*` / `--v5-*` names as aliases onto those tokens; see `docs/design/token-mapping.md`. Wine accent `#7a2233`, ink on paper, no in-page shadows. **No new palettes.**
+- Local dark surfaces use `data-paper="chrome"` (green tray) / `data-paper="theater"` (lights-off); `data-paper="sheet"` resets to light paper inside them.
+- Selected / active chrome: wine-accent treatment from `DESIGN.md` §6 (not the old orange fill + forest text).
 - Avoid iconic big-tech chrome (generic purple gradients, Inter-only stacks, glassmorphism kits).
 - **Mouse-first.** Do not add keyboard shortcuts; keep normal focusability and visible focus rings.
 

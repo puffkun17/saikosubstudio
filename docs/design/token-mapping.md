@@ -101,7 +101,7 @@
 - `--type-*`（13/15/16/18/24）→ 对应 `--pt-size-meta/control/body/title/display`，数值相同，接线时可别名。
 - `--space-1…7`（4…48）→ `--pt-space-1…7`，数值相同。
 - `ds.css` 的 `--ds-*`（字号 20/16/14/13/12、控件 36/32/28、`--ds-ink` 系）→ 可一一别名到 `--pt-size-*` / `--pt-control-h*` / `--ink-*`。
-- Tailwind `@theme` 的 `--font-sans/-mono/-serif` → 见 DESIGN.md §4（字体栈顺序有一处待确认的改动）。
+- Tailwind `@theme` 的 `--font-sans/-mono/-serif` → 见根目录 DESIGN.md §4（已改为 Geist 在前）。
 - **不迁移**：`--lang-*`、`--fmt-*`（字幕身份色）、烧录/字幕样式里的 hex。
 - **待定**：`workbench-b7.css` 的 `--wb-cat-*`（review #B8433C、structure #7A5E8E、screen #1F7F78、credit #A3700C、sound #52708C）与 `--wb-done #2F6B44`。`--wb-cat-review` 与新酒红、朱红都接近，接线前要单独排一次。
 
