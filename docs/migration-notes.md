@@ -31,3 +31,10 @@
 
 - `AGENTS.md` still says local dark surfaces use `data-paper="chrome"` (green tray); after `design/no-green` (9e0a5a7) the tray is plain paper and `[data-paper="chrome"]` no longer exists. Root `DESIGN.md` §3.7 is correct; AGENTS.md wording needs a follow-up. Not changed here.
 - `--fmt-*` / `--lang-*` identity tokens in `globals.css` are kept untouched (DESIGN.md §9), but after A1 no component references them any more. Decide later whether subtitle-style UI should use them or whether they can be removed.
+
+## Act 1 ceremony (feat/act1-ceremony)
+
+- A4 minimal slice only: `runSearch` now throws `TmdbRequestError` on 429 (with `Retry-After`) and on ≥500, so the ceremony can tell "no answer yet" from "answered, no match". Other 4xx still return `[]` as before. Starting TMDB at 0 ms (in parallel with parsing) is not done here — follow-up for A4.
+- Patience (`TMDB_PATIENCE_MS`, 8 s) is counted from the start of each match attempt (`runMatch` / `retry`), not from ceremony start.
+- Not touched (pre-existing): BottomStatusDeck motion durations 0.42 s / 0.32 s exceed the motion cap in DESIGN.md.
+- Not touched (pre-existing, `TmdbPanel.tsx`): in 「手动检索」 on 390 px the search glyph in the 片名 field overlaps the first letter of the prefilled title.

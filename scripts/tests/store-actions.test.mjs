@@ -361,3 +361,39 @@ test('deleteTask and removeFileFromTask (prefer content id; name still works)', 
   assert.equal(s.borrowedVideoName, null);
   assert.equal(s.filenameEpKey, '');
 });
+
+test('A3: deferred auto match — processFiles waits for the ceremony; 429 surfaces without a notice', async () => {
+  const realFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    return {
+      ok: false,
+      status: 429,
+      headers: { get: (name) => (name.toLowerCase() === 'retry-after' ? '7' : null) },
+      json: async () => ({}),
+    };
+  };
+  try {
+    useStudioStore.getState().restartSystem();
+    useStudioStore.setState({ statusNotices: [], tmdbData: null, selectedTaskId: null, tasks: [], uploadedFiles: [] });
+    const f = makeFile('f-rl', 'Ratelimit.Movie.2021.1080p.chs.srt');
+    const taskId = await useStudioStore.getState().processFiles([f], { recognized: true, deferAutoMatch: true });
+    assert.ok(taskId, 'processFiles resolves with the selected task id');
+    await delay(80);
+    assert.equal(calls, 0, 'deferred: selectTask must not start its own search');
+    const outcome = await useStudioStore.getState().autoMatchTask(taskId, { ceremony: true });
+    assert.equal(outcome.kind, 'rate_limited');
+    assert.equal(outcome.retryAfterMs, 7000);
+    assert.ok(calls >= 1);
+    assert.equal(
+      useStudioStore.getState().statusNotices.some((n) => n.id === 'media-match'),
+      false,
+      'ceremony owns the retry / manual choice — no duplicate notice',
+    );
+    assert.equal(useStudioStore.getState().isSearchingTmdb, false);
+    assert.equal((await useStudioStore.getState().autoMatchTask('other-task')).kind, 'skipped');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

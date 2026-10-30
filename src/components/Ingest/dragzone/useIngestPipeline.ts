@@ -1,8 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { mintFileId } from '@/core/identity';
 import { runRecognitionJob } from '@/core/recognitionClient';
+import {
+  createIngestCeremony,
+  type CeremonySnapshot,
+  type IngestCeremony,
+  type MatchOutcome,
+} from '@/core/ingestCeremony';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
+import type { TmdbSearchOutcome } from '@/store/types';
 import { detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
 import { getClientBatchIssue } from '@/utils/importSafety';
 import type { IgnoredIngestEntry } from '@/utils/ingestJunk';
@@ -36,19 +43,49 @@ import {
   readAndDecodeFile,
 } from '@/components/Ingest/dragzone/archive';
 
-/** Ceremony release gate: honest work + perceptual floor, not fake padding. */
-const CEREMONY_MIN_MS = 2400;
-const CEREMONY_SOFT_MS = 4500;
-const CEREMONY_HARD_MS = 6000;
+/** Per-phase perceptual floor; the ceremony release gate lives in core/ingestCeremony. */
 const PHASE_FLOOR_MS = 160;
+
+const toMatchOutcome = (outcome: TmdbSearchOutcome): MatchOutcome => {
+  switch (outcome.kind) {
+    case 'answered':
+    case 'stale':
+      return { kind: 'arrived' };
+    case 'skipped':
+      return { kind: 'skipped' };
+    case 'rate_limited':
+      return { kind: 'rate_limited', retryAfterMs: outcome.retryAfterMs };
+    case 'failed':
+    default:
+      return { kind: 'failed', message: outcome.kind === 'failed' ? outcome.message : undefined };
+  }
+};
+
+/** Deck title while 匹配影片 is waiting on TMDB; null keeps the phase message. */
+const matchWaitTitle = (snapshot: CeremonySnapshot | null): string | null => {
+  if (!snapshot || snapshot.phase !== 'running') return null;
+  if (snapshot.needsChoice) return snapshot.choiceReason === 'failed' ? '影片资料请求失败' : '影片资料暂未返回';
+  if (snapshot.match === 'rate_limited') return '影片资料请求排队中…';
+  return null;
+};
 
 /**
  * DragZone 导入流水线：预检队列、压缩包预览、整理仪式（阶段 / 底栏进度 / 前进按钮）。
  * 与 UI 解耦，DragZone 只负责拖放、菜单与渲染。
  */
 export const useIngestPipeline = () => {
-  const { processFiles, addLog, setIngestClearing, setStatusNotice, dismissStatusNotice } = useStudioStore(useShallow((state) => ({
+  const {
+    processFiles,
+    addLog,
+    setIngestClearing,
+    setStatusNotice,
+    dismissStatusNotice,
+    cancelTmdbSearch,
+    setTmdbManualOpen,
+  } = useStudioStore(useShallow((state) => ({
     processFiles: state.processFiles,
+    cancelTmdbSearch: state.cancelTmdbSearch,
+    setTmdbManualOpen: state.setTmdbManualOpen,
     addLog: state.addLog,
     setIngestClearing: state.setIngestClearing,
     setStatusNotice: state.setStatusNotice,
@@ -65,6 +102,18 @@ export const useIngestPipeline = () => {
   const [importSummary, setImportSummary] = useState<ImportSummary>(createEmptyImportSummary);
   const [queuedItems, setQueuedItems] = useState<PreflightItem[]>([]);
   const [queueIssue, setQueueIssue] = useState<string | null>(null);
+  const ceremonyRef = useRef<IngestCeremony | null>(null);
+  const [ceremony, setCeremony] = useState<CeremonySnapshot | null>(null);
+
+  useEffect(() => () => ceremonyRef.current?.dispose(), []);
+
+  const retryMatch = useCallback(() => {
+    ceremonyRef.current?.retry();
+  }, []);
+  const chooseManualSearch = useCallback(() => {
+    cancelTmdbSearch();
+    ceremonyRef.current?.chooseManual();
+  }, [cancelTmdbSearch]);
 
   const setPhase = (phase: IngestPhase, message = PHASE_COPY[phase]) => {
     setIngestPhase(phase);
@@ -93,13 +142,14 @@ export const useIngestPipeline = () => {
       done: ingestPhase === 'ready' || index < resolvedIndex,
     }));
     const chipSummary = resultChips.length > 0 ? resultChips.slice(0, 3).join(' · ') : undefined;
+    const waitTitle = ingestPhase === 'metadata' ? matchWaitTitle(ceremony) : null;
     setBottomStatus({
-      title: ingestMessage,
+      title: waitTitle ?? ingestMessage,
       subtitle: chipSummary,
       steps,
     });
     return () => setBottomStatus(null);
-  }, [isParsing, ingestPhase, ingestMessage, resultChips, setBottomStatus]);
+  }, [isParsing, ingestPhase, ingestMessage, resultChips, ceremony, setBottomStatus]);
 
   const holdPhaseFloor = async (startedAt: number, phaseStartedAt: number) => {
     const phaseElapsed = Date.now() - phaseStartedAt;
@@ -107,19 +157,6 @@ export const useIngestPipeline = () => {
       await sleep(PHASE_FLOOR_MS - phaseElapsed);
     }
     void startedAt;
-  };
-
-  const waitForCeremonyRelease = async (startedAt: number) => {
-    // Give selectTask's deferred TMDB search a tick to flip isSearchingTmdb.
-    await sleep(120);
-    while (true) {
-      const elapsed = Date.now() - startedAt;
-      if (elapsed >= CEREMONY_HARD_MS) break;
-      const { isSearchingTmdb } = useStudioStore.getState();
-      // After MIN: release when TMDB is idle, or at SOFT if still in flight.
-      if (elapsed >= CEREMONY_MIN_MS && (!isSearchingTmdb || elapsed >= CEREMONY_SOFT_MS)) break;
-      await sleep(80);
-    }
   };
 
   const peekArchiveContents = async (item: PreflightItem) => {
@@ -307,6 +344,11 @@ export const useIngestPipeline = () => {
 
     // Cold-start clearing ceremony (not replayed when appending from TaskList).
     const ceremonyStartedAt = Date.now();
+    ceremonyRef.current?.dispose();
+    const ceremonyGate = createIngestCeremony();
+    ceremonyRef.current = ceremonyGate;
+    setCeremony(ceremonyGate.getSnapshot());
+    ceremonyGate.subscribe(setCeremony);
     setIngestClearing(true);
     setIsParsing(true);
     let phaseStartedAt = Date.now();
@@ -452,9 +494,17 @@ export const useIngestPipeline = () => {
 
       // Recognition (ASS split / SDH) off the main thread when Workers exist; ceremony floor stays.
       const recognized = await runRecognitionJob(detectedFiles);
-      processFiles(recognized.files as Subfile[], { recognized: true });
+      const matchTaskId = await processFiles(recognized.files as Subfile[], { recognized: true, deferAutoMatch: true });
+      if (matchTaskId) {
+        // Release = max(2.4 s, TMDB answer applied locally); slow / failed → 重试 · 手动搜索.
+        ceremonyGate.runMatch(async () =>
+          toMatchOutcome(await useStudioStore.getState().autoMatchTask(matchTaskId, { ceremony: true })));
+      } else {
+        ceremonyGate.skipMatch();
+      }
       await holdPhaseFloor(ceremonyStartedAt, phaseStartedAt);
-      await waitForCeremonyRelease(ceremonyStartedAt);
+      const release = await ceremonyGate.released;
+      if (ceremonyRef.current !== ceremonyGate) return;
 
       setPhase('ready');
       setParsingFiles(preflight.map(item => ({
@@ -468,7 +518,11 @@ export const useIngestPipeline = () => {
 
       setIsParsing(false);
       setIngestClearing(false);
+      ceremonyGate.dispose();
+      ceremonyRef.current = null;
+      setCeremony(null);
       addLog('整理完成', 'success');
+      if (release.reason === 'manual') setTmdbManualOpen(true);
     } else {
       setIsParsing(false);
       setIngestClearing(false);
@@ -501,6 +555,10 @@ export const useIngestPipeline = () => {
 
   return {
     isParsing,
+    /** 匹配影片等待态：needsChoice 时显示「重试 / 手动搜索」。 */
+    ceremony,
+    retryMatch,
+    chooseManualSearch,
     importSummary,
     queuedItems,
     setQueuedItems,
