@@ -39,7 +39,7 @@ export const HistoryPanel: React.FC = () => {
         >
           <motion.div
             ref={ref}
-            data-surface="cream"
+            data-paper="sheet"
             initial={{ y: 12, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 12, opacity: 0 }}

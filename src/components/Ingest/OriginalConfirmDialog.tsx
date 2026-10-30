@@ -14,7 +14,7 @@ export const OriginalConfirmDialog: React.FC<{ onCancel: () => void; onConfirm: 
   return (
     <OverlayPortal>
       <div
-        className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
+        className="ui-modal-layer fixed inset-0 grid place-items-center bg-[var(--pt-scrim)] p-4"
         onClick={(event) => { if (event.target === event.currentTarget) onCancel(); }}
       >
         <div role="alertdialog" aria-modal="true" aria-labelledby="original-confirm-title" aria-describedby="original-confirm-desc" className="ui-modal" data-testid="original-confirm">

@@ -108,7 +108,7 @@ export default function FeedbackPage() {
                     key={item.id}
                     type="button"
                     onClick={() => { setCategory(item.id); setState('idle'); setError(''); }}
-                    className={`flex min-h-28 cursor-pointer flex-col items-start gap-3 rounded-xl border p-[var(--ds-pad-card)] text-left transition-colors
+                    className={`flex min-h-28 cursor-pointer flex-col items-start gap-3 rounded-lg border p-[var(--ds-pad-card)] text-left transition-colors
                       ${selected
                         ? 'border-[var(--v4-accent)]/45 bg-[var(--v4-accent-soft)] text-[var(--v4-text)]'
                         : 'border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-muted)] hover:border-[var(--v4-line-strong)] hover:bg-[var(--v4-panel)]'}`}
@@ -142,7 +142,7 @@ export default function FeedbackPage() {
               required
               rows={9}
               placeholder="请描述遇到的情况，或希望改进的方向。"
-              className="mt-[var(--ds-gap-item)] w-full resize-y rounded-xl border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] px-4 py-3.5 text-base font-medium leading-7 text-[var(--v4-text)] outline-none transition-colors placeholder:text-[var(--v4-text-faint)] focus:border-[var(--v4-accent)]/55 focus:bg-[var(--v4-accent-soft)]/40"
+              className="mt-[var(--ds-gap-item)] w-full resize-y rounded-md border border-[var(--v4-line-strong)] bg-[var(--v4-panel-raised)] px-4 py-3.5 text-base font-medium leading-7 text-[var(--v4-text)] outline-none transition-colors placeholder:text-[var(--v4-text-faint)] focus:border-[var(--v4-accent)]/55 focus:bg-[var(--v4-accent-soft)]/40"
             />
             <p className="mt-2 text-sm font-medium text-[var(--v4-text-faint)]">{message.length} / 3000</p>
             {lastErrorCode && (
@@ -167,7 +167,7 @@ export default function FeedbackPage() {
                 type="button"
                 onClick={registerSupport}
                 disabled={hasLiked}
-                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-[var(--v4-accent)]/35 bg-[var(--v4-panel-raised)] px-4 text-sm font-semibold text-[var(--v4-accent-strong)] transition-colors hover:bg-[var(--v4-accent-soft)] disabled:cursor-default disabled:border-[var(--v4-line)] disabled:bg-[var(--v4-panel-muted)] disabled:text-[var(--v4-text-faint)]"
+                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-[var(--v4-accent)]/35 bg-[var(--v4-panel-raised)] px-4 text-sm font-semibold text-[var(--v4-accent-strong)] transition-colors hover:bg-[var(--v4-accent-soft)] disabled:cursor-default disabled:border-[var(--v4-line)] disabled:bg-[var(--v4-panel-muted)] disabled:text-[var(--v4-text-faint)]"
               >
                 <ThumbsUp className="h-5 w-5 stroke-[2]" aria-hidden="true" />
                 {hasLiked ? '已点赞支持' : '点赞支持'}
@@ -179,7 +179,7 @@ export default function FeedbackPage() {
             <button
               type="submit"
               disabled={state === 'sending' || message.trim().length === 0}
-              className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-xl)] bg-[var(--v4-accent)] px-5 text-base font-semibold text-[var(--v4-accent-ink)] transition-colors hover:bg-[var(--v4-accent-strong)] disabled:cursor-not-allowed disabled:opacity-45"
+              className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[var(--v4-accent)] px-5 text-base font-semibold text-[var(--v4-accent-ink)] transition-colors hover:bg-[var(--v4-accent-strong)] disabled:cursor-not-allowed disabled:opacity-45"
             >
               {state === 'sending'
                 ? <LoaderCircle className="h-5 w-5 animate-spin stroke-[2]" aria-hidden="true" />

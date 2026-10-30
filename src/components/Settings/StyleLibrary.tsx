@@ -98,7 +98,7 @@ export const StyleLibrary: React.FC = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setSaving(false); }}
-              className="h-[var(--ds-ctl-h)] min-w-0 flex-1 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-[var(--ds-ctl-px)] text-sm text-[var(--v4-text)] outline-none focus:border-[var(--v4-accent)]"
+              className="h-[var(--ds-ctl-h)] min-w-0 flex-1 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-[var(--ds-ctl-px)] text-sm text-[var(--v4-text)] outline-none focus:border-[var(--v4-accent)]"
               aria-label="样式名称"
             />
             <button type="button" className="ui-action" onClick={save}>保存</button>

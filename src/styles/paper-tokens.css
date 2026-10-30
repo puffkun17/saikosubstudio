@@ -1,0 +1,226 @@
+/*
+ * SaikoSubStudio · paper-tokens（纸面账本语义层）
+ * 规范见根目录 DESIGN.md；对比度由 docs/design/contrast.py 计算（改值必须重跑）。
+ * 旧 --v4-* / --v5-* 在 globals.css 里别名到这里（见 docs/design/token-mapping.md），组件用法不变。
+ *
+ * 命名：
+ *   颜色  --paper-* 纸面 · --ink-* 墨 · --rule-* 线 · --accent-* 唯一强调（酒红）
+ *         --state-* 语义状态 · --focus-* 焦点 · --chrome-* 墨绿托盘
+ *   刻度  --pt-* 前缀（radius / space / font / size / weight / leading / elev），
+ *         避免与 globals.css 现有 --radius-* / --space-* / --type-* 及 Tailwind @theme --font-* 撞名。
+ *   动效  --motion-*
+ * 作用域：:root = 纸面（默认，浅色）；[data-paper="chrome"] = 墨绿托盘；[data-paper="theater"] = 关灯放映（深色）；
+ *         [data-paper="sheet"] = 在深色表面里回到浅色纸面（例如托盘里弹出的历史面板）。
+ * App 目前没有跟随系统的暗色模式，深色只出现在这两个局部表面上。
+ */
+
+:root,
+[data-paper="sheet"] {
+  /* ── 纸面：靠色差分层，不靠阴影 ─────────────────────────── */
+  --paper-desk: #f2ece1;    /* 桌面/工作区底 */
+  --paper-sheet: #faf7f0;   /* 面板、账本页 */
+  --paper-raised: #fffdf8;  /* 输入框、弹层、次按钮 */
+  --paper-sunken: #eae3d6;  /* 表头、hover 行、禁用底、skeleton */
+
+  /* ── 墨：深+重 / 浅+轻 两档为主 ─────────────────────────── */
+  --ink-strong: #1c1a17;      /* 标题、字幕正文、关键数值（配 600/500） */
+  --ink-body: #3a352e;        /* 长段说明 */
+  --ink-muted: #5f584e;       /* 副文案、元数据、时间码（配 400） */
+  --ink-placeholder: #736b60; /* 输入占位，仍 ≥4.5:1 */
+  --ink-faint: #8a8276;       /* 仅非文字：图标、禁用文字、刻度；不承载必读信息 */
+
+  /* ── 线：账本的骨架 ────────────────────────────────────── */
+  --rule-hair: #dcd3c4;    /* 行间发丝线、面板内分隔（装饰性） */
+  --rule-strong: #b9ae9c;  /* 分组线、面板外框 */
+  --rule-control: #8c8375; /* 控件边界（输入、次按钮），≥3:1 */
+  --rule-ledger: var(--ink-strong); /* 账本表头上下的粗线（1.5–2px） */
+
+  /* ── 唯一强调：酒红 ───────────────────────────────────── */
+  --accent: #7a2233;
+  --accent-hover: #8c2b3d;
+  --accent-press: #651a29;
+  --accent-ink: #fff8f1;  /* 强调底上的字 */
+  --accent-text: var(--accent); /* 强调色作文字（链接、选中标签），浅底均 ≥7.8:1 */
+  --accent-soft: color-mix(in srgb, var(--accent) 10%, transparent); /* 选中行/选中 chip 底 */
+  --accent-line: color-mix(in srgb, var(--accent) 45%, transparent); /* 选中项的 1px 边 */
+
+  /* ── 语义状态：与酒红分家，只表达状态 ─────────────────── */
+  --state-danger: #b0361c;   /* 朱红，偏橙，和酒红拉开 */
+  --state-warning: #8a5a0b;
+  --state-success: #2d6640;
+  --state-info: #2e5a84;
+  --state-danger-soft: color-mix(in srgb, var(--state-danger) 10%, transparent);
+  --state-warning-soft: color-mix(in srgb, var(--state-warning) 10%, transparent);
+  --state-success-soft: color-mix(in srgb, var(--state-success) 10%, transparent);
+  --state-info-soft: color-mix(in srgb, var(--state-info) 10%, transparent);
+  --state-on-solid: #fff8f1; /* 实心危险确认按钮上的字 */
+
+  /* ── 焦点：只在 :focus-visible 出现 ───────────────────── */
+  --focus-ring: #2e5a84;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* ── 墨绿托盘（chrome）：绿色只在这里 ─────────────────── */
+  --chrome-bg: #1f3a33;
+  --chrome-bg-raised: #28463e;
+
+  /* 选区 / 光标 / 滚动条也走纸面 */
+  --selection-bg: color-mix(in srgb, var(--accent) 18%, transparent);
+  --scrollbar-thumb: var(--rule-strong);
+  --scrollbar-track: transparent;
+  --skeleton: var(--paper-sunken);
+
+  /* ── 字体（均已自托管或系统自带，CSP font-src 'self' 不变） ── */
+  --pt-font-ui: "Geist Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei",
+    "Noto Sans CJK SC", "Source Han Sans SC", system-ui, sans-serif;
+  --pt-font-mono: "Geist Mono", "SFMono-Regular", "Cascadia Mono", ui-monospace, monospace, "PingFang SC",
+    "Microsoft YaHei";
+  --pt-font-title: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif; /* 仅片名 */
+
+  /* 字号：8 档，px 写在注释里，值用 rem 以跟随 --site-scale */
+  --pt-size-micro: 0.75rem;   /* 12 徽标/语言牌，最小 */
+  --pt-size-meta: 0.8125rem;  /* 13 元数据、时间码、提示 */
+  --pt-size-dense: 0.875rem;  /* 14 账本行、紧凑控件 */
+  --pt-size-control: 0.9375rem; /* 15 按钮、输入 */
+  --pt-size-body: 1rem;       /* 16 正文、字幕预览 */
+  --pt-size-title: 1.125rem;  /* 18 面板标题 */
+  --pt-size-page: 1.25rem;    /* 20 页标题/片名 */
+  --pt-size-display: 1.5rem;  /* 24 空态大标题，上限 */
+
+  --pt-weight-regular: 400;
+  --pt-weight-medium: 500;
+  --pt-weight-strong: 600; /* 上限；不用 700（CJK 回退字体会伪粗） */
+
+  --pt-leading-tight: 1.25;  /* 标题、单行控件 */
+  --pt-leading-ui: 1.45;     /* 英文/混排 UI 文本 */
+  --pt-leading-cjk: 1.6;     /* 中文段落、双语字幕行 */
+  --pt-tracking-title: -0.01em;
+  --pt-tracking-caps: 0.04em; /* 仅英文小型大写标签 */
+
+  /* ── 间距：4 基准 ─────────────────────────────────────── */
+  --pt-space-1: 4px;
+  --pt-space-2: 8px;
+  --pt-space-3: 12px;
+  --pt-space-4: 16px;
+  --pt-space-5: 24px;
+  --pt-space-6: 32px;
+  --pt-space-7: 48px;
+  --pt-row-y: 8px;     /* 账本行上下内边距 */
+  --pt-row-x: 12px;
+
+  /* 控件尺寸 */
+  --pt-control-h: 36px;
+  --pt-control-h-sm: 32px;
+  --pt-control-h-xs: 28px;
+  --pt-hit-min: 32px;
+
+  /* ── 圆角：为工具软化，但不圆成胶囊 ──────────────────── */
+  --pt-radius-xs: 2px;   /* 数据标记、刻度 */
+  --pt-radius-sm: 4px;   /* chip、语言牌、行内标签 */
+  --pt-radius-md: 6px;   /* 按钮、输入、选择器 */
+  --pt-radius-lg: 8px;   /* 面板、菜单、toast */
+  --pt-radius-xl: 12px;  /* 对话框、大抽屉（上限） */
+  --pt-radius-pill: 999px; /* 只用于开关轨道与进度点 */
+
+  /* ── 层级：基础层零阴影；只有浮层有一档柔和投影 ─────── */
+  --pt-elev-none: none;
+  --pt-elev-float: 0 6px 20px color-mix(in srgb, var(--ink-strong) 12%, transparent),
+    0 1px 2px color-mix(in srgb, var(--ink-strong) 8%, transparent); /* 菜单、popover、toast */
+  --pt-elev-modal: 0 16px 40px color-mix(in srgb, var(--ink-strong) 16%, transparent); /* 对话框 */
+  --pt-scrim: color-mix(in srgb, var(--ink-strong) 40%, transparent);
+
+  /* ── 动效：Operate 模式，150–250ms ───────────────────── */
+  --motion-fast: 150ms;  /* hover、按下、颜色 */
+  --motion-base: 200ms;  /* 展开、切换、选中移动 */
+  --motion-slow: 250ms;  /* 抽屉、对话框进入（上限） */
+  --motion-exit: 150ms;  /* 退出永远比进入快 */
+  --motion-ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --motion-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --motion-ease-standard: cubic-bezier(0.2, 0, 0.2, 1);
+  --motion-move: 1; /* 位移倍率；减少动效时为 0，组件用 calc(var(--motion-move) * Npx) */
+}
+
+/* 派生色在每个局部表面重新计算（否则 color-mix 只在 :root 解析一次）。
+   chrome / theater 下面若显式给值，以它们为准（同优先级，后写的赢）。 */
+[data-paper] {
+  --state-danger-soft: color-mix(in srgb, var(--state-danger) 10%, transparent);
+  --state-warning-soft: color-mix(in srgb, var(--state-warning) 10%, transparent);
+  --state-success-soft: color-mix(in srgb, var(--state-success) 10%, transparent);
+  --state-info-soft: color-mix(in srgb, var(--state-info) 10%, transparent);
+  --accent-soft: color-mix(in srgb, var(--accent) 10%, transparent);
+  --accent-line: color-mix(in srgb, var(--accent) 45%, transparent);
+  --rule-ledger: var(--ink-strong);
+  --skeleton: var(--paper-sunken);
+  --scrollbar-thumb: var(--rule-strong);
+}
+
+/* 墨绿托盘：顶栏/底栏。纸面墨色反转为奶油，强调提亮。 */
+[data-paper="chrome"] {
+  --paper-desk: var(--chrome-bg);
+  --paper-sheet: var(--chrome-bg);
+  --paper-raised: var(--chrome-bg-raised);
+  --paper-sunken: #1a322c;
+  --ink-strong: #f2ece1;
+  --ink-body: #e3ddd1;
+  --ink-muted: #c4ccc2;
+  --ink-placeholder: #a7b4ab;
+  --ink-faint: #93a39a;
+  --rule-hair: #3b5a51;
+  --rule-strong: #4c6b62;
+  --rule-control: #7f998f;
+  --rule-ledger: var(--ink-strong);
+  --accent-text: #f0b3be;
+  --accent-soft: color-mix(in srgb, #f0b3be 14%, transparent);
+  --accent-line: color-mix(in srgb, #f0b3be 45%, transparent);
+  --focus-ring: #a9c8ea;
+  /* 当前步骤：奶油纸片 + 墨字（不用彩色填充） */
+  --chrome-active-bg: #faf7f0;
+  --chrome-active-ink: #1c1a17;
+  --scrollbar-thumb: var(--rule-strong);
+  --skeleton: var(--paper-sunken);
+}
+
+/* 关灯放映：近黑暖灰，不是反相的浅色主题。 */
+[data-paper="theater"] {
+  color-scheme: dark;
+  --paper-desk: #121110;
+  --paper-sheet: #1a1917;
+  --paper-raised: #23211e;
+  --paper-sunken: #0d0c0b;
+  --ink-strong: #eee8dc;
+  --ink-body: #d6cfc2;
+  --ink-muted: #a39b8e;
+  --ink-placeholder: #968e82;
+  --ink-faint: #7a7368;
+  --rule-hair: #33302b;
+  --rule-strong: #4a4640;
+  --rule-control: #7a7368;
+  --rule-ledger: var(--ink-muted);
+  --accent: #d06276;
+  --accent-hover: #dc7a8c;
+  --accent-press: #c85b6f;
+  --accent-ink: #170d0f;
+  --accent-text: #e59aaa;
+  --accent-soft: color-mix(in srgb, #d06276 18%, transparent);
+  --accent-line: color-mix(in srgb, #d06276 50%, transparent);
+  --state-danger: #ee7b5e;
+  --state-warning: #e0b05c;
+  --state-success: #7dbe8f;
+  --state-info: #86aedb;
+  --state-on-solid: #170d0f;
+  --focus-ring: #86aedb;
+  --selection-bg: color-mix(in srgb, #d06276 30%, transparent);
+  --skeleton: var(--paper-raised);
+  --pt-elev-float: 0 8px 24px rgb(0 0 0 / 0.5);
+  --pt-elev-modal: 0 16px 48px rgb(0 0 0 / 0.6);
+  --pt-scrim: rgb(0 0 0 / 0.72);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    /* 保留颜色/透明度反馈，去掉位移；时长压到 fast 档 */
+    --motion-base: var(--motion-fast);
+    --motion-slow: var(--motion-fast);
+    --motion-move: 0;
+  }
+}

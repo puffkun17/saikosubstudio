@@ -12,8 +12,8 @@ import {
 
 const barTone: Record<StatusNotice['tone'], string> = {
   message: 'border-[var(--v4-line-strong)] bg-[color-mix(in_srgb,var(--v5-panel)_94%,transparent)]',
-  success: 'border-[color-mix(in_srgb,var(--v5-orange)_36%,var(--v4-line-strong))] bg-[color-mix(in_srgb,var(--v5-orange)_12%,var(--v5-panel))]',
-  notice: 'border-[color-mix(in_srgb,var(--v5-green)_22%,var(--v4-line-strong))] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)]',
+  success: 'border-[color-mix(in_srgb,var(--state-success)_36%,var(--v4-line-strong))] bg-[color-mix(in_srgb,var(--state-success)_10%,var(--v5-panel))]',
+  notice: 'border-[var(--rule-strong)] bg-[var(--v5-panel)]',
   warning: 'border-[color-mix(in_srgb,var(--v5-warning)_40%,var(--v4-line-strong))] bg-[color-mix(in_srgb,var(--v5-warning)_10%,var(--v5-panel))]',
   alert: 'border-[color-mix(in_srgb,var(--v5-danger)_36%,var(--v4-line-strong))] bg-[color-mix(in_srgb,var(--v5-danger)_10%,var(--v5-panel))]',
 };

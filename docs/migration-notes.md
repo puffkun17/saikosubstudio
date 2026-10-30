@@ -13,3 +13,16 @@
 - Switch B: PWA path migration — old SWs precached `/_next/static/*`; new build precaches `/assets/*`. Existing SW template is non-blocking; users get a refresh prompt when the new SW installs (no hard break).
 - Oki follow-ups (Switch B, non-blocking): missing Rate Limiting binding silently skips limiting locally (`feedback.ts:30`, `tmdb.ts:147`) — add a warning later; feedback limit 1/60s is looser than old 3/15min by Nias's decision; trailing-slash pages return 200 (duplicate URLs) — consider 308 to no-slash; `/api/tmdb/...` with trailing slash returns 403; cleanup leftovers: `sw.template.js` `_rsc` branch (~29–31) and `/_next/static` branch (~146), unused `src/server/bindings.ts`; T8 TMDB proxy queue still skipped (Rate Limiting binding sufficient).
 - Switch B CI/deploy: wrangler config path is `dist/saikosubstudio/wrangler.json` (not `dist/server/`). Legacy Cloudflare Pages project still uses `pages:build` → `.vercel/output/static`; auto preview/production Pages deploys disabled — live path is Workers via `deploy.yml`.
+
+## Paper tokens wiring (design/paper-tokens)
+
+- `--wb-cat-*` kept as-is (workbench category = data encoding, not brand accent). `--wb-cat-review: #B8433C` sits close to `--state-danger` (`#B0361C`); not merged in this PR — revisit together with `--state-*` later. Only `--wb-done` now points to `var(--state-success)`.
+- `workbench-b7.css` still hardcodes `#8f3530` text in three places (review-category labels); left untouched with `--wb-cat-*`.
+- `[data-paper="chrome"]` does not redefine `--accent` or `--state-*`. Wine (`#7A2233`) on the green tray is low contrast, so tray text/dots use `--accent-text` and the active step uses `--chrome-active-bg/ink`. Any future state badge inside the tray needs a chrome-specific state colour first.
+- `BrandMark.tsx` keeps its own hex (`#1a3d37` / `#ef8d5f`) — it is the logo artwork, not UI chrome.
+- `--v4-*` / `--v5-*` remain as aliases in `globals.css` (`:root, [data-paper]`); the rename sweep is a follow-up. `--glow-*` and `--elevation-*-dim` resolve to `none`/neutral and can be deleted once nothing references them.
+- `.ingest-halo-root` class is still applied in `QueueTree.tsx` but no longer has styles (glow removed); harmless, can be dropped.
+- `--lang-*` / `--fmt-*` (subtitle identity colours) intentionally not touched.
+- Mobile workbench info bar (390px): the title is truncated to "S." because `.workflow-info-bar` is a fixed single row (`--info-bar-h`) holding back + title + `OutputModeControl` + 「打开预览」. Already present on 98730de (cf-pages-hosted), not introduced by paper tokens. A fix needs a layout change (two-row info bar on narrow screens, or moving the output switch out of the bar), so it is left for a separate pass.
+- `/feedback` top tray still highlights 「导入」 as the current step, because the workflow step indicator reflects store `workflowStep` (default 1) even on non-workflow pages. Recorded only, not fixed here.
+- Tray step indicator (top + mobile bottom) now marks only the current step (cream sheet slides under it); the old "steps passed" progress fill is gone, so a non-current step never looks selected. The old fill behaviour was already on 98730de (orange fill for steps ≤ current).

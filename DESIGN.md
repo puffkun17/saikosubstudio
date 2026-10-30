@@ -1,359 +1,187 @@
-# SubStudio Design Language
+# SaikoSubStudio 设计基础 · Paper Ledger
 
-> **所有 Agent 在改 UI / 样式 / 资产 / 文案呈现之前，必须先读完本文。**  
-> 本文是共享设计真相源。Prompt 可以不同，语言必须一致。  
-> 详细审计见 `DESIGN_AUDIT.md`；执行队列见 `DESIGN_BACKLOG.md`；设计方案（决策+验收）见 `DESIGN_PLAN.md`；实现 token 见 `app/globals.css`（`--v5-*`）。
+> 状态：已接线（`design/paper-tokens`）。本文件取代旧的 Ridgeline（奶油/森林绿/橘）`DESIGN.md`。
+> 旧的 `DESIGN.md`、`DESIGN_AUDIT.md`、`DESIGN_BACKLOG.md`、`DESIGN_PLAN.md` 已归档到 `docs/design-archive/`，只作历史参考。
+>
+> Token 源文件：`src/styles/paper-tokens.css` · 旧变量映射：`docs/design/token-mapping.md` · 对比度脚本：`docs/design/contrast.py` · 预览：`docs/design/preview.html`
 
----
+## 1. 产品与模式
 
-## Creed
+SaikoSubStudio 是一个字幕工作台：导入（Ingest）→ 校对与编辑（Workbench）→ 关灯预览（Theater）。用户长时间盯着一列列时间码和双语字幕行，反复点选、修改、比对。
 
-SaikoSubStudio is not an AI SaaS website.  
-It is an editorial desktop application — a modern subtitle workbench,  
-not a 仿宋书房 / poster-calligraphy surface.
+- **模式：Operate（操作型工具）**。界面的任务是让内容和状态清楚，而不是吸引注意。产品简报优先于任何通用设计规则。
+- **用户流程带功能**：先保证“导入 → 改 → 看”这条路顺，再加功能。三个步骤共用一套色板，只改变密度。
+- **鼠标优先**：主要操作都能点到；键盘快捷键只是补充，不能是唯一入口。可点区域不小于 32px。
+- **气质**：纸面账本。暖纸、深墨、细线、一个强调色。安静、克制、像一本好用的账簿，不像营销页。
 
-Every visual decision must reinforce this identity.
+## 2. 原则
 
-Never introduce generic Bootstrap, Material, Windows,  
-or modern AI startup aesthetics.
+1. **内容是主角。** 字幕文字永远是屏幕上对比度最高的东西；外框、图标、装饰都要退后。
+2. **颜色只表达意义。** 近乎单色的纸与墨；酒红只用于“当前/主要操作/选中”；状态色只用于状态。
+3. **用线和纸色分层，不用阴影。** 页面内的层次靠纸色深浅 + 1px 发丝线；只有真正浮在上面的东西（菜单、弹层、对话框）才有阴影。
+4. **两档墨。** 深+重（`--ink-strong` + 500/600）给要读的内容；浅+轻（`--ink-muted` + 400）给元数据。中间档尽量少用。
+5. **账本结构。** 行、列、时间码对齐；表头上下一道粗线，行间发丝线；数字等宽对齐。
+6. **平静的状态变化。** hover 只换底色，按下只再深一点，没有位移、缩放、发光。
+7. **不抄大厂，不堆套路。** 不做侧边色条、渐变字、毛玻璃、紫色渐变、卡片套卡片、霓虹光晕。
 
-Preserve calmness, restraint, typography and paper-like warmth  
-before introducing visual novelty.
+## 3. 颜色
 
-**Editorial Desktop ≠ 仿宋书房.** Display Serif is for film titles only;  
-product UI headlines (empty state, About) speak in UI Sans.
+全部数值来自 `paper-tokens.css`，对比度由 `python3 docs/design/contrast.py` 计算（103 组，全部通过；改值必须重跑）。正文要求 ≥4.5:1，控件边界与焦点要求 ≥3:1（WCAG 2.x AA）。
 
----
-
-## 1. 品牌定位
-
-**SaikoSubStudio 是 Editorial Desktop Application —— 字幕剪辑用的桌面编辑工作台。**
-
-屏上品牌短名统一为 **SaikoSubStudio**（与政策全称一致）。禁止再并列 `SubStudio` / `LOCAL SUBTITLE STUDIO` 作为主品牌。
-
-它不是：
-
-- AI SaaS 落地页
-- 通用 B2B 仪表盘
-- 营销站或「智能助手」产品壳
-
-它应该感觉像：
-
-- 冷静、温暖、克制
-- 编辑室 / 片场后台，而不是创业公司官网
-- Desktop-first：双托盘（顶栏 + 底栏）框住奶油工作面
-- 每一次视觉决策都有意图，不为「好看一点」而加料
-
-一句话检验：
-
-> **去掉 Logo 之后，这还像 SaikoSubStudio，还是像随便一个 AI 工具？**
-
----
-
-## 2. 色彩原则
-
-### 核心三元（Ridgeline）
-
-| 角色 | Token | 值 | 用途 |
-|------|-------|-----|------|
-| Cream | `--v5-cream` / `--v5-canvas` | `#f5f1ea` | 工作区底 |
-| Forest | `--v5-green` / `--v5-text` | `#1a3d37` | 墨水手、托盘、主文字 |
-| Citrus | `--v5-accent` / `--v5-orange` | `#ef8d5f` | 唯一强调色、主操作 |
-
-### 表面阶
-
-- Canvas：`cream` → `canvas-raised` → `panel` → `panel-muted`
-- 线：`--v5-line` / `--v5-line-strong`（墨绿 alpha，禁止冷灰蓝边线）
-- 字：`text` → `text-muted` → `text-faint`（faint 只做装饰/占位，不作正文）
-- 语义：`danger` `#c45b55` · `warning` `#c4893a` · success 从 forest 派生，**禁止再引入独立翠绿**
-
-### 规则
-
-1. **新代码只写 `--v5-*`。** `--v4-*` 仅为兼容别名（映射到 `--v5-*`），禁止在其上叠加新语义或新角色。  
-2. 禁止再发明 `mint` / `emerald` / `action` / 冷灰蓝暗色 `@theme` 伪名（见下方 Deprecated）。  
-3. 禁止组件内散落裸 hex / 随意 `rgba(239,141,95,*)`；用 `color-mix(in srgb, var(--v5-*) …)`。  
-4. 阴影优先 **墨绿 tint**，奶油面上避免冷黑 elevation。  
-5. 第三方品牌色（如 TMDB 蓝）只允许出现在对方 Logo 本体，不得污染 chrome / glow / 控件。  
-6. 数据辅色（文件格式、语言标、检查标记）是**有限封闭色板**，不得临时加第 13 种语言色或 Tailwind 默认蓝。
-
-### Deprecated `@theme`（EP-0.1 · 已删除，禁止回流）
-
-| 类别 | 已删除伪名 |
-|------|------------|
-| Accent 多名 | `--color-mint*`、`--color-accent-emerald*`、`--color-action*`、`--color-accent-neon\|glow\|muted` |
-| 冷灰蓝暗色 | `--color-bg-dark\|base`、`--color-surface-*`、`--color-text-primary\|secondary`、`--color-glass-border` |
-
-唯一强调色：`--v5-accent*`（及 `--v5-orange*` 别名）。产品面引用须走 `--v5-*` 或既有 `--v4-*` 别名。
-
-### 三套表面契约
-
-| 表面 | `data-surface` / 选择器 | 字色 / 边线 token |
-|------|-------------------------|-------------------|
-| Cream desk | 默认 / `[data-surface="cream"]` | `--surface-text*` / `--surface-line*` → 墨绿 |
-| Forest chrome | `[data-surface="forest"]` | 同上 → 奶油半透明 ink |
-| Theater dim | `[data-surface="theater"]` / `.lights-off-stage` | 更深奶油 ink + 柑橘强线 |
-
-切换表面时文字角色映射到 `--surface-*`；`--v4-text|line*` 为兼容别名。
-
-### Elevation / Glow（EP-0.2）
-
-| Token | 用途 |
-|-------|------|
-| `--elevation-0` | 面板默认 / hairline |
-| `--elevation-1` | 轻浮层 |
-| `--elevation-2` | Menu、Toast、InfoHint |
-| `--elevation-3` | Modal |
-| `--elevation-*-dim` | Theater 同族更高 alpha（tip / chrome / 抽屉） |
-| `--glow-accent` | 选中 / 焦点（一种） |
-| `--glow-cta` | 仅 hero 主按钮 |
-
-阴影色一律 `color-mix(forest …)`；禁止 Theater 另起纯黑 elevation 体系。
-
-### Radius（EP-0.3）
+### 3.1 纸（表面）
 
 | Token | 值 | 用途 |
-|-------|-----|------|
-| `--radius-xs` | 2px | 刻度、小标记 |
-| `--radius-sm` | 6px | chip、语言牌、小 icon 钮 |
-| `--radius-md` | 8px | 输入、标准面板、BrandMark 外框、`.ui-action` |
-| `--radius-lg` | 12px | choice 容器、toast |
-| `--radius-xl` | 20px | hero CTA、大抽屉 |
-| `--radius-pill` | 999px | **仅**托盘胶囊、进度点 |
+|---|---|---|
+| `--paper-desk` | `#F2ECE1` | 工作区底色 |
+| `--paper-sheet` | `#FAF7F0` | 面板、账本页 |
+| `--paper-raised` | `#FFFDF8` | 输入框、次按钮、弹层 |
+| `--paper-sunken` | `#EAE3D6` | 表头、hover 行、禁用底、skeleton |
 
-兼容：`--v5-radius-panel` → xl；`--v5-radius-control` → lg。禁止新增 `rounded-[Npx]` / 奇怪 rem 中间值；内容区信息徽章禁止 pill。
+### 3.2 墨（文字）— 不再用绿色做字
 
-### Spacing（EP-0.5 TOKEN-011）
+| Token | 值 | desk / sheet / raised / sunken | 用途 |
+|---|---|---|---|
+| `--ink-strong` | `#1C1A17` | 14.77 / 16.23 / 17.08 / 13.61 | 标题、字幕正文、关键数值 |
+| `--ink-body` | `#3A352E` | 10.33 / 11.35 / 11.95 / 9.52 | 说明段落 |
+| `--ink-muted` | `#5F584E` | 5.97 / 6.56 / 6.90 / 5.50 | 元数据、时间码、次要标签 |
+| `--ink-placeholder` | `#736B60` | — / — / 5.16 / — | 输入占位 |
+| `--ink-faint` | `#8A8276` | 3.55（sheet） | 只给图标、禁用、刻度；不承载必读文字 |
 
-| Token | 值 | 用途 |
-|-------|-----|------|
-| `--space-1`…`--space-7` | 4 / 8 / 12 / 16 / 24 / 32 / 48 | 主阶；半档仅光学对齐 |
-| `--space-panel` | 16（=`--space-4`） | 工作台面板内边距 |
-| `--space-copy` | 24（=`--space-5`） | 关于 / 空态文案区 |
+### 3.3 线
 
-工具类：`.density-panel` / `.density-panel-x` · `.density-copy` / `.density-copy-x`。同级 Workbench 面板横向 padding 统一 16，禁止再 `px-5`/`md:px-6` 乱跳。
+| Token | 值 | 对比 | 用途 |
+|---|---|---|---|
+| `--rule-hair` | `#DCD3C4` | 1.39（装饰） | 行间线、面板内分隔 |
+| `--rule-strong` | `#B9AE9C` | 2.05（装饰） | 面板外框、分组线 |
+| `--rule-control` | `#8C8375` | 3.68 raised / 3.49 sheet | 输入框、次按钮边框（控件边界须 ≥3:1） |
+| `--rule-ledger` | = ink-strong | — | 账本表头上下 1.5px 粗线 |
 
-### 裸色纪律（EP-0.5 TOKEN-012）
+### 3.4 强调：酒红（唯一）
 
-1. **禁止**在组件内新增裸 triad hex / `rgba(26,61,55|239,141,95|245,241,234,*)`；派生色用 `color-mix(in srgb, var(--v5-*) …)`。  
-2. 三原色、`--lang-*`、`--fmt-*`、BrandMark SVG **仅**在真相源定义，业务组件禁止覆盖。  
-3. 存量随触及清扫；评审可拒「新增裸色」。不借清扫改品牌色相。
+| Token | 值 | 对比 |
+|---|---|---|
+| `--accent` | `#7A2233` | 作文字：desk 8.49 / sheet 9.33 / sunken 7.82 |
+| `--accent-hover` | `#8C2B3D` | 按钮字 7.89 |
+| `--accent-press` | `#651A29` | 按钮字 11.51 |
+| `--accent-ink` | `#FFF8F1` | 主按钮字 9.48 |
+| `--accent-soft` | accent 10% | 选中行底；其上 ink-strong 13.66、accent 7.85 |
 
-### Tray ink（EP-0.4 TOKEN-008）
+- 主按钮、当前步骤、选中行、链接用酒红；一个视图里只有一个主按钮。
+- 旧方案的橘色（`#EF8D5F` / `#E07845`）在奶油底上做文字只有约 2–3:1，被 `--accent-text` 取代。
 
-| Token | 用途 |
-|-------|------|
-| `--tray-ink` | 托盘主字（奶油实色） |
-| `--tray-ink-soft` | 控件默认字 |
-| `--tray-ink-muted` / `--tray-ink-faint` | 次要 / 更弱 |
-| `--tray-line*` / `--tray-fill*` | 托盘边线与半透明底 |
+### 3.5 状态（与酒红分开）
 
-托盘禁止再手写 `rgba(245,241,234,*)`；用上表或 `color-mix(var(--v5-cream) …)`。
+| Token | 值 | sheet / sunken / 自身 10% 底 | 说明 |
+|---|---|---|---|
+| `--state-danger` | `#B0361C` | 5.79 / 4.85 / 4.99 | 朱红偏橙，和酒红一眼可分；实心按钮字 5.88 |
+| `--state-warning` | `#8A5A0B` | 5.53 / 4.64 / 4.82 | 深琥珀（旧 `#C4893A` 做字不达标） |
+| `--state-success` | `#2D6640` | 6.36 / 5.33 / 5.50 | 完成、已校对 |
+| `--state-info` | `#2E5A84` | 6.74 / 5.65 / 5.81 | 提示、处理中 |
 
----
+状态永远是“图标/文字 + 颜色”双通道，不只靠颜色。
 
-## 3. 字体原则
+### 3.6 焦点
 
-| 角色 | 字体 | 用在哪里 |
-|------|------|----------|
-| UI Sans | PingFang / 雅黑 → Geist Sans（`--font-sans`） | 控件、正文、导航；**空态主句**（「添加本地字幕」）；**关于 / 反馈页大标题** |
-| Display Serif | Noto Serif SC（自托管）· `.font-display` | **仅片名**：工作台信息栏片源名、Theater 标题、TMDB 结果标题 |
-| Prose Serif | 同上 · `.prose-serif` | 片名旁白 / 剧情简介等片源散文（非营销大标题） |
-| Mono | Geist Mono | 时间码、缩放、语言标、评分、键值 |
+`--focus-ring: #2E5A84`（sheet 6.74:1），2px 环 + 2px 间隙，只在 `:focus-visible` 时出现，鼠标点击不出环。焦点色用蓝而不用酒红，这样主按钮上的焦点也看得见。
 
-### 字阶（产品 UI · EP-0.4 TOKEN-009）
+### 3.7 局部深色表面（没有系统暗色模式）
 
-| 角色 | Token | 约略尺寸 | 备注 |
-|------|-------|----------|------|
-| Caption / meta | `--type-caption` | 13px（`text-xs`） | 旁注、托盘 meta；**禁止**再写 `text-[11px]` |
-| Control / label | `--type-control` | 15px | 按钮、chip |
-| Body | `--type-body` | 16px | 默认阅读 |
-| Title | `--type-title` | 18px | 区块标题 |
-| Display (UI) | `--type-display` | ≈24px + **UI Sans** 700 | 空态落点主句 / 关于页大标题——现代工具声口，非海报书法 |
-| Display (片名) | `.font-display` | 片名尺寸 + **Serif** 700 | **仅**片源名 / TMDB 标题 |
+App 不跟随 `prefers-color-scheme`。默认就是浅色纸面（`:root` 与 `[data-paper="sheet"]` 相同；sheet 用来在深色局部里重新放一块浅纸）。深色只出现在两个局部，用属性切换，组件不需要改写：
 
-Eyebrow tracking **仅两档**：`--tracking-eyebrow`（0.06em）· `--tracking-eyebrow-wide`（0.08em）。
+- `[data-paper="chrome"]` 墨绿托盘（顶栏/步骤条）：底 `#1F3A33`，字 `#F2ECE1`（10.44）、muted `#C4CCC2`（7.46）、强调字 `#F0B3BE`（6.95）、控件边 `#7F998F`（3.37）、焦点 `#A9C8EA`（7.09）。**当前步骤 = 奶油纸片 `#FAF7F0` + 墨字（16.23）**，不再用橘色填充。绿色只在这里出现。
+- `[data-paper="theater"]` 关灯放映：底 `#121110`/`#1A1917`/`#23211E`，字 `#EEE8DC`（15.46/14.40/13.16）、muted `#A39B8E`（≥5.84）、强调提亮为 `#D06276`（按钮，深字 5.17）与 `#E59AAA`（文字 ≥7.29）；状态色各自提亮，均 ≥5.8。
 
-### 字重（EP-0.4 TOKEN-010）
+## 4. 字体
 
-| 角色 | 字重 | 说明 |
-|------|------|------|
-| Body 默认 | **450** | 产品阅读默认（`body { font-weight: 450 }`）；设计选择，非遗漏 |
-| Meta / caption | 500 | 副文案、旁注 |
-| Control | 600 | 按钮、chip、选择项 |
-| Display / 强调 | 600–700 | 空态与关于页大标题（UI Sans）、片名（Serif）、托盘关键数字；少用喊话 |
+只用已经在仓库里或系统自带的字体（`public/fonts/geist`、`public/fonts/noto-serif-sc`），CSP 不变。
 
-同层级禁止 medium/semibold 随机跳（同一角色用同一档）。
+| 角色 | Token | 栈 |
+|---|---|---|
+| UI / 字幕 | `--pt-font-ui` | Geist Sans → PingFang SC → Hiragino Sans GB → Microsoft YaHei UI → Noto/Source Han Sans → system-ui |
+| 时间码 / 数值 | `--pt-font-mono` | Geist Mono → SF Mono → Cascadia Mono → … → PingFang SC |
+| 片名 | `--pt-font-title` | Noto Serif SC（只有 500/700 字重，用 500） |
 
-### 规则
+- **变化点（待确认）**：现有 `--font-sans` 是中文字体在前；这里改为 Geist 在前，让英文、数字在 Mac/Windows 上一致，中文自动回退到系统黑体。若接线后中英混排基线不齐，退回中文在前。
+- 字重只有 400 / 500 / 600。不用 700：PingFang 最高到 600 左右，且 `font-synthesis: none` 下 700 会退化，中英粗细不一致。
+- 时间码、序号、时长一律 `font-variant-numeric: tabular-nums`。
+- 中文段落行高 1.6（`--pt-leading-cjk`），UI 1.45，标题 1.25；标题用 `text-wrap: balance`，段落 `pretty`。
+- 不用全大写做中文标签；英文小标签可用 `--pt-tracking-caps`。
 
-- **Display Serif = 片名 only。** 空态 hero / 关于与反馈页营销大标题必须用 UI Sans（约 600–700），禁止再挂 `.font-display` / `font-family: var(--font-serif)`。
-- 宋体不是「高级装饰」，更不是书房气质；它只给**已确认的影视片名**身份感。工具栏、按钮、表单、产品空态禁止衬线。
-- 禁止同屏用一堆 `text-[11px]` / `text-[14px]` / `text-[17px]` 打穿字阶；新代码走 `--type-*` 或 Tailwind 阶（`text-xs` = Caption）。
-- Tracking：eyebrow / 大写品牌标只用上述两档；正文保持克制。不借此改动静默 fork 色板或其它 token。
+| Token | 尺寸 | 用途 |
+|---|---|---|
+| `--pt-size-micro` | 12 | 语言牌、徽标（下限） |
+| `--pt-size-meta` | 13 | 元数据、时间码、提示 |
+| `--pt-size-dense` | 14 | 账本行、紧凑控件 |
+| `--pt-size-control` | 15 | 按钮、输入 |
+| `--pt-size-body` | 16 | 正文、字幕预览 |
+| `--pt-size-title` | 18 | 面板标题 |
+| `--pt-size-page` | 20 | 页标题、片名 |
+| `--pt-size-display` | 24 | 空态大标题（上限） |
 
----
+## 5. 间距、圆角、层级
 
-## 4. Icon System
+- 间距 4 基准：`--pt-space-1…7` = 4 / 8 / 12 / 16 / 24 / 32 / 48。账本行 `8px 12px`。
+- 控件高 36 / 32 / 28（`--pt-control-h*`），可点区域 ≥32。
+- 圆角（为工具软化，不做胶囊）：xs 2（数据标记）· sm 4（chip、语言牌）· **md 6（按钮、输入）** · lg 8（面板、菜单）· xl 12（对话框上限）· pill 只给开关轨道。
+- 层级：页面内 **零阴影**，靠纸色 + 线。浮层二选一只用阴影：`--pt-elev-float`（菜单、popover、toast）、`--pt-elev-modal`（对话框）。不叠“边框 + 阴影 + 光晕”。
+- 对话框遮罩 `--pt-scrim`；点遮罩不关闭有未保存修改的对话框。
 
-### 来源分工（不可混用职责）
+## 6. 组件规则
 
-| 体系 | 来源 | 职责 |
-|------|------|------|
-| UI 线框 | **Lucide React** | 动作、状态、工具栏、导航 |
-| 文件字形 | `FileFormatIcon` | 格式识别（非装饰） |
-| 语言字牌 | `LanguageMark` | 轨语言身份；**字标用 UI Sans（保证 CJK）**；右侧标签可用 mono |
-| 检查几何 | `inspectionMarks` | ■ 结构 · ● 画面 · ▲ 声音 |
-| 品牌 / 插画 | `BrandMark`、空态 PNG | Logo、空态说明；**不进工具栏** |
+**按钮**（高 36，圆角 6，字 15/500）
+- 主要：`--accent` 底 + `--accent-ink` 字；hover → `--accent-hover`；按下 → `--accent-press`；不位移、不缩放、不发光。
+- 次要：`--paper-raised` 底 + 1px `--rule-control` 边 + `--ink-strong` 字；hover → `--paper-sunken`。
+- 安静：透明底 + `--ink-body`；hover → `--paper-sunken`。用于工具条。
+- 危险：默认是次要样式 + `--state-danger` 字；只有确认对话框里才用实心 `--state-danger`。
+- 禁用：`--paper-sunken` 底 + `--ink-faint` 字 + `cursor: not-allowed`；不用整体透明度。
+- 加载中：保持宽度，文字换成“处理中…”，不放转圈。
 
-### 语言字标限制（ICON-005）
+**输入框**：`--paper-raised` 底、1px `--rule-control` 边、圆角 6、高 36；占位 `--ink-placeholder`；聚焦边变 `--accent` + 焦点环；错误边 `--state-danger` + 下方文字说明。
 
-- 色块内字标（简 / 繁 / あ / 한 / En…）优先 **系统 / UI Sans**，避免 mono 在部分 Windows 字体链上缺字方框。  
-- 右侧语言标签文案可继续 mono semibold。  
-- 若抽样仍见方框：记录 OS + 字体回退，再考虑显式 `font-family` 栈；勿为此引入第二套图标库。
+**账本行（字幕表）**
+- 表头：`--paper-sunken` 底，上下 1.5px `--rule-ledger`，13/500 `--ink-muted`。
+- 行：14/400，行间 1px `--rule-hair`，无斑马纹；序号、时间码用 mono + tabular-nums + `--ink-muted`。
+- 双语：原文 `--ink-strong`，译文 `--ink-body`，同一格上下排，行高 1.6。
+- hover：`--paper-sunken`；选中：`--accent-soft` 底 + 序号变 `--accent-text`，**不加左侧色条**。
+- 状态列：文字 + 小圆点，颜色走 `--state-*`。
 
-### Lucide 规范
+**面板**：`--paper-sheet` 底、1px `--rule-strong` 边、圆角 8、无阴影；标题 18/600 + 下方发丝线。不在面板里再套卡片，用分隔线分组。
 
-- 尺寸：默认 **16 / 20**（`h-4` / `h-5`）；托盘可略大，但不要发明 `h-[18px]` 中间值。
-- 描边：**stroke 2** 为默认；托盘若需 2.25，整区统一，禁止同栏 2 / 2.2 / 2.5 混用。
-- 以描边为主；填充仅用于明确「实心态」（如播放中），不要把半个工具栏填实。
-- 禁止引入第二套图标库（Heroicons、Phosphor、Remix 等）。
-- **范围：** 上述 size/stroke 纪律**仅约束 Lucide UI 线框**。原生 checkbox、分布图命中点、检查几何 ■●▲、文件/语言字形不在此条内。
+**墨绿托盘**：容器加 `data-paper="chrome"`；步骤之间用发丝线；当前步骤奶油纸片。
 
-### 规则
+**焦点环**：`outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset);` 仅 `:focus-visible`。
 
-- 插画只出现在空态 / 关于 / 营销位。
-- 语义图标与数据字形可以同屏，但**不要用 Lucide 再画一套文件类型图标**。
+**加载**：skeleton（`--skeleton` 纯色块，形状贴近真实内容）；可以有 1.6s 的轻微透明度脉动，减少动效时静止。不用转圈占满面板。
 
----
+**浏览器表面**：`::selection` 用 `--selection-bg`；`caret-color: var(--accent)`；滚动条 thumb 用 `--scrollbar-thumb`；`accent-color: var(--accent)`。
 
-## 5. Badge System
+## 7. 动效（Operate）
 
-徽章不是装饰贴纸。先问：**这是身份、分类、元信息，还是 chrome 状态？**
+- 时长：`--motion-fast` 150（hover、颜色）· `--motion-base` 200（展开、切换）· `--motion-slow` 250（抽屉、对话框，上限）· `--motion-exit` 150（退出比进入快）。
+- 曲线：进入 `--motion-ease-out`，退出 `--motion-ease-in`。
+- 只动 `opacity`、`transform`、颜色；不动宽高布局。
+- 没有页面加载动画、没有装饰动画、没有弹跳。
+- `prefers-reduced-motion`：时长都压到 150，`--motion-move` 归零（位移去掉，颜色/透明度保留）。
 
-| 角色 | 形态 | 实现 | 例子 |
-|------|------|------|------|
-| Meta text | 无底、无边框 | `.rd-chip` / 纯排印 | 任务旁注、年份旁信息 |
-| Category tag | 小方角 chip | `.ui-tag` | 影片类型 |
-| Identity mark | 色块字牌 / 文件剪影 | `LanguageMark` / `FileFormatIcon` | 语言、格式 |
-| Status / filter | 方角 chip（非胶囊） | 工作区 filter | 检查类型筛选 |
-| Chrome pill | `rounded-full` **仅托盘** | 顶/底栏 | 缩放 `Aa 100%`、LOCAL |
-| Rating | 大写品牌 + mono 分 | `.ui-rating*` | TMDB 分 |
+## 8. 要做 / 不要做
 
-### 规则
+| 要做 | 不要做 |
+|---|---|
+| 纸色 + 发丝线分层 | 页面内卡片投影、卡片套卡片 |
+| 一个酒红主按钮 | 多个彩色按钮抢注意 |
+| 选中 = 淡底 + 文字变色 | 左侧粗色条（>1px）、发光描边 |
+| 时间码等宽对齐 | 渐变字、毛玻璃、紫色渐变、霓虹光晕 |
+| 状态 = 图标/文字 + 颜色 | 只靠颜色区分状态 |
+| skeleton 占位 | 全屏转圈、页面入场动画 |
+| 圆角 6/8 | 胶囊按钮、20px 大圆角面板 |
+| 400/500/600 两档墨 | 700 粗体、灰上加灰的三四层文字 |
 
-1. **片源元数据优先排印，不要堆 chip**（见 WorkflowChrome 的「去 chip」决策）。
-2. 禁止把 shadcn `Badge`（`rounded-4xl` 胶囊）接入产品面（文件已删，勿回流）。
-3. 工作区默认方角；全圆胶囊只属于 chrome，不属于内容区。
-4. 同一信息只选一种徽章角色，禁止「标签套标签」。
+## 9. 不在本次范围
 
----
-
-## 6. 文件图标规范
-
-实现：`src/components/ui/FileFormatIcon.tsx`
-
-### 语言
-
-Adobe CC 式文件徽章，经 Ridgeline **降饱和、偏暖** 调和：
-
-- 一类剪影一种语义：
-  - **document**（折角纸）：SRT / ASS / unknown
-  - **archive**（箱体+盖+卡扣）：ZIP / RAR / 7Z
-  - **folder**（吊挂文件夹）：DIR
-- 大写扩展名码是主体；禁止再加装饰、渐变、玻璃、外发光。
-- 尺寸 API：`sm 24` · `md 30` · `lg 36` · `xl 44`  
-  - 列表 / 选择器默认 **md**  
-  - **禁止**在导入空态英雄位用 lg/xl 格式条；空态格式只作底边注解（见 §7）  
-  - 禁止同列表随意混 sm/xl
-
-### 色板（封闭）
-
-| Format | 气质 | 说明 |
-|--------|------|------|
-| SRT | Forest-teal | 呼应墨绿 |
-| ASS | Muted plum | 样式轨 |
-| ZIP | Citrus-adjacent | 靠近强调色，勿再提亮 |
-| RAR | Soft brick | |
-| 7Z | Dusty indigo | |
-| Folder | Warm gold-dust | |
-| Unknown | Warm stone | |
-
-### 规则
-
-- 新格式必须走同一剪影体系 + 降饱和原则，禁止直接贴高饱和 Adobe 原色或系统文件图标。
-- 与 `LanguageMark` 并排时：语言色已避开文件色；不要再给任一侧加描边光晕抢戏。
-- 颜色日后应升为 token；在此之前，**只改 `ADOBE` 一处**，禁止在业务组件里覆盖 fill。
+- 字幕样式本身（`--lang-*`、`--fmt-*`、烧录预设的颜色）是用户内容的身份色，不迁移到这套 token。
+- 工作台分类色（`--wb-cat-*`，含 review 的 `#B8433C`）是数据编码，本次保留不动，记录在 `docs/migration-notes.md`；以后再评估是否收进 `--state-*`。
+- 旧名 `--v4-*` / `--v5-*` 现在只是指向新 token 的别名（`src/styles/globals.css`），映射见 `docs/design/token-mapping.md`；逐个改名是后续工作。
 
 ---
 
-## 7. 组件设计原则
-
-### 控件真相源
-
-| 需求 | 使用 |
-|------|------|
-| 按钮 | **`.ui-action`**（含 `--secondary` / `--quiet` / `--danger` / `--lg` / `--icon`） |
-| 分段选择 | `.ui-choice-group` / `.ui-choice` |
-| 面板 | `.v4-panel`（或等价 v5 面板类） |
-| 类型标签 | `.ui-tag` |
-| 评分 | `.ui-rating` |
-
-**产品按钮 = `.ui-action`。** 勿再引入 shadcn / Base UI `Button`·`Badge`·`Card`（EP-0.6 SHELL-006 已从 `src/components/ui/` 删除 `button.tsx` / `badge.tsx` / `card.tsx`）。
-
-空态主 CTA 可以更高更圆（hero），但应视为 `ui-action` 的 **hero 变体**，不是另一套按钮系统。
-
-### 原则
-
-1. **一个组合、一个焦点**：桌面工作台不是卡片墙；能去边框/阴影/底就去。
-2. **卡片是例外**：只有承载交互时才需要容器感。
-3. **圆角有限档**：xs 2 · sm 6 · md 8 · lg 12 · xl 20 · pill 999。禁止 `rounded-[11px]` 等一次性值。
-4. **密度分区**：工作台紧（`--space-panel` = 16），关于/空态文案区松（`--space-copy` = 24）。
-5. **空态 = 本机添加**：语义只谈本机文件/文件夹，禁止暗示云端、URL、库引用。动词统一为「添加」。**桌面**（细指针 / 可悬停）：结构为 **Upload 示意** → **主句「添加本地字幕」** → **「拖到此处，或点选下方」+「仅在本机读取」**（「拖到此处」视觉主于点选从句）→ **横排等权双入口「选择文件 / 选择文件夹」**；整面奶油虚线舞台为拖放落点，**idle 即须可见柔和虚线拖放井**（墨绿/柑橘混色），hover 加深、dragging 最强。**触控主 / 窄屏粗指针**（`(hover: none) and (pointer: coarse)`，或 `(max-width: 768px) and (pointer: coarse)`；细指针平板不强制走触控）：**不教拖放**——无虚线拖放井、无 Upload 示意、无「拖到此处 / 松开以添加」；提示改为点选优先（如「点选下方添加 · 仅在本机读取」），双入口与格式脚注保留。禁止：营销 intro、四宫格亮点轨、格式英雄位、单侧偏袒的整面点击。
-6. **动效克制**：用现有 `--v5-ease` 与时长阶；动效服务层级与状态，不服务炫耀。
-7. **禁止双轨**：不要一边用 `.ui-action`，一边手写第三套按钮；**禁止**把已删除的 shadcn Button/Badge/Card 加回产品路径。
-8. **先身份，后便利**：技术上「用现成紫色组件更快」不构成设计理由。
-
-### 改 UI 前的自问
-
-1. 这是在加强 Editorial Desktop，还是在往 AI SaaS 靠？
-2. 能否用现有 token / `.ui-*` / 既有徽章角色完成？
-3. 会不会引入新的圆角、阴影、色相、图标库？
-4. Design Director / 本文是否已覆盖？若冲突，停，先对齐文档。
-
----
-
-## 8. Do / Don't
-
-### Do
-
-- 维持奶油工作面 + 墨绿双托盘 + 柑橘单点强调
-- 片名用思源宋体；空态 / 关于页大标题与控件用系统黑体（UI Sans）
-- Lucide 做 UI；文件/语言/检查走既有专用体系
-- 元信息尽量排印化；徽章按角色表选用
-- 新色、新半径、新 elevation 先写入本文与 token，再落地组件
-- Desktop-first：尊重托盘、工作区、预览区的表面契约
-
-### Don't（绝对不要引入）
-
-| 禁止 | 为什么 |
-|------|--------|
-| 紫/靛渐变、霓虹 glow、玻璃拟态 | AI SaaS / 通用暗黑仪表盘指纹 |
-| Material / Bootstrap / Windows 系统控件感 / 圆角胶囊成灾 | 通用桌面壳或 OS 皮肤，冲掉编辑气质 |
-| Inter / Roboto / 默认系统栈当品牌展示 | 无身份 |
-| 第二套图标库或彩色扁平 emoji 图标 | 打断 Lucide + 数据字形语言 |
-| shadcn Badge 式超圆 pill 铺内容区 | 与 Ridgeline chip 语言冲突 |
-| 冷灰蓝暗色主题当默认产品面 | 已封存的 tungsten 方向，不是 Ridgeline |
-| 检查标记 / 状态随便借用 Tailwind `blue-500` 等 | 破坏三元与封闭辅色板 |
-| 为「更科技」加网格、扫描线、终端绿、赛博边 | 不是本产品 |
-| 首屏堆统计条、功能胶囊、浮动贴纸徽章 | 营销站噪音 |
-| 无故重设计整页「换个风格试试」 | 身份靠连贯，不靠刷新感 |
-
----
-
-## 维护
-
-- 本文优先于任何 Agent 的个人审美或临时 Prompt。
-- 若实现与本文冲突：先改实现，或先提案修订本文并经 Design Director 确认——**禁止静默分叉**。
-- 审计细节（只读）：`DESIGN_AUDIT.md`。  
-- 执行队列与验收：`DESIGN_BACKLOG.md`。  
-- 实值与控件 CSS：`app/globals.css`。
+Visual principles inspired by Cindy.

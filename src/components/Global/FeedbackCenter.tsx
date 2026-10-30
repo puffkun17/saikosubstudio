@@ -19,8 +19,8 @@ const errorLogStyle = {
 
 const noticeStyles = {
   message: 'border-[var(--v4-line-strong)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-text)]',
-  success: 'border-[color-mix(in_srgb,var(--v5-orange)_32%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-text)]',
-  notice: 'border-[color-mix(in_srgb,var(--v5-green)_16%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-text)]',
+  success: 'border-[color-mix(in_srgb,var(--state-success)_32%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-text)]',
+  notice: 'border-[var(--rule-strong)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-text)]',
   warning: 'border-[color-mix(in_srgb,var(--v5-warning)_34%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-text)]',
   alert: 'border-[color-mix(in_srgb,var(--v5-danger)_32%,transparent)] bg-[color-mix(in_srgb,var(--v5-panel)_96%,transparent)] text-[var(--v4-danger)]',
 } as const;
@@ -72,7 +72,7 @@ const ToastItem: React.FC<{
         setPaused(true);
       }}
       onMouseLeave={() => setPaused(false)}
-      className={`ui-toast pointer-events-auto border p-[var(--ds-pad-card)] backdrop-blur-md ${noticeStyles[notice.tone]}`}
+      className={`ui-toast pointer-events-auto border p-[var(--ds-pad-card)] ${noticeStyles[notice.tone]}`}
     >
       <div className="flex items-start gap-2.5">
         <div className="min-w-0 flex-1">

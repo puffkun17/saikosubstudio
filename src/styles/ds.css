@@ -4,12 +4,12 @@
  */
 :root {
   /* Spacing: 4px base */
-  --ds-space-1: 4px;
-  --ds-space-2: 8px;
-  --ds-space-3: 12px;
-  --ds-space-4: 16px;
-  --ds-space-5: 24px;
-  --ds-space-6: 32px;
+  --ds-space-1: var(--pt-space-1);
+  --ds-space-2: var(--pt-space-2);
+  --ds-space-3: var(--pt-space-3);
+  --ds-space-4: var(--pt-space-4);
+  --ds-space-5: var(--pt-space-5);
+  --ds-space-6: var(--pt-space-6);
 
   /* v1.1 vertical rhythm — the ONLY gaps used between blocks (see ui-spec-v1.md §2.1) */
   --ds-gap-item: 8px;      /* heading → its content; rows inside a group */
@@ -33,10 +33,10 @@
   --ds-lh-body: 1.45;    /* body, subtitle lines */
   --ds-lh-meta: 1.4;     /* hints */
 
-  /* Ink: 2 secondary levels only */
-  --ds-ink: var(--surface-text, #1a3d37);
-  --ds-ink-2: color-mix(in srgb, var(--ds-ink) 82%, transparent);
-  --ds-ink-3: color-mix(in srgb, var(--ds-ink) 62%, transparent);
+  /* Ink: 2 secondary levels only — solid paper-token ink (no opacity mixes; faint merged into muted) */
+  --ds-ink: var(--ink-strong);
+  --ds-ink-2: var(--ink-body);
+  --ds-ink-3: var(--ink-muted);
 
   /* Chrome heights */
   --ds-bar-h: 48px;
@@ -64,7 +64,7 @@
 
 .ds-select {
   height: var(--ds-control-h); width: 100%; padding: 0 var(--ds-space-2);
-  border: 1px solid var(--surface-line-strong); border-radius: var(--radius-md);
+  border: 1px solid var(--rule-control); border-radius: var(--pt-radius-md);
   background: var(--v5-panel-raised); color: var(--ds-ink);
   font-size: var(--ds-fs-meta); font-weight: var(--ds-fw-medium);
 }
@@ -80,7 +80,7 @@
 }
 .ds-segmented__item[aria-checked="true"], .ds-segmented__item[aria-pressed="true"] {
   background: var(--v5-panel-raised); color: var(--ds-ink); font-weight: var(--ds-fw-strong);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--v5-green) 18%, transparent);
+  outline: 1px solid var(--rule-strong); outline-offset: -1px;
 }
 
 /* Export menu */
@@ -109,12 +109,12 @@
 /* 对齐方式: compact two-option choice, one line each */
 .align-choice__item {
   display: flex; flex-direction: column; gap: 2px; padding: var(--ds-pad-card);
-  text-align: left; border-radius: var(--radius-md); border: 1px solid var(--surface-line);
+  text-align: left; border-radius: var(--pt-radius-lg); border: 1px solid var(--surface-line);
   background: var(--v5-panel-muted); cursor: pointer; transition: border-color .15s, background-color .15s;
 }
 .align-choice__item:hover { border-color: var(--surface-line-strong); }
-.align-choice__item[aria-checked="true"] { border-color: color-mix(in srgb, var(--v5-accent) 50%, transparent); background: var(--v5-accent-soft); }
-.align-choice__item[aria-checked="true"] .ds-body { color: var(--v5-accent-strong); }
+.align-choice__item[aria-checked="true"] { border-color: var(--accent-line); background: var(--accent-soft); }
+.align-choice__item[aria-checked="true"] .ds-body { color: var(--accent-text); }
 @media (max-width: 640px) { .align-choice { grid-template-columns: 1fr 1fr; } }
 
 .export-menu__review { padding: var(--ds-pad-card); border-bottom: 1px solid var(--surface-line); max-height: 160px; overflow-y: auto; }
@@ -126,7 +126,7 @@
   border-radius: var(--radius-md); border: 1px solid var(--surface-line); background: var(--v5-panel);
   font-size: var(--ds-fs-meta); font-weight: var(--ds-fw-medium); color: var(--ds-ink-2); cursor: pointer;
 }
-.episode-tabs__tab[aria-selected="true"] { border-color: color-mix(in srgb, var(--v5-accent) 55%, transparent); background: var(--v5-accent-soft); color: var(--ds-ink); font-weight: var(--ds-fw-strong); }
+.episode-tabs__tab[aria-selected="true"] { border-color: var(--accent-line); background: var(--v5-accent-soft); color: var(--ds-ink); font-weight: var(--ds-fw-strong); }
 .episode-tabs__tab:disabled { opacity: .6; cursor: wait; }
 .episode-tabs__dot { width: 6px; height: 6px; border-radius: 999px; background: var(--surface-line-strong); }
 .episode-tabs__dot.is-done { background: var(--v5-accent-strong); }
@@ -140,12 +140,12 @@
   .source-identity-rail__tmdb { margin-top: var(--ds-space-1); justify-content: flex-start; }
 }
 
-/* Custom properties resolve where declared: re-derive ink inside each surface scope so
-   ds-* text follows the local surface (forest theater = light ink, cream panels = dark ink). */
-[data-surface] {
-  --ds-ink: var(--surface-text, var(--v4-text));
-  --ds-ink-2: color-mix(in srgb, var(--ds-ink) 82%, transparent);
-  --ds-ink-3: color-mix(in srgb, var(--ds-ink) 62%, transparent);
+/* Custom properties resolve where declared: re-derive ink inside each data-paper scope so
+   ds-* text follows the local surface (chrome / theater = light ink, sheet = dark ink). */
+[data-paper] {
+  --ds-ink: var(--ink-strong);
+  --ds-ink-2: var(--ink-body);
+  --ds-ink-3: var(--ink-muted);
 }
 
 
@@ -157,15 +157,15 @@
 /* ── Popovers: solid surface + elevation, never glass (spec §6.2) ─────────── */
 .ui-menu, .export-menu {
   background: var(--v5-panel-raised) !important;
-  border: 1px solid var(--v5-line-strong, rgba(26,61,55,.18));
-  box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.22);
+  border: 1px solid var(--rule-strong);
+  box-shadow: var(--pt-elev-float);
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
   color: var(--ds-ink);
 }
 
 /* ── Theater dock: one right panel for every preview option (spec §6.1) ──── */
 .ds-dock {
-  /* surface = original 样式参数 drawer (.theater-style-shell: forest glass) — Derek liked it */
+  /* surface = .theater-style-shell: solid paper, data-paper="chrome" (lights off: "theater") */
   display: flex; flex-direction: column; min-height: 0; flex-shrink: 0;
   color: var(--ds-ink); border-radius: 0; border-width: 0 0 0 1px;
   position: relative; z-index: var(--z-theater-style);
@@ -173,7 +173,7 @@
 @media (min-width: 1024px) { .ds-dock { width: 360px; height: 100%; } }
 @media (max-width: 1023px) {
   /* bottom sheet in flow: the stage above shrinks and the frame stays fully visible */
-  .ds-dock { width: 100%; max-height: 48%; border-width: 1px 0 0 0; border-radius: 16px 16px 0 0; }
+  .ds-dock { width: 100%; max-height: 48%; border-width: 1px 0 0 0; border-radius: var(--pt-radius-lg) var(--pt-radius-lg) 0 0; }
 }
 .ds-dock__head { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-gap-item);
   padding: var(--ds-pad-card); border-bottom: 1px solid var(--surface-line); }
@@ -186,23 +186,23 @@
 .ds-dock__group { margin-top: var(--ds-gap-group); padding: 0 10px; }
 .ds-dock__list > .ds-dock__group:first-child { margin-top: 0; }
 .ds-dock__item { color: var(--ds-ink); }
-.ds-dock__item:hover { background: color-mix(in srgb, var(--v5-cream) 8%, transparent); }
-.ds-dock__item--active { background: color-mix(in srgb, var(--v5-orange) 18%, transparent); color: var(--v5-orange); }
+.ds-dock__item:hover { background: var(--paper-sunken); }
+.ds-dock__item--active { background: var(--accent-soft); color: var(--accent-text); }
 .ds-dock .export-menu { border: 0 !important; box-shadow: none !important; background: transparent !important; max-width: none; }
-.ds-dock [data-surface] { background: transparent; }
+.ds-dock [data-paper] { background: transparent; }
 
 /* ── Special-line navigation (spec §6.3) ─────────────────────────────────── */
-.ds-chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px;
+.ds-chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: var(--pt-radius-md);
   border: 1px solid var(--surface-line); color: var(--ds-ink); font-size: var(--ds-fs-meta); font-weight: var(--ds-fw-medium); cursor: pointer; }
 .ds-chip:hover { border-color: var(--v5-accent); }
-.ds-chip[aria-pressed="true"] { background: var(--v5-accent); border-color: var(--v5-accent); color: #fff; }
+.ds-chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .ds-chip__count { font-variant-numeric: tabular-nums; opacity: .75; }
-.ds-pager { display: inline-flex; align-items: center; height: 28px; border: 1px solid var(--surface-line); border-radius: 8px; }
+.ds-pager { display: inline-flex; align-items: center; height: 28px; border: 1px solid var(--rule-control); border-radius: var(--pt-radius-md); }
 .ds-pager__btn { width: 28px; height: 100%; font-size: 16px; line-height: 1; color: var(--ds-ink); cursor: pointer; }
 .ds-pager__btn:hover { color: var(--v5-accent); }
 .ds-pager__pos { min-width: 56px; text-align: center; font-size: var(--ds-fs-meta); font-variant-numeric: tabular-nums; color: var(--ds-ink-2); }
-.ds-coach { display: inline-flex; align-items: center; gap: var(--ds-gap-item); margin: 0; padding: 4px 4px 4px 10px; border-radius: 8px;
-  background: var(--v5-panel-raised); color: #1a3d37; font-size: var(--ds-fs-meta); box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+.ds-coach { display: inline-flex; align-items: center; gap: var(--ds-gap-item); margin: 0; padding: 4px 4px 4px 10px; border-radius: var(--pt-radius-lg);
+  background: var(--v5-panel-raised); color: var(--ink-strong); font-size: var(--ds-fs-meta); box-shadow: var(--pt-elev-float); }
 .ds-coach__close { padding: 2px 8px; border-radius: 6px; font-weight: var(--ds-fw-medium); color: var(--v5-accent-strong); cursor: pointer; }
 .timeline-marks { position: absolute; inset: 0 2px; pointer-events: none; }
 .timeline-marks__tick { position: absolute; top: 50%; width: 2px; height: 12px; margin-left: -1px; transform: translateY(-50%);
@@ -213,17 +213,9 @@
 @media (prefers-reduced-motion: reduce) { .timeline-marks__pulse { animation-duration: .01s; } }
 
 
-/* Controls on the forest dock (original 样式参数 surface): keep AA contrast */
-[data-surface="forest"] .ds-select,
-[data-surface="forest"] .ds-segmented {
-  background: color-mix(in srgb, var(--v5-cream) 10%, transparent);
-  border-color: color-mix(in srgb, var(--v5-cream) 22%, transparent);
-  color: var(--ds-ink);
-}
-[data-surface="forest"] .ds-select option { color: #1a3d37; background: #fff; }
-[data-surface="forest"] .ds-segmented__item { color: var(--ds-ink-2); }
-[data-surface="forest"] .ds-segmented__item[aria-checked="true"] { background: color-mix(in srgb, var(--v5-cream) 20%, transparent); color: var(--ds-ink); box-shadow: none; }
-[data-surface="forest"] .export-menu__download:hover { background: color-mix(in srgb, var(--v5-cream) 8%, transparent); }
+/* Controls on the green dock: paper tokens already flip inside data-paper="chrome";
+   only the native option popup stays light, so pin its ink/paper to the light values. */
+[data-paper="chrome"] .ds-select option { color: #1c1a17; background: #fffdf8; }
 
 /* ===== v1.3 Control padding tokens (Derek: every text-to-edge distance is a token) =====
    Text is vertically centred by flex + a fixed line box; height comes from the control height token,
@@ -261,11 +253,11 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
 
 /* 「样式」列表（v1.3 tokens）：行内上下 8、左右 12；字形与色块均为 20px 行盒 */
 .ds-style-list { --row-px: min(var(--ds-ctl-px), calc(var(--ds-pad-card) - 4px)); display: flex; flex-direction: column; gap: 2px; margin: 0 calc(-1 * var(--row-px)); }
-.ds-style-row { display: flex; align-items: stretch; border-radius: var(--radius-md); }
+.ds-style-row { display: flex; align-items: stretch; border-radius: var(--pt-radius-lg); }
 .ds-style-row:hover { background: color-mix(in srgb, var(--v4-panel-raised) 60%, transparent); }
-.ds-style-row--on { background: var(--v4-panel-raised); color: var(--v4-accent-strong); }
+.ds-style-row--on { background: var(--v4-panel-raised); color: var(--accent-text); }
 .ds-style-row__main { display: flex; flex: 1; min-width: 0; align-items: flex-start; gap: 10px; padding: var(--ds-gap-item) var(--row-px); text-align: left; cursor: pointer; }
 .ds-style-row__main > svg { margin-top: 2px; }
 .ds-style-row__swatch { width: 20px; height: 20px; flex-shrink: 0; border-radius: 6px; }
 .ds-style-row__del { display: grid; place-items: center; width: var(--ds-ctl-h); flex-shrink: 0; color: var(--v4-text-muted); border-radius: var(--radius-md); cursor: pointer; }
-.ds-style-row__del:hover { color: var(--v4-danger, #e5484d); }
+.ds-style-row__del:hover { color: var(--state-danger); }

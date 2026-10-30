@@ -48,7 +48,7 @@ const FontFamilySelect = ({
   <div className="grid grid-cols-[56px_minmax(0,1fr)] items-center gap-[var(--ds-gap-group)]">
     <span className="text-sm text-[var(--v4-text-muted)] font-medium">{label}</span>
     <select
-      className="h-[var(--ds-ctl-h)] min-w-0 w-full rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-[var(--ds-ctl-px)] text-left text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
+      className="h-[var(--ds-ctl-h)] min-w-0 w-full rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-[var(--ds-ctl-px)] text-left text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
       value={value}
       onChange={e => onChange(e.target.value)}
     >
@@ -111,7 +111,7 @@ const ColorPicker = ({
                   key={c}
                   type="button"
                   onClick={() => onChange(c)}
-                  className={`h-5 w-5 rounded-full border transition-all cursor-pointer ${value === c ? 'border-[var(--v4-accent-strong)] shadow-[var(--glow-accent)] scale-105' : 'border-[var(--v4-line)] hover:border-[var(--v4-line-strong)] hover:scale-105'}`}
+                  className={`h-5 w-5 rounded-full border transition-all cursor-pointer ${value === c ? 'border-[var(--v4-accent-strong)] ring-1 ring-[var(--accent-line)] scale-105' : 'border-[var(--v4-line)] hover:border-[var(--v4-line-strong)] hover:scale-105'}`}
                   style={{ backgroundColor: c }}
                 />
               ))}
@@ -255,11 +255,11 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
 
   return (
     <div
-      data-surface={tone === 'theater' ? 'forest' : 'cream'}
+      data-paper={tone === 'theater' ? undefined : 'sheet'}
       className={
         tone === 'theater'
           ? `theater-style-drawer flex h-full w-full flex-col overflow-y-auto text-left text-[var(--v4-text)] scrollbar-thin ${embedded ? 'p-[var(--ds-pad-card)]' : 'p-[var(--ds-pad-card)]'}`
-          : `flex h-full w-full flex-col overflow-y-auto text-left text-[var(--v4-text)] scrollbar-thin ${embedded ? 'p-[var(--ds-pad-card)]' : 'bg-[var(--v5-cream)] p-[var(--ds-pad-card)]'}`
+          : `flex h-full w-full flex-col overflow-y-auto text-left text-[var(--v4-text)] scrollbar-thin ${embedded ? 'p-[var(--ds-pad-card)]' : 'bg-[var(--paper-desk)] p-[var(--ds-pad-card)]'}`
       }
     >
       <StyleLibrary />
@@ -444,7 +444,7 @@ export const StyleSidebar: React.FC<{ tone?: StyleSidebarTone; embedded?: boolea
                     <div className="grid grid-cols-[56px_minmax(0,1fr)] items-center gap-[var(--ds-gap-group)]">
                       <span className="text-sm font-medium text-[var(--v4-text-muted)]">位置</span>
                       <select
-                        className="h-[var(--ds-ctl-h)] w-full min-w-0 rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-[var(--ds-ctl-px)] text-left text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
+                        className="h-[var(--ds-ctl-h)] w-full min-w-0 rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-[var(--ds-ctl-px)] text-left text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
                         value={customStyle.lyricPosition ?? 'top'}
                         onChange={e => handleStyleChange('lyricPosition', e.target.value as StyleSettings['lyricPosition'])}
                       >

@@ -408,7 +408,7 @@ export const WorkbenchStep: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="ui-modal-layer fixed inset-0 grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
+              className="ui-modal-layer fixed inset-0 grid place-items-center bg-[var(--pt-scrim)] p-4"
               onClick={(event) => {
                 if (event.target === event.currentTarget) setShowBackConfirm(false);
               }}

@@ -148,7 +148,7 @@ export const ColorSampler: React.FC = () => {
             
             {eyeDropperSupported ? (
               <button 
-                className="w-full py-2.5 bg-[var(--v4-accent)] hover:bg-[var(--v4-accent-strong)] text-[var(--v4-accent-ink)] font-semibold rounded-lg text-sm flex items-center justify-center gap-1.5 transition-all shadow"
+                className="w-full py-2.5 bg-[var(--v4-accent)] hover:bg-[var(--v4-accent-strong)] text-[var(--v4-accent-ink)] font-semibold rounded-md text-sm flex items-center justify-center gap-1.5 transition-colors"
                 onClick={triggerEyeDropper}
               >
                 <Pipette className="h-4 w-4" />

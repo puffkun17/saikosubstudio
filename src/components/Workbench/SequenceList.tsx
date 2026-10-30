@@ -287,7 +287,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
                   <span>{listController.filterStatus}</span>
                   <button
                     type="button"
-                    className="font-semibold text-[var(--v5-green)] underline decoration-2 underline-offset-2 wb-focus-ring rounded"
+                    className="font-semibold text-[var(--ink-strong)] underline decoration-2 underline-offset-2 wb-focus-ring rounded"
                     onClick={listController.onClearFocus}
                   >
                     清除
@@ -491,7 +491,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
 
                   <div className="hidden min-w-0 items-center gap-2 self-center select-none md:flex">
                     <div className="relative flex flex-col items-center self-stretch py-0.5">
-                      <span className={`mt-0.5 h-2 w-2 rounded-full border ${isActive ? 'bg-[var(--v4-accent-strong)] border-[var(--v4-accent-strong)] shadow-[var(--glow-accent)]' : 'bg-[var(--v4-accent-soft)] border-[var(--v4-line-strong)]'}`} />
+                      <span className={`mt-0.5 h-2 w-2 rounded-full border ${isActive ? 'bg-[var(--v4-accent-strong)] border-[var(--v4-accent-strong)]' : 'bg-[var(--v4-accent-soft)] border-[var(--v4-line-strong)]'}`} />
                       <span className="mt-1 flex-1 w-px bg-[var(--v4-line)]" />
                     </div>
                     <div className={`flex min-w-0 flex-col whitespace-nowrap font-mono text-xs leading-tight tabular-nums tracking-tight ${isActive ? 'font-semibold text-[var(--v4-accent-strong)]' : 'font-medium text-[var(--v4-text-muted)]'}`}>

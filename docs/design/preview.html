@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>paper-tokens 预览</title>
+<link rel="stylesheet" href="../../public/fonts/geist/geist.css">
+<link rel="stylesheet" href="../../public/fonts/noto-serif-sc/noto-serif-sc.css">
+<link rel="stylesheet" href="../../src/styles/paper-tokens.css">
+<style>
+  * { box-sizing: border-box; }
+  html { font-synthesis: none; -webkit-font-smoothing: antialiased; }
+  body { margin: 0; background: var(--paper-desk); color: var(--ink-strong); font: var(--pt-weight-regular) var(--pt-size-body)/var(--pt-leading-ui) var(--pt-font-ui); caret-color: var(--accent); accent-color: var(--accent); }
+  ::selection { background: var(--selection-bg); }
+  main { width: 1200px; margin: 0 auto; padding: var(--pt-space-6) var(--pt-space-6) var(--pt-space-7); display: grid; gap: var(--pt-space-5); }
+  h1 { font: var(--pt-weight-medium) var(--pt-size-page)/var(--pt-leading-tight) var(--pt-font-title); margin: 0; letter-spacing: var(--pt-tracking-title); text-wrap: balance; }
+  h2 { font-size: var(--pt-size-title); font-weight: var(--pt-weight-strong); margin: 0; line-height: var(--pt-leading-tight); }
+  .meta { color: var(--ink-muted); font-size: var(--pt-size-meta); }
+  .row { display: flex; gap: var(--pt-space-3); align-items: center; flex-wrap: wrap; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--pt-space-5); }
+
+  .panel { background: var(--paper-sheet); border: 1px solid var(--rule-strong); border-radius: var(--pt-radius-lg); }
+  .panel > header { padding: var(--pt-space-3) var(--pt-space-4); border-bottom: 1px solid var(--rule-hair); display: flex; justify-content: space-between; align-items: baseline; }
+  .panel > .body { padding: var(--pt-space-4); display: grid; gap: var(--pt-space-4); }
+
+  .sw { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--pt-space-2); }
+  .sw div { border: 1px solid var(--rule-hair); border-radius: var(--pt-radius-sm); overflow: hidden; background: var(--paper-raised); }
+  .sw i { display: block; height: 40px; }
+  .sw span { display: block; padding: 4px 6px; font: var(--pt-size-micro)/1.3 var(--pt-font-mono); color: var(--ink-muted); }
+  .sw b { display: block; font: var(--pt-weight-medium) var(--pt-size-micro)/1.3 var(--pt-font-ui); color: var(--ink-strong); }
+
+  .type p { margin: 0; display: grid; grid-template-columns: 120px 1fr; align-items: baseline; gap: var(--pt-space-3); }
+  .type code { font: var(--pt-size-meta) var(--pt-font-mono); color: var(--ink-muted); }
+
+  .btn { font: var(--pt-weight-medium) var(--pt-size-control)/1 var(--pt-font-ui); height: var(--pt-control-h); padding: 0 var(--pt-space-4); border-radius: var(--pt-radius-md); border: 1px solid transparent; cursor: pointer; transition: background-color var(--motion-fast) var(--motion-ease-out), border-color var(--motion-fast) var(--motion-ease-out), color var(--motion-fast) var(--motion-ease-out); }
+  .btn:focus-visible, .btn.is-focus { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+  .primary { background: var(--accent); color: var(--accent-ink); }
+  .primary:hover, .primary.is-hover { background: var(--accent-hover); }
+  .primary:active, .primary.is-press { background: var(--accent-press); }
+  .secondary { background: var(--paper-raised); color: var(--ink-strong); border-color: var(--rule-control); }
+  .secondary:hover, .secondary.is-hover { background: var(--paper-sunken); }
+  .secondary:active, .secondary.is-press { background: color-mix(in srgb, var(--paper-sunken) 85%, var(--ink-strong)); }
+  .quiet { background: transparent; color: var(--ink-body); }
+  .quiet:hover, .quiet.is-hover { background: var(--paper-sunken); color: var(--ink-strong); }
+  .danger { background: var(--paper-raised); color: var(--state-danger); border-color: var(--rule-control); }
+  .danger-solid { background: var(--state-danger); color: var(--state-on-solid); }
+  .btn[disabled] { background: var(--paper-sunken); color: var(--ink-faint); border-color: transparent; cursor: not-allowed; }
+  .btn.sm { height: var(--pt-control-h-sm); padding: 0 var(--pt-space-3); font-size: var(--pt-size-dense); }
+  .lbl { font-size: var(--pt-size-micro); color: var(--ink-muted); width: 72px; }
+
+  .field { display: grid; gap: 6px; }
+  .field label { font-size: var(--pt-size-meta); color: var(--ink-muted); font-weight: var(--pt-weight-medium); }
+  .input { height: var(--pt-control-h); padding: 0 var(--pt-space-3); border: 1px solid var(--rule-control); border-radius: var(--pt-radius-md); background: var(--paper-raised); color: var(--ink-strong); font: var(--pt-size-control) var(--pt-font-ui); width: 100%; }
+  .input::placeholder { color: var(--ink-placeholder); }
+  .input:focus-visible, .input.is-focus { outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset); border-color: var(--accent); }
+  .input.is-error { border-color: var(--state-danger); }
+  .err { color: var(--state-danger); font-size: var(--pt-size-meta); }
+
+  table.ledger { width: 100%; border-collapse: collapse; font-size: var(--pt-size-dense); }
+  .ledger thead th { background: var(--paper-sunken); color: var(--ink-muted); font-weight: var(--pt-weight-medium); font-size: var(--pt-size-meta); text-align: left; padding: 6px var(--pt-row-x); border-top: 1.5px solid var(--rule-ledger); border-bottom: 1.5px solid var(--rule-ledger); }
+  .ledger td { padding: var(--pt-row-y) var(--pt-row-x); border-bottom: 1px solid var(--rule-hair); vertical-align: top; }
+  .ledger tbody tr:last-child td { border-bottom: 1.5px solid var(--rule-ledger); }
+  .ledger .n, .ledger .tc { font-family: var(--pt-font-mono); font-variant-numeric: tabular-nums; color: var(--ink-muted); white-space: nowrap; }
+  .ledger .n { width: 44px; text-align: right; }
+  .ledger .src { color: var(--ink-strong); line-height: var(--pt-leading-cjk); }
+  .ledger .tr { color: var(--ink-body); line-height: var(--pt-leading-ui); }
+  .ledger tr.is-hover td { background: var(--paper-sunken); }
+  .ledger tr.is-sel td { background: var(--accent-soft); }
+  .ledger tr.is-sel .n { color: var(--accent-text); font-weight: var(--pt-weight-medium); }
+  .st { display: inline-flex; align-items: center; gap: 6px; font-size: var(--pt-size-meta); white-space: nowrap; }
+  .st::before { content: ""; width: 6px; height: 6px; border-radius: var(--pt-radius-pill); background: currentColor; }
+  .ok { color: var(--state-success); } .warn { color: var(--state-warning); } .bad { color: var(--state-danger); } .info { color: var(--state-info); }
+
+  .chip { display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: var(--pt-radius-sm); font-size: var(--pt-size-micro); font-weight: var(--pt-weight-medium); border: 1px solid var(--rule-strong); color: var(--ink-muted); }
+  .chip.is-sel { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-line); }
+  .note { padding: var(--pt-space-2) var(--pt-space-3); border-radius: var(--pt-radius-md); font-size: var(--pt-size-dense); color: var(--ink-strong); }
+  .note b { font-weight: var(--pt-weight-medium); }
+  .note.warn-bg { background: var(--state-warning-soft); } .note.bad-bg { background: var(--state-danger-soft); } .note.info-bg { background: var(--state-info-soft); } .note.ok-bg { background: var(--state-success-soft); }
+
+  .sk { display: grid; gap: 8px; }
+  .sk i { display: block; height: 12px; border-radius: var(--pt-radius-xs); background: var(--skeleton); }
+
+  .tray { background: var(--paper-desk); color: var(--ink-strong); border-radius: var(--pt-radius-lg); padding: 6px; display: flex; gap: 4px; align-items: center; }
+  .tray .step { height: var(--pt-control-h-sm); padding: 0 var(--pt-space-3); display: inline-flex; align-items: center; gap: 8px; border-radius: var(--pt-radius-md); color: var(--ink-muted); font-size: var(--pt-size-dense); font-weight: var(--pt-weight-medium); }
+  .tray .step em { font-style: normal; font-family: var(--pt-font-mono); font-size: var(--pt-size-micro); }
+  .tray .step.is-cur { background: var(--chrome-active-bg); color: var(--chrome-active-ink); }
+  .tray .sep { width: 1px; height: 16px; background: var(--rule-hair); }
+  .tray .spacer { flex: 1; }
+  .tray .acc { color: var(--accent-text); font-size: var(--pt-size-meta); }
+
+  .theater { background: var(--paper-desk); color: var(--ink-strong); border-radius: var(--pt-radius-lg); padding: var(--pt-space-5); display: grid; gap: var(--pt-space-3); }
+  .theater .screen { height: 120px; background: var(--paper-sunken); border-radius: var(--pt-radius-md); display: grid; place-items: end center; padding-bottom: 14px; text-align: center; }
+  .theater .screen p { margin: 0; line-height: 1.4; }
+  .menu { position: absolute; right: 0; top: 44px; width: 200px; background: var(--paper-raised); border-radius: var(--pt-radius-lg); box-shadow: var(--pt-elev-float); padding: 4px; font-size: var(--pt-size-dense); }
+  .menu div { padding: 6px 10px; border-radius: var(--pt-radius-sm); }
+  .menu div.is-hover { background: var(--paper-sunken); }
+  .menu hr { border: 0; border-top: 1px solid var(--rule-hair); margin: 4px 0; }
+</style>
+</head>
+<body>
+<main>
+  <div class="row" style="justify-content:space-between">
+    <div><h1>海街日记 · Umimachi Diary</h1><div class="meta">paper-tokens 预览 · 草案 · design/paper-tokens</div></div>
+    <div class="meta">Visual principles inspired by Cindy.</div>
+  </div>
+
+  <div class="tray" data-paper="chrome">
+    <span class="step"><em>1</em>导入</span><span class="sep"></span>
+    <span class="step is-cur"><em>2</em>校对</span><span class="sep"></span>
+    <span class="step"><em>3</em>放映</span>
+    <span class="spacer"></span><span class="acc">3 条待确认</span>
+    <button class="btn sm secondary" style="margin-left:12px">导出 SRT</button>
+  </div>
+
+  <section class="panel">
+    <header><h2>色板</h2><span class="meta">contrast.py：103 组全部 ≥ AA</span></header>
+    <div class="body">
+      <div class="sw">
+        <div><i style="background:var(--paper-desk)"></i><span><b>paper-desk</b>#F2ECE1</span></div>
+        <div><i style="background:var(--paper-sheet)"></i><span><b>paper-sheet</b>#FAF7F0</span></div>
+        <div><i style="background:var(--paper-raised)"></i><span><b>paper-raised</b>#FFFDF8</span></div>
+        <div><i style="background:var(--paper-sunken)"></i><span><b>paper-sunken</b>#EAE3D6</span></div>
+        <div><i style="background:var(--rule-hair)"></i><span><b>rule-hair</b>#DCD3C4</span></div>
+        <div><i style="background:var(--rule-control)"></i><span><b>rule-control</b>#8C8375 · 3.49</span></div>
+        <div><i style="background:var(--ink-strong)"></i><span><b>ink-strong</b>#1C1A17 · 16.23</span></div>
+        <div><i style="background:var(--ink-body)"></i><span><b>ink-body</b>#3A352E · 11.35</span></div>
+        <div><i style="background:var(--ink-muted)"></i><span><b>ink-muted</b>#5F584E · 6.56</span></div>
+        <div><i style="background:var(--ink-faint)"></i><span><b>ink-faint</b>#8A8276 · 非文字</span></div>
+        <div><i style="background:var(--accent)"></i><span><b>accent 酒红</b>#7A2233 · 9.33</span></div>
+        <div><i style="background:var(--chrome-bg)"></i><span><b>chrome 墨绿</b>#1F3A33</span></div>
+        <div><i style="background:var(--state-danger)"></i><span><b>danger</b>#B0361C · 5.79</span></div>
+        <div><i style="background:var(--state-warning)"></i><span><b>warning</b>#8A5A0B · 5.53</span></div>
+        <div><i style="background:var(--state-success)"></i><span><b>success</b>#2D6640 · 6.36</span></div>
+        <div><i style="background:var(--state-info)"></i><span><b>info / focus</b>#2E5A84 · 6.74</span></div>
+        <div><i style="background:var(--accent-soft)"></i><span><b>accent-soft</b>10%</span></div>
+        <div><i style="background:var(--state-danger-soft)"></i><span><b>danger-soft</b>10%</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid2">
+    <section class="panel">
+      <header><h2>字号与字重</h2><span class="meta">400 / 500 / 600</span></header>
+      <div class="body type">
+        <p><code>24 · 600</code><span style="font-size:var(--pt-size-display);font-weight:600;line-height:1.25">还没有字幕文件</span></p>
+        <p><code>20 · serif 500</code><span style="font:500 var(--pt-size-page)/1.25 var(--pt-font-title)">海街日记 Umimachi Diary</span></p>
+        <p><code>18 · 600</code><span style="font-size:var(--pt-size-title);font-weight:600">校对面板 Review</span></p>
+        <p><code>16 · 400</code><span>四姐妹在镰仓的老房子里生活。Four sisters in Kamakura.</span></p>
+        <p><code>15 · 500</code><span style="font-size:var(--pt-size-control);font-weight:500">导出字幕 Export</span></p>
+        <p><code>14 · 400</code><span style="font-size:var(--pt-size-dense)">第 128 行 · 双语对照 bilingual</span></p>
+        <p><code>13 · mono</code><span style="font:var(--pt-size-meta) var(--pt-font-mono);font-variant-numeric:tabular-nums;color:var(--ink-muted)">00:12:04,180 → 00:12:06,940</span></p>
+        <p><code>12 · 500</code><span><span class="chip">ZH</span> <span class="chip is-sel">EN 已选</span> <span class="chip">SRT</span></span></p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <header><h2>按钮与输入</h2><span class="meta">圆角 6 · 高 36</span></header>
+      <div class="body">
+        <div class="row"><span class="lbl">主要</span><button class="btn primary">开始校对</button><button class="btn primary is-hover">hover</button><button class="btn primary is-press">按下</button><button class="btn primary is-focus">焦点</button><button class="btn primary" disabled>禁用</button></div>
+        <div class="row"><span class="lbl">次要</span><button class="btn secondary">替换文件</button><button class="btn secondary is-hover">hover</button><button class="btn secondary is-press">按下</button><button class="btn secondary is-focus">焦点</button><button class="btn secondary" disabled>禁用</button></div>
+        <div class="row"><span class="lbl">安静</span><button class="btn quiet">撤销</button><button class="btn quiet is-hover">hover</button><span class="lbl">危险</span><button class="btn danger">删除行</button><button class="btn danger-solid">确认删除</button></div>
+        <div class="grid2" style="gap:var(--pt-space-3)">
+          <div class="field"><label>片名</label><input class="input" placeholder="例如：海街日记"></div>
+          <div class="field"><label>聚焦</label><input class="input is-focus" value="Umimachi Diary"></div>
+          <div class="field"><label>时间偏移（毫秒）</label><input class="input is-error" value="12a0"><span class="err">只能填数字，例如 -250</span></div>
+          <div class="field"><label>加载中（skeleton）</label><div class="sk" style="padding-top:6px"><i style="width:90%"></i><i style="width:70%"></i><i style="width:80%"></i></div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel" style="position:relative">
+    <header><h2>字幕账本</h2><span class="meta">412 行 · 已校对 368 · 选中第 3 行</span></header>
+    <div class="body" style="padding:0 0 var(--pt-space-4)">
+      <table class="ledger">
+        <thead><tr><th class="n" style="text-align:right">#</th><th>时间码</th><th>原文 / 译文</th><th>状态</th></tr></thead>
+        <tbody>
+          <tr><td class="n">1</td><td class="tc">00:00:41,200 → 00:00:43,880</td><td><div class="src">お姉ちゃん、起きて。</div><div class="tr">姐姐，起床了。</div></td><td><span class="st ok">已校对</span></td></tr>
+          <tr class="is-hover"><td class="n">2</td><td class="tc">00:00:44,010 → 00:00:46,520</td><td><div class="src">今日はお父さんのお葬式でしょ。</div><div class="tr">今天是爸爸的葬礼吧。</div></td><td><span class="st ok">已校对</span></td></tr>
+          <tr class="is-sel"><td class="n">3</td><td class="tc">00:00:46,700 → 00:00:49,050</td><td><div class="src">十五年も会ってないのに。</div><div class="tr">都十五年没见了。</div></td><td><span class="st warn">时长过短</span></td></tr>
+          <tr><td class="n">4</td><td class="tc">00:00:49,300 → 00:00:51,000</td><td><div class="src">行くよ、みんなで。</div><div class="tr">（未翻译）</div></td><td><span class="st bad">缺译文</span></td></tr>
+          <tr><td class="n">5</td><td class="tc">00:00:51,420 → 00:00:54,600</td><td><div class="src">鎌倉から山形まで、遠いね。</div><div class="tr">从镰仓到山形，好远啊。</div></td><td><span class="st info">机翻待审</span></td></tr>
+        </tbody>
+      </table>
+      <div class="menu" style="top:132px;right:24px">
+        <div>在上方插入一行</div><div class="is-hover">合并到下一行</div><div>拆分此行</div><hr><div style="color:var(--state-danger)">删除此行</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid2">
+    <section class="panel">
+      <header><h2>状态提示</h2><span class="meta">soft 底 + 墨字</span></header>
+      <div class="body" style="gap:var(--pt-space-2)">
+        <div class="note warn-bg"><b class="warn">注意</b> · 有 3 行时长短于 0.8 秒。</div>
+        <div class="note bad-bg"><b class="bad">失败</b> · 第 4 行缺少译文，导出会留空。</div>
+        <div class="note info-bg"><b class="info">提示</b> · 机翻结果需要人工确认。</div>
+        <div class="note ok-bg"><b class="ok">完成</b> · 368 / 412 行已校对。</div>
+      </div>
+    </section>
+    <section class="theater" data-paper="theater">
+      <div class="row" style="justify-content:space-between"><h2>放映（关灯）</h2><span class="meta" style="color:var(--ink-muted)">theater 作用域</span></div>
+      <div class="screen"><p style="font-size:var(--pt-size-body)">十五年も会ってないのに。</p><p style="color:var(--ink-body);font-size:var(--pt-size-dense)">都十五年没见了。</p></div>
+      <div class="row"><button class="btn primary">继续播放</button><button class="btn secondary">返回校对</button><span class="chip is-sel">EN</span><span class="st warn">时长过短</span><span style="color:var(--accent-text);font-size:var(--pt-size-meta)">第 3 / 412 行</span></div>
+    </section>
+  </div>
+</main>
+</body>
+</html>

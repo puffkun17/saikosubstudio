@@ -289,8 +289,7 @@ export const DragZone: React.FC = () => {
                   </p>
                   {(importSummary.autoHandled.length > 0 || importSummary.needsAttention.length > 0) && (
                     <p
-                      className="mt-2 inline-flex max-w-full items-center rounded-md px-2 py-0.5 text-xs font-medium"
-                      style={{ background: '#ef8d5f', color: '#1a3d37' }}
+                      className="mt-2 inline-flex max-w-full items-center rounded-[var(--pt-radius-sm)] bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--accent-text)]"
                       title={[
                         ...importSummary.autoHandled.map((i) => `自动：${i.name}`),
                         ...importSummary.needsAttention.map((i) => `待确认：${i.name}`),

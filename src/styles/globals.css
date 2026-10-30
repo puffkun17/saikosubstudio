@@ -1,17 +1,19 @@
 /* Noto Serif SC + Geist are linked from each HTML entry (<link>), not @import: bundlers try to resolve public/ URLs. */
 @import "tailwindcss";
+@import "./paper-tokens.css";
 
 /*
- * 双字体：
- * - 正文 / 控件 / 空态与关于页大标题：系统黑体（PingFang / 雅黑 → Geist Sans）
- * - 片名（片源名）仅：自托管思源宋体（Noto Serif SC）
- * CSP font-src 仅 'self'，故字体放在 public/fonts。
+ * 字体（DESIGN.md §4）：
+ * - UI / 字幕：Geist Sans 在前（英文、数字在 Mac/Windows 一致），中文回退到 PingFang / 雅黑。
+ * - 时间码 / 数值：Geist Mono。
+ * - 片名（只用于标题）：自托管思源宋体（Noto Serif SC）。
+ * 字体都在 public/fonts（自托管），CSP font-src 仍只有 'self'，不用第三方 CDN。许可证见 docs/FONT_LICENSES.md。
  */
 @theme {
-  --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", var(--font-geist-sans), system-ui, sans-serif;
-  --font-serif: "Noto Serif SC", "Source Han Serif SC", "思源宋体", serif;
-  --font-mono: var(--font-geist-mono), "SFMono-Regular", "Cascadia Mono", ui-monospace, monospace, "PingFang SC", "Microsoft YaHei";
-  /* Accent / dark @theme 伪名已删（EP-0.1 TOKEN-001/002）；只用 :root --v5-*。见 DESIGN.md §2 Deprecated。 */
+  --font-sans: var(--pt-font-ui);
+  --font-serif: var(--pt-font-title);
+  --font-mono: var(--pt-font-mono);
+  /* Accent / dark @theme 伪名已删（EP-0.1 TOKEN-001/002）；颜色只走 paper-tokens.css。 */
 
   /* One readable scale: annotation 13, control 15, body 16, headings 18-24. */
   --text-xs: 0.8125rem;
@@ -24,38 +26,11 @@
 
 :root {
   /*
-   * SaikoSubStudio 5.0 Beta — Ridgeline
-   * Triad: cream #f5f1ea · forest #1a3d37 · citrus #ef8d5f
-   * Live names are --v5-*; --v4-* aliases keep existing class hooks working.
-   * Sealed tungsten: docs/V4_TUNGSTEN_ARCHIVE.md
+   * SaikoSubStudio · Paper Ledger 接线层
+   * 真实取值在 ./paper-tokens.css（--paper-* / --ink-* / --rule-* / --accent-* / --state-* / --pt-*）。
+   * 这里只保留旧名（--v5-* / --v4-* / --surface-* / --tray-* / --radius-* / --type-* / --space-*）作为别名，
+   * 组件里的用法不变。映射表：docs/design/token-mapping.md。旧 Ridgeline 值见 docs/design-archive/DESIGN.md。
    */
-  --v5-cream: #f5f1ea;
-  --v5-green: #1a3d37;
-  --v5-orange: #ef8d5f;
-  --v5-orange-strong: #f0a07a;
-  --v5-orange-deep: #e07845;
-
-  --background: var(--v5-cream);
-  --foreground: var(--v5-green);
-
-  --v5-canvas: #f5f1ea;
-  --v5-canvas-raised: #fffcf7;
-  --v5-panel: #fffcf7;
-  --v5-panel-raised: #ffffff;
-  --v5-panel-muted: #efebe3;
-  /* 派生半透明走 color-mix（EP-0.5 TOKEN-012）；三原色 hex 仅此处密封。 */
-  --v5-line: color-mix(in srgb, var(--v5-green) 12%, transparent);
-  --v5-line-strong: color-mix(in srgb, var(--v5-green) 22%, transparent);
-  --v5-text: var(--v5-green);
-  /* 奶油底上的可读阶：muted 给副文案，faint 只留给装饰/占位，不再当正文色。 */
-  --v5-text-muted: color-mix(in srgb, var(--v5-green) 80%, transparent);
-  --v5-text-faint: color-mix(in srgb, var(--v5-green) 58%, transparent);
-  --v5-accent: var(--v5-orange);
-  --v5-accent-strong: var(--v5-orange-deep);
-  --v5-accent-soft: color-mix(in srgb, var(--v5-orange) 16%, transparent);
-  --v5-accent-ink: #ffffff;
-  --v5-danger: #c45b55;
-  --v5-warning: #c4893a;
 
   /* Language identity faces（BADGE-004）— 组件只引 var(--lang-*-face/ink/mark) */
   --lang-zh-cn-face: #C9A430;
@@ -99,69 +74,26 @@
   --fmt-unknown-face: #857D72;
   --fmt-unknown-fold: #6B655B;
   --fmt-ink: #FFFFFF;
-  --v5-desk-glow: color-mix(in srgb, var(--v5-green) 6%, transparent);
 
   /*
-   * Radius ladder（EP-0.3 TOKEN-005/006/007）
-   * xs 刻度 · sm chip/语言牌/小 icon · md 输入/面板 · lg choice/toast · xl hero/大抽屉 · pill 仅托盘胶囊/进度点
+   * Radius：按 Paper Ledger 用途收敛（按钮/控件 6 · 面板/卡片/菜单 8 · 对话框上限 12）。
+   * Tailwind 的 rounded-sm/md/lg/xl/2xl 也读这些变量，所以这里同时决定 Tailwind 圆角。
+   * 面板上原来写 --radius-md、控件上原来写 --radius-lg 的地方已逐处改成 --pt-radius-*。
    */
-  --radius-xs: 2px;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 20px;
-  --radius-pill: 999px;
-  /* Compat aliases */
-  --v5-radius-panel: var(--radius-xl);
-  --v5-radius-control: var(--radius-lg);
+  --radius-xs: var(--pt-radius-xs);
+  --radius-sm: var(--pt-radius-md);
+  --radius-md: var(--pt-radius-md);
+  --radius-lg: var(--pt-radius-lg);
+  --radius-xl: var(--pt-radius-lg);
+  --radius-2xl: var(--pt-radius-xl);
+  --radius-pill: var(--pt-radius-pill);
+  --v5-radius-panel: var(--pt-radius-lg);
+  --v5-radius-control: var(--pt-radius-md);
 
-  --v5-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --v5-dur-fast: 160ms;
-  --v5-dur: 240ms;
-  --v5-dur-slow: 420ms;
-
-  /*
-   * Elevation / glow（EP-0.2 TOKEN-004）
-   * 墨绿 tint 一族；theater-dim 用 *-dim（更高 alpha），禁止另起纯黑阴影体系。
-   */
-  --elevation-0: 0 1px 0 color-mix(in srgb, var(--v5-green) 4%, transparent);
-  --elevation-1: 0 8px 24px color-mix(in srgb, var(--v5-green) 10%, transparent);
-  --elevation-2: 0 16px 40px color-mix(in srgb, var(--v5-green) 14%, transparent);
-  --elevation-3: 0 24px 64px color-mix(in srgb, var(--v5-green) 18%, transparent);
-  --elevation-1-dim: 0 8px 24px color-mix(in srgb, var(--v5-green) 32%, transparent);
-  --elevation-2-dim: 0 16px 40px color-mix(in srgb, var(--v5-green) 36%, transparent);
-  --elevation-3-dim: 0 24px 64px color-mix(in srgb, var(--v5-green) 42%, transparent);
-  --glow-accent: 0 0 12px color-mix(in srgb, var(--v5-accent) 22%, transparent);
-  --glow-cta: 0 8px 20px color-mix(in srgb, var(--v5-accent) 25%, transparent);
-
-  /*
-   * 三表面字色 / 边线角色（EP-0.2 ASSET-003）
-   * cream 默认；forest / theater 在 [data-surface] 覆盖。组件优先 --surface-*，--v4-* 仍为别名。
-   */
-  --surface-text: var(--v5-text);
-  --surface-text-muted: var(--v5-text-muted);
-  --surface-text-faint: var(--v5-text-faint);
-  --surface-line: var(--v5-line);
-  --surface-line-strong: var(--v5-line-strong);
-
-  /* Compat aliases — prefer --v5-* in new code. */
-  --v4-canvas: var(--v5-canvas);
-  --v4-canvas-raised: var(--v5-canvas-raised);
-  --v4-panel: var(--v5-panel);
-  --v4-panel-raised: var(--v5-panel-raised);
-  --v4-panel-muted: var(--v5-panel-muted);
-  --v4-line: var(--surface-line);
-  --v4-line-strong: var(--surface-line-strong);
-  --v4-text: var(--surface-text);
-  --v4-text-muted: var(--surface-text-muted);
-  --v4-text-faint: var(--surface-text-faint);
-  --v4-accent: var(--v5-accent);
-  --v4-accent-strong: var(--v5-accent-strong);
-  --v4-accent-soft: var(--v5-accent-soft);
-  --v4-accent-ink: var(--v5-accent-ink);
-  --v4-danger: var(--v5-danger);
-  --v4-warning: var(--v5-warning);
-  --v4-desk-glow: var(--v5-desk-glow);
+  --v5-ease: var(--motion-ease-out);
+  --v5-dur-fast: var(--motion-fast);
+  --v5-dur: var(--motion-base);
+  --v5-dur-slow: var(--motion-slow);
   --v4-ease: var(--v5-ease);
   --v4-dur-fast: var(--v5-dur-fast);
   --v4-dur: var(--v5-dur);
@@ -172,46 +104,25 @@
   /* Info bar under top tray; 0 when idle (set by WorkflowChrome). */
   --info-bar-h: 0px;
 
-  /*
-   * Tray ink（EP-0.4 TOKEN-008）— 奶油半透明，禁止托盘再手写 rgba(245,241,234,*)
-   */
-  --tray-ink: var(--v5-cream);
-  --tray-ink-soft: color-mix(in srgb, var(--v5-cream) 88%, transparent);
-  --tray-ink-muted: color-mix(in srgb, var(--v5-cream) 72%, transparent);
-  --tray-ink-faint: color-mix(in srgb, var(--v5-cream) 62%, transparent);
-  --tray-line: color-mix(in srgb, var(--v5-cream) 14%, transparent);
-  --tray-line-soft: color-mix(in srgb, var(--v5-cream) 10%, transparent);
-  --tray-line-strong: color-mix(in srgb, var(--v5-cream) 22%, transparent);
-  --tray-fill: color-mix(in srgb, var(--v5-cream) 10%, transparent);
-  --tray-fill-soft: color-mix(in srgb, var(--v5-cream) 8%, transparent);
-  --tray-fill-hover: color-mix(in srgb, var(--v5-cream) 14%, transparent);
-
-  /*
-   * Type scale（EP-0.4 TOKEN-009）
-   * Caption · Control · Body · Title · Display；eyebrow tracking 仅两档。
-   */
-  --type-caption: 0.8125rem; /* 13 — 旁注 / meta；对齐 @theme text-xs */
-  --type-control: 0.9375rem; /* 15 — 按钮 / chip */
-  --type-body: 1rem;         /* 16 — 默认阅读 */
-  --type-title: 1.125rem;    /* 18 — 区块标题 */
-  --type-display: 1.5rem;    /* 24 — 空态 / 片名 display */
+  /* Type scale → --pt-size-*（同值）。 */
+  --type-caption: var(--pt-size-meta);    /* 13 */
+  --type-control: var(--pt-size-control); /* 15 */
+  --type-body: var(--pt-size-body);       /* 16 */
+  --type-title: var(--pt-size-title);     /* 18 */
+  --type-display: var(--pt-size-display); /* 24 */
   --tracking-eyebrow: 0.06em;
   --tracking-eyebrow-wide: 0.08em;
 
-  /*
-   * Spacing ladder（EP-0.5 TOKEN-011）
-   * 主阶 4 / 8 / 12 / 16 / 24 / 32 / 48；半档仅光学对齐。
-   * 密度：工作台面板 --space-panel(16)；关于/空态文案 --space-copy(24)。
-   */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-7: 48px;
-  --space-panel: var(--space-4);
-  --space-copy: var(--space-5);
+  /* Spacing ladder → --pt-space-*（同值，4 基准）。 */
+  --space-1: var(--pt-space-1);
+  --space-2: var(--pt-space-2);
+  --space-3: var(--pt-space-3);
+  --space-4: var(--pt-space-4);
+  --space-5: var(--pt-space-5);
+  --space-6: var(--pt-space-6);
+  --space-7: var(--pt-space-7);
+  --space-panel: var(--pt-space-4);
+  --space-copy: var(--pt-space-5);
 
   /* Stacking: nav < dim scrim < dropdown < feedback < overlay/modal. Never mount modals inside nav. */
   --z-raised: 10;
@@ -227,8 +138,92 @@
   /* Theater 局部叠层（相对主区）：L0 舞台 < L1 样式。导出菜单 Portal 用 --z-dropdown，高于样式。 */
   --z-theater-stage: 1;
   --z-theater-style: 20;
-  /* 播放条外高 + 舞台底 padding（xl:p-6）写死档；抽屉 bottom 让出，禁止每帧测量。 */
+  /* 播放条外高 + 舞台底 padding（xl:p-6）写死档；抽屉 bottom 让出，禁止每帧测量。布局尺寸，不进 --pt-*。 */
   --theater-deck-h: 5.25rem;
+}
+
+/*
+ * 颜色别名在 :root 和每个 [data-paper] 局部表面上都声明一次：
+ * 自定义属性在声明处解析，只写在 :root 的别名进不了 chrome / theater / sheet 作用域。
+ */
+:root,
+[data-paper] {
+  /* 旧三原色名：cream → 纸，green → 墨（不再用绿色做字），orange → 酒红。 */
+  --v5-cream: var(--paper-desk);
+  --v5-green: var(--ink-strong);
+  --v5-orange: var(--accent);
+  --v5-orange-strong: var(--accent-text);
+  --v5-orange-deep: var(--accent-press);
+
+  --background: var(--paper-desk);
+  --foreground: var(--ink-strong);
+
+  --v5-canvas: var(--paper-desk);
+  --v5-canvas-raised: var(--paper-sheet);
+  --v5-panel: var(--paper-sheet);
+  --v5-panel-raised: var(--paper-raised);
+  --v5-panel-muted: var(--paper-sunken);
+  --v5-line: var(--rule-hair);
+  --v5-line-strong: var(--rule-strong);
+  --v5-text: var(--ink-strong);
+  --v5-text-muted: var(--ink-muted);
+  /* faint 并入 muted：所有还在用 faint 的地方都承载文字。 */
+  --v5-text-faint: var(--ink-muted);
+  --v5-accent: var(--accent);
+  --v5-accent-strong: var(--accent-text);
+  --v5-accent-soft: var(--accent-soft);
+  --v5-accent-ink: var(--accent-ink);
+  --v5-danger: var(--state-danger);
+  --v5-warning: var(--state-warning);
+  --v5-desk-glow: transparent;
+
+  /* 层级：页面内零阴影；只有浮层（菜单/popover/toast）和对话框有投影。光晕全部去掉。 */
+  --elevation-0: none;
+  --elevation-1: none;
+  --elevation-2: var(--pt-elev-float);
+  --elevation-3: var(--pt-elev-modal);
+  --elevation-1-dim: none;
+  --elevation-2-dim: var(--pt-elev-float);
+  --elevation-3-dim: var(--pt-elev-modal);
+  --glow-accent: none;
+  --glow-cta: none;
+
+  --surface-text: var(--ink-strong);
+  --surface-text-muted: var(--ink-muted);
+  --surface-text-faint: var(--ink-muted);
+  --surface-line: var(--rule-hair);
+  --surface-line-strong: var(--rule-strong);
+
+  /* Compat aliases — prefer the paper tokens in new code. */
+  --v4-canvas: var(--v5-canvas);
+  --v4-canvas-raised: var(--v5-canvas-raised);
+  --v4-panel: var(--v5-panel);
+  --v4-panel-raised: var(--v5-panel-raised);
+  --v4-panel-muted: var(--v5-panel-muted);
+  --v4-line: var(--surface-line);
+  --v4-line-strong: var(--surface-line-strong);
+  --v4-text: var(--surface-text);
+  --v4-text-muted: var(--surface-text-muted);
+  --v4-text-faint: var(--ink-muted);
+  --v4-accent: var(--v5-accent);
+  --v4-accent-strong: var(--v5-accent-strong);
+  --v4-accent-soft: var(--v5-accent-soft);
+  --v4-accent-ink: var(--v5-accent-ink);
+  --v4-danger: var(--v5-danger);
+  --v4-warning: var(--v5-warning);
+  --v4-desk-glow: transparent;
+
+  /* 托盘墨：托盘本身是 data-paper="chrome"，墨色在那里自动反转成奶油。 */
+  --tray-ink: var(--ink-strong);
+  --tray-ink-soft: var(--ink-body);
+  --tray-ink-muted: var(--ink-muted);
+  --tray-ink-faint: var(--ink-muted);
+  --tray-line: var(--rule-hair);
+  --tray-line-soft: var(--rule-hair);
+  --tray-line-strong: var(--rule-strong);
+  --tray-fill: var(--paper-raised);
+  --tray-fill-soft: var(--paper-sunken);
+  --tray-fill-hover: var(--paper-raised);
 }
 
 html {
@@ -260,9 +255,7 @@ body {
 
 .app-canvas {
   color: var(--v4-text);
-  background:
-    radial-gradient(1200px 520px at 50% -8%, var(--v4-desk-glow), transparent 58%),
-    var(--v4-canvas);
+  background: var(--v4-canvas);
 }
 
 .app-workspace {
@@ -270,34 +263,34 @@ body {
   background: transparent;
 }
 
-/* 思源宋体 display：仅片名（片源名 / TMDB 结果标题）。空态与关于页大标题走 UI Sans。 */
+/* 思源宋体 display：仅片名（片源名 / TMDB 结果标题）。只有 500/700 字重，用 500（DESIGN.md §4）。 */
 .font-display {
   font-family: var(--font-serif);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.02em;
 }
 
-/* 片名旁白 / 剧情简介等片源散文；非营销大标题。 */
+/* 片名旁白 / 剧情简介等片源散文。宋体只用于标题，所以这里走 UI 字体，类名保留。 */
 .prose-serif {
-  font-family: var(--font-serif);
-  font-weight: 500;
+  font-family: var(--font-sans);
+  font-weight: 400;
   letter-spacing: 0.01em;
   line-height: 1.8;
 }
 
 .v4-panel {
   border: 1px solid var(--v4-line);
-  border-radius: var(--radius-md);
+  border-radius: var(--pt-radius-lg);
   background: var(--v4-panel);
   box-shadow: var(--elevation-0);
 }
 
-/* Ridgeline twin trays: forest green chrome both ends. */
+/* Twin trays: the one place green lives. Markup sets data-paper="chrome", so ink/rule tokens read as cream-on-green. */
 .system-tray--top,
 .system-tray--bottom {
-  background: var(--v5-green);
-  border-color: var(--tray-line-soft);
-  color: color-mix(in srgb, var(--v5-cream) 92%, transparent);
+  background: var(--chrome-bg);
+  border-color: var(--rule-hair);
+  color: var(--ink-strong);
   backdrop-filter: none;
   /* 墨绿托盘上 antialiased 更稳，奶油工作区保持亚像素。 */
   -webkit-font-smoothing: antialiased;
@@ -306,23 +299,23 @@ body {
 
 .system-tray--top .soft-log-marquee__text,
 .system-tray--bottom .soft-log-marquee__text {
-  color: color-mix(in srgb, var(--v5-cream) 78%, transparent);
+  color: var(--ink-muted);
 }
 
 .system-tray__ctrl {
-  border: 1px solid color-mix(in srgb, var(--v5-cream) 16%, transparent);
+  border: 1px solid var(--rule-control);
   background: var(--tray-fill);
   color: var(--tray-ink-soft);
 }
 
 .system-tray__ctrl:hover {
-  border-color: var(--tray-line-strong);
+  border-color: var(--ink-muted);
   background: var(--tray-fill-hover);
   color: var(--tray-ink);
 }
 
 .system-tray__accent {
-  color: var(--v5-orange);
+  color: var(--accent-text);
 }
 
 /* Narrow chrome (≤843): top essentials only — LOCAL / scale % yield space to wordmark. */
@@ -345,80 +338,31 @@ body {
   }
 }
 
-/* Forest panels (theater chrome only): remap cream tokens to on-green. */
-[data-surface="forest"] {
-  --surface-text: var(--v5-cream);
-  --surface-text-muted: color-mix(in srgb, var(--v5-cream) 82%, transparent);
-  --surface-text-faint: color-mix(in srgb, var(--v5-cream) 60%, transparent);
-  --surface-line: color-mix(in srgb, var(--v5-cream) 12%, transparent);
-  --surface-line-strong: color-mix(in srgb, var(--v5-cream) 22%, transparent);
-  --v4-canvas: var(--v5-green);
-  --v4-canvas-raised: #214942;
-  --v4-panel: color-mix(in srgb, var(--v5-cream) 6%, transparent);
-  --v4-panel-raised: color-mix(in srgb, var(--v5-cream) 10%, transparent);
-  --v4-panel-muted: color-mix(in srgb, var(--v5-cream) 5%, transparent);
-  --v4-line: var(--surface-line);
-  --v4-line-strong: var(--surface-line-strong);
-  --v4-text: var(--surface-text);
-  --v4-text-muted: var(--surface-text-muted);
-  --v4-text-faint: var(--surface-text-faint);
-  --v4-accent: var(--v5-orange);
-  --v4-accent-strong: var(--v5-orange-strong);
-  --v4-accent-soft: color-mix(in srgb, var(--v5-orange) 18%, transparent);
-  --v4-accent-ink: #ffffff;
-  color: var(--v4-text);
-  background: var(--v5-green);
+/* Local surfaces (DESIGN.md §3.7). Token values live in paper-tokens.css; the alias block above re-resolves per scope. */
+[data-paper="chrome"] {
+  color: var(--ink-strong);
+  background: var(--chrome-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Style drawer & light panels: force cream even when nested in forest theater. */
-[data-surface="cream"] {
-  --surface-text: var(--v5-green);
-  --surface-text-muted: color-mix(in srgb, var(--v5-green) 80%, transparent);
-  --surface-text-faint: color-mix(in srgb, var(--v5-green) 58%, transparent);
-  --surface-line: color-mix(in srgb, var(--v5-green) 12%, transparent);
-  --surface-line-strong: color-mix(in srgb, var(--v5-green) 22%, transparent);
-  --v4-canvas: var(--v5-cream);
-  --v4-canvas-raised: var(--v5-canvas-raised);
-  --v4-panel: var(--v5-panel);
-  --v4-panel-raised: var(--v5-panel-raised);
-  --v4-panel-muted: var(--v5-panel-muted);
-  --v4-line: var(--surface-line);
-  --v4-line-strong: var(--surface-line-strong);
-  --v4-text: var(--surface-text);
-  --v4-text-muted: var(--surface-text-muted);
-  --v4-text-faint: var(--surface-text-faint);
-  --v4-accent: var(--v5-orange);
-  --v4-accent-strong: var(--v5-orange-deep);
-  --v4-accent-soft: color-mix(in srgb, var(--v5-orange) 16%, transparent);
-  --v4-accent-ink: #ffffff;
-  color: var(--v4-text);
-  background: var(--v5-cream);
+/* Style drawer & light panels: back to light paper even when nested in a dark surface. */
+[data-paper="sheet"] {
+  color: var(--ink-strong);
+  background: var(--paper-desk);
   -webkit-font-smoothing: auto;
   -moz-osx-font-smoothing: auto;
 }
 
-/* Theater dim：关灯舞台字色/边线角色；阴影走 elevation-*-dim */
-[data-surface="theater"],
+/* Lights-off stage: near-black warm grey (set on the stage while lights are off). */
+[data-paper="theater"] {
+  color: var(--ink-strong);
+}
 
 .lights-off-exit-tip {
   /* Above dim scrim; tip is informational only (pointer-events none in markup). */
   max-width: min(22rem, calc(100vw - 2rem));
   text-align: center;
-}
-
-.lights-off-stage {
-  --surface-text: color-mix(in srgb, var(--v5-cream) 92%, transparent);
-  --surface-text-muted: color-mix(in srgb, var(--v5-cream) 72%, transparent);
-  --surface-text-faint: color-mix(in srgb, var(--v5-cream) 48%, transparent);
-  --surface-line: color-mix(in srgb, var(--v5-cream) 10%, transparent);
-  --surface-line-strong: color-mix(in srgb, var(--v5-orange) 16%, transparent);
-  --v4-text: var(--surface-text);
-  --v4-text-muted: var(--surface-text-muted);
-  --v4-text-faint: var(--surface-text-faint);
-  --v4-line: var(--surface-line);
-  --v4-line-strong: var(--surface-line-strong);
 }
 
 /* Shared handoff stage: empty + queue share one field — no panel hard-cut. */
@@ -451,11 +395,6 @@ body {
     left: -1.6rem;
     width: 1rem;
   }
-
-  .ingest-halo-root::before {
-    width: 3.85rem;
-    height: 3.85rem;
-  }
 }
 
 /* 空态：本机添加落点面（文件/文件夹等权）— idle 即可见拖放井（桌面） */
@@ -477,40 +416,34 @@ body {
 
 /* Workflow gate: quietly draw the eye back to the drop well (not a flash toast). */
 .ingest-drop-zone[data-gate-hint='true'] .ingest-local-add {
-  border-color: color-mix(in srgb, var(--v5-orange) 52%, var(--v5-green) 18%);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--v5-orange) 28%, transparent),
-    var(--elevation-1-dim);
-  transition: border-color 220ms var(--v5-ease), box-shadow 220ms var(--v5-ease);
+  border-color: var(--accent);
+  transition: border-color var(--motion-base) var(--v5-ease);
 }
 
 /* Hover：虚线加深，仍低于 dragging（仅桌面拖放示意） */
 .ingest-stage.is-empty:not(.ingest-stage--tap-first):hover:not(.is-dragging) .ingest-local-add {
-  border-color: color-mix(
-    in srgb,
-    var(--v5-green) 68%,
-    color-mix(in srgb, var(--v5-orange) 26%, var(--v5-cream))
-  );
-  background: color-mix(in srgb, var(--v5-cream) 72%, #ffffff);
+  border-color: var(--rule-control);
+  background: var(--paper-raised);
 }
 
 .ingest-stage.is-empty:not(.ingest-stage--tap-first).is-dragging .ingest-local-add {
-  border-color: color-mix(in srgb, var(--v4-accent) 55%, var(--v5-green) 20%);
+  border-color: var(--accent);
   border-style: dashed;
-  background: color-mix(in srgb, var(--v4-accent-soft) 32%, transparent);
+  background: var(--accent-soft);
 }
 
 .ingest-stage.is-empty.is-accepting .ingest-local-add {
   animation: ingestAbsorb 240ms var(--v5-ease) 1;
-  border-color: color-mix(in srgb, var(--v4-accent) 80%, transparent);
+  border-color: var(--accent);
 }
 
+/* 收下文件：一次淡底闪现（不扩散光圈）。 */
 @keyframes ingestAbsorb {
   0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--v5-orange) 35%, transparent);
+    background-color: var(--accent-soft);
   }
   100% {
-    box-shadow: 0 0 0 28px color-mix(in srgb, var(--v5-orange) 0%, transparent);
+    background-color: transparent;
   }
 }
 
@@ -542,7 +475,6 @@ body {
     color-mix(in srgb, var(--v4-line-strong) 55%, transparent) 72%,
     transparent
   );
-  box-shadow: 0 0 14px color-mix(in srgb, var(--v4-accent) 28%, transparent);
   /* 树杈打开：主干先自上而下生长 */
   transform-origin: top;
   animation: treeSpineGrow 480ms var(--v5-ease) both;
@@ -573,7 +505,6 @@ body {
   border-radius: var(--radius-pill);
   transform: translateY(-50%);
   background: color-mix(in srgb, var(--v4-accent) 40%, var(--v4-line-strong));
-  box-shadow: 0 0 8px color-mix(in srgb, var(--v4-accent) 22%, transparent);
   opacity: 0.85;
   /* 叶枝随后逐条抽出（--leaf-delay 由条目错峰节奏注入） */
   transform-origin: left;
@@ -601,24 +532,6 @@ body {
 
 .ingest-halo-root {
   position: relative;
-}
-
-.ingest-halo-root::before {
-  content: "";
-  position: absolute;
-  left: -0.35rem;
-  top: 50%;
-  z-index: -1;
-  width: 3.25rem;
-  height: 3.25rem;
-  transform: translateY(-50%);
-  border-radius: var(--radius-pill);
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--v4-accent) 28%, transparent),
-    transparent 70%
-  );
-  pointer-events: none;
 }
 
 /*
@@ -652,9 +565,8 @@ body {
 /* Gate: briefly pulse the add-files CTAs (toast carries the copy). */
 .ingest-local-add__entry[data-gate-cta='true'],
 [data-ingest-add-cta][data-gate-cta='true'] {
-  outline: 2px solid color-mix(in srgb, var(--v5-orange) 70%, transparent);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--v5-orange) 22%, transparent);
 }
 
 /* PWA update notice: small, corner-anchored, never blocks the workspace. */
@@ -682,8 +594,7 @@ body {
   z-index: calc(var(--z-nav) - 1);
   height: var(--info-bar-h);
   border-bottom: 1px solid var(--v4-line);
-  background: color-mix(in srgb, var(--v4-canvas-raised) 94%, transparent);
-  backdrop-filter: blur(10px);
+  background: var(--v4-canvas-raised);
 }
 
 .workflow-info-bar__inner {
@@ -755,14 +666,14 @@ body {
   font-weight: 600;
   line-height: 1.15;
   letter-spacing: 0.005em;
-  color: color-mix(in srgb, var(--v5-cream) 96%, transparent);
+  color: var(--ink-strong);
 }
 
 .bottom-status-deck__meta {
   font-size: var(--type-caption);
   line-height: 1.15;
   font-weight: 500;
-  color: color-mix(in srgb, var(--v5-cream) 78%, transparent);
+  color: var(--ink-muted);
 }
 
 .bottom-status-deck__steps {
@@ -792,8 +703,8 @@ body {
 }
 
 .bottom-status-deck__step.is-done .bottom-status-deck__dot {
-  background: var(--v5-orange);
-  border-color: var(--v5-orange);
+  background: var(--accent-text);
+  border-color: var(--accent-text);
 }
 
 .bottom-status-deck__step.is-active {
@@ -804,9 +715,8 @@ body {
 .bottom-status-deck__step.is-active .bottom-status-deck__dot {
   width: 0.55rem;
   height: 0.55rem;
-  background: var(--v5-orange);
-  border-color: var(--v5-orange);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--v5-orange) 35%, transparent);
+  background: var(--accent-text);
+  border-color: var(--accent-text);
 }
 
 /* 当前步外圈甜甜圈：更大、更清晰，替代原先几乎看不见的淡环 */
@@ -815,9 +725,9 @@ body {
   position: absolute;
   inset: -5px;
   border-radius: var(--radius-pill);
-  border: 2px solid color-mix(in srgb, var(--v5-orange) 28%, transparent);
-  border-top-color: var(--v5-orange);
-  border-right-color: color-mix(in srgb, var(--v5-orange) 70%, transparent);
+  border: 2px solid var(--rule-strong);
+  border-top-color: var(--accent-text);
+  border-right-color: var(--accent-text);
   animation: bottomStatusSpin 0.9s linear infinite;
 }
 
@@ -827,7 +737,7 @@ body {
 
 .bottom-status-deck__subtitle {
   margin: 0;
-  color: color-mix(in srgb, var(--v5-cream) 78%, transparent);
+  color: var(--ink-muted);
 }
 
 @keyframes bottomStatusSpin {
@@ -839,7 +749,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .bottom-status-deck__step.is-active .bottom-status-deck__dot::after {
     animation: none;
-    border-color: color-mix(in srgb, var(--v5-orange) 55%, transparent);
+    border-color: var(--accent-text);
   }
 }
 
@@ -851,9 +761,6 @@ body {
   border: 3.5px solid color-mix(in srgb, var(--v4-line-strong) 55%, transparent);
   border-top-color: var(--v4-accent);
   border-right-color: color-mix(in srgb, var(--v4-accent) 55%, transparent);
-  box-shadow:
-    0 0 0 8px color-mix(in srgb, var(--v4-accent-soft) 65%, transparent),
-    0 8px 28px color-mix(in srgb, var(--v4-accent) 18%, transparent);
   animation: ingestLocalSpin 0.85s linear infinite;
 }
 
@@ -896,14 +803,10 @@ body {
   /* 略增内边距，空态读成 drop well 而非贴在奶油上的字+钮 */
   padding: clamp(var(--space-7), 10vh, 5.75rem) clamp(var(--space-5), 4vw, var(--space-7));
   text-align: center;
-  border-radius: var(--radius-lg);
-  /* Idle：墨绿/柑橘实色混入奶油的虚线（避免半透明贴奶油看不见） */
-  border: 2px dashed color-mix(
-    in srgb,
-    var(--v5-green) 55%,
-    color-mix(in srgb, var(--v5-orange) 20%, var(--v5-cream))
-  );
-  background: color-mix(in srgb, var(--v5-cream) 88%, #ffffff);
+  border-radius: var(--pt-radius-lg);
+  /* Idle：控件边界色的实色虚线（≥3:1，贴纸面也看得见） */
+  border: 2px dashed var(--rule-control);
+  background: var(--paper-sheet);
   box-shadow: none;
   transition:
     border-color var(--v4-dur) var(--v4-ease),
@@ -923,7 +826,7 @@ body {
   align-items: center;
   justify-content: center;
   margin-bottom: var(--space-3);
-  color: color-mix(in srgb, var(--v5-green) 62%, var(--v5-orange) 38%);
+  color: var(--ink-muted);
 }
 
 .ingest-local-add__cue-icon {
@@ -1008,14 +911,14 @@ body {
   min-height: 2.5rem;
   padding: 0.45rem 1rem;
   font-size: 0.875rem;
-  border-color: color-mix(in srgb, var(--v4-line-strong) 85%, transparent);
-  background: color-mix(in srgb, var(--v5-cream) 55%, transparent);
+  border-color: var(--rule-control);
+  background: var(--paper-raised);
   box-shadow: none;
 }
 
 .ingest-local-add__entry.ui-action:hover {
-  border-color: color-mix(in srgb, var(--v4-accent) 50%, var(--v4-line-strong));
-  background: color-mix(in srgb, var(--v4-accent-soft) 40%, transparent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
   box-shadow: none;
 }
 
@@ -1056,13 +959,13 @@ body {
 
   .ingest-stage.is-empty .ingest-local-add {
     border: none;
-    background: color-mix(in srgb, var(--v5-cream) 88%, #ffffff);
+    background: var(--paper-sheet);
   }
 
   .ingest-stage.is-empty:hover:not(.is-dragging) .ingest-local-add,
   .ingest-stage.is-empty.is-dragging .ingest-local-add {
     border: none;
-    background: color-mix(in srgb, var(--v5-cream) 88%, #ffffff);
+    background: var(--paper-sheet);
   }
 
   .ingest-local-add__cue {
@@ -1077,13 +980,13 @@ body {
 
 .ingest-stage--tap-first.is-empty .ingest-local-add {
   border: none;
-  background: color-mix(in srgb, var(--v5-cream) 88%, #ffffff);
+  background: var(--paper-sheet);
 }
 
 .ingest-stage--tap-first.is-empty:hover .ingest-local-add,
 .ingest-stage--tap-first.is-empty.is-dragging .ingest-local-add {
   border: none;
-  background: color-mix(in srgb, var(--v5-cream) 88%, #ffffff);
+  background: var(--paper-sheet);
 }
 
 .ingest-stage--tap-first .ingest-local-add__cue {
@@ -1131,7 +1034,7 @@ body {
   color: var(--v4-text-faint);
 }
 
-/* Genre / category badges — static forest chips (not interactive) */
+/* Genre / category badges — static ink chips (not interactive) */
 .ui-tag-row {
   display: flex;
   flex-wrap: wrap;
@@ -1143,15 +1046,15 @@ body {
   display: inline-flex;
   align-items: center;
   max-width: 100%;
-  border: 1px solid color-mix(in srgb, var(--v5-green, #1a3d37) 18%, transparent);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--v5-green, #1a3d37) 9%, transparent);
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--pt-radius-sm);
+  background: var(--paper-sunken);
   padding: 0.15rem 0.5rem;
   font-size: 0.6875rem;
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: 0.02em;
-  color: var(--v5-green, #1a3d37);
+  color: var(--ink-body);
   white-space: nowrap;
 }
 
@@ -1221,7 +1124,7 @@ body {
   align-items: stretch;
   gap: 0.25rem;
   padding: 0.2rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--pt-radius-lg);
   border: 1px solid var(--v4-line);
   background: var(--v4-panel-muted);
 }
@@ -1239,7 +1142,7 @@ body {
   justify-content: center;
   gap: 0.375rem;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border-radius: var(--pt-radius-md);
   background: transparent;
   padding: 0.35rem 0.75rem;
   font-size: 0.75rem;
@@ -1259,14 +1162,13 @@ body {
 
 .ui-choice--on,
 .ui-choice[aria-pressed="true"] {
-  border-color: color-mix(in srgb, var(--v4-accent) 28%, transparent);
+  border-color: var(--accent-line);
   background: var(--v4-panel-raised);
-  color: var(--v4-accent-strong);
-  box-shadow: 0 1px 0 color-mix(in srgb, #fff 55%, transparent);
+  color: var(--accent-text);
 }
 
 .ui-choice:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--v4-accent) 55%, transparent);
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 1px;
 }
 
@@ -1279,7 +1181,7 @@ body {
   justify-content: center;
   gap: 0.375rem;
   border: 1px solid color-mix(in srgb, var(--v4-accent) 42%, transparent);
-  border-radius: var(--radius-md);
+  border-radius: var(--pt-radius-md);
   background: var(--v4-accent-soft);
   padding: 0.4rem 0.85rem;
   font-size: 0.8125rem;
@@ -1307,7 +1209,7 @@ body {
 }
 
 .ui-action:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--v4-accent) 55%, transparent);
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -1387,14 +1289,14 @@ body {
 
 /*
  * Hero — 空态等大 CTA 变体（若再用）。
- * 高 48 · radius-xl ≈ 20px；主钮允许唯一 CTA glow。
+ * 高 48 · 圆角与普通按钮同为 6px；不发光（DESIGN.md §5）。
  * 当前导入空态双入口用 .ui-action--secondary 横排，不用 hero。
  */
 .ui-action--hero {
   min-height: 3rem;
   min-width: 8.5rem;
   padding: 0.65rem 1.75rem;
-  border-radius: var(--radius-xl);
+  border-radius: var(--pt-radius-md);
   font-size: 0.875rem;
   font-weight: 700;
 }
@@ -1403,15 +1305,12 @@ body {
   border-color: transparent;
   background: var(--v4-accent);
   color: var(--v4-accent-ink);
-  box-shadow: var(--glow-cta);
 }
 
 .ui-action--hero:not(.ui-action--secondary):hover {
   border-color: transparent;
-  background: var(--v4-accent);
+  background: var(--accent-hover);
   color: var(--v4-accent-ink);
-  filter: brightness(1.05);
-  transform: translateY(-0.125rem);
 }
 
 .ui-action--hero.ui-action--secondary {
@@ -1428,7 +1327,7 @@ body {
 .ui-modal {
   width: 100%;
   max-width: 24rem;
-  border-radius: var(--radius-md);
+  border-radius: var(--pt-radius-xl);
   border: 1px solid var(--v4-line-strong);
   background: var(--v4-panel-raised);
   padding: var(--ds-pad-card);
@@ -1443,14 +1342,14 @@ body {
 .ui-menu {
   min-width: 12rem;
   overflow: hidden;
-  border-radius: var(--radius-md);
+  border-radius: var(--pt-radius-lg);
   border: 1px solid var(--v4-line-strong);
   background: var(--v4-panel-raised);
   box-shadow: var(--elevation-2);
 }
 
 .ui-toast {
-  border-radius: var(--radius-lg);
+  border-radius: var(--pt-radius-lg);
   border: 1px solid var(--v4-line-strong);
   background: var(--v4-panel-raised);
   box-shadow: var(--elevation-2);
@@ -1529,7 +1428,7 @@ body {
 }
 
 .v4-focus-ring:focus-visible {
-  outline: 2px solid var(--v4-accent);
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 3px;
 }
 
@@ -1591,7 +1490,7 @@ body {
   .ingest-shell {
     padding-top: var(--ds-gap-section);
     padding-bottom: var(--ds-gap-section);
-    /* Extra bottom slack so formats footnote clears the forest tray */
+    /* Extra bottom slack so formats footnote clears the green tray */
     scroll-padding-bottom: calc(var(--tray-h) + 0.5rem);
   }
 
@@ -1662,7 +1561,7 @@ body {
 /* Previously referenced but undefined — Firefox thin scrollbars (WebKit handled globally). */
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--v5-green) 24%, transparent) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 /* Unified press feedback for every interactive control (framer whileTap wins if present). */
@@ -1684,7 +1583,8 @@ button {
   border: 0;
   padding: 0;
   cursor: pointer;
-  background: rgba(7, 11, 10, 0.9);
+  /* 暗幕挂在 portal 上、不在 theater 作用域内，所以直接用关灯纸面的近黑暖灰。 */
+  background: color-mix(in srgb, #0d0c0b 90%, transparent);
 }
 
 .lights-off-stage {
@@ -1693,49 +1593,41 @@ button {
 }
 
 /* ── 关灯二期：舞台自身的灯光编排 ─────────────────────────────
-   舞台被提到暗幕之上后，simulator 周围的奶油底会形成一块刺眼亮区。
-   关灯时让舞台底色跟着暗幕一起沉入近黑，电视获得一圈暖色环境光
-  （类似电视背后的 bias lighting），控制条息屏、悬停或聚焦时唤醒。
-   样式侧栏可与关灯共存：夜光 LCD 毛玻璃，不强制开灯。 */
+   关灯时舞台挂 data-paper="theater"：底色、线、字跟着 paper-tokens 的近黑暖灰走。
+   不再有电视背后的彩色环境光，也不用毛玻璃（DESIGN.md §5）。
+   放映厅里的条、钮、停靠面板都读 --paper-* / --rule-*，在 chrome 与 theater 两个作用域下自动换值。 */
 .screen-sim-root {
   transition: background-color 680ms var(--v5-ease);
 }
 
-.lights-off-stage .screen-sim-root {
-  background-color: #0a0e0d;
+[data-paper="theater"] .screen-sim-root {
+  background-color: var(--paper-desk);
 }
 
 .screen-sim-frame {
-  transition: box-shadow 680ms var(--v5-ease), border-color 680ms var(--v5-ease);
+  transition: border-color 680ms var(--v5-ease);
 }
 
-.lights-off-stage .screen-sim-frame {
-  border-color: color-mix(in srgb, var(--v5-orange) 14%, transparent);
-  box-shadow:
-    0 0 90px 14px color-mix(in srgb, var(--v5-orange) 7%, transparent),
-    0 0 32px 4px color-mix(in srgb, var(--v5-orange) 5%, transparent),
-    var(--elevation-3-dim);
+[data-paper="theater"] .screen-sim-frame {
+  border-color: var(--rule-hair);
+  box-shadow: none;
 }
-
-/* 播放条毛玻璃；图标钮仅半透明底，避免嵌套 backdrop 发糊 */
 
 .theater-system-chrome {
   max-width: 100%;
 }
 
 .theater-chrome-bar {
-  background: color-mix(in srgb, #142e29 72%, transparent);
-  backdrop-filter: blur(16px) saturate(1.15);
-  -webkit-backdrop-filter: blur(16px) saturate(1.15);
-  box-shadow: var(--elevation-2-dim);
+  background: var(--paper-raised);
+  box-shadow: none;
 }
 
 .theater-chrome-chip {
-  background: color-mix(in srgb, #1a3d37 55%, transparent);
+  background: var(--paper-sheet);
 }
 
 .theater-chrome-chip:hover {
-  background: color-mix(in srgb, #1a3d37 78%, transparent);
+  background: var(--paper-sunken);
 }
 
 .theater-stage-chrome {
@@ -1743,30 +1635,22 @@ button {
 }
 
 /* 关灯后 JS 已隐藏按钮，进度条保持可拖；不再息屏透明度 */
-.lights-off-stage .theater-stage-chrome {
+[data-paper="theater"] .theater-stage-chrome {
   opacity: 1;
 }
 
 .theater-chrome-bar--lights-off {
-  background: color-mix(in srgb, #0a0e0d 70%, transparent);
-  border-color: color-mix(in srgb, var(--v5-cream) 10%, transparent);
+  background: var(--paper-sheet);
+  border-color: var(--rule-hair);
   box-shadow: none;
   padding-inline: 0.65rem;
 }
 
-.lights-off-stage .theater-chrome-bar,
-.lights-off-stage .theater-chrome-chip {
-  background: color-mix(in srgb, #0a0e0d 78%, transparent);
-  border-color: color-mix(in srgb, var(--v5-orange) 16%, transparent);
-}
-
-/* 放映厅样式抽屉：深绿毛玻璃；关灯时更深、更透，夜光 LCD 感 */
+/* 放映厅停靠面板：实色纸面，关灯时随 data-paper="theater" 变成近黑。 */
 .theater-style-shell {
-  border: 1px solid color-mix(in srgb, var(--v5-cream) 14%, transparent);
-  background: color-mix(in srgb, #142e29 78%, transparent);
-  backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
-  box-shadow: var(--elevation-3-dim);
+  border: 1px solid var(--rule-hair);
+  background: var(--paper-sheet);
+  box-shadow: none;
 }
 
 .theater-style-drawer {
@@ -1777,15 +1661,7 @@ button {
 .theater-style-drawer .glass-slider-input,
 .theater-style-drawer .glass-slider-input::-webkit-slider-runnable-track,
 .theater-style-drawer .glass-slider-input::-moz-range-track {
-  background: color-mix(in srgb, var(--v5-cream) 16%, transparent);
-}
-
-.lights-off-stage .theater-style-shell {
-  border-color: color-mix(in srgb, var(--v5-orange) 20%, transparent);
-  background: color-mix(in srgb, #0a0e0d 82%, transparent);
-  box-shadow:
-    0 0 36px 2px color-mix(in srgb, var(--v5-orange) 6%, transparent),
-    var(--elevation-3-dim);
+  background: var(--rule-strong);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1828,28 +1704,18 @@ button {
 
 .action-required-button {
   background: var(--v4-accent);
-  border: 1px solid color-mix(in srgb, var(--v4-accent-strong) 40%, transparent);
+  border: 1px solid var(--accent-press);
   color: var(--v4-accent-ink);
-  box-shadow: 0 8px 20px rgba(224, 120, 69, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .action-required-button:hover {
-  background: var(--v4-accent-strong);
-  box-shadow: 0 10px 24px rgba(224, 120, 69, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  background: var(--accent-hover);
+  color: var(--v4-accent-ink);
 }
 
 .action-required-button:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--v4-accent) 80%, transparent);
+  outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 3px;
-}
-
-@keyframes actionBeacon {
-  0%, 100% {
-    box-shadow: 0 0 0 5px var(--v4-accent-soft), 0 0 15px color-mix(in srgb, var(--v5-orange) 14%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 0 8px color-mix(in srgb, var(--v4-accent-soft) 40%, transparent), 0 0 22px color-mix(in srgb, var(--v5-orange) 22%, transparent);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1865,7 +1731,7 @@ button {
   }
 }
 
-/* Dial Gauge Form Style — cream surface + global amber accent */
+/* Dial Gauge Form Style — paper surface + wine accent */
 .v9-dial-gauge {
   display: flex;
   align-items: center;
@@ -1933,7 +1799,6 @@ button {
   border-radius: 50%;
   background: var(--v4-accent-strong);
   border: 2px solid var(--v4-panel-raised);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--v4-accent) 35%, transparent);
   margin-top: -5px;
   transition: transform 0.15s;
 }
@@ -1960,7 +1825,6 @@ button {
   border-radius: 50%;
   background: var(--v4-accent-strong);
   border: 2px solid var(--v4-panel-raised);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--v4-accent) 35%, transparent);
 }
 
 /* Hide Spinners in input number */
@@ -1970,13 +1834,13 @@ button {
   margin: 0;
 }
 
-/* Range input — Ridgeline cream panels */
+/* Range input — paper panels */
 .glass-slider-input {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
   height: 5px;
-  background: color-mix(in srgb, var(--v5-green) 14%, transparent);
+  background: var(--rule-strong);
   border-radius: var(--radius-xs);
   outline: none;
   cursor: pointer;
@@ -1985,7 +1849,7 @@ button {
 .glass-slider-input::-webkit-slider-runnable-track {
   width: 100%;
   height: 5px;
-  background: color-mix(in srgb, var(--v5-green) 14%, transparent);
+  background: var(--rule-strong);
   border-radius: var(--radius-xs);
 }
 
@@ -1995,9 +1859,8 @@ button {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #ffffff;
-  border: 2.5px solid var(--v5-orange);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--v5-orange) 28%, transparent);
+  background: var(--paper-raised);
+  border: 2.5px solid var(--accent);
   margin-top: -5.5px;
   transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
@@ -2008,12 +1871,12 @@ button {
 
 .glass-slider-input::-webkit-slider-thumb:active {
   transform: scale(0.95);
-  background: var(--v5-cream);
+  background: var(--paper-sunken);
 }
 
 .glass-slider-input::-moz-range-track {
   height: 5px;
-  background: color-mix(in srgb, var(--v5-green) 14%, transparent);
+  background: var(--rule-strong);
   border-radius: var(--radius-xs);
 }
 
@@ -2021,18 +1884,18 @@ button {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #ffffff;
-  border: 2.5px solid var(--v5-orange);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--v5-orange) 28%, transparent);
+  background: var(--paper-raised);
+  border: 2.5px solid var(--accent);
 }
 
 .glass-lens-active {
-  background: color-mix(in srgb, var(--v5-orange) 8%, transparent) !important;
-  box-shadow: inset 4px 0 0 var(--v5-orange);
-  transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--accent-soft) !important;
+  outline: 1px solid var(--accent-line);
+  outline-offset: -1px;
+  transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Custom Slim Scrollbar — Ridgeline cream canvas */
+/* Custom Slim Scrollbar — paper canvas */
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -2041,12 +1904,12 @@ button {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--v5-green) 18%, transparent);
+  background: var(--scrollbar-thumb);
   border-radius: var(--radius-pill);
   transition: all 0.3s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--v5-orange) 55%, transparent) !important;
+  background: var(--rule-control) !important;
 }
 
 /* ==========================================================================
