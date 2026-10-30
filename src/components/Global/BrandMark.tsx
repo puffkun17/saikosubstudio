@@ -14,13 +14,13 @@ export const BrandMark: React.FC<{ className?: string; title?: string }> = ({
     className={className}
   >
     {title ? <title>{title}</title> : null}
-    {/* Warm forest container — 家庭观影 / 阅片环境 */}
-    <rect width="512" height="512" rx="88" fill="#1a3d37" />
+    {/* 墨色底 — 纸面账本：墨底 + 纸色字幕轨 + 酒红强调 */}
+    <rect width="512" height="512" rx="88" fill="#1c1a17" />
     {/* Primary subtitle track (简中优先) */}
-    <rect x="96" y="148" width="320" height="50" rx="8" fill="#f5f1ea" />
+    <rect x="96" y="148" width="320" height="50" rx="8" fill="#faf7f0" />
     {/* Secondary subtitle track (English) */}
-    <rect x="96" y="212" width="248" height="38" rx="6" fill="#f5f1ea" />
+    <rect x="96" y="212" width="248" height="38" rx="6" fill="#faf7f0" />
     {/* Accent / studio foundation bar */}
-    <rect x="152" y="278" width="208" height="20" rx="10" fill="#ef8d5f" />
+    <rect x="152" y="278" width="208" height="20" rx="10" fill="#d06276" />
   </svg>
 );

@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img">
   <title>SaikoSubStudio</title>
-  <rect width="512" height="512" rx="88" fill="#1a3d37"/>
-  <rect x="96" y="148" width="320" height="50" rx="8" fill="#f5f1ea"/>
-  <rect x="96" y="212" width="248" height="38" rx="6" fill="#f5f1ea"/>
-  <rect x="152" y="278" width="208" height="20" rx="10" fill="#ef8d5f"/>
+  <rect width="512" height="512" rx="88" fill="#1c1a17"/>
+  <rect x="96" y="148" width="320" height="50" rx="8" fill="#faf7f0"/>
+  <rect x="96" y="212" width="248" height="38" rx="6" fill="#faf7f0"/>
+  <rect x="152" y="278" width="208" height="20" rx="10" fill="#d06276"/>
 </svg>

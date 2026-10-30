@@ -1,6 +1,6 @@
 # SaikoSubStudio 设计基础 · Paper Ledger
 
-> 状态：已接线（`design/paper-tokens`）。本文件取代旧的 Ridgeline（奶油/森林绿/橘）`DESIGN.md`。
+> 状态：已接线（`design/paper-tokens`；`design/no-green` 去掉墨绿托盘）。本文件取代旧的 Ridgeline（奶油/森林绿/橘）`DESIGN.md`。
 > 旧的 `DESIGN.md`、`DESIGN_AUDIT.md`、`DESIGN_BACKLOG.md`、`DESIGN_PLAN.md` 已归档到 `docs/design-archive/`，只作历史参考。
 >
 > Token 源文件：`src/styles/paper-tokens.css` · 旧变量映射：`docs/design/token-mapping.md` · 对比度脚本：`docs/design/contrast.py` · 预览：`docs/design/preview.html`
@@ -17,7 +17,7 @@ SaikoSubStudio 是一个字幕工作台：导入（Ingest）→ 校对与编辑�
 ## 2. 原则
 
 1. **内容是主角。** 字幕文字永远是屏幕上对比度最高的东西；外框、图标、装饰都要退后。
-2. **颜色只表达意义。** 近乎单色的纸与墨；酒红只用于“当前/主要操作/选中”；状态色只用于状态。
+2. **颜色只表达意义。** 近乎单色的纸与墨；酒红只用于“当前/主要操作/选中”；状态色只用于状态。**不使用绿色作为品牌色或大面积底色**（托盘、logo、theme-color、进度、评分都不用绿）。
 3. **用线和纸色分层，不用阴影。** 页面内的层次靠纸色深浅 + 1px 发丝线；只有真正浮在上面的东西（菜单、弹层、对话框）才有阴影。
 4. **两档墨。** 深+重（`--ink-strong` + 500/600）给要读的内容；浅+轻（`--ink-muted` + 400）给元数据。中间档尽量少用。
 5. **账本结构。** 行、列、时间码对齐；表头上下一道粗线，行间发丝线；数字等宽对齐。
@@ -26,7 +26,7 @@ SaikoSubStudio 是一个字幕工作台：导入（Ingest）→ 校对与编辑�
 
 ## 3. 颜色
 
-全部数值来自 `paper-tokens.css`，对比度由 `python3 docs/design/contrast.py` 计算（103 组，全部通过；改值必须重跑）。正文要求 ≥4.5:1，控件边界与焦点要求 ≥3:1（WCAG 2.x AA）。
+全部数值来自 `paper-tokens.css`，对比度由 `python3 docs/design/contrast.py` 计算（108 组，全部通过；改值必须重跑）。正文要求 ≥4.5:1，控件边界与焦点要求 ≥3:1（WCAG 2.x AA）。
 
 ### 3.1 纸（表面）
 
@@ -75,7 +75,7 @@ SaikoSubStudio 是一个字幕工作台：导入（Ingest）→ 校对与编辑�
 |---|---|---|---|
 | `--state-danger` | `#B0361C` | 5.79 / 4.85 / 4.99 | 朱红偏橙，和酒红一眼可分；实心按钮字 5.88 |
 | `--state-warning` | `#8A5A0B` | 5.53 / 4.64 / 4.82 | 深琥珀（旧 `#C4893A` 做字不达标） |
-| `--state-success` | `#2D6640` | 6.36 / 5.33 / 5.50 | 完成、已校对 |
+| `--state-success` | `#2D6640` | 6.36 / 5.33 / 5.50 | 完成、已校对。**全站唯一的绿**，只用于小面积状态指示（勾、小圆点、提示条细边），不做底色；进度和评分不用它 |
 | `--state-info` | `#2E5A84` | 6.74 / 5.65 / 5.81 | 提示、处理中 |
 
 状态永远是“图标/文字 + 颜色”双通道，不只靠颜色。
@@ -86,9 +86,10 @@ SaikoSubStudio 是一个字幕工作台：导入（Ingest）→ 校对与编辑�
 
 ### 3.7 局部深色表面（没有系统暗色模式）
 
-App 不跟随 `prefers-color-scheme`。默认就是浅色纸面（`:root` 与 `[data-paper="sheet"]` 相同；sheet 用来在深色局部里重新放一块浅纸）。深色只出现在两个局部，用属性切换，组件不需要改写：
+App 不跟随 `prefers-color-scheme`。默认就是浅色纸面（`:root` 与 `[data-paper="sheet"]` 相同；sheet 用来在深色局部里重新放一块浅纸）。深色只出现在关灯放映这一个局部，用属性切换，组件不需要改写。
 
-- `[data-paper="chrome"]` 墨绿托盘（顶栏/步骤条）：底 `#1F3A33`，字 `#F2ECE1`（10.44）、muted `#C4CCC2`（7.46）、强调字 `#F0B3BE`（6.95）、控件边 `#7F998F`（3.37）、焦点 `#A9C8EA`（7.09）。**当前步骤 = 奶油纸片 `#FAF7F0` + 墨字（16.23）**，不再用橘色填充。绿色只在这里出现。
+**纸面托盘（顶栏/底栏/步骤条）**：不再是单独的深色作用域（旧 `[data-paper="chrome"]` 墨绿托盘已删除），直接用默认浅色 token。底 `--paper-sunken #EAE3D6`，与页面之间一条 `--rule-hair` 发丝线；字 `--ink-strong`（13.61）/ `--ink-body`（9.52）/ `--ink-muted`（5.50）；托盘按钮 `--paper-raised` 底 + `--tray-line-control`（= `--ink-placeholder`，sunken 上 4.11）边，图标酒红。**当前步骤 = `--paper-raised` 纸片 + 墨字（17.08）+ 酒红下划线**；其余步骤统一中性（sunken 底 + 发丝分隔线），不按“已走过”填充。
+
 - `[data-paper="theater"]` 关灯放映：底 `#121110`/`#1A1917`/`#23211E`，字 `#EEE8DC`（15.46/14.40/13.16）、muted `#A39B8E`（≥5.84）、强调提亮为 `#D06276`（按钮，深字 5.17）与 `#E59AAA`（文字 ≥7.29）；状态色各自提亮，均 ≥5.8。
 
 ## 4. 字体
@@ -147,7 +148,11 @@ App 不跟随 `prefers-color-scheme`。默认就是浅色纸面（`:root` 与 `[
 
 **面板**：`--paper-sheet` 底、1px `--rule-strong` 边、圆角 8、无阴影；标题 18/600 + 下方发丝线。不在面板里再套卡片，用分隔线分组。
 
-**墨绿托盘**：容器加 `data-paper="chrome"`；步骤之间用发丝线；当前步骤奶油纸片。
+**纸面托盘**：不加 `data-paper`；`--paper-sunken` 底 + 发丝线分隔页面；步骤之间用发丝线；当前步骤 raised 纸片 + 墨字 + 酒红下划线。
+
+**进度与评分**：进度条、评分环用墨色（高分）/酒红（中段），低分才用 `--state-danger`；不用绿色。
+
+**品牌标与浏览器色**：logo 为墨底 `#1C1A17` + 纸色字幕轨 + 酒红条；`theme-color` / manifest `theme_color` = 托盘色 `#EAE3D6`。
 
 **焦点环**：`outline: var(--focus-ring-width) solid var(--focus-ring); outline-offset: var(--focus-ring-offset);` 仅 `:focus-visible`。
 

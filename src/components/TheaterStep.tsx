@@ -264,7 +264,7 @@ export const TheaterStep: React.FC = () => {
   }
 
   return (
-    <div data-paper="chrome" className="relative flex h-full w-full flex-1 flex-col overflow-hidden">
+    <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden">
       
       {/* 顶部导航栏 */}
       <div className="relative z-[var(--z-raised)] flex flex-col gap-2 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-3 py-2 md:px-6">
@@ -365,7 +365,7 @@ export const TheaterStep: React.FC = () => {
 
         {/* 停靠面板：文档流内的兄弟节点（不是浮层），预览随之缩小、保持比例、不被遮挡。 */}
         {dock && (
-          <aside id="theater-dock" data-paper={isLightsOff ? 'theater' : 'chrome'} className="theater-style-shell ds-dock" aria-label={DOCK_TITLES[dock]}>
+          <aside id="theater-dock" data-paper={isLightsOff ? 'theater' : undefined} className="theater-style-shell ds-dock" aria-label={DOCK_TITLES[dock]}>
             <header className="ds-dock__head">
               <h3 className="ds-head">{DOCK_TITLES[dock]}</h3>
               <button type="button" className="ui-action ui-action--secondary ui-action--icon" aria-label="关闭面板" onClick={() => { setDock(null); setIsSettingsOpen(false); }}>

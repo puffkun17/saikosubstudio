@@ -312,7 +312,7 @@ const LANG_VISUAL: Record<string, LangVisual> = {
   unknown: { label: '待识别', face: 'var(--lang-unknown-face)', ink: 'var(--lang-unknown-ink)', mark: '?' },
 };
 
-/** 表面自适应的芯片配色：随 data-paper（sheet/chrome/theater）自动取得可读对比。 */
+/** 表面自适应的芯片配色：随 data-paper（sheet/theater）自动取得可读对比。 */
 const chipSurfaceStyle = (face: string): React.CSSProperties => ({
   borderColor: `color-mix(in srgb, ${face} 48%, var(--v4-line-strong))`,
   background: `color-mix(in srgb, ${face} 12%, transparent)`,
