@@ -57,7 +57,12 @@ const toMatchOutcome = (outcome: TmdbSearchOutcome): MatchOutcome => {
       return { kind: 'rate_limited', retryAfterMs: outcome.retryAfterMs };
     case 'failed':
     default:
-      return { kind: 'failed', message: outcome.kind === 'failed' ? outcome.message : undefined };
+      if (outcome.kind !== 'failed') return { kind: 'failed' };
+      return {
+        kind: 'failed',
+        message: outcome.message,
+        retryable: typeof outcome.status === 'number' && outcome.status >= 500,
+      };
   }
 };
 

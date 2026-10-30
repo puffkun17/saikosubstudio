@@ -10,6 +10,7 @@ import {
   mergeResults,
   prepareCleanQuery,
   isTmdbRateLimitError,
+  TmdbRequestError,
   runSearch,
   scriptPartsFromQuery,
   uniqueQueries,
@@ -460,10 +461,12 @@ export const createMediaTmdbSlice: StateCreator<StudioState, [], [], MediaTmdbSl
           actionLabel: '重新搜索',
         });
       }
-      if (!silent) get().addLog(`影片信息匹配失败: ${message}`, rateLimited ? 'info' : 'error');
+      // Ceremony mode: the 匹配影片 view shows the failure itself (and 5xx is retried silently),
+      // so no error banner / toast stacks up behind 「重试 / 手动搜索」.
+      if (!silent && !options?.ceremony) get().addLog(`影片信息匹配失败: ${message}`, rateLimited ? 'info' : 'error');
       return rateLimited
         ? { kind: 'rate_limited', retryAfterMs: e.retryAfterMs }
-        : { kind: 'failed', message };
+        : { kind: 'failed', message, status: e instanceof TmdbRequestError ? e.status : undefined };
     } finally {
       // Clear spinner if we still own the search slot, even after a task switch (S8).
       // Result application still uses isCurrentRequest() (request id + selected task).

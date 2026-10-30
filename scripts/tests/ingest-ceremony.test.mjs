@@ -11,6 +11,8 @@ const {
   createIngestCeremony,
   CEREMONY_MIN_MS,
   TMDB_PATIENCE_MS,
+  SERVER_ERROR_SILENT_RETRIES,
+  SERVER_ERROR_RETRY_DELAY_MS,
 } = loadCore()('core/ingestCeremony');
 
 function createFakeClock() {
@@ -214,4 +216,94 @@ test('late answer from a superseded attempt is ignored', async () => {
   assert.equal(seen.releasedAt, 9000);
   assert.equal(seen.reason, 'arrived');
   assert.equal(ceremony.getSnapshot().failureMessage, null);
+});
+
+/** Job that answers each attempt from a script on the fake clock. */
+const scripted = (clock, steps) => {
+  let i = 0;
+  const job = () => {
+    const [ms, outcome] = steps[Math.min(i, steps.length - 1)];
+    i += 1;
+    return new Promise((resolve) => clock.setTimeout(() => resolve(outcome), ms));
+  };
+  job.calls = () => i;
+  return job;
+};
+const SERVER_DOWN = { kind: 'failed', message: '503', retryable: true };
+
+test('5xx → one silent retry → success: no choice shown', async () => {
+  assert.equal(SERVER_ERROR_SILENT_RETRIES, 1);
+  const clock = createFakeClock();
+  const ceremony = createIngestCeremony({ clock });
+  const seen = watch(ceremony);
+  const job = scripted(clock, [[500, SERVER_DOWN], [600, { kind: 'arrived' }]]);
+  ceremony.runMatch(job);
+  await clock.advanceTo(500);
+  assert.equal(ceremony.getSnapshot().needsChoice, false, '5xx is silent the first time');
+  assert.equal(ceremony.getSnapshot().match, 'pending', 'still 匹配中 while the silent retry waits');
+  await clock.advanceTo(500 + SERVER_ERROR_RETRY_DELAY_MS);
+  assert.equal(job.calls(), 2);
+  assert.equal(ceremony.getSnapshot().match, 'pending');
+  await clock.advanceTo(2400);
+  assert.equal(seen.releasedAt, 2400);
+  assert.equal(ceremony.getSnapshot().needsChoice, false);
+});
+
+test('5xx twice → choice (failed); 8 s timer is not reset by the silent retry', async () => {
+  const clock = createFakeClock();
+  const ceremony = createIngestCeremony({ clock });
+  const seen = watch(ceremony);
+  const job = scripted(clock, [[500, SERVER_DOWN], [500, SERVER_DOWN]]);
+  ceremony.runMatch(job);
+  await clock.advanceTo(1799);
+  assert.equal(ceremony.getSnapshot().needsChoice, false);
+  await clock.advanceTo(1800); // 500 + 800 + 500
+  assert.equal(job.calls(), 2, 'only one silent retry');
+  assert.equal(ceremony.getSnapshot().needsChoice, true);
+  assert.equal(ceremony.getSnapshot().choiceReason, 'failed');
+  await clock.advanceTo(30_000);
+  assert.equal(job.calls(), 2, 'no further automatic retries');
+  assert.equal(seen.releasedAt, null, 'never auto-releases');
+});
+
+test('slow 5xx: silent retry keeps the per-request 8 s timer from runMatch', async () => {
+  const clock = createFakeClock();
+  const ceremony = createIngestCeremony({ clock });
+  const job = scripted(clock, [[6000, SERVER_DOWN], [10_000, { kind: 'arrived' }]]);
+  ceremony.runMatch(job);
+  await clock.advanceTo(TMDB_PATIENCE_MS - 1);
+  assert.equal(ceremony.getSnapshot().needsChoice, false);
+  await clock.advanceTo(TMDB_PATIENCE_MS);
+  assert.equal(ceremony.getSnapshot().needsChoice, true, 'choice at 8 s from runMatch, not from the silent retry');
+  assert.equal(ceremony.getSnapshot().choiceReason, 'slow');
+});
+
+test('user 重试 restarts the 8 s timer and the silent-retry budget', async () => {
+  const clock = createFakeClock();
+  const ceremony = createIngestCeremony({ clock });
+  const seen = watch(ceremony);
+  const job = scripted(clock, [
+    [500, SERVER_DOWN], [500, SERVER_DOWN], // round 1 → choice at 1.8 s
+    [500, SERVER_DOWN], [500, { kind: 'arrived' }], // round 2: silent retry again → success
+  ]);
+  ceremony.runMatch(job);
+  await clock.advanceTo(1800);
+  assert.equal(ceremony.getSnapshot().needsChoice, true);
+  await clock.advanceTo(2000);
+  ceremony.retry();
+  assert.equal(ceremony.getSnapshot().needsChoice, false);
+  await clock.advanceTo(2500);
+  assert.equal(ceremony.getSnapshot().needsChoice, false, 'silent budget restored by the user retry');
+  await clock.advanceTo(3800); // 2500 + 800 + 500
+  assert.equal(seen.releasedAt, 3800);
+  assert.equal(job.calls(), 4);
+});
+
+test('non-retryable failure (network / 4xx-like) still shows the choice at once', async () => {
+  const clock = createFakeClock();
+  const ceremony = createIngestCeremony({ clock });
+  ceremony.runMatch(scripted(clock, [[300, { kind: 'failed', message: 'offline' }]]));
+  await clock.advanceTo(300);
+  assert.equal(ceremony.getSnapshot().needsChoice, true);
+  assert.equal(ceremony.getSnapshot().choiceReason, 'failed');
 });

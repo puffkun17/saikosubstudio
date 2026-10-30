@@ -153,7 +153,8 @@ export type TmdbSearchOutcome =
   /** Superseded by a newer search or a task switch. */
   | { kind: 'stale' }
   | { kind: 'rate_limited'; retryAfterMs: number | null }
-  | { kind: 'failed'; message: string };
+  /** status：TmdbRequestError 的 HTTP 状态（5xx），网络错误等为 undefined。 */
+  | { kind: 'failed'; message: string; status?: number };
 
 export interface StudioState {
   workflowStep: number;
