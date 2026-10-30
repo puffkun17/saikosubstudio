@@ -4,6 +4,9 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { FileFormatIcon, LanguageMark, resolveFileFormat } from '@/components/ui/FileFormatIcon';
+import { MiddleTruncate } from '@/components/ui/MiddleTruncate';
+import { splitSharedPrefix } from '@/core/sharedNamePrefix';
+import { EASE_OUT, MOTION_S } from '@/core/motion';
 import {
   buildRenderNodes,
   formatBytes,
@@ -13,12 +16,34 @@ import {
 } from '@/components/Ingest/dragzone/preflight';
 
 /**
- * 生产线「轨单元」：单独字幕 / 包内字幕 / 文件夹内字幕共用同一视觉规格。
- * 壳（7z、文件夹）用更大的根行；轨用 lg 图标 + 语种标，桌面再加一档字号。
+ * list v2 列表行规格（B 舞台复用同一组件）：
+ * - 四列：格式图标 | 文件名（只显示区分段，中间截断保尾） | **定宽语言列**（牌左对齐、名字跟在牌后） | 移除。
+ * - 定宽语言列让一组文件的语言牌落在同一条竖线上，不再随文件名长度左右跳。
  */
+const TRACK_GRID = 'grid grid-cols-[auto_minmax(0,1fr)_4.75rem_auto] items-center gap-2.5 md:grid-cols-[auto_minmax(0,1fr)_5.5rem_auto] md:gap-3.5';
+
+/** 动效：一般 0.25 s 上限（DESIGN.md §7），列表里没有远距离移动。 */
+const LEAF_S = MOTION_S.slow;
+
+/** 一组文件名的显示名：有共同前缀就只显示尾巴，否则显示全名。 */
+export const groupDisplayNames = (names: string[]) => {
+  const split = splitSharedPrefix(names);
+  return { prefix: split?.prefix ?? null, display: split?.tails ?? names };
+};
+
+/** 组头上的共同前缀（只显示一次，中间截断 + tooltip）。 */
+export const SharedPrefixLine = ({ prefix }: { prefix: string | null }) =>
+  prefix ? (
+    <p className="mt-1 flex min-w-0 items-baseline gap-1.5 text-xs text-[var(--v4-text-muted)] md:text-sm" data-shared-prefix>
+      <span className="shrink-0">文件名前缀</span>
+      <MiddleTruncate text={prefix} keepTail={12} className="font-mono text-[12px] text-[var(--ink-body)] md:text-[13px]" />
+    </p>
+  ) : null;
+
 export const TrackUnit = ({
   keyName,
   name,
+  displayName,
   title,
   accepted,
   note,
@@ -27,33 +52,35 @@ export const TrackUnit = ({
 }: {
   keyName: string;
   name: string;
+  /** 列表里显示的名字（共同前缀折叠后的尾巴）；缺省 = name。 */
+  displayName?: string;
   title?: string;
   accepted: boolean;
   note?: string;
   languageLabels: string[];
   onRemove?: () => void;
 }) => (
-  <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2.5 md:gap-3.5">
+  <div className={TRACK_GRID} data-track-unit>
     <FileFormatIcon name={name} size="md" />
     <div className="min-w-0">
       <p
-        className={`truncate text-[15px] font-medium leading-snug md:text-[16px] lg:text-[17px] ${accepted ? 'text-[var(--v4-text)]' : 'text-[var(--v4-danger)]'}`}
-        title={title || name}
+        className={`text-[15px] font-medium leading-snug md:text-[16px] lg:text-[17px] ${accepted ? 'text-[var(--v4-text)]' : 'text-[var(--v4-danger)]'}`}
+        data-track-name
       >
-        {name}
+        <MiddleTruncate text={displayName ?? name} title={title || name} />
       </p>
       {note && !accepted && (
         <p className="mt-0.5 text-xs font-normal text-[var(--v4-danger)] md:text-sm">{note}</p>
       )}
     </div>
     {languageLabels.length > 0 ? (
-      <span className="inline-flex flex-wrap items-center justify-end gap-1 md:gap-1.5">
+      <span className="flex min-w-0 flex-wrap items-center justify-start gap-1 md:gap-1.5" data-lang-col>
         {languageLabels.map((label) => (
           <LanguageMark key={`${keyName}:${label}`} label={label} size="md" />
         ))}
       </span>
     ) : (
-      <span aria-hidden="true" />
+      <span aria-hidden="true" data-lang-col />
     )}
     {onRemove ? (
       <button
@@ -79,6 +106,7 @@ export const ArchiveSubtree = ({
   shouldReduceMotion: boolean | null;
 }) => {
   if (item.kind !== 'zip' && item.kind !== 'archive') return null;
+  const { display } = groupDisplayNames((item.archiveEntries || []).map((entry) => entry.name));
   if (item.archivePeekStatus !== 'error' && !(item.archiveEntries && item.archiveEntries.length > 0)) return null;
   return (
     <div className="ingest-halo-tree mt-2.5 md:mt-3">
@@ -91,9 +119,9 @@ export const ArchiveSubtree = ({
           initial={shouldReduceMotion ? false : { opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{
-            duration: shouldReduceMotion ? 0 : 0.26,
+            duration: shouldReduceMotion ? 0 : LEAF_S,
             delay: shouldReduceMotion ? 0 : leafDelayMs(entryIndex) / 1000,
-            ease: [0.16, 1, 0.3, 1],
+            ease: EASE_OUT,
           }}
           className="ingest-halo-leaf min-w-0 py-1.5 md:py-2"
           style={{ '--leaf-delay': `${leafDelayMs(entryIndex)}ms` } as React.CSSProperties}
@@ -101,6 +129,7 @@ export const ArchiveSubtree = ({
           <TrackUnit
             keyName={`${item.key}:${entry.name}`}
             name={entry.name}
+            displayName={display[entryIndex]}
             title={entry.name}
             accepted={true}
             languageLabels={[entry.languageLabel]}
@@ -133,9 +162,9 @@ export const QueueTree = ({
           initial: shouldReduceMotion ? false : { opacity: 0, y: -14, scale: 1.03 },
           animate: { opacity: 1, y: 0, scale: 1 },
           transition: {
-            duration: shouldReduceMotion ? 0 : 0.34,
+            duration: shouldReduceMotion ? 0 : MOTION_S.slow,
             delay: shouldReduceMotion ? 0 : Math.min(nodeIndex * 0.05, 0.2),
-            ease: [0.16, 1, 0.3, 1] as const,
+            ease: EASE_OUT,
           },
         };
 
@@ -149,6 +178,11 @@ export const QueueTree = ({
             folderSrt > 0 ? `${folderSrt} SRT` : null,
             folderAss > 0 ? `${folderAss} ASS` : null,
           ].filter(Boolean).join(' · ');
+          // 去掉顶层目录名，保留剩余相对路径（如 S01/xx.srt）
+          const subPaths = node.items.map((item) => (item.relativePath
+            ? item.relativePath.split('/').slice(1).join('/')
+            : item.name));
+          const folderNames = groupDisplayNames(subPaths);
           return (
             <motion.div key={`folder:${node.folder}`} {...landing} className="min-w-0">
               <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 md:gap-4">
@@ -163,6 +197,7 @@ export const QueueTree = ({
                     本地文件夹 · {node.items.length} 个文件
                     {folderFormat ? ` · ${folderFormat}` : ''} · {formatBytes(folderBytes)}
                   </p>
+                  <SharedPrefixLine prefix={folderNames.prefix} />
                 </div>
                 <button
                   type="button"
@@ -177,19 +212,16 @@ export const QueueTree = ({
               <div className="ingest-halo-tree mt-2.5 md:mt-3">
                 {node.items.map((item, leafIndex) => {
                   const langs = languagesForItem(item);
-                  // 去掉顶层目录名，保留剩余相对路径（如 S01/xx.srt）
-                  const subPath = item.relativePath
-                    ? item.relativePath.split('/').slice(1).join('/')
-                    : item.name;
+                  const subPath = subPaths[leafIndex];
                   return (
                     <motion.div
                       key={item.key}
                       initial={shouldReduceMotion ? false : { opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{
-                        duration: shouldReduceMotion ? 0 : 0.26,
+                        duration: shouldReduceMotion ? 0 : LEAF_S,
                         delay: shouldReduceMotion ? 0 : leafDelayMs(leafIndex) / 1000,
-                        ease: [0.16, 1, 0.3, 1],
+                        ease: EASE_OUT,
                       }}
                       className="ingest-halo-leaf min-w-0 py-1.5 md:py-2"
                       style={{ '--leaf-delay': `${leafDelayMs(leafIndex)}ms` } as React.CSSProperties}
@@ -197,6 +229,7 @@ export const QueueTree = ({
                       <TrackUnit
                         keyName={item.key}
                         name={subPath}
+                        displayName={folderNames.display[leafIndex]}
                         title={item.relativePath || item.name}
                         accepted={item.accepted}
                         note={item.accepted ? undefined : item.note}
@@ -240,8 +273,8 @@ export const QueueTree = ({
                 <FileFormatIcon format={resolveFileFormat(item.name)} size="md" />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-[16px] font-semibold leading-snug tracking-tight text-[var(--v4-text)] md:text-[17px] lg:text-[18px]" title={item.name}>
-                  {item.name}
+                <p className="text-[16px] font-semibold leading-snug tracking-tight text-[var(--v4-text)] md:text-[17px] lg:text-[18px]">
+                  <MiddleTruncate text={item.name} />
                 </p>
                 {isArchive && item.archivePeekStatus === 'loading' && (
                   <p className="mt-1 text-xs font-medium text-[var(--v4-text-muted)] md:text-sm">
@@ -262,6 +295,9 @@ export const QueueTree = ({
                       formatBytes(item.file.size),
                     ].filter(Boolean).join(' · ')}
                   </p>
+                )}
+                {isArchive && item.archivePeekStatus === 'ready' && item.archiveEntries && (
+                  <SharedPrefixLine prefix={groupDisplayNames(item.archiveEntries.map((entry) => entry.name)).prefix} />
                 )}
                 {!item.accepted && (
                   <p className="mt-1 text-xs font-medium text-[var(--v4-danger)] md:text-sm">{item.note}</p>

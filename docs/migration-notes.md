@@ -44,3 +44,10 @@
 - 8 s patience (`TMDB_PATIENCE_MS`) is per request: it starts at `runMatch` and restarts when the user clicks 「重试」. Automatic retries (429 queue, 5xx silent retry) do **not** restart it, so the user sees 「重试 / 手动搜索」 at most 8 s after the request they started.
 - 5xx: one silent retry after 800 ms (`SERVER_ERROR_SILENT_RETRIES` / `SERVER_ERROR_RETRY_DELAY_MS`); the snapshot stays `pending`. Network errors and non-HTTP failures are not retried silently.
 - While the ceremony runs, a TMDB failure no longer adds an error banner (E-05) and log toasts behind 「重试 / 手动搜索」 (was visible on e1b1e41 when TMDB returned 5xx). Outside the ceremony, behaviour is unchanged.
+
+## DragZone list v2 (feat/dragzone-list-v2)
+
+- Scope of this draft: B-ready list component only (fixed language column, shared filename prefix + middle truncation, new SRT/ASS/archive silhouettes, single bottom action bar) plus motion tokens in `src/core/motion.ts` and the DESIGN.md §7 long-move exception (≤350 ms, spring bounce 0, transform only).
+- Plan B pieces **not** in this draft: persistent stage shell / `layoutStage` coordinates; cross-zone long-move animation (`MOTION_S.longMove` is defined but unused); multi-work grouping + hint + staging area (暂存区); 「更多文件」 picker on page 2; post-merge prompt.
+- Pre-existing (not changed here): filename-only language detection (`archive.ts` → `detectLanguageByFilename`) returns 待识别 for bilingual tags such as `EN&CHS` / `EN&CHT`. Already the case on e1b1e41.
+- `.ingest-queue-footer` is `position: sticky; bottom: 0` on < 768 px. It works because `.ingest-shell` is the scroll container and ends above the bottom tray; if that container changes, re-check the sticky bar.

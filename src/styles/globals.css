@@ -154,7 +154,7 @@
   --v5-orange-strong: var(--accent-text);
   --v5-orange-deep: var(--accent-press);
 
-  --background: var(--paper-desk);
+  --background: var(--v4-canvas);
   --foreground: var(--ink-strong);
 
   --v5-canvas: var(--paper-desk);
@@ -340,7 +340,7 @@ body {
 /* Style drawer & light panels: back to light paper even when nested in a dark surface. */
 [data-paper="sheet"] {
   color: var(--ink-strong);
-  background: var(--paper-desk);
+  background: var(--v4-canvas);
   -webkit-font-smoothing: auto;
   -moz-osx-font-smoothing: auto;
 }
@@ -1944,4 +1944,54 @@ button {
   background: var(--v4-accent);
   border-color: var(--v4-accent);
   color: var(--v4-accent-ink);
+}
+
+/* —— DragZone list v2：队列底栏（对话框页脚式，一处收齐动作） —— */
+.ingest-action-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "note secondary"
+    "primary primary";
+  align-items: center;
+  gap: 0.625rem 0.75rem;
+  border-top: 1px solid var(--rule-hair);
+  padding-top: 0.75rem;
+}
+.ingest-action-bar__note { grid-area: note; }
+.ingest-action-bar__secondary {
+  grid-area: secondary;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.375rem;
+}
+.ingest-action-bar__primary { grid-area: primary; }
+.ingest-action-bar__primary .workflow-continue-in-flow { width: 100%; align-items: stretch; }
+.ingest-action-bar__primary .workflow-continue-in-flow > button { width: 100%; }
+
+/* 窄屏：整个队列页脚（提示 + 底栏）贴在滚动区（.ingest-shell）底部，不随列表滚走。
+   sticky 放在 footer 上而不是底栏本身：底栏的父级只有它自己高，粘不住。
+   底色与面板一致，不加投影（DESIGN.md §8）。 */
+@media (max-width: 767.98px) {
+  .ingest-queue-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    margin-inline: -0.25rem;
+    padding: 0 0.25rem 0.75rem;
+    background: var(--v4-canvas);
+  }
+}
+
+@media (min-width: 768px) {
+  .ingest-action-bar {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "note secondary primary";
+    gap: 0.75rem;
+    padding-top: 1rem;
+  }
+  .ingest-action-bar__secondary { gap: 0.5rem; }
+  .ingest-action-bar__primary .workflow-continue-in-flow { width: auto; align-items: flex-end; }
+  .ingest-action-bar__primary .workflow-continue-in-flow > button { width: auto; }
 }

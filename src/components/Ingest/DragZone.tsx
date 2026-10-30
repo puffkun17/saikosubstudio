@@ -5,17 +5,12 @@ import { OriginalConfirmDialog } from '@/components/Ingest/OriginalConfirmDialog
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import {
-  ChevronDown,
   FilePlus,
   FolderPlus,
-  HardDrive,
-  Plus,
   Upload,
 } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { summarizeImportForChip } from '@/utils/importSummary';
-import { DeleteButton } from '@/components/ui/delete-button';
-import { WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
 import {
   MAX_DROPPED_ENTRIES,
   collectEntryFiles,
@@ -30,6 +25,7 @@ import {
 } from '@/components/Ingest/dragzone/environment';
 import { useIngestPipeline } from '@/components/Ingest/dragzone/useIngestPipeline';
 import { QueueTree } from '@/components/Ingest/dragzone/QueueTree';
+import { QueueActionBar } from '@/components/Ingest/dragzone/QueueActionBar';
 
 export const DragZone: React.FC = () => {
   const [confirmOriginal, setConfirmOriginal] = React.useState(false);
@@ -63,21 +59,9 @@ export const DragZone: React.FC = () => {
     folderInputRef.current?.click();
   };
 
-  const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
-  const addMenuRef = useRef<HTMLDivElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!addMenuOpen) return;
-    const onPointerDown = (event: MouseEvent) => {
-      if (addMenuRef.current && !addMenuRef.current.contains(event.target as Node)) {
-        setAddMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onPointerDown);
-    return () => document.removeEventListener('mousedown', onPointerDown);
-  }, [addMenuOpen]);
 
   const {
     isParsing,
@@ -357,54 +341,6 @@ export const DragZone: React.FC = () => {
                       onConfirm={() => { setIsOriginalWork(true); setConfirmOriginal(false); }}
                     />
                   )}
-                  <div className="relative" ref={addMenuRef}>
-                    <button
-                      type="button"
-                      onClick={() => setAddMenuOpen((open) => !open)}
-                      className="ui-action ui-action--secondary ui-action--lg"
-                      aria-expanded={addMenuOpen}
-                    >
-                      <Plus className="h-4 w-4 md:h-5 md:w-5" aria-hidden="true" />
-                      添加
-                      <ChevronDown className={`h-4 w-4 opacity-70 transition-transform md:h-4 md:w-4 ${addMenuOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {addMenuOpen && (
-                      <div className="ui-menu absolute right-0 top-full z-20 mt-1.5">
-                        <button
-                          type="button"
-                          className="flex w-full items-center gap-2 px-3.5 py-3 text-left text-sm font-normal text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)] md:text-[15px]"
-                          onClick={() => { setAddMenuOpen(false); fileInputRef.current?.click(); }}
-                        >
-                          <FilePlus className="h-4 w-4 text-[var(--v4-accent-strong)]" />
-                          文件 / 压缩包
-                        </button>
-                        <button
-                          type="button"
-                          className={`flex w-full items-center gap-2 border-t border-[var(--v4-line)] px-3.5 py-3 text-left text-sm font-normal md:text-[15px] ${
-                            folderPickSupported
-                              ? 'text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)]'
-                              : 'cursor-help text-[var(--v4-text-faint)]'
-                          }`}
-                          title={folderPickSupported ? undefined : FOLDER_UNSUPPORTED_HINT}
-                          aria-disabled={!folderPickSupported || undefined}
-                          onClick={() => {
-                            setAddMenuOpen(false);
-                            handleFolderPick();
-                          }}
-                        >
-                          <FolderPlus className="h-4 w-4 text-[var(--v4-accent-strong)]" />
-                          {folderPickSupported ? '文件夹' : '文件夹（不可用）'}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="inline-flex items-center gap-2">
-                    <span className="text-xs text-[var(--v4-text-faint)]">清空队列</span>
-                    <DeleteButton
-                      aria-label="清空导入队列"
-                      onConfirm={() => { setQueuedItems([]); setQueueIssue(null); }}
-                    />
-                  </div>
                 </div>
               </header>
 
@@ -415,19 +351,19 @@ export const DragZone: React.FC = () => {
                 removeFolderGroup={removeFolderGroup}
               />
 
-              <footer className="mt-6 flex flex-col gap-4 px-1 md:mt-7">
+              <footer className="ingest-queue-footer mt-6 flex flex-col gap-3 px-1 md:mt-7 md:gap-4">
                 {(queueIssue || rejectedItems.length > 0) && (
                   <p className="text-sm leading-5 text-[var(--v4-warning)] md:text-[15px]">
                     {queueIssue || `${rejectedItems.length} 项无法处理，可移除后继续。`}
                   </p>
                 )}
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--v4-text-muted)] md:text-[15px]">
-                    <HardDrive className="h-4 w-4" aria-hidden="true" />
-                    仅在本地读取，不上传
-                  </span>
-                  <WorkflowContinueInFlow className="min-w-[8.5rem] justify-center" />
-                </div>
+                <QueueActionBar
+                  itemCount={queuedItems.length}
+                  onClear={() => { setQueuedItems([]); setQueueIssue(null); }}
+                  onPickFiles={() => fileInputRef.current?.click()}
+                  onPickFolder={handleFolderPick}
+                  folderPickSupported={folderPickSupported}
+                />
               </footer>
             </motion.div>
           )}
