@@ -769,6 +769,18 @@ body {
   }
 }
 
+/* 匹配影片等不到结果：停转，换成静止的状态圈 */
+.ingest-local-static {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--radius-pill);
+  border: 3.5px solid color-mix(in srgb, var(--v4-line-strong) 55%, transparent);
+  color: var(--ink-muted);
+}
+
 /*
  * Local add — 导入空态（单面奶油舞台）
  * 语义：仅本机。动词统一为「添加」。

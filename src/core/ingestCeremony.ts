@@ -6,7 +6,11 @@
  * - 等待期间停在「匹配影片」；TMDB 请求起跑 TMDB_PATIENCE_MS 后仍未返回，或请求失败，
  *   给出「重试 / 手动搜索」选择，用户选了才前进。
  * - 429：按 Retry-After 排队自动重试，状态仍是「匹配中」（到点照样给出选择）。
+ * - 5xx（retryable 失败）：先静默自动重试 SERVER_ERROR_SILENT_RETRIES 次，仍失败才给出选择。
  * - 不走 TMDB 的文件名（skipped）：只守 CEREMONY_MIN_MS，保持旧行为。
+ *
+ * 8 s 计时（TMDB_PATIENCE_MS）按「每次请求」算：runMatch 起跑一次，用户点「重试」重新起跑；
+ * 自动重试（429 排队、5xx 静默重试）不重置计时，所以用户最多等 8 s 就能看到选择。
  *
  * 时钟可注入，单元测试用假时钟；不依赖 React / store / DOM。
  */
@@ -14,6 +18,10 @@
 export const CEREMONY_MIN_MS = 2400;
 /** TMDB 起跑后等多久给出「重试 / 手动搜索」（可调）。 */
 export const TMDB_PATIENCE_MS = 8000;
+/** 5xx 时静默自动重试的次数（每次用户发起的请求内）。 */
+export const SERVER_ERROR_SILENT_RETRIES = 1;
+/** 5xx 静默重试前的间隔。 */
+export const SERVER_ERROR_RETRY_DELAY_MS = 800;
 /** 429 未带 Retry-After 时的排队间隔。 */
 export const RATE_LIMIT_DEFAULT_RETRY_MS = 5000;
 /** 单次排队上限（Worker 限流窗口为 60 s）。 */
@@ -25,7 +33,8 @@ export type MatchOutcome =
   /** 本次不走 TMDB（文件名不足 / 已有片源）。 */
   | { kind: 'skipped' }
   | { kind: 'rate_limited'; retryAfterMs?: number | null }
-  | { kind: 'failed'; message?: string };
+  /** retryable：服务端暂时故障（5xx），值得静默再试一次。 */
+  | { kind: 'failed'; message?: string; retryable?: boolean };
 
 export type MatchJob = () => Promise<MatchOutcome>;
 
@@ -73,6 +82,8 @@ export type IngestCeremonyOptions = {
   patienceMs?: number;
   rateLimitDefaultMs?: number;
   rateLimitMaxMs?: number;
+  serverErrorRetries?: number;
+  serverErrorRetryDelayMs?: number;
 };
 
 export type IngestCeremony = {
@@ -102,6 +113,10 @@ export const createIngestCeremony = (options: IngestCeremonyOptions = {}): Inges
   const patienceMs = options.patienceMs ?? TMDB_PATIENCE_MS;
   const rateLimitDefaultMs = options.rateLimitDefaultMs ?? RATE_LIMIT_DEFAULT_RETRY_MS;
   const rateLimitMaxMs = options.rateLimitMaxMs ?? RATE_LIMIT_MAX_RETRY_MS;
+  const serverErrorRetries = options.serverErrorRetries ?? SERVER_ERROR_SILENT_RETRIES;
+  const serverErrorRetryDelayMs = options.serverErrorRetryDelayMs ?? SERVER_ERROR_RETRY_DELAY_MS;
+  /** 本轮（runMatch / 用户重试）已用掉的 5xx 静默重试次数。 */
+  let silentRetriesUsed = 0;
 
   let snapshot: CeremonySnapshot = {
     phase: 'running',
@@ -193,6 +208,17 @@ export const createIngestCeremony = (options: IngestCeremonyOptions = {}): Inges
       }
       case 'failed':
       default:
+        if (outcome.kind === 'failed' && outcome.retryable && silentRetriesUsed < serverErrorRetries) {
+          silentRetriesUsed += 1;
+          retryTimer = clear(retryTimer);
+          // 仍是「匹配中」：不出选择，不重置 8 s 计时。
+          retryTimer = clock.setTimeout(() => {
+            retryTimer = null;
+            if (myToken !== token || !isRunning()) return;
+            attempt({ keepChoice: true });
+          }, serverErrorRetryDelayMs);
+          return;
+        }
         patienceTimer = clear(patienceTimer);
         update({
           match: 'failed',
@@ -240,6 +266,7 @@ export const createIngestCeremony = (options: IngestCeremonyOptions = {}): Inges
     runMatch: (nextJob) => {
       if (!isRunning() || job) return;
       job = nextJob;
+      silentRetriesUsed = 0;
       startPatience();
       attempt({ keepChoice: false });
     },
@@ -252,6 +279,7 @@ export const createIngestCeremony = (options: IngestCeremonyOptions = {}): Inges
     retry: () => {
       if (!isRunning() || !job) return;
       retryTimer = clear(retryTimer);
+      silentRetriesUsed = 0;
       startPatience();
       attempt({ keepChoice: false });
     },

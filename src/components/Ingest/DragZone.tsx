@@ -166,9 +166,18 @@ export const DragZone: React.FC = () => {
     return (
       <div className="relative mx-auto flex w-full max-w-lg min-h-[280px] flex-col items-center justify-center px-2">
         <div className="flex flex-col items-center gap-2.5 text-center">
-          <span className="ingest-local-spinner" aria-hidden="true" />
-          <p className="text-base font-semibold tracking-tight text-[var(--v4-text)]">
-            文件仅在本地处理
+          {ceremony?.needsChoice ? (
+            <span className="ingest-local-static" aria-hidden="true" data-ingest-match-static>
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <circle cx="10.5" cy="10.5" r="5.5" />
+                <path d="M15 15l4.5 4.5" />
+              </svg>
+            </span>
+          ) : (
+            <span className="ingest-local-spinner" aria-hidden="true" />
+          )}
+          <p className="text-base font-semibold tracking-tight text-[var(--v4-text)]" data-ingest-parsing-title>
+            {ceremony?.needsChoice ? '还没匹配到影片' : '文件仅在本地处理'}
           </p>
           {ceremony?.needsChoice ? (
             <div className="mt-2 flex flex-col items-center gap-2.5" data-ingest-match-choice>

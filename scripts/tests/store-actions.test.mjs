@@ -397,3 +397,20 @@ test('A3: deferred auto match — processFiles waits for the ceremony; 429 surfa
     globalThis.fetch = realFetch;
   }
 });
+
+test('ceremony polish: 5xx surfaces as failed with status so the ceremony can retry silently', async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: false, status: 503, headers: { get: () => null }, json: async () => ({}) });
+  try {
+    useStudioStore.getState().restartSystem();
+    useStudioStore.setState({ statusNotices: [], tmdbData: null, selectedTaskId: null, tasks: [], uploadedFiles: [] });
+    const f = makeFile('f-5xx', 'Outage.Movie.2020.1080p.chs.srt');
+    const taskId = await useStudioStore.getState().processFiles([f], { recognized: true, deferAutoMatch: true });
+    const outcome = await useStudioStore.getState().autoMatchTask(taskId, { ceremony: true });
+    assert.equal(outcome.kind, 'failed');
+    assert.equal(outcome.status, 503);
+    assert.equal(useStudioStore.getState().statusNotices.length, 0, 'silent in ceremony mode: no banner / toast');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

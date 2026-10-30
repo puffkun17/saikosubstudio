@@ -38,3 +38,9 @@
 - Patience (`TMDB_PATIENCE_MS`, 8 s) is counted from the start of each match attempt (`runMatch` / `retry`), not from ceremony start.
 - Not touched (pre-existing): BottomStatusDeck motion durations 0.42 s / 0.32 s exceed the motion cap in DESIGN.md.
 - Not touched (pre-existing, `TmdbPanel.tsx`): in 「手动检索」 on 390 px the search glyph in the 片名 field overlaps the first letter of the prefilled title.
+
+## Ceremony polish (fix/ceremony-polish)
+
+- 8 s patience (`TMDB_PATIENCE_MS`) is per request: it starts at `runMatch` and restarts when the user clicks 「重试」. Automatic retries (429 queue, 5xx silent retry) do **not** restart it, so the user sees 「重试 / 手动搜索」 at most 8 s after the request they started.
+- 5xx: one silent retry after 800 ms (`SERVER_ERROR_SILENT_RETRIES` / `SERVER_ERROR_RETRY_DELAY_MS`); the snapshot stays `pending`. Network errors and non-HTTP failures are not retried silently.
+- While the ceremony runs, a TMDB failure no longer adds an error banner (E-05) and log toasts behind 「重试 / 手动搜索」 (was visible on e1b1e41 when TMDB returned 5xx). Outside the ceremony, behaviour is unchanged.
