@@ -16,7 +16,7 @@ export type InspectionMarkFilter =
 /** Ridgeline 辅色 — 禁止体系外蓝与紫 */
 export const MARK_COLOR: Record<InspectionMarkKind, string> = {
   structure: '#c45b55', // --v5-danger
-  screen: '#456660', // forest slate
+  screen: '#5f584e', // ink muted（暖灰墨，去绿）
   sound: '#c4893a', // --v5-warning
   lyrics: '#9a7b4f', // bronze
   credit: '#8a7355', // warm stone，署名星标

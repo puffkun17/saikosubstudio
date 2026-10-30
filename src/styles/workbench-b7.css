@@ -5,10 +5,11 @@
      --wb-cat-review #b8433c 与 --state-danger 都是红系，暂时保留，见 docs/migration-notes.md。 */
   --wb-cat-review: #b8433c;
   --wb-cat-structure: #7a5e8e;
-  --wb-cat-screen: #1f7f78;
   --wb-cat-credit: #a3700c;
   --wb-cat-sound: #52708c;
-  --wb-done: var(--state-success);
+  --wb-cat-screen: #5f584e;
+  /* 进度/完成是中性表达：墨色。绿色 --state-success 只留给 .wb-chk 这种小面积「已完成」勾。 */
+  --wb-done: var(--ink-strong);
 }
 
 /* Selected (DESIGN.md §6): wine fill, accent-ink text, bold, underline */
@@ -133,7 +134,7 @@
   font-size: 19px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: var(--v5-green);
+  color: var(--ink-strong);
 }
 
 .wb-score__sub {
@@ -151,7 +152,7 @@
 }
 
 .wb-score__sub strong {
-  color: var(--v5-green);
+  color: var(--ink-strong);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   font-size: 13px;
@@ -159,7 +160,7 @@
 
 .wb-score__sub small {
   font-size: 12px;
-  color: var(--wb-done);
+  color: var(--accent-text);
   font-weight: 600;
 }
 
@@ -203,7 +204,7 @@
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 4px;
-  color: var(--v5-green);
+  color: var(--ink-strong);
 }
 
 .wb-grp__p {
@@ -212,7 +213,7 @@
 }
 
 .wb-grp__p b {
-  color: var(--v5-green);
+  color: var(--ink-strong);
   font-variant-numeric: tabular-nums;
 }
 
@@ -225,7 +226,7 @@
   border-radius: var(--pt-radius-md);
   font-size: 12px;
   font-weight: 600;
-  color: var(--v5-green);
+  color: var(--ink-strong);
   background: color-mix(in srgb, var(--wb-cat-review) 7%, var(--v5-panel));
   border: 1px solid color-mix(in srgb, var(--wb-cat-review) 40%, transparent);
   white-space: nowrap;
@@ -314,7 +315,7 @@
   border-radius: var(--pt-radius-md);
   font-size: 13px;
   font-weight: 600;
-  color: var(--v5-green);
+  color: var(--ink-strong);
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
@@ -352,7 +353,7 @@
   font-variant-numeric: tabular-nums;
   font-size: 13px;
   font-weight: 700;
-  color: var(--v5-green);
+  color: var(--ink-strong);
 }
 
 .wb-pager button {
@@ -361,7 +362,7 @@
   border-radius: var(--pt-radius-md);
   border: 1px solid var(--v5-line-strong);
   background: var(--v5-panel);
-  color: var(--v5-green);
+  color: var(--ink-strong);
   cursor: pointer;
   display: grid;
   place-items: center;
@@ -385,7 +386,7 @@
 }
 
 .wb-row.done {
-  background: color-mix(in srgb, var(--wb-done) 7%, var(--paper-raised));
+  background: color-mix(in srgb, var(--wb-done) 4%, var(--paper-raised));
 }
 
 .wb-row.sweep {
@@ -425,7 +426,7 @@
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background: var(--wb-done);
+  background: var(--state-success);
   color: var(--state-on-solid);
   font-size: 10px;
   font-weight: 800;
@@ -496,7 +497,7 @@
   font-weight: 600;
   border: 1px solid var(--v5-line-strong);
   background: var(--v5-panel);
-  color: var(--v5-green);
+  color: var(--ink-strong);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -536,7 +537,7 @@
   font-weight: 600;
   border: 1px solid var(--v5-line-strong);
   background: var(--v5-panel);
-  color: var(--v5-green);
+  color: var(--ink-strong);
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -544,7 +545,7 @@
 }
 
 .wb-cat.guess {
-  border: 1.5px dashed var(--v5-green);
+  border: 1.5px dashed var(--ink-strong);
 }
 
 .wb-cat small {
@@ -582,7 +583,7 @@
   position: absolute;
   left: -2px;
   right: -2px;
-  border: 1.5px solid color-mix(in srgb, var(--v5-green) 55%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--ink-strong) 55%, transparent);
   border-radius: 6px;
   pointer-events: none;
   z-index: 2;
@@ -612,7 +613,7 @@
 }
 
 .wb-rail__bk.done {
-  background: color-mix(in srgb, var(--wb-done) 32%, var(--v5-panel));
+  background: color-mix(in srgb, var(--wb-done) 22%, var(--v5-panel));
 }
 
 /* Overview drawer */
@@ -649,7 +650,7 @@
 .wb-drawer__hd h2 {
   font-size: 16px;
   font-weight: 800;
-  color: var(--v5-green);
+  color: var(--ink-strong);
 }
 
 .wb-drawer .sec {
@@ -664,7 +665,7 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  color: var(--v5-green);
+  color: var(--ink-strong);
 }
 
 .wb-drawer .sec h3 small {
@@ -696,7 +697,7 @@
   font-size: 18px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: var(--v5-green);
+  color: var(--ink-strong);
 }
 
 .wb-vit span {
@@ -717,17 +718,17 @@
   flex: 1 1 0;
   min-width: 0;
   border-radius: 2px 2px 0 0;
-  background: color-mix(in srgb, var(--v5-green) 55%, var(--v5-panel-muted));
+  background: color-mix(in srgb, var(--ink-strong) 55%, var(--v5-panel-muted));
 }
 
 .wb-chart__bar.is-now {
-  background: var(--v5-green);
+  background: var(--ink-strong);
 }
 
 .wb-form {
   font-size: 12px;
   line-height: 1.6;
-  color: var(--v5-green);
+  color: var(--ink-strong);
 }
 
 .wb-form .row2 {

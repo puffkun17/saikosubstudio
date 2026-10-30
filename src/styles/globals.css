@@ -144,13 +144,12 @@
 
 /*
  * 颜色别名在 :root 和每个 [data-paper] 局部表面上都声明一次：
- * 自定义属性在声明处解析，只写在 :root 的别名进不了 chrome / theater / sheet 作用域。
+ * 自定义属性在声明处解析，只写在 :root 的别名进不了 theater / sheet 作用域。
  */
 :root,
 [data-paper] {
-  /* 旧三原色名：cream → 纸，green → 墨（不再用绿色做字），orange → 酒红。 */
+  /* 旧三原色名：cream → 纸，orange → 酒红。旧 green 别名已删，原用处直接写 --ink-strong。 */
   --v5-cream: var(--paper-desk);
-  --v5-green: var(--ink-strong);
   --v5-orange: var(--accent);
   --v5-orange-strong: var(--accent-text);
   --v5-orange-deep: var(--accent-press);
@@ -213,7 +212,7 @@
   --v4-warning: var(--v5-warning);
   --v4-desk-glow: transparent;
 
-  /* 托盘墨：托盘本身是 data-paper="chrome"，墨色在那里自动反转成奶油。 */
+  /* 托盘墨：托盘是纸面（sunken），直接用默认墨色。 */
   --tray-ink: var(--ink-strong);
   --tray-ink-soft: var(--ink-body);
   --tray-ink-muted: var(--ink-muted);
@@ -221,6 +220,8 @@
   --tray-line: var(--rule-hair);
   --tray-line-soft: var(--rule-hair);
   --tray-line-strong: var(--rule-strong);
+  /* 托盘控件边：sunken 上 --rule-control 只有 2.93:1，换深一档（4.11:1），见 contrast.py [tray]。 */
+  --tray-line-control: var(--ink-placeholder);
   --tray-fill: var(--paper-raised);
   --tray-fill-soft: var(--paper-sunken);
   --tray-fill-hover: var(--paper-raised);
@@ -285,16 +286,13 @@ body {
   box-shadow: var(--elevation-0);
 }
 
-/* Twin trays: the one place green lives. Markup sets data-paper="chrome", so ink/rule tokens read as cream-on-green. */
+/* Twin trays: paper trays. Sunken paper + one hair rule against the page; ink text, default light tokens. */
 .system-tray--top,
 .system-tray--bottom {
-  background: var(--chrome-bg);
+  background: var(--paper-sunken);
   border-color: var(--rule-hair);
   color: var(--ink-strong);
   backdrop-filter: none;
-  /* 墨绿托盘上 antialiased 更稳，奶油工作区保持亚像素。 */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 .system-tray--top .soft-log-marquee__text,
@@ -303,7 +301,7 @@ body {
 }
 
 .system-tray__ctrl {
-  border: 1px solid var(--rule-control);
+  border: 1px solid var(--tray-line-control);
   background: var(--tray-fill);
   color: var(--tray-ink-soft);
 }
@@ -339,13 +337,6 @@ body {
 }
 
 /* Local surfaces (DESIGN.md §3.7). Token values live in paper-tokens.css; the alias block above re-resolves per scope. */
-[data-paper="chrome"] {
-  color: var(--ink-strong);
-  background: var(--chrome-bg);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
 /* Style drawer & light panels: back to light paper even when nested in a dark surface. */
 [data-paper="sheet"] {
   color: var(--ink-strong);
@@ -1490,7 +1481,7 @@ body {
   .ingest-shell {
     padding-top: var(--ds-gap-section);
     padding-bottom: var(--ds-gap-section);
-    /* Extra bottom slack so formats footnote clears the green tray */
+    /* Extra bottom slack so formats footnote clears the bottom tray */
     scroll-padding-bottom: calc(var(--tray-h) + 0.5rem);
   }
 

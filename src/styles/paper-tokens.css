@@ -5,13 +5,15 @@
  *
  * 命名：
  *   颜色  --paper-* 纸面 · --ink-* 墨 · --rule-* 线 · --accent-* 唯一强调（酒红）
- *         --state-* 语义状态 · --focus-* 焦点 · --chrome-* 墨绿托盘
+ *         --state-* 语义状态 · --focus-* 焦点
  *   刻度  --pt-* 前缀（radius / space / font / size / weight / leading / elev），
  *         避免与 globals.css 现有 --radius-* / --space-* / --type-* 及 Tailwind @theme --font-* 撞名。
  *   动效  --motion-*
- * 作用域：:root = 纸面（默认，浅色）；[data-paper="chrome"] = 墨绿托盘；[data-paper="theater"] = 关灯放映（深色）；
- *         [data-paper="sheet"] = 在深色表面里回到浅色纸面（例如托盘里弹出的历史面板）。
- * App 目前没有跟随系统的暗色模式，深色只出现在这两个局部表面上。
+ * 作用域：:root = 纸面（默认，浅色；顶栏/底栏托盘也直接用它，底色取 --paper-sunken）；
+ *         [data-paper="theater"] = 关灯放映（深色）；
+ *         [data-paper="sheet"] = 在深色表面里回到浅色纸面（例如关灯时的样式抽屉）。
+ * 不使用绿色作为品牌色或大面积底色；绿色只剩 --state-success，且只用于小面积状态指示。
+ * App 目前没有跟随系统的暗色模式，深色只出现在关灯放映这个局部表面上。
  */
 
 :root,
@@ -47,7 +49,7 @@
   /* ── 语义状态：与酒红分家，只表达状态 ─────────────────── */
   --state-danger: #b0361c;   /* 朱红，偏橙，和酒红拉开 */
   --state-warning: #8a5a0b;
-  --state-success: #2d6640;
+  --state-success: #2d6640; /* 唯一保留的绿：只做小面积「已完成」指示（勾、细边），不做底色 */
   --state-info: #2e5a84;
   --state-danger-soft: color-mix(in srgb, var(--state-danger) 10%, transparent);
   --state-warning-soft: color-mix(in srgb, var(--state-warning) 10%, transparent);
@@ -59,10 +61,6 @@
   --focus-ring: #2e5a84;
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
-
-  /* ── 墨绿托盘（chrome）：绿色只在这里 ─────────────────── */
-  --chrome-bg: #1f3a33;
-  --chrome-bg-raised: #28463e;
 
   /* 选区 / 光标 / 滚动条也走纸面 */
   --selection-bg: color-mix(in srgb, var(--accent) 18%, transparent);
@@ -141,7 +139,7 @@
 }
 
 /* 派生色在每个局部表面重新计算（否则 color-mix 只在 :root 解析一次）。
-   chrome / theater 下面若显式给值，以它们为准（同优先级，后写的赢）。 */
+   theater 下面若显式给值，以它们为准（同优先级，后写的赢）。 */
 [data-paper] {
   --state-danger-soft: color-mix(in srgb, var(--state-danger) 10%, transparent);
   --state-warning-soft: color-mix(in srgb, var(--state-warning) 10%, transparent);
@@ -152,32 +150,6 @@
   --rule-ledger: var(--ink-strong);
   --skeleton: var(--paper-sunken);
   --scrollbar-thumb: var(--rule-strong);
-}
-
-/* 墨绿托盘：顶栏/底栏。纸面墨色反转为奶油，强调提亮。 */
-[data-paper="chrome"] {
-  --paper-desk: var(--chrome-bg);
-  --paper-sheet: var(--chrome-bg);
-  --paper-raised: var(--chrome-bg-raised);
-  --paper-sunken: #1a322c;
-  --ink-strong: #f2ece1;
-  --ink-body: #e3ddd1;
-  --ink-muted: #c4ccc2;
-  --ink-placeholder: #a7b4ab;
-  --ink-faint: #93a39a;
-  --rule-hair: #3b5a51;
-  --rule-strong: #4c6b62;
-  --rule-control: #7f998f;
-  --rule-ledger: var(--ink-strong);
-  --accent-text: #f0b3be;
-  --accent-soft: color-mix(in srgb, #f0b3be 14%, transparent);
-  --accent-line: color-mix(in srgb, #f0b3be 45%, transparent);
-  --focus-ring: #a9c8ea;
-  /* 当前步骤：奶油纸片 + 墨字（不用彩色填充） */
-  --chrome-active-bg: #faf7f0;
-  --chrome-active-ink: #1c1a17;
-  --scrollbar-thumb: var(--rule-strong);
-  --skeleton: var(--paper-sunken);
 }
 
 /* 关灯放映：近黑暖灰，不是反相的浅色主题。 */

@@ -20,7 +20,7 @@ L = dict(  # light / paper (default)
     rule_hair='#DCD3C4', rule_strong='#B9AE9C', rule_control='#8C8375', rule_ledger='#1C1A17',
     accent='#7A2233', accent_hover='#8C2B3D', accent_press='#651A29', accent_ink='#FFF8F1',
     danger='#B0361C', warning='#8A5A0B', success='#2D6640', info='#2E5A84', focus='#2E5A84',
-    chrome='#1F3A33',
+    on_solid='#FFF8F1',
 )
 D = dict(  # theater (lights-off) dark scope
     desk='#121110', sheet='#1A1917', raised='#23211E', sunken='#0D0C0B',
@@ -28,10 +28,6 @@ D = dict(  # theater (lights-off) dark scope
     rule_hair='#33302B', rule_strong='#4A4640', rule_control='#7A7368',
     accent='#D06276', accent_hover='#DC7A8C', accent_press='#C85B6F', accent_ink='#170D0F', accent_text='#E59AAA',
     danger='#EE7B5E', warning='#E0B05C', success='#7DBE8F', info='#86AEDB', focus='#86AEDB',
-)
-C = dict(  # chrome (forest trays) scope
-    bg='#1F3A33', bg_raised='#28463E', ink='#F2ECE1', ink_muted='#C4CCC2', ink_faint='#93A39A',
-    rule='#3B5A51', rule_control='#7F998F', ink_body='#E3DDD1', placeholder='#A7B4AB', active_bg='#FAF7F0', active_ink='#1C1A17', accent_text='#F0B3BE', focus='#A9C8EA',
 )
 rows = []
 def chk(name, fg, bg, need):
@@ -74,20 +70,27 @@ chk('focus ring vs paper-sheet', L['focus'], L['sheet'], 3.0)
 chk('focus ring vs accent fill (adjacent, 1.4.11)', L['focus'], L['accent'], 1.0)
 chk('rule-hair vs paper-sheet (decorative divider, no req)', L['rule_hair'], L['sheet'], 0)
 chk('accent vs paper-sheet (primary btn boundary)', L['accent'], L['sheet'], 3.0)
-# --- chrome (forest trays)
-chk('chrome ink on chrome-bg', C['ink'], C['bg'], 4.5)
-chk('chrome ink-muted on chrome-bg', C['ink_muted'], C['bg'], 4.5)
-chk('chrome ink-faint on chrome-bg (3:1 icons)', C['ink_faint'], C['bg'], 3.0)
-chk('chrome ink on chrome-bg-raised', C['ink'], C['bg_raised'], 4.5)
-chk('chrome ink-muted on chrome-bg-raised', C['ink_muted'], C['bg_raised'], 4.5)
-chk('chrome active-ink on active-bg (current step)', C['active_ink'], C['active_bg'], 4.5)
-chk('chrome accent-text on chrome-bg', C['accent_text'], C['bg'], 4.5)
-chk('chrome ink-body on chrome-bg', C['ink_body'], C['bg'], 4.5)
-chk('chrome placeholder on chrome-bg-raised', C['placeholder'], C['bg_raised'], 4.5)
-chk('chrome rule-control vs chrome-bg-raised', C['rule_control'], C['bg_raised'], 3.0)
-chk('chrome accent-text on chrome-bg-raised', C['accent_text'], C['bg_raised'], 4.5)
-chk('chrome focus vs chrome-bg', C['focus'], C['bg'], 3.0)
-chk('chrome rule vs chrome-bg (decorative)', C['rule'], C['bg'], 0)
+# --- paper trays (top/bottom): default light tokens on paper-sunken, no separate scope
+chk('[tray] ink-strong on tray (paper-sunken)', L['ink_strong'], L['sunken'], 4.5)
+chk('[tray] ink-body on tray (step label)', L['ink_body'], L['sunken'], 4.5)
+chk('[tray] ink-muted on tray (仅本地处理 / disabled step)', L['ink_muted'], L['sunken'], 4.5)
+chk('[tray] accent icon on tray ctrl (paper-raised)', L['accent'], L['raised'], 3.0)
+chk('[tray] ink-body on tray ctrl (paper-raised)', L['ink_body'], L['raised'], 4.5)
+chk('[tray] current step ink-strong on paper-raised chip', L['ink_strong'], L['raised'], 4.5)
+chk('[tray] current step accent underline vs paper-raised (3:1 UI)', L['accent'], L['raised'], 3.0)
+chk('[tray] tray-line-control = ink-placeholder (ctrl border) vs tray', L['ink_placeholder'], L['sunken'], 3.0)
+chk('[tray] tray-line-control vs ctrl fill (paper-raised)', L['ink_placeholder'], L['raised'], 3.0)
+chk('[tray] accent on accent-soft badge (over raised)', L['accent'], mix(L['accent'], L['raised'], 0.10), 4.5)
+chk('[tray] focus ring vs tray', L['focus'], L['sunken'], 3.0)
+chk('[tray] rule-hair tray/page divider (decorative)', L['rule_hair'], L['desk'], 0)
+# --- neutral progress / score (no green)
+chk('[score] ring high = ink-strong vs paper-sheet (3:1 UI)', L['ink_strong'], L['sheet'], 3.0)
+chk('[score] ring mid = accent vs paper-sheet (3:1 UI)', L['accent'], L['sheet'], 3.0)
+chk('[score] ring low = danger vs paper-sheet (3:1 UI)', L['danger'], L['sheet'], 3.0)
+chk('[progress] bar ink-strong vs track paper-sunken (3:1 UI)', L['ink_strong'], L['sunken'], 3.0)
+# --- the only green left: small success marks
+chk('[success] check glyph on-solid on success dot', L['on_solid'], L['success'], 4.5)
+chk('[success] success dot vs paper-raised (3:1 UI)', L['success'], L['raised'], 3.0)
 # --- theater dark
 for s in ('desk', 'sheet', 'raised'):
     for k in ('ink_strong', 'ink_body', 'ink_muted', 'accent_text', 'danger', 'warning', 'success', 'info'):

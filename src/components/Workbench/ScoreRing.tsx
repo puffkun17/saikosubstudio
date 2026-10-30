@@ -14,7 +14,8 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({ score, size = 54, stroke =
   const c = 2 * Math.PI * r;
   const clamped = Math.max(0, Math.min(100, score));
   const offset = c * (1 - clamped / 100);
-  const tone = clamped >= 85 ? '#2f6b44' : clamped >= 70 ? '#1f7f78' : '#b8433c';
+  // 评分是中性度量：高分墨色、中段酒红、低分才用危险状态色（不用绿色）。
+  const tone = clamped >= 85 ? 'var(--ink-strong)' : clamped >= 70 ? 'var(--accent)' : 'var(--state-danger)';
 
   return (
     <div className="wb-ring" style={{ width: size, height: size }} aria-hidden="true">

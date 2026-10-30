@@ -20,7 +20,7 @@ const WORKFLOW_STEPS = [
 
 /**
  * Narrow chrome breakpoint: below this, workflow steps leave the top tray
- * and become equal segments in the bottom green tray. ≥844 keeps desktop top tabs.
+ * and become equal segments in the bottom paper tray. ≥844 keeps desktop top tabs.
  */
 const NARROW_CHROME_MQ = '(max-width: 843px)';
 
@@ -117,11 +117,11 @@ const WorkflowStepButton: React.FC<WorkflowStepButtonProps> = ({
         className={`system-tray__workflow-seg v4-focus-ring relative flex min-h-11 min-w-0 flex-1 cursor-pointer items-center justify-center px-2 text-[length:var(--type-control)] font-bold tracking-wide transition-colors
           ${index > 0 ? 'border-l border-[var(--rule-hair)]' : ''}
           ${isActive
-            ? 'text-[var(--chrome-active-ink)]'
+            ? 'text-[var(--ink-strong)]'
             : disabled
               ? 'cursor-help text-[var(--ink-muted)]'
               : 'text-[var(--ink-body)] hover:text-[var(--ink-strong)]'}
-          ${isActive ? 'underline decoration-2 underline-offset-4' : ''}`}
+          ${isActive ? 'underline decoration-[var(--accent)] decoration-2 underline-offset-4' : ''}`}
         aria-current={isActive ? 'step' : undefined}
         aria-disabled={disabled || undefined}
         aria-label={disabled && gatedHint ? gatedHint : `前往${step.label}`}
@@ -139,11 +139,11 @@ const WorkflowStepButton: React.FC<WorkflowStepButtonProps> = ({
       className={`v4-focus-ring relative flex cursor-pointer items-center justify-center px-1 text-[length:var(--type-control)] font-bold tracking-wide transition-colors
         ${index > 0 ? 'border-l border-[var(--rule-hair)]' : ''}
         ${isActive
-          ? 'text-[var(--chrome-active-ink)]'
+          ? 'text-[var(--ink-strong)]'
           : disabled
             ? 'cursor-help text-[var(--ink-muted)]'
             : 'text-[var(--ink-body)] hover:text-[var(--ink-strong)]'}
-        ${isActive ? 'underline decoration-2 underline-offset-4' : ''}`}
+        ${isActive ? 'underline decoration-[var(--accent)] decoration-2 underline-offset-4' : ''}`}
       aria-current={isActive ? 'step' : undefined}
       aria-disabled={disabled || undefined}
       aria-label={disabled && gatedHint ? gatedHint : `前往${step.label}`}
@@ -193,7 +193,9 @@ export const SystemTray = () => {
     setWorkflowStep: state.setWorkflowStep,
     setStatusNotice: state.setStatusNotice,
   })));
-  const isInfoPage = pathname === '/about' || pathname === '/feedback';
+  // 静态资源按目录托管，/feedback 会落在 /feedback/：先去掉结尾斜杠再判断。
+  const routePath = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  const isInfoPage = routePath === '/about' || routePath === '/feedback';
   const showLibrary = !isInfoPage;
   /** Narrow studio: workflow lives in bottom tray; status deck yields. */
   const showBottomWorkflow = isNarrowChrome && !isInfoPage;
@@ -324,9 +326,9 @@ export const SystemTray = () => {
         role="group"
         aria-label="工作流程进度"
       >
-        {/* 只标当前页：奶油纸片滑到当前步骤下面；其余步骤一律同底（托盘绿 + 分隔线），不再用「已走过」填充。 */}
+        {/* 只标当前页：raised 纸片滑到当前步骤下面（墨字 + 酒红下划线）；其余步骤一律同底（sunken 纸 + 分隔线）。 */}
         <motion.div
-          className="absolute inset-y-0 bg-[var(--chrome-active-bg)]"
+          className="absolute inset-y-0 bg-[var(--paper-raised)]"
           initial={false}
           animate={{
             left: `${(Math.max(workflowStep, 1) - 1) / WORKFLOW_STEPS.length * 100}%`,
@@ -408,7 +410,6 @@ export const SystemTray = () => {
       {/* ── Top: menu + brand + (desktop) workflow + essentials ─────────── */}
       <nav
         aria-label="全局导航"
-        data-paper="chrome"
         className={`system-tray system-tray--top fixed top-0 z-[var(--z-nav)] justify-between border-b ${trayChrome}`}
         data-chrome={isNarrowChrome ? 'narrow' : 'wide'}
       >
@@ -492,7 +493,6 @@ export const SystemTray = () => {
       <div
         role="toolbar"
         aria-label="操作台"
-        data-paper="chrome"
         className={`system-tray system-tray--bottom fixed bottom-0 z-[var(--z-nav)] border-t ${trayChrome}`}
         data-chrome={isNarrowChrome ? 'narrow' : 'wide'}
       >

@@ -141,7 +141,7 @@
 }
 
 /* Custom properties resolve where declared: re-derive ink inside each data-paper scope so
-   ds-* text follows the local surface (chrome / theater = light ink, sheet = dark ink). */
+   ds-* text follows the local surface (theater = light ink, sheet = dark ink). */
 [data-paper] {
   --ds-ink: var(--ink-strong);
   --ds-ink-2: var(--ink-body);
@@ -165,7 +165,7 @@
 
 /* ── Theater dock: one right panel for every preview option (spec §6.1) ──── */
 .ds-dock {
-  /* surface = .theater-style-shell: solid paper, data-paper="chrome" (lights off: "theater") */
+  /* surface = .theater-style-shell: solid paper (lights off: data-paper="theater") */
   display: flex; flex-direction: column; min-height: 0; flex-shrink: 0;
   color: var(--ds-ink); border-radius: 0; border-width: 0 0 0 1px;
   position: relative; z-index: var(--z-theater-style);
@@ -213,9 +213,6 @@
 @media (prefers-reduced-motion: reduce) { .timeline-marks__pulse { animation-duration: .01s; } }
 
 
-/* Controls on the green dock: paper tokens already flip inside data-paper="chrome";
-   only the native option popup stays light, so pin its ink/paper to the light values. */
-[data-paper="chrome"] .ds-select option { color: #1c1a17; background: #fffdf8; }
 
 /* ===== v1.3 Control padding tokens (Derek: every text-to-edge distance is a token) =====
    Text is vertically centred by flex + a fixed line box; height comes from the control height token,
