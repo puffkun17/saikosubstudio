@@ -10,6 +10,7 @@ import {
 } from '@/core/ingestCeremony';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
 import { useIngestStage } from '@/store/useIngestStage';
+import { shouldNudgeBeforeProcess } from '@/core/workGrouping';
 import type { TmdbSearchOutcome } from '@/store/types';
 import { detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
 import { getClientBatchIssue } from '@/utils/importSafety';
@@ -536,6 +537,8 @@ export const useIngestPipeline = () => {
       await sleep(PHASE_FLOOR_MS);
 
       // 本次清单已整理完；暂存区保持不动，回到第 1 页时提示继续。
+      // 交接：同一次提交里任务页挂载，文件行按 objectId 从清单位置接续过去（stageFlags）。
+      useIngestStage.getState().markHandoff();
       setQueuedItems([]);
       setIsParsing(false);
       setIngestClearing(false);
@@ -566,6 +569,16 @@ export const useIngestPipeline = () => {
       disabledReason: queueIssue || '清单中暂无可整理的字幕文件，移除无效项或补充文件后继续。',
       onClick: () => {
         if (disabled) return;
+        // 多作品提示还没处理：第一次点只把提示带到眼前，第二次点照常整理全部（不拦截）。
+        const stage = useIngestStage.getState();
+        if (shouldNudgeBeforeProcess({
+          noticeOpen: stage.multiWorkOpenSignature !== null,
+          signature: stage.multiWorkOpenSignature,
+          nudgedSignature: stage.multiWorkNudgedSignature,
+        })) {
+          stage.nudgeMultiWork();
+          return;
+        }
         void handleFilesProcess();
       },
     });

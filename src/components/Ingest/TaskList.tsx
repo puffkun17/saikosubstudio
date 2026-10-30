@@ -8,7 +8,10 @@ import { runRecognitionJob } from '@/core/recognitionClient';
 import { useStudioStore, Subfile } from '@/store/useStudioStore';
 import { Check, CircleAlert, GripVertical, Info, Paintbrush, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { parseSrt, decodeBuffer, detectSubtitleLanguage, StyleSettings } from '@/utils/subtitleCore';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
+import { MOTION_S, springNoBounce } from '@/core/motion';
+import { STAGE_HANDOFF_WINDOW_MS, stageSharedHandoffEnabled } from '@/core/stageFlags';
+import { useIngestStage } from '@/store/useIngestStage';
 import { TrackSelect } from '@/components/Ingest/TrackSelect';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { FileFormatIcon, LanguageMark } from '@/components/ui/FileFormatIcon';
@@ -51,8 +54,23 @@ const isEnglishLikeLang = (lang?: string | null, name?: string | null): boolean 
     || /英语|英語|英文/.test(hay);
 };
 
+const HANDOFF_MOVE = springNoBounce(MOTION_S.longMove);
+
 export const TaskList: React.FC = () => {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  // 第 1 页 → 第 2 页交接：放行后马上挂载的这一次，轨道行带上来源 objectId 作 layoutId，
+  // 从清单里的位置移过来；窗口过了就去掉，换轨 / 对调时不再飞。
+  const reduceMotion = useReducedMotion();
+  const [handoffWindow, setHandoffWindow] = useState(() => {
+    const at = useIngestStage.getState().handoffAt;
+    return stageSharedHandoffEnabled() && at !== null && Date.now() - at < STAGE_HANDOFF_WINDOW_MS;
+  });
+  useEffect(() => {
+    if (!handoffWindow) return;
+    const timer = window.setTimeout(() => setHandoffWindow(false), STAGE_HANDOFF_WINDOW_MS);
+    return () => window.clearTimeout(timer);
+  }, [handoffWindow]);
+  const handoffObjects = handoffWindow && !reduceMotion;
   const [pendingCancelUpload, setPendingCancelUpload] = useState(false);
   const [draggingTrack, setDraggingTrack] = useState<'zh' | 'en' | null>(null);
   const [dropTargetTrack, setDropTargetTrack] = useState<'zh' | 'en' | null>(null);
@@ -570,7 +588,7 @@ export const TaskList: React.FC = () => {
       )}
 
       {/* Inner pane scrolls; primary CTA lives in the task info bar */}
-      <div className="relative flex min-h-0 flex-1 flex-col gap-[var(--ds-gap-group)] overflow-x-visible overflow-y-auto pr-1 select-none scrollbar-thin">
+      <motion.div layoutScroll className="relative flex min-h-0 flex-1 flex-col gap-[var(--ds-gap-group)] overflow-x-visible overflow-y-auto pr-1 select-none scrollbar-thin">
 
         {needsTitleInput && (
           <div className="relative flex flex-shrink-0 items-center gap-2.5 rounded-lg border border-[var(--v4-accent)] bg-[var(--v4-accent-soft)] px-3 py-2.5">
@@ -650,13 +668,21 @@ export const TaskList: React.FC = () => {
                       <span className="flex min-w-0 flex-col justify-center gap-0.5">
                         {label}
                       </span>
-                      <TrackSelect
-                        value={file?.id || ''}
-                        options={trackOptions}
-                        onChange={(id) => bindTrack(activeTask.id, trackKey, id)}
-                        countLabel={file ? getSubTitleCount(file) : null}
-                        placeholder={placeholder}
-                      />
+                      <motion.div
+                        className="min-w-0"
+                        {...(handoffObjects && file?.sourceObjectId
+                          ? { layoutId: file.sourceObjectId, layout: 'position' as const, transition: { layout: HANDOFF_MOVE } }
+                          : {})}
+                        data-handoff-object={file?.sourceObjectId}
+                      >
+                        <TrackSelect
+                          value={file?.id || ''}
+                          options={trackOptions}
+                          onChange={(id) => bindTrack(activeTask.id, trackKey, id)}
+                          countLabel={file ? getSubTitleCount(file) : null}
+                          placeholder={placeholder}
+                        />
+                      </motion.div>
                       <span
                         role="button"
                         tabIndex={canReorderTracks ? 0 : -1}
@@ -879,7 +905,7 @@ export const TaskList: React.FC = () => {
 
         </div>
 
-      </div>
+      </motion.div>
 
       <input
         ref={fileInputRef}

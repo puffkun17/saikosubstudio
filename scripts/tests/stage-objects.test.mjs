@@ -48,3 +48,25 @@ test('groupQueueByWork: one work, two works, unknowns, archive majority', () => 
   assert.deepEqual(two.works.map((w) => [w.title, w.objectIds]), [['Ted Lasso', ['z']], ['Slow Horses', ['s1', 's2']]]);
   assert.equal(W.workSignature(two), 'slow horses|ted lasso');
 });
+
+test('groupQueueByWork counts files, not queue items (zip = its entries)', () => {
+  const ted = Array.from({ length: 9 }, (_, i) => `Ted.Lasso.S04E01.Home.1080p.WEB-DL.T${i}.srt`);
+  const g = W.groupQueueByWork([
+    { objectId: 'zip', names: ted },
+    { objectId: 's1', names: ['Slow.Horses.S04E01.chs.srt'] },
+    { objectId: 's2', names: ['Slow.Horses.S04E01.eng.srt'] },
+    { objectId: 'u', names: ['a.srt', 'b.srt'], fileCount: 2 },
+  ]);
+  assert.deepEqual(g.works.map((w) => [w.title, w.objectIds.length, w.fileCount]), [['Ted Lasso', 1, 9], ['Slow Horses', 2, 2]]);
+  assert.equal(g.unknownFileCount, 2);
+  assert.equal(W.groupQueueByWork([{ objectId: 'x', names: ['Ted.Lasso.S04E01.srt'], fileCount: 0 }]).works[0].fileCount, 1);
+});
+
+test('shouldNudgeBeforeProcess: first click nudges, second proceeds, new combination nudges again', () => {
+  const sig = 'slow horses|ted lasso';
+  assert.equal(W.shouldNudgeBeforeProcess({ noticeOpen: false, signature: sig, nudgedSignature: null }), false);
+  assert.equal(W.shouldNudgeBeforeProcess({ noticeOpen: true, signature: sig, nudgedSignature: null }), true);
+  assert.equal(W.shouldNudgeBeforeProcess({ noticeOpen: true, signature: sig, nudgedSignature: sig }), false);
+  assert.equal(W.shouldNudgeBeforeProcess({ noticeOpen: true, signature: 'a|b', nudgedSignature: sig }), true);
+  assert.equal(W.shouldNudgeBeforeProcess({ noticeOpen: true, signature: null, nudgedSignature: null }), false);
+});

@@ -345,7 +345,8 @@ export const summarizeQueue = (
   const queueStatsLine = archivePeekPending && trackCount === 0
     ? '正在读取…'
     : [
-        `${queuedItems.length} 项`,
+        // 与多作品提示、暂存区同一口径：按文件算（压缩包 = 包内轨数），不按清单项算。
+        `${queuedItems.reduce((sum, item) => sum + Math.max(1, item.archiveEntries?.length ?? 0), 0)} 个文件`,
         queueFormatSummary || (trackCount > 0 ? `${trackCount} 轨` : null),
         queueSourceSummary,
         formatBytes(totalBytes),

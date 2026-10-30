@@ -16,6 +16,17 @@ export interface IngestStageState {
   stagedItems: PreflightItem[];
   /** 用户点了「都留在这里」时的作品组合签名；组合不变就不再提示。 */
   multiWorkDismissed: string | null;
+  /** 多作品提示正在显示时的组合签名（没显示 = null）。由 DragZone 同步。 */
+  multiWorkOpenSignature: string | null;
+  /** 已经因为「整理文件」提醒过的组合签名：同一组合第二次点就照常整理。 */
+  multiWorkNudgedSignature: string | null;
+  /** 每提醒一次 +1，提示块据此滚到眼前并描一圈。 */
+  multiWorkNudgeSeq: number;
+  /** 等待态放行（第 1 页 → 第 2 页交接）的时间戳；任务页据此决定这次挂载要不要接续文件行。 */
+  handoffAt: number | null;
+  markHandoff: () => void;
+  setMultiWorkOpen: (signature: string | null) => void;
+  nudgeMultiWork: () => void;
   setQueuedItems: (next: Updater<PreflightItem[]>) => void;
   setStagedItems: (next: Updater<PreflightItem[]>) => void;
   /** 本次清单 → 暂存区（按 objectId，保持原顺序）。 */
@@ -30,6 +41,18 @@ export const useIngestStage = create<IngestStageState>((set) => ({
   queuedItems: [],
   stagedItems: [],
   multiWorkDismissed: null,
+  multiWorkOpenSignature: null,
+  multiWorkNudgedSignature: null,
+  multiWorkNudgeSeq: 0,
+  handoffAt: null,
+  markHandoff: () => set({ handoffAt: Date.now() }),
+  setMultiWorkOpen: (signature) => set((state) => (
+    state.multiWorkOpenSignature === signature ? state : { multiWorkOpenSignature: signature }
+  )),
+  nudgeMultiWork: () => set((state) => ({
+    multiWorkNudgedSignature: state.multiWorkOpenSignature,
+    multiWorkNudgeSeq: state.multiWorkNudgeSeq + 1,
+  })),
   setQueuedItems: (next) => set((state) => ({ queuedItems: resolve(next, state.queuedItems) })),
   setStagedItems: (next) => set((state) => ({ stagedItems: resolve(next, state.stagedItems) })),
   stageObjects: (objectIds) => set((state) => {

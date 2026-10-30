@@ -41,18 +41,24 @@ export interface WorkUnit {
   objectId: string;
   /** 用来判断片名的名字：普通文件 = [自己的名字]；压缩包 = 包内轨名（预览没好时用包名）。 */
   names: string[];
+  /** 这一项里有几个字幕文件；缺省 = names.length（普通文件 1，压缩包 = 包内轨数）。 */
+  fileCount?: number;
 }
 
 export interface WorkGroup {
   key: string;
   title: string;
   objectIds: string[];
+  /** 这部作品一共几个文件（压缩包按包内文件算，不按包算）。 */
+  fileCount: number;
 }
 
 export interface WorkGrouping {
   works: WorkGroup[];
   /** 认不出片名的条目（不属于任何一部）。 */
   unknown: string[];
+  /** 认不出片名的文件数（同样按文件算）。 */
+  unknownFileCount: number;
   isMultiWork: boolean;
 }
 
@@ -78,24 +84,41 @@ export function groupQueueByWork(units: WorkUnit[]): WorkGrouping {
   const works: WorkGroup[] = [];
   const byKey = new Map<string, WorkGroup>();
   const unknown: string[] = [];
+  let unknownFileCount = 0;
   for (const unit of units) {
+    const files = Math.max(1, unit.fileCount ?? unit.names.length);
     const work = majorityTitle(unit.names);
     if (!work) {
       unknown.push(unit.objectId);
+      unknownFileCount += files;
       continue;
     }
     let group = byKey.get(work.key);
     if (!group) {
-      group = { key: work.key, title: work.title, objectIds: [] };
+      group = { key: work.key, title: work.title, objectIds: [], fileCount: 0 };
       byKey.set(work.key, group);
       works.push(group);
     }
     group.objectIds.push(unit.objectId);
+    group.fileCount += files;
   }
-  return { works, unknown, isMultiWork: works.length >= 2 };
+  return { works, unknown, unknownFileCount, isMultiWork: works.length >= 2 };
 }
 
 /** 提示是否针对同一组作品（用户点了「都留在这里」之后，组合不变就不再弹）。 */
 export function workSignature(grouping: WorkGrouping): string {
   return grouping.works.map((work) => work.key).sort().join('|');
+}
+
+/**
+ * 「整理文件」遇到还没处理的多作品提示时：第一次点只把提示带到眼前（滚过去 + 描一圈），
+ * 第二次点照常整理全部（不拦截、不弹窗）。同一组合只提醒一次；组合变了重新算。
+ */
+export function shouldNudgeBeforeProcess(input: {
+  noticeOpen: boolean;
+  signature: string | null;
+  nudgedSignature: string | null;
+}): boolean {
+  if (!input.noticeOpen || !input.signature) return false;
+  return input.nudgedSignature !== input.signature;
 }

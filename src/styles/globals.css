@@ -1976,7 +1976,9 @@ button {
 @media (max-width: 767.98px) {
   .ingest-queue-footer {
     position: sticky;
-    bottom: 0;
+    /* Chromium 把 sticky 约束框按滚动区 padding 内缩；抵消 .ingest-shell 的底部 padding，
+       否则底栏下面会露出一条列表行。 */
+    bottom: calc(-1 * var(--ds-gap-section));
     z-index: 10;
     margin-inline: -0.25rem;
     padding: 0 0.25rem 0.75rem;
@@ -1994,4 +1996,20 @@ button {
   .ingest-action-bar__secondary { gap: 0.5rem; }
   .ingest-action-bar__primary .workflow-continue-in-flow { width: auto; align-items: flex-end; }
   .ingest-action-bar__primary .workflow-continue-in-flow > button { width: auto; }
+}
+
+/* Act 1 → Act 2（进入工作台）的 View Transition：整页交叉淡入，0.25 s；减少动态 0.15 s 纯淡入淡出。
+   只在 html[data-act-transition] 时生效（stageFlags.enterWorkbenchTransition），别处不用 VT。 */
+html[data-act-transition]::view-transition-old(root),
+html[data-act-transition]::view-transition-new(root) {
+  animation-duration: 0.25s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-act-transition]::view-transition-old(root),
+  html[data-act-transition]::view-transition-new(root) {
+    animation-duration: 0.15s;
+    animation-timing-function: linear;
+  }
 }

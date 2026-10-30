@@ -50,7 +50,7 @@
 - Scope of this draft: B-ready list component only (fixed language column, shared filename prefix + middle truncation, new SRT/ASS/archive silhouettes, single bottom action bar) plus motion tokens in `src/core/motion.ts` and the DESIGN.md §7 long-move exception (≤350 ms, spring bounce 0, transform only).
 - Plan B pieces **not** in this draft: persistent stage shell / `layoutStage` coordinates; cross-zone long-move animation (`MOTION_S.longMove` is defined but unused); multi-work grouping + hint + staging area (暂存区); 「更多文件」 picker on page 2; post-merge prompt.
 - Pre-existing (not changed here): filename-only language detection (`archive.ts` → `detectLanguageByFilename`) returns 待识别 for bilingual tags such as `EN&CHS` / `EN&CHT`. Already the case on e1b1e41.
-- `.ingest-queue-footer` is `position: sticky; bottom: 0` on < 768 px. It works because `.ingest-shell` is the scroll container and ends above the bottom tray; if that container changes, re-check the sticky bar.
+- `.ingest-queue-footer` is `position: sticky` on < 768 px, stuck to `.ingest-shell` (the scroll container, which ends above the bottom tray). Since v4 it uses `bottom: calc(-1 * var(--ds-gap-section))`: Chromium deflates the sticky rect by the container's padding, so with `bottom: 0` a list row peeked out under the bar once the list overflowed. If that container or its padding changes, re-check the sticky bar.
 
 ## DragZone list v3 / 方案 B 骨架（feat/dragzone-list-v2）
 
@@ -60,3 +60,33 @@
 - 动效：跨区域长距离移动 0.35 s（`MOTION_S.longMove`，springNoBounce），其余保持 0.25 s；reduced motion 下只做 0.15 s 透明度。
 - 多作品提示 + 暂存区：按片名分组（`core/workGrouping.ts`），≥2 部时在清单顶部提示；选一部后其余进入暂存区。暂存区在清单非空时位于清单顶部，清单空时位于拖放井上方并提示「继续整理？」。「整理文件」行为不变（提示打开时仍整理当前全部清单）。
 - 已知遗留：Act1→Act2 共享元素 / ViewTransition（仍是 `AnimatePresence mode="wait"`）；layoutStage 坐标函数；混合压缩包按条目拆分；第 2 页「更多文件」入口；仪式 token 编排；压缩包内同路径重名条目 objectId 冲突。
+
+## DragZone v4 checkpoint（feat/dragzone-list-v2）
+
+- 多作品提示按文件计数：`WorkUnit.fileCount`（压缩包按条目数），Ted Lasso 压缩包显示「9 个文件」；「另有 N 个文件认不出片名」。`queueStatsLine` 也改为「N 个文件」。
+- 暂存区按作品分组：组头「片名 · N 个文件」+ 一行「文件名前缀」，行内只显示尾部（MiddleTruncate，title 保留全名）。
+- 「整理文件」行为变化（仅此一处）：多作品提示未处理时，第一次点只把提示滚到眼前、描一圈酒红（`data-multi-work-pulse`，1.1 s；reduced motion 为静态描边）并出现「再点一次」说明；同一组提示下第二次点照常整理。逻辑在 `core/workGrouping.ts` 的 `shouldNudgeBeforeProcess`，状态在 `useIngestStage.multiWork*`。e2e：`e2e/ingest.multi-work-nudge.spec.ts`。
+- 共享元素交接（第 1 页 → 第 2 页），开关在 `core/stageFlags.ts`（`STAGE_SHARED_HANDOFF`，URL `?handoff=off` 关闭）：
+  - 仪式期间清单不卸载，顶部换成仪式状态，暂存区和底栏隐藏，清单只读（`data-queue-readonly`）。**行为变化：仪式期间拖入被忽略。**
+  - 放行时 `markHandoff()`；第 2 页 `TaskList` 在 900 ms 窗口内给每条轨道包装 `layoutId = sourceObjectId`，0.35 s 无回弹 spring 移动；窗口外不挂 layoutId，避免换轨 / 重新绑定时再次飞行。reduced motion 不做移动，只做 0.15 s 淡入淡出。
+  - DragZone 退场时用 `useIsPresent` 冻结最后一帧清单，避免 store 清空后闪出空拖放井。
+  - `IngestStep` 在开关打开时用 `AnimatePresence mode="popLayout"`（否则仍为 `wait`）。`gate-notice-dedupe` 的源码断言已同步。
+- 进入工作台（Act 1 → Act 2）的 ViewTransition：`enterWorkbenchTransition`（`ACT_VIEW_TRANSITION`，URL `?vt=off` 关闭；不支持 / 页面隐藏时直接更新）。只用于合轴完成进入工作台、和顶部「工作台」从第 1 步点入两处。root 交叉淡化 0.25 s，reduced motion 0.15 s。
+- 4x CPU 降速（Playwright + CDP，headless Chromium，Ted 压缩包 9 条，每种 3 次；rAF 间隔，t0 起 600 ms 窗口）：
+  - 交接开：p50 16.7 / p95 33.4 / max 66.7 ms，>25 ms 7.5%，>33 ms 6.5%（93 帧）
+  - `?handoff=off`：p50 16.7 / p95 33.3 / max 33.4 ms，>25 ms 5.2%，>33 ms 1.0%（96 帧）
+  - 进入工作台（VT 开）：p50 16.7 / p95 33.3 / max 33.4 ms，>33 ms 0%；VT 从开始到结束 377–403 ms
+  - 进入工作台（`?vt=off`）：p95 33.5 / max 116.7 ms，>33 ms 6.6%
+  - 结论：交接每次约多掉 2 帧（>33 ms），没有长卡顿；先保留开关默认打开。若真机更差，方案 C = 关 `STAGE_SHARED_HANDOFF`。
+- 既有问题（与本轮无关，只记录）：单元测试 `A3: deferred auto match` 偶发失败（`selectTask must not start its own search` 1 !== 0），在未改动的代码上 3 次也会失败 1 次。
+
+### 下周从这里开始
+1. 交接掉帧：先在真机 / 4x 下看是哪一帧长（首帧测量？），试只给可见行挂 layoutId；不行就走方案 C（关开关）。
+2. 混合压缩包按条目拆分（现在整包归入多数片名，多作品提示里压缩包不可拆）。
+3. layoutStage 坐标函数（方案 B 剩余）。
+4. 第 2 页「更多文件」入口。
+5. 仪式 token 编排。
+6. 压缩包内同路径重名条目的 objectId 冲突。
+7. 修 `A3` 偶发失败的单元测试。
+8. ViewTransition 实测 377–403 ms，比 0.25 s 动画长（含快照和一次 setTimeout）；看能否去掉 setTimeout。
+

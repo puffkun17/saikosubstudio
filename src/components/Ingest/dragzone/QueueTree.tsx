@@ -128,6 +128,7 @@ export const ArchiveSubtree = ({
       {item.archiveEntries?.map((entry, entryIndex) => (
         <motion.div
           key={entry.objectId ?? `${item.key}:${entry.name}`}
+          {...(entry.objectId ? stageObjectProps(entry.objectId, shouldReduceMotion) : {})}
           data-stage-object={entry.objectId}
           initial={shouldReduceMotion ? false : { opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
@@ -135,6 +136,7 @@ export const ArchiveSubtree = ({
             duration: shouldReduceMotion ? 0 : LEAF_S,
             delay: shouldReduceMotion ? 0 : leafDelayMs(entryIndex) / 1000,
             ease: EASE_OUT,
+            layout: LONG_MOVE,
           }}
           className="ingest-halo-leaf min-w-0 py-1.5 md:py-2"
           style={{ '--leaf-delay': `${leafDelayMs(entryIndex)}ms` } as React.CSSProperties}
@@ -159,16 +161,24 @@ export const QueueTree = ({
   shouldReduceMotion,
   removeQueuedFile,
   removeFolderGroup,
+  readOnly = false,
 }: {
   queuedItems: PreflightItem[];
   shouldReduceMotion: boolean | null;
   removeQueuedFile: (key: string) => void;
   removeFolderGroup: (folderName: string) => void;
+  /** 等待态里只读：不显示移除按钮（占位保持列宽，行不跳）。 */
+  readOnly?: boolean;
 }) => {
   const renderNodes = buildRenderNodes(queuedItems);
+  const removePlaceholder = <span className="h-9 w-9" aria-hidden="true" />;
 
   return (
-    <div className="max-h-[min(480px,56vh)] space-y-3 overflow-y-auto px-1 pb-1 md:max-h-[min(620px,62vh)] md:space-y-4">
+    <motion.div
+      layoutScroll
+      className="max-h-[min(480px,56vh)] space-y-3 overflow-y-auto px-1 pb-1 md:max-h-[min(620px,62vh)] md:space-y-4"
+      data-queue-readonly={readOnly || undefined}
+    >
       {renderNodes.map((node, nodeIndex) => {
         // 文件「落桌」：从上方轻降 + 微缩回位，像放到桌面上
         const landing = {
@@ -213,14 +223,16 @@ export const QueueTree = ({
                   </p>
                   <SharedPrefixLine prefix={folderNames.prefix} />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => removeFolderGroup(node.folder)}
-                  className="ui-action ui-action--quiet ui-action--danger ui-action--icon"
-                  aria-label={`移除文件夹 ${node.folder}`}
-                >
-                  <X className="h-4 w-4" strokeWidth={2} />
-                </button>
+                {readOnly ? removePlaceholder : (
+                  <button
+                    type="button"
+                    onClick={() => removeFolderGroup(node.folder)}
+                    className="ui-action ui-action--quiet ui-action--danger ui-action--icon"
+                    aria-label={`移除文件夹 ${node.folder}`}
+                  >
+                    <X className="h-4 w-4" strokeWidth={2} />
+                  </button>
+                )}
               </div>
 
               <div className="ingest-halo-tree mt-2.5 md:mt-3">
@@ -251,7 +263,7 @@ export const QueueTree = ({
                         accepted={item.accepted}
                         note={item.accepted ? undefined : item.note}
                         languageLabels={langs}
-                        onRemove={() => removeQueuedFile(item.key)}
+                        onRemove={readOnly ? undefined : () => removeQueuedFile(item.key)}
                       />
                       <ArchiveSubtree item={item} shouldReduceMotion={shouldReduceMotion} />
                     </motion.div>
@@ -283,7 +295,7 @@ export const QueueTree = ({
                 accepted={item.accepted}
                 note={item.accepted ? undefined : item.note}
                 languageLabels={langs}
-                onRemove={() => removeQueuedFile(item.key)}
+                onRemove={readOnly ? undefined : () => removeQueuedFile(item.key)}
               />
             </motion.div>
           );
@@ -332,20 +344,22 @@ export const QueueTree = ({
                   <p className="mt-1 text-xs font-medium text-[var(--v4-danger)] md:text-sm">{item.note}</p>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={() => removeQueuedFile(item.key)}
-                className="ui-action ui-action--quiet ui-action--danger ui-action--icon"
-                aria-label={`移除 ${item.name}`}
-              >
-                <X className="h-4 w-4" strokeWidth={2} />
-              </button>
+              {readOnly ? removePlaceholder : (
+                <button
+                  type="button"
+                  onClick={() => removeQueuedFile(item.key)}
+                  className="ui-action ui-action--quiet ui-action--danger ui-action--icon"
+                  aria-label={`移除 ${item.name}`}
+                >
+                  <X className="h-4 w-4" strokeWidth={2} />
+                </button>
+              )}
             </div>
 
             <ArchiveSubtree item={item} shouldReduceMotion={shouldReduceMotion} />
           </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 };

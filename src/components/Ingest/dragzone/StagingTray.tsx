@@ -7,11 +7,32 @@ import { MiddleTruncate } from '@/components/ui/MiddleTruncate';
 import { EASE_OUT, MOTION_S, springNoBounce } from '@/core/motion';
 import { workTitleOf } from '@/core/workGrouping';
 import { CLEAR_CONFIRM_TIMEOUT_MS } from '@/components/Ingest/dragzone/QueueActionBar';
+import { groupDisplayNames, SharedPrefixLine } from '@/components/Ingest/dragzone/QueueTree';
 import type { PreflightItem } from '@/components/Ingest/dragzone/preflight';
 
-/** 一条暂存文件在列表里显示的作品名（压缩包按包内轨）。 */
-const workLabelOf = (item: PreflightItem) =>
-  workTitleOf(item.archiveEntries?.[0]?.name || item.name)?.title ?? null;
+/** 一条暂存项里的文件数：压缩包按包内轨算，与多作品提示、清单统计同一口径。 */
+const fileCountOf = (item: PreflightItem) => Math.max(1, item.archiveEntries?.length ?? 0);
+
+type StagedWorkGroup = { key: string; title: string | null; items: PreflightItem[]; files: number };
+
+/** 按作品分组（保持暂存顺序），每组折叠一次共同前缀——与主清单同一套规则。 */
+const groupStagedByWork = (items: PreflightItem[]): StagedWorkGroup[] => {
+  const groups: StagedWorkGroup[] = [];
+  const byKey = new Map<string, StagedWorkGroup>();
+  for (const item of items) {
+    const work = workTitleOf(item.archiveEntries?.[0]?.name || item.name);
+    const key = work?.key ?? '__unknown__';
+    let group = byKey.get(key);
+    if (!group) {
+      group = { key, title: work?.title ?? null, items: [], files: 0 };
+      byKey.set(key, group);
+      groups.push(group);
+    }
+    group.items.push(item);
+    group.files += fileCountOf(item);
+  }
+  return groups;
+};
 
 /**
  * 暂存区（plan B，dragzone-proposal §7.1 步骤 10–14）。
@@ -45,7 +66,8 @@ export const StagingTray = ({
   }, [confirmingClear]);
 
   if (stagedItems.length === 0) return null;
-  const count = stagedItems.length;
+  const count = stagedItems.reduce((sum, item) => sum + fileCountOf(item), 0);
+  const groups = groupStagedByWork(stagedItems);
   const longMove = springNoBounce(MOTION_S.longMove);
 
   return (
@@ -69,52 +91,74 @@ export const StagingTray = ({
         </p>
       </header>
 
-      <ul className="mt-2.5 space-y-0.5 md:mt-3">
-        <AnimatePresence initial={false}>
-          {stagedItems.map((item) => {
-            const work = workLabelOf(item);
-            const entries = item.archiveEntries?.length ?? 0;
-            return (
-              <motion.li
-                key={item.objectId}
-                layoutId={reduce ? undefined : item.objectId}
-                initial={reduce ? { opacity: 0 } : false}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, transition: { duration: reduce ? MOTION_S.reduced : MOTION_S.exit } }}
-                transition={reduce ? { duration: MOTION_S.reduced } : { layout: longMove }}
-                className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 rounded-md px-1 py-1.5 md:gap-3.5"
-                data-staged-item={item.objectId}
-              >
-                <FileFormatIcon format={resolveFileFormat(item.name)} size="sm" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-[var(--ink-body)] md:text-[15px]">
-                    <MiddleTruncate text={item.relativePath || item.name} />
-                  </p>
-                  {(work || entries > 0) && (
-                    <p className="text-xs text-[var(--ink-muted)]">
-                      {[work, entries > 0 ? `包内 ${entries} 条` : null].filter(Boolean).join(' · ')}
+      <div className="mt-2.5 space-y-3 md:mt-3">
+        {groups.map((group) => {
+          const { prefix, display } = groupDisplayNames(group.items.map((item) => item.name));
+          return (
+            <div key={group.key} data-staged-work={group.key}>
+              {(group.title || prefix) && (
+                <div className="px-1">
+                  {group.title && (
+                    <p className="flex items-baseline gap-2 text-sm font-medium text-[var(--ink-strong)]">
+                      <span className="min-w-0 truncate">{group.title}</span>
+                      <span className="shrink-0 tabular-nums text-xs font-normal text-[var(--ink-muted)]">{group.files} 个文件</span>
                     </p>
                   )}
+                  <SharedPrefixLine prefix={prefix} />
                 </div>
-                <button
-                  type="button"
-                  className="ui-action ui-action--quiet"
-                  onClick={() => onUnstage(item.objectId)}
-                  aria-label={`移回 ${item.name}`}
-                  data-staged-return
-                >
-                  移回
-                </button>
-              </motion.li>
-            );
-          })}
-        </AnimatePresence>
-      </ul>
+              )}
+              <ul className="mt-1 space-y-0.5">
+                <AnimatePresence initial={false}>
+                  {group.items.map((item, index) => {
+                    const entries = item.archiveEntries?.length ?? 0;
+                    const folder = item.relativePath && item.relativePath !== item.name
+                      ? item.relativePath.slice(0, item.relativePath.length - item.name.length)
+                      : '';
+                    return (
+                      <motion.li
+                        key={item.objectId}
+                        layoutId={reduce ? undefined : item.objectId}
+                        initial={reduce ? { opacity: 0 } : false}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0, transition: { duration: reduce ? MOTION_S.reduced : MOTION_S.exit } }}
+                        transition={reduce ? { duration: MOTION_S.reduced } : { layout: longMove }}
+                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 rounded-md px-1 py-1.5 md:gap-3.5"
+                        data-staged-item={item.objectId}
+                      >
+                        <FileFormatIcon format={resolveFileFormat(item.name)} size="sm" />
+                        <div className="min-w-0" title={item.relativePath || item.name}>
+                          <p className="text-sm font-medium text-[var(--ink-body)] md:text-[15px]" data-staged-name>
+                            <MiddleTruncate text={display[index] ?? item.name} />
+                          </p>
+                          {(folder || entries > 0) && (
+                            <p className="text-xs text-[var(--ink-muted)]">
+                              {[folder ? folder.replace(/\/$/, '') : null, entries > 0 ? `包内 ${entries} 条` : null].filter(Boolean).join(' · ')}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          className="ui-action ui-action--quiet"
+                          onClick={() => onUnstage(item.objectId)}
+                          aria-label={`移回 ${item.name}`}
+                          data-staged-return
+                        >
+                          移回
+                        </button>
+                      </motion.li>
+                    );
+                  })}
+                </AnimatePresence>
+              </ul>
+            </div>
+          );
+        })}
+      </div>
 
       <footer className="mt-2.5 flex flex-wrap items-center justify-end gap-2 border-t border-[var(--rule-hair)] px-1 pt-2.5 md:mt-3 md:pt-3" data-staging-footer>
         {confirmingClear ? (
           <span role="group" aria-label="确认清空暂存区" className="inline-flex items-center gap-1">
-            <span className="whitespace-nowrap px-1 text-sm text-[var(--ink-muted)]">清空暂存区 {count} 项？</span>
+            <span className="whitespace-nowrap px-1 text-sm text-[var(--ink-muted)]">清空暂存区 {count} 个文件？</span>
             <button
               type="button"
               className="ui-action ui-action--danger"

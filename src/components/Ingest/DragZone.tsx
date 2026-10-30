@@ -9,7 +9,7 @@ import {
   FolderPlus,
   Upload,
 } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';
 import { summarizeImportForChip } from '@/utils/importSummary';
 import {
   MAX_DROPPED_ENTRIES,
@@ -68,12 +68,12 @@ export const DragZone: React.FC = () => {
 
 
   const {
-    isParsing,
-    ceremony,
+    isParsing: isParsingLive,
+    ceremony: ceremonyLive,
     retryMatch,
     chooseManualSearch,
     importSummary,
-    queuedItems,
+    queuedItems: queuedItemsLive,
     setQueuedItems,
     queueIssue,
     setQueueIssue,
@@ -82,8 +82,23 @@ export const DragZone: React.FC = () => {
     removeFolderGroup,
   } = useIngestPipeline();
 
+  // 交接（plan B）：放行那一刻清单在 store 里被清空、等待态结束，但这一页还在退场（popLayout）。
+  // 退场期间冻结在最后一帧「等待态 + 清单」，文件行才能从原位飞到任务页，而不是先闪一下空拖放井。
+  const isPresent = useIsPresent();
+  const [frozen, setFrozen] = useState<{ queuedItems: typeof queuedItemsLive; ceremony: typeof ceremonyLive } | null>(null);
+  if (isPresent && isParsingLive && (frozen?.queuedItems !== queuedItemsLive || frozen?.ceremony !== ceremonyLive)) {
+    setFrozen({ queuedItems: queuedItemsLive, ceremony: ceremonyLive });
+  }
+  const holding = !isPresent && frozen !== null;
+  const isParsing = holding ? true : isParsingLive;
+  const ceremony = holding ? frozen.ceremony : ceremonyLive;
+  const queuedItems = holding ? frozen.queuedItems : queuedItemsLive;
+
   // 暂存区（plan B）：与本次清单同住舞台 store，页面切换不丢。
-  const { stagedItems, multiWorkDismissed, stageObjects, unstageObjects, clearStaged, dismissMultiWork } = useIngestStage(
+  const {
+    stagedItems, multiWorkDismissed, stageObjects, unstageObjects, clearStaged, dismissMultiWork,
+    setMultiWorkOpen, multiWorkNudgeSeq, multiWorkNudgedSignature,
+  } = useIngestStage(
     useShallow((state) => ({
       stagedItems: state.stagedItems,
       multiWorkDismissed: state.multiWorkDismissed,
@@ -91,6 +106,9 @@ export const DragZone: React.FC = () => {
       unstageObjects: state.unstageObjects,
       clearStaged: state.clearStaged,
       dismissMultiWork: state.dismissMultiWork,
+      setMultiWorkOpen: state.setMultiWorkOpen,
+      multiWorkNudgeSeq: state.multiWorkNudgeSeq,
+      multiWorkNudgedSignature: state.multiWorkNudgedSignature,
     })),
   );
   const archivePeekPending = queuedItems.some((item) => (item.kind === 'zip' || item.kind === 'archive') && item.archivePeekStatus === 'loading');
@@ -100,12 +118,20 @@ export const DragZone: React.FC = () => {
       .map((item) => ({
         objectId: item.objectId,
         names: item.archiveEntries && item.archiveEntries.length > 0 ? item.archiveEntries.map((entry) => entry.name) : [item.name],
+        fileCount: item.archiveEntries && item.archiveEntries.length > 0 ? item.archiveEntries.length : 1,
       })),
   ), [queuedItems]);
   // 包内预览还没回来时不提示（包名常常只有片名，等轨名到了再判断，避免提示闪一下又变）。
-  const showMultiWork = !archivePeekPending
+  const multiWorkSignature = workSignature(workGrouping);
+  const showMultiWork = !isParsing
+    && !archivePeekPending
     && workGrouping.isMultiWork
-    && multiWorkDismissed !== workSignature(workGrouping);
+    && multiWorkDismissed !== multiWorkSignature;
+  // 告诉「整理文件」：提示还开着（第一次点先把提示带到眼前）。
+  useEffect(() => {
+    setMultiWorkOpen(showMultiWork ? multiWorkSignature : null);
+  }, [showMultiWork, multiWorkSignature, setMultiWorkOpen]);
+  useEffect(() => () => setMultiWorkOpen(null), [setMultiWorkOpen]);
   // 暂存区放在视线里：清单空时在拖放井上方（「继续整理？」提示），清单非空时在清单顶部（提示块下面）。
   const stagingTray = (
     <StagingTray
@@ -128,18 +154,22 @@ export const DragZone: React.FC = () => {
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
+    if (isParsing) return;
     dragCounterRef.current += 1;
     if (dragCounterRef.current === 1) setIsDragging(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
+    if (isParsing) return;
     dragCounterRef.current -= 1;
     if (dragCounterRef.current === 0) setIsDragging(false);
   };
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
+    // 等待态里清单只读：不在整理途中再加文件。
+    if (isParsing) return;
     dragCounterRef.current = 0;
     setIsDragging(false);
 
@@ -189,41 +219,46 @@ export const DragZone: React.FC = () => {
     addFilesToQueue(incoming);
   };
 
-  if (isParsing) {
+  // 等待态（文件仅在本地处理 / 还没匹配到影片）：清单还在时放在清单上方，文件行不消失、只读。
+  const ceremonyStatus = (
+    <div className="flex flex-col items-center gap-2.5 text-center">
+      {ceremony?.needsChoice ? (
+        <span className="ingest-local-static" aria-hidden="true" data-ingest-match-static>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <circle cx="10.5" cy="10.5" r="5.5" />
+            <path d="M15 15l4.5 4.5" />
+          </svg>
+        </span>
+      ) : (
+        <span className="ingest-local-spinner" aria-hidden="true" />
+      )}
+      <p className="text-base font-semibold tracking-tight text-[var(--v4-text)]" data-ingest-parsing-title>
+        {ceremony?.needsChoice ? '还没匹配到影片' : '文件仅在本地处理'}
+      </p>
+      {ceremony?.needsChoice ? (
+        <div className="mt-2 flex flex-col items-center gap-2.5" data-ingest-match-choice>
+          <p className="max-w-[22rem] px-4 text-center text-sm text-balance text-[var(--ink-muted)]">
+            {ceremony.choiceReason === 'failed'
+              ? '影片资料没有取到。可以再试一次，或自己输入片名。'
+              : '影片资料还没回来。可以再试一次，或自己输入片名。'}
+          </p>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={retryMatch} className="ui-action">
+              重试
+            </button>
+            <button type="button" onClick={chooseManualSearch} className="ui-action ui-action--secondary">
+              手动搜索
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+
+  if (isParsing && queuedItems.length === 0) {
     return (
       <div className="relative mx-auto flex w-full max-w-lg min-h-[280px] flex-col items-center justify-center px-2">
-        <div className="flex flex-col items-center gap-2.5 text-center">
-          {ceremony?.needsChoice ? (
-            <span className="ingest-local-static" aria-hidden="true" data-ingest-match-static>
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                <circle cx="10.5" cy="10.5" r="5.5" />
-                <path d="M15 15l4.5 4.5" />
-              </svg>
-            </span>
-          ) : (
-            <span className="ingest-local-spinner" aria-hidden="true" />
-          )}
-          <p className="text-base font-semibold tracking-tight text-[var(--v4-text)]" data-ingest-parsing-title>
-            {ceremony?.needsChoice ? '还没匹配到影片' : '文件仅在本地处理'}
-          </p>
-          {ceremony?.needsChoice ? (
-            <div className="mt-2 flex flex-col items-center gap-2.5" data-ingest-match-choice>
-              <p className="max-w-[22rem] px-4 text-center text-sm text-balance text-[var(--ink-muted)]">
-                {ceremony.choiceReason === 'failed'
-                  ? '影片资料没有取到。可以再试一次，或自己输入片名。'
-                  : '影片资料还没回来。可以再试一次，或自己输入片名。'}
-              </p>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={retryMatch} className="ui-action">
-                  重试
-                </button>
-                <button type="button" onClick={chooseManualSearch} className="ui-action ui-action--secondary">
-                  手动搜索
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </div>
+        {ceremonyStatus}
       </div>
     );
   }
@@ -338,6 +373,11 @@ export const DragZone: React.FC = () => {
                   松开以继续添加
                 </p>
               )}
+              {isParsing ? (
+                <div className="mb-5 px-1 md:mb-6" data-ingest-ceremony-head>
+                  {ceremonyStatus}
+                </div>
+              ) : (
               <header className="mb-5 flex flex-wrap items-end justify-between gap-3 px-1 md:mb-6 md:gap-4">
                 <div className="min-w-0">
                   <h3 className="text-base font-semibold tracking-tight text-[var(--v4-text)] md:text-lg lg:text-[1.25rem]">
@@ -389,25 +429,29 @@ export const DragZone: React.FC = () => {
                   )}
                 </div>
               </header>
+              )}
 
               {showMultiWork && (
                 <MultiWorkNotice
-                  key={workSignature(workGrouping)}
+                  key={multiWorkSignature}
                   grouping={workGrouping}
+                  nudgeSeq={multiWorkNudgedSignature === multiWorkSignature ? multiWorkNudgeSeq : 0}
                   onConfirm={stageAllButWork}
-                  onKeepAll={() => dismissMultiWork(workSignature(workGrouping))}
+                  onKeepAll={() => dismissMultiWork(multiWorkSignature)}
                 />
               )}
 
-              {stagingTray}
+              {!isParsing && stagingTray}
 
               <QueueTree
                 queuedItems={queuedItems}
                 shouldReduceMotion={shouldReduceMotion}
                 removeQueuedFile={removeQueuedFile}
                 removeFolderGroup={removeFolderGroup}
+                readOnly={isParsing}
               />
 
+              {!isParsing && (
               <footer className="ingest-queue-footer mt-6 flex flex-col gap-3 px-1 md:mt-7 md:gap-4">
                 {(queueIssue || rejectedItems.length > 0) && (
                   <p className="text-sm leading-5 text-[var(--v4-warning)] md:text-[15px]">
@@ -422,6 +466,7 @@ export const DragZone: React.FC = () => {
                   folderPickSupported={folderPickSupported}
                 />
               </footer>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
