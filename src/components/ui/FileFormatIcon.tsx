@@ -114,9 +114,10 @@ interface FileFormatGlyphProps {
 }
 
 /**
- * 纯 SVG 图标，24 单位网格：
- * - 文档（srt/ass/未知）：竖向纸片 + 右上折角，格式字压在下半部。
- * - 压缩包（zip/rar/7z）：同一张纸片，但没有折角，顶部一道封条 + 竖向系绳 —— “捆起来的一叠”，B 里可以做“拆封”。
+ * 纯 SVG 图标，24 单位网格。list v2：每种格式靠**轮廓**区分（20–28 px 不认字也能分）：
+ * - SRT / 未知：竖向纸片 + 右上**镂空折角**。
+ * - ASS：竖向纸片，右上角是**实心墨色样式角**（“带样式的字幕”），没有折角。
+ * - 压缩包（zip/rar/7z）：**横向盒子**，盒盖比盒身宽一圈 + 中间提签；B 里可以做“开盖”。
  * - 文件夹：横向标签夹，无字。
  */
 export const FileFormatGlyph: React.FC<FileFormatGlyphProps> = ({
@@ -154,13 +155,30 @@ export const FileFormatGlyph: React.FC<FileFormatGlyphProps> = ({
 
   if (kind === 'archive') {
     return (
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="block h-full w-full">
-        <rect x="4.25" y="2.75" width="15.5" height="18.5" rx="1.5" fill={c.body} {...stroke} />
-        {/* 封条 + 系绳 */}
-        <path d="M4.25 8.25h15.5" {...stroke} />
-        <path d="M12 2.75v5.5" {...stroke} stroke={c.detail} />
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="block h-full w-full" data-glyph="archive">
+        {/* 盒身（横向） */}
+        <rect x="3.25" y="8" width="17.5" height="12.75" rx="1.25" fill={c.body} {...stroke} />
+        {/* 盒盖：比盒身宽，轮廓上多出两个肩 */}
+        <rect x="1.75" y="4.5" width="20.5" height="4" rx="1" fill={c.body} {...stroke} />
+        {/* 提签 */}
+        <path d="M10 8.5v2.25c0 .41.34.75.75.75h2.5c.41 0 .75-.34.75-.75V8.5" {...stroke} stroke={c.detail} />
         {withCode && code && (
-          <text x="12" y="17.6" textAnchor="middle" fontSize={codeSize} fill={c.ink} style={MONO_STYLE}>
+          <text x="12" y="18.4" textAnchor="middle" fontSize={code.length <= 2 ? 6.6 : 5.8} fill={c.ink} style={MONO_STYLE}>
+            {code}
+          </text>
+        )}
+      </svg>
+    );
+  }
+
+  if (format === 'ass') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="block h-full w-full" data-glyph="document-styled">
+        <rect x="4.25" y="2.75" width="14.5" height="18.5" rx="1.5" fill={c.body} {...stroke} />
+        {/* 实心样式角：与 SRT 的镂空折角在同一位置，明暗相反 */}
+        <path d="M11.25 2.75h6c.83 0 1.5.67 1.5 1.5v6Z" fill={c.line} stroke={c.line} strokeWidth={sw} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        {withCode && code && (
+          <text x="11.5" y="17.6" textAnchor="middle" fontSize={codeSize} fill={c.ink} style={MONO_STYLE}>
             {code}
           </text>
         )}
@@ -169,7 +187,7 @@ export const FileFormatGlyph: React.FC<FileFormatGlyphProps> = ({
   }
 
   return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="block h-full w-full">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="block h-full w-full" data-glyph="document">
       <path
         d="M5.75 2.75h8.5l4.5 4.5v12.5c0 .83-.67 1.5-1.5 1.5h-11.5c-.83 0-1.5-.67-1.5-1.5V4.25c0-.83.67-1.5 1.5-1.5Z"
         fill={c.body}
@@ -328,7 +346,7 @@ const isLatinMark = (mark: string) => /^[\x20-\x7e]+$/.test(mark);
 
 /**
  * 纯文字语言牌：圆角 4、1 px 控件边、不透明纸底、墨字，不填色块。
- * 待识别用虚线边（形状区分状态，不只靠颜色）。
+ * 待识别（list v2）：实心淡墨底、无控件边、淡墨问号 —— 比已确认的语言更安静（以前的虚线边反而更抢眼）。
  */
 export const LanguageTile: React.FC<{
   visual: LangVisual;
@@ -341,21 +359,29 @@ export const LanguageTile: React.FC<{
   const latin = isLatinMark(visual.mark);
   const pending = visual.key === 'unknown';
   const fontPx = latin ? LANG_FONT_PX[size].latin : LANG_FONT_PX[size].cjk;
-  const borderColor = tone === 'accent' ? 'var(--accent)' : tone === 'faint' ? 'var(--rule-strong)' : 'var(--rule-control)';
-  const color = tone === 'accent' ? 'var(--accent-text)' : tone === 'faint' ? 'var(--ink-muted)' : 'var(--ink-strong)';
-  const background = tone === 'accent' ? 'color-mix(in srgb, var(--accent) 8%, var(--paper-raised))' : 'var(--paper-raised)';
+  const pendingFill = 'color-mix(in srgb, var(--ink-faint) 16%, var(--paper-raised))';
+  const borderColor = pending
+    ? pendingFill
+    : tone === 'accent' ? 'var(--accent)' : tone === 'faint' ? 'var(--rule-strong)' : 'var(--rule-control)';
+  const color = pending
+    ? 'var(--ink-faint)'
+    : tone === 'accent' ? 'var(--accent-text)' : tone === 'faint' ? 'var(--ink-muted)' : 'var(--ink-strong)';
+  const background = pending
+    ? pendingFill
+    : tone === 'accent' ? 'color-mix(in srgb, var(--accent) 8%, var(--paper-raised))' : 'var(--paper-raised)';
 
   return (
     <span
       aria-hidden="true"
       data-lang-key={visual.key}
+      data-lang-pending={pending || undefined}
       className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[var(--pt-radius-sm)] border leading-none ${className}`}
       style={{
         height: px,
         minWidth: px,
         paddingInline: latin && visual.mark.length > 1 ? 3 : 0,
         borderColor,
-        borderStyle: pending ? 'dashed' : 'solid',
+        borderStyle: 'solid',
         background,
         color,
       }}

@@ -5,17 +5,12 @@ import { OriginalConfirmDialog } from '@/components/Ingest/OriginalConfirmDialog
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import {
-  ChevronDown,
   FilePlus,
   FolderPlus,
-  HardDrive,
-  Plus,
   Upload,
 } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';
 import { summarizeImportForChip } from '@/utils/importSummary';
-import { DeleteButton } from '@/components/ui/delete-button';
-import { WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
 import {
   MAX_DROPPED_ENTRIES,
   collectEntryFiles,
@@ -30,6 +25,11 @@ import {
 } from '@/components/Ingest/dragzone/environment';
 import { useIngestPipeline } from '@/components/Ingest/dragzone/useIngestPipeline';
 import { QueueTree } from '@/components/Ingest/dragzone/QueueTree';
+import { QueueActionBar } from '@/components/Ingest/dragzone/QueueActionBar';
+import { StagingTray } from '@/components/Ingest/dragzone/StagingTray';
+import { MultiWorkNotice } from '@/components/Ingest/dragzone/MultiWorkNotice';
+import { useIngestStage } from '@/store/useIngestStage';
+import { groupQueueByWork, workSignature } from '@/core/workGrouping';
 
 export const DragZone: React.FC = () => {
   const [confirmOriginal, setConfirmOriginal] = React.useState(false);
@@ -63,29 +63,17 @@ export const DragZone: React.FC = () => {
     folderInputRef.current?.click();
   };
 
-  const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
-  const addMenuRef = useRef<HTMLDivElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!addMenuOpen) return;
-    const onPointerDown = (event: MouseEvent) => {
-      if (addMenuRef.current && !addMenuRef.current.contains(event.target as Node)) {
-        setAddMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onPointerDown);
-    return () => document.removeEventListener('mousedown', onPointerDown);
-  }, [addMenuOpen]);
 
   const {
-    isParsing,
-    ceremony,
+    isParsing: isParsingLive,
+    ceremony: ceremonyLive,
     retryMatch,
     chooseManualSearch,
     importSummary,
-    queuedItems,
+    queuedItems: queuedItemsLive,
     setQueuedItems,
     queueIssue,
     setQueueIssue,
@@ -94,6 +82,71 @@ export const DragZone: React.FC = () => {
     removeFolderGroup,
   } = useIngestPipeline();
 
+  // 交接（plan B）：放行那一刻清单在 store 里被清空、等待态结束，但这一页还在退场（popLayout）。
+  // 退场期间冻结在最后一帧「等待态 + 清单」，文件行才能从原位飞到任务页，而不是先闪一下空拖放井。
+  const isPresent = useIsPresent();
+  const [frozen, setFrozen] = useState<{ queuedItems: typeof queuedItemsLive; ceremony: typeof ceremonyLive } | null>(null);
+  if (isPresent && isParsingLive && (frozen?.queuedItems !== queuedItemsLive || frozen?.ceremony !== ceremonyLive)) {
+    setFrozen({ queuedItems: queuedItemsLive, ceremony: ceremonyLive });
+  }
+  const holding = !isPresent && frozen !== null;
+  const isParsing = holding ? true : isParsingLive;
+  const ceremony = holding ? frozen.ceremony : ceremonyLive;
+  const queuedItems = holding ? frozen.queuedItems : queuedItemsLive;
+
+  // 暂存区（plan B）：与本次清单同住舞台 store，页面切换不丢。
+  const {
+    stagedItems, multiWorkDismissed, stageObjects, unstageObjects, clearStaged, dismissMultiWork,
+    setMultiWorkOpen, multiWorkNudgeSeq, multiWorkNudgedSignature,
+  } = useIngestStage(
+    useShallow((state) => ({
+      stagedItems: state.stagedItems,
+      multiWorkDismissed: state.multiWorkDismissed,
+      stageObjects: state.stageObjects,
+      unstageObjects: state.unstageObjects,
+      clearStaged: state.clearStaged,
+      dismissMultiWork: state.dismissMultiWork,
+      setMultiWorkOpen: state.setMultiWorkOpen,
+      multiWorkNudgeSeq: state.multiWorkNudgeSeq,
+      multiWorkNudgedSignature: state.multiWorkNudgedSignature,
+    })),
+  );
+  const archivePeekPending = queuedItems.some((item) => (item.kind === 'zip' || item.kind === 'archive') && item.archivePeekStatus === 'loading');
+  const workGrouping = React.useMemo(() => groupQueueByWork(
+    queuedItems
+      .filter((item) => item.accepted)
+      .map((item) => ({
+        objectId: item.objectId,
+        names: item.archiveEntries && item.archiveEntries.length > 0 ? item.archiveEntries.map((entry) => entry.name) : [item.name],
+        fileCount: item.archiveEntries && item.archiveEntries.length > 0 ? item.archiveEntries.length : 1,
+      })),
+  ), [queuedItems]);
+  // 包内预览还没回来时不提示（包名常常只有片名，等轨名到了再判断，避免提示闪一下又变）。
+  const multiWorkSignature = workSignature(workGrouping);
+  const showMultiWork = !isParsing
+    && !archivePeekPending
+    && workGrouping.isMultiWork
+    && multiWorkDismissed !== multiWorkSignature;
+  // 告诉「整理文件」：提示还开着（第一次点先把提示带到眼前）。
+  useEffect(() => {
+    setMultiWorkOpen(showMultiWork ? multiWorkSignature : null);
+  }, [showMultiWork, multiWorkSignature, setMultiWorkOpen]);
+  useEffect(() => () => setMultiWorkOpen(null), [setMultiWorkOpen]);
+  // 暂存区放在视线里：清单空时在拖放井上方（「继续整理？」提示），清单非空时在清单顶部（提示块下面）。
+  const stagingTray = (
+    <StagingTray
+      stagedItems={stagedItems}
+      queueEmpty={queuedItems.length === 0}
+      onUnstage={(objectId) => unstageObjects([objectId])}
+      onUnstageAll={() => unstageObjects()}
+      onClear={clearStaged}
+    />
+  );
+  const stageAllButWork = (workKey: string) => {
+    const others = workGrouping.works.filter((work) => work.key !== workKey).flatMap((work) => work.objectIds);
+    stageObjects(others);
+  };
+
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -101,18 +154,22 @@ export const DragZone: React.FC = () => {
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
+    if (isParsing) return;
     dragCounterRef.current += 1;
     if (dragCounterRef.current === 1) setIsDragging(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
+    if (isParsing) return;
     dragCounterRef.current -= 1;
     if (dragCounterRef.current === 0) setIsDragging(false);
   };
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
+    // 等待态里清单只读：不在整理途中再加文件。
+    if (isParsing) return;
     dragCounterRef.current = 0;
     setIsDragging(false);
 
@@ -162,41 +219,46 @@ export const DragZone: React.FC = () => {
     addFilesToQueue(incoming);
   };
 
-  if (isParsing) {
+  // 等待态（文件仅在本地处理 / 还没匹配到影片）：清单还在时放在清单上方，文件行不消失、只读。
+  const ceremonyStatus = (
+    <div className="flex flex-col items-center gap-2.5 text-center">
+      {ceremony?.needsChoice ? (
+        <span className="ingest-local-static" aria-hidden="true" data-ingest-match-static>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <circle cx="10.5" cy="10.5" r="5.5" />
+            <path d="M15 15l4.5 4.5" />
+          </svg>
+        </span>
+      ) : (
+        <span className="ingest-local-spinner" aria-hidden="true" />
+      )}
+      <p className="text-base font-semibold tracking-tight text-[var(--v4-text)]" data-ingest-parsing-title>
+        {ceremony?.needsChoice ? '还没匹配到影片' : '文件仅在本地处理'}
+      </p>
+      {ceremony?.needsChoice ? (
+        <div className="mt-2 flex flex-col items-center gap-2.5" data-ingest-match-choice>
+          <p className="max-w-[22rem] px-4 text-center text-sm text-balance text-[var(--ink-muted)]">
+            {ceremony.choiceReason === 'failed'
+              ? '影片资料没有取到。可以再试一次，或自己输入片名。'
+              : '影片资料还没回来。可以再试一次，或自己输入片名。'}
+          </p>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={retryMatch} className="ui-action">
+              重试
+            </button>
+            <button type="button" onClick={chooseManualSearch} className="ui-action ui-action--secondary">
+              手动搜索
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+
+  if (isParsing && queuedItems.length === 0) {
     return (
       <div className="relative mx-auto flex w-full max-w-lg min-h-[280px] flex-col items-center justify-center px-2">
-        <div className="flex flex-col items-center gap-2.5 text-center">
-          {ceremony?.needsChoice ? (
-            <span className="ingest-local-static" aria-hidden="true" data-ingest-match-static>
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                <circle cx="10.5" cy="10.5" r="5.5" />
-                <path d="M15 15l4.5 4.5" />
-              </svg>
-            </span>
-          ) : (
-            <span className="ingest-local-spinner" aria-hidden="true" />
-          )}
-          <p className="text-base font-semibold tracking-tight text-[var(--v4-text)]" data-ingest-parsing-title>
-            {ceremony?.needsChoice ? '还没匹配到影片' : '文件仅在本地处理'}
-          </p>
-          {ceremony?.needsChoice ? (
-            <div className="mt-2 flex flex-col items-center gap-2.5" data-ingest-match-choice>
-              <p className="max-w-[22rem] px-4 text-center text-sm text-balance text-[var(--ink-muted)]">
-                {ceremony.choiceReason === 'failed'
-                  ? '影片资料没有取到。可以再试一次，或自己输入片名。'
-                  : '影片资料还没回来。可以再试一次，或自己输入片名。'}
-              </p>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={retryMatch} className="ui-action">
-                  重试
-                </button>
-                <button type="button" onClick={chooseManualSearch} className="ui-action ui-action--secondary">
-                  手动搜索
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </div>
+        {ceremonyStatus}
       </div>
     );
   }
@@ -207,6 +269,7 @@ export const DragZone: React.FC = () => {
     <div
       ref={dropZoneRef}
       data-ingest-drop-zone
+      data-stage-zone="intake"
       className={`ingest-drop-zone group/outer flex w-full flex-col ${
         queuedItems.length === 0 ? 'ingest-drop-zone--empty flex-1' : 'items-center py-1 md:py-2'
       }`}
@@ -215,6 +278,7 @@ export const DragZone: React.FC = () => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      {queuedItems.length === 0 && stagingTray}
       <div
         className={`ingest-stage relative z-10 select-none ${
           queuedItems.length > 0 ? 'has-queue px-3 py-4 md:px-4 md:py-6' : 'is-empty'
@@ -302,12 +366,18 @@ export const DragZone: React.FC = () => {
               exit={shouldReduceMotion ? undefined : { opacity: 0 }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
               className="ingest-queue flex flex-col text-left"
+              data-stage-zone="current"
             >
               {!tapFirst && isDragging && (
                 <p className="mb-4 px-1 text-sm font-medium text-[var(--v4-accent-strong)] md:text-base">
                   松开以继续添加
                 </p>
               )}
+              {isParsing ? (
+                <div className="mb-5 px-1 md:mb-6" data-ingest-ceremony-head>
+                  {ceremonyStatus}
+                </div>
+              ) : (
               <header className="mb-5 flex flex-wrap items-end justify-between gap-3 px-1 md:mb-6 md:gap-4">
                 <div className="min-w-0">
                   <h3 className="text-base font-semibold tracking-tight text-[var(--v4-text)] md:text-lg lg:text-[1.25rem]">
@@ -357,78 +427,46 @@ export const DragZone: React.FC = () => {
                       onConfirm={() => { setIsOriginalWork(true); setConfirmOriginal(false); }}
                     />
                   )}
-                  <div className="relative" ref={addMenuRef}>
-                    <button
-                      type="button"
-                      onClick={() => setAddMenuOpen((open) => !open)}
-                      className="ui-action ui-action--secondary ui-action--lg"
-                      aria-expanded={addMenuOpen}
-                    >
-                      <Plus className="h-4 w-4 md:h-5 md:w-5" aria-hidden="true" />
-                      添加
-                      <ChevronDown className={`h-4 w-4 opacity-70 transition-transform md:h-4 md:w-4 ${addMenuOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {addMenuOpen && (
-                      <div className="ui-menu absolute right-0 top-full z-20 mt-1.5">
-                        <button
-                          type="button"
-                          className="flex w-full items-center gap-2 px-3.5 py-3 text-left text-sm font-normal text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)] md:text-[15px]"
-                          onClick={() => { setAddMenuOpen(false); fileInputRef.current?.click(); }}
-                        >
-                          <FilePlus className="h-4 w-4 text-[var(--v4-accent-strong)]" />
-                          文件 / 压缩包
-                        </button>
-                        <button
-                          type="button"
-                          className={`flex w-full items-center gap-2 border-t border-[var(--v4-line)] px-3.5 py-3 text-left text-sm font-normal md:text-[15px] ${
-                            folderPickSupported
-                              ? 'text-[var(--v4-text)] hover:bg-[var(--v4-accent-soft)]'
-                              : 'cursor-help text-[var(--v4-text-faint)]'
-                          }`}
-                          title={folderPickSupported ? undefined : FOLDER_UNSUPPORTED_HINT}
-                          aria-disabled={!folderPickSupported || undefined}
-                          onClick={() => {
-                            setAddMenuOpen(false);
-                            handleFolderPick();
-                          }}
-                        >
-                          <FolderPlus className="h-4 w-4 text-[var(--v4-accent-strong)]" />
-                          {folderPickSupported ? '文件夹' : '文件夹（不可用）'}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="inline-flex items-center gap-2">
-                    <span className="text-xs text-[var(--v4-text-faint)]">清空队列</span>
-                    <DeleteButton
-                      aria-label="清空导入队列"
-                      onConfirm={() => { setQueuedItems([]); setQueueIssue(null); }}
-                    />
-                  </div>
                 </div>
               </header>
+              )}
+
+              {showMultiWork && (
+                <MultiWorkNotice
+                  key={multiWorkSignature}
+                  grouping={workGrouping}
+                  nudgeSeq={multiWorkNudgedSignature === multiWorkSignature ? multiWorkNudgeSeq : 0}
+                  onConfirm={stageAllButWork}
+                  onKeepAll={() => dismissMultiWork(multiWorkSignature)}
+                />
+              )}
+
+              {!isParsing && stagingTray}
 
               <QueueTree
                 queuedItems={queuedItems}
                 shouldReduceMotion={shouldReduceMotion}
                 removeQueuedFile={removeQueuedFile}
                 removeFolderGroup={removeFolderGroup}
+                readOnly={isParsing}
               />
 
-              <footer className="mt-6 flex flex-col gap-4 px-1 md:mt-7">
+              {!isParsing && (
+              <footer className="ingest-queue-footer mt-6 flex flex-col gap-3 px-1 md:mt-7 md:gap-4">
                 {(queueIssue || rejectedItems.length > 0) && (
                   <p className="text-sm leading-5 text-[var(--v4-warning)] md:text-[15px]">
                     {queueIssue || `${rejectedItems.length} 项无法处理，可移除后继续。`}
                   </p>
                 )}
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--v4-text-muted)] md:text-[15px]">
-                    <HardDrive className="h-4 w-4" aria-hidden="true" />
-                    仅在本地读取，不上传
-                  </span>
-                  <WorkflowContinueInFlow className="min-w-[8.5rem] justify-center" />
-                </div>
+                <QueueActionBar
+                  itemCount={queuedItems.length}
+                  onClear={() => { setQueuedItems([]); setQueueIssue(null); }}
+                  onPickFiles={() => fileInputRef.current?.click()}
+                  onPickFolder={handleFolderPick}
+                  folderPickSupported={folderPickSupported}
+                />
               </footer>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

@@ -43,7 +43,8 @@ describe('gate / notice channel surfaces', () => {
 describe('ingest remount flash guards', () => {
   it('IngestStep empty shell does not fade in on remount', () => {
     const ingest = read('src/components/IngestStep.tsx');
-    assert.match(ingest, /AnimatePresence mode="wait" initial=\{false\}/);
+    // mode is "wait", or "popLayout" while the shared-element handoff flag is on.
+    assert.match(ingest, /AnimatePresence mode=\{shared \? 'popLayout' : 'wait'\} initial=\{false\}|AnimatePresence mode="wait" initial=\{false\}/);
     assert.match(
       ingest,
       /key="handoff-state"[\s\S]*?initial=\{false\}/,

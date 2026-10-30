@@ -1,5 +1,6 @@
 'use client';
 
+import { enterWorkbenchTransition } from '@/core/stageFlags';
 import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react';
 
 import { useLocationPathname } from '@/hooks/useLocationPathname';
@@ -259,7 +260,8 @@ export const SystemTray = () => {
         focusIngestDropZone();
         return;
       }
-      setWorkflowStep(2);
+      if (workflowStep === 1) enterWorkbenchTransition(() => setWorkflowStep(2));
+      else setWorkflowStep(2);
       return;
     }
 

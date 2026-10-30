@@ -6,6 +6,7 @@ import { historyIdFor } from '../../core/identity';
 import { mergeWorkerAvailable, runMergeJob, runMergeJobInThread } from '../../core/mergeClient';
 import type { MergeJobEvent, MergeJobInput, MergeJobResult } from '../../core/mergeJob';
 import { groupAndBindFiles } from '../../core/taskGrouping';
+import { enterWorkbenchTransition } from '../../core/stageFlags';
 import type { AlignmentFallbackInfo } from '../../utils/subtitleCore';
 import {
   assessMediaIdentity,
@@ -523,9 +524,14 @@ export const createIngestSlice: StateCreator<StudioState, [], [], IngestSlice> =
     const apply = (result: MergeJobResult) => {
       // Ignore stale results: task switch OR a newer merge started on the same task (S9).
       if (!isCurrentMerge()) return;
-      set({ processedSubs: result.rows, previewIndex: 0, workflowStep: 2, editHistory: [], editFuture: [] });
-      // Clear save point: a finished merge is restorable from 存档 after reload / leaving /.
-      get().saveToLibrary();
+      const commit = () => {
+        set({ processedSubs: result.rows, previewIndex: 0, workflowStep: 2, editHistory: [], editFuture: [] });
+        // Clear save point: a finished merge is restorable from 存档 after reload / leaving /.
+        get().saveToLibrary();
+      };
+      // Act 1 → Act 2（进入工作台）：只有这一处用 View Transition（plan B §5）。
+      if (get().workflowStep === 1) enterWorkbenchTransition(commit);
+      else commit();
     };
     const fail = (err: unknown) => {
       if (!isCurrentMerge()) return;

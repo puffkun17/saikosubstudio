@@ -9,6 +9,8 @@ import {
   type MatchOutcome,
 } from '@/core/ingestCeremony';
 import { useStudioStore, type Subfile } from '@/store/useStudioStore';
+import { useIngestStage } from '@/store/useIngestStage';
+import { shouldNudgeBeforeProcess } from '@/core/workGrouping';
 import type { TmdbSearchOutcome } from '@/store/types';
 import { detectSubtitleLanguage, parseMediaFilename, assessMediaIdentity } from '@/utils/subtitleCore';
 import { getClientBatchIssue } from '@/utils/importSafety';
@@ -105,7 +107,9 @@ export const useIngestPipeline = () => {
   const [ingestMessage, setIngestMessage] = useState(PHASE_COPY.idle);
   const [resultChips, setResultChips] = useState<string[]>([]);
   const [importSummary, setImportSummary] = useState<ImportSummary>(createEmptyImportSummary);
-  const [queuedItems, setQueuedItems] = useState<PreflightItem[]>([]);
+  // 本次清单住在舞台 store 里（暂存区同处），DragZone 卸载后不丢。
+  const queuedItems = useIngestStage((state) => state.queuedItems);
+  const setQueuedItems = useIngestStage((state) => state.setQueuedItems);
   const [queueIssue, setQueueIssue] = useState<string | null>(null);
   const ceremonyRef = useRef<IngestCeremony | null>(null);
   const [ceremony, setCeremony] = useState<CeremonySnapshot | null>(null);
@@ -164,12 +168,19 @@ export const useIngestPipeline = () => {
     void startedAt;
   };
 
+  /** 预览结果回写：条目可能已被移到暂存区，两边都更新。 */
+  const updateRowEverywhere = (map: (rows: PreflightItem[]) => PreflightItem[]) => {
+    const stage = useIngestStage.getState();
+    stage.setQueuedItems(map);
+    stage.setStagedItems(map);
+  };
+
   const peekArchiveContents = async (item: PreflightItem) => {
     const key = item.key;
 
     // Hint only — never flip to ready/empty (that used to show「0 条字幕」as a fake success).
     const softWatchdog = window.setTimeout(() => {
-      setQueuedItems((current) => current.map((row) => {
+      updateRowEverywhere((current) => current.map((row) => {
         if (row.key !== key) return row;
         if (row.archivePeekStatus !== 'loading') return row;
         return {
@@ -183,7 +194,7 @@ export const useIngestPipeline = () => {
       const archiveEntries = await peekArchiveEntries(item);
       if (!archiveEntries) return;
 
-      setQueuedItems(current => current.map(row => {
+      updateRowEverywhere(current => current.map(row => {
         if (row.key !== key) return row;
         if (archiveEntries.length === 0) {
           return {
@@ -207,7 +218,7 @@ export const useIngestPipeline = () => {
     } catch (error: unknown) {
       const { encrypted, message } = describeArchivePeekError(error);
       addLog(`${item.name}: ${message}`, encrypted ? 'error' : 'info');
-      setQueuedItems(current => current.map(row => {
+      updateRowEverywhere(current => current.map(row => {
         if (row.key !== key) return row;
         if (encrypted) {
           return {
@@ -242,7 +253,10 @@ export const useIngestPipeline = () => {
     }
     const incoming = rawIncoming.filter((record) => !isVideoFile(record.file));
     if (incoming.length === 0) return;
-    const seenKeys = new Set(queuedItems.map(item => item.key));
+    const seenKeys = new Set([
+      ...queuedItems.map(item => item.key),
+      ...useIngestStage.getState().stagedItems.map(item => item.key),
+    ]);
     const additions: PreflightItem[] = [];
     let duplicateCount = 0;
     let skippedInFolder = 0;
@@ -377,9 +391,9 @@ export const useIngestPipeline = () => {
     for (const item of validItems) {
       const file = item.file;
       if (item.kind === 'zip') {
-        ignoredInArchive.push(...await processZipFile(file, detectedFiles, summaries, addLog));
+        ignoredInArchive.push(...await processZipFile(file, detectedFiles, summaries, addLog, item.objectId));
       } else if (item.kind === 'archive') {
-        ignoredInArchive.push(...await processLocalArchiveFile(file, detectedFiles, summaries, addLog));
+        ignoredInArchive.push(...await processLocalArchiveFile(file, detectedFiles, summaries, addLog, item.objectId));
       } else {
         try {
           const decoded = await readAndDecodeFile(file);
@@ -395,6 +409,7 @@ export const useIngestPipeline = () => {
             isCommentary: /(commentary|comment|director|解说|导轨)/i.test(file.name),
             size: decoded.text.length,
             importSource: item.folderName ? 'folder' : 'file',
+            sourceObjectId: item.objectId,
             encoding: decoded.encoding,
             encodingConfidence: decoded.confidence,
           };
@@ -521,6 +536,10 @@ export const useIngestPipeline = () => {
       setIngestMessage('整理完成，可开始核对');
       await sleep(PHASE_FLOOR_MS);
 
+      // 本次清单已整理完；暂存区保持不动，回到第 1 页时提示继续。
+      // 交接：同一次提交里任务页挂载，文件行按 objectId 从清单位置接续过去（stageFlags）。
+      useIngestStage.getState().markHandoff();
+      setQueuedItems([]);
       setIsParsing(false);
       setIngestClearing(false);
       ceremonyGate.dispose();
@@ -550,6 +569,16 @@ export const useIngestPipeline = () => {
       disabledReason: queueIssue || '清单中暂无可整理的字幕文件，移除无效项或补充文件后继续。',
       onClick: () => {
         if (disabled) return;
+        // 多作品提示还没处理：第一次点只把提示带到眼前，第二次点照常整理全部（不拦截）。
+        const stage = useIngestStage.getState();
+        if (shouldNudgeBeforeProcess({
+          noticeOpen: stage.multiWorkOpenSignature !== null,
+          signature: stage.multiWorkOpenSignature,
+          nudgedSignature: stage.multiWorkNudgedSignature,
+        })) {
+          stage.nudgeMultiWork();
+          return;
+        }
         void handleFilesProcess();
       },
     });

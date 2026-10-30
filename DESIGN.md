@@ -167,6 +167,7 @@ App 不跟随 `prefers-color-scheme`。默认就是浅色纸面（`:root` 与 `[
 - 只动 `opacity`、`transform`、颜色；不动宽高布局。
 - 没有页面加载动画、没有装饰动画、没有弹跳。
 - `prefers-reduced-motion`：时长都压到 150，`--motion-move` 归零（位移去掉，颜色/透明度保留）。
+- **唯一例外（Act 1 舞台，2026-10-30 批准）**：跨区远距离移动（文件从列表落到舞台 / 暂存区）`visualDuration` ≤ 350，弹簧 bounce 0，只动 transform。其余一律 ≤ 250、无回弹。代码常量见 `src/core/motion.ts`。
 
 ## 8. 要做 / 不要做
 
