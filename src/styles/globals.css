@@ -1384,17 +1384,44 @@ body {
   height: 100%;
 }
 
-/* Keep poster 2:3, but clamp height so Import ready-state fits one desktop screen. */
+/* 封面满铺：宽度贴卡片两边、顶部用卡片内圆角；盒子按 2:3，cover 裁切不变形。
+   lg 上左栏高度只跟右栏走（contain: size），封面可以在 min-height（由 JS 按左栏高度给出）之上
+   向简介让出高度：空间够时是完整 2:3，不够时从下方裁一点，再不够才折叠简介。 */
 .source-identity-rail__poster {
   aspect-ratio: 2 / 3;
   width: 100%;
-  max-height: min(36vh, 220px);
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: calc(var(--pt-radius-lg) - 1px) calc(var(--pt-radius-lg) - 1px) 0 0;
   background: var(--v4-panel-muted);
 }
 
 .source-identity-rail__poster img {
-  object-fit: contain;
-  object-position: center;
+  object-fit: cover;
+  object-position: 50% 20%;
+}
+
+@media (min-width: 1024px) {
+  .source-identity-rail {
+    contain: size;
+    overflow: hidden auto;
+    scrollbar-width: thin;
+  }
+
+  .source-identity-rail__poster {
+    flex: 0 1 auto;
+    min-height: 120px;
+  }
+
+  .source-identity-rail__body {
+    flex: 1 0 auto;
+  }
+
+  /* 展开后全文可能超出：封面先缩到最小高度，剩下的在简介列里滚动。 */
+  .source-identity-rail[data-synopsis-expanded] .source-identity-rail__body {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
 }
 
 .source-identity-rail__title,
@@ -1402,25 +1429,7 @@ body {
   text-wrap: balance;
 }
 
-@media (min-width: 1024px) {
-  .source-identity-rail__poster {
-    max-height: min(32vh, 200px);
-  }
-}
-
-@media (min-width: 1024px) and (min-height: 900px) {
-  .source-identity-rail__poster {
-    max-height: min(40vh, 260px);
-  }
-}
-
 @media (max-width: 1023px) {
-  .source-identity-rail__poster {
-    max-width: 10rem;
-    max-height: none;
-    margin-inline: auto;
-  }
-
   .ingest-shell--ready {
     overflow-y: auto;
   }

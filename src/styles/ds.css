@@ -134,9 +134,13 @@
 /* Import film card: on narrow screens a one-row strip (thumbnail + title + actions); synopsis hidden. */
 @media (max-width: 1023px) {
   .source-identity-rail { flex-direction: row; height: auto; align-items: stretch; }
-  .source-identity-rail .source-identity-rail__poster { width: 72px; flex-shrink: 0; border-bottom: 0; border-right: 1px solid var(--surface-line); }
+  /* 单行条：封面贴左边满高，cover 居中裁切；左侧用卡片内圆角。 */
+  .source-identity-rail .source-identity-rail__poster { width: 88px; aspect-ratio: auto; min-height: 132px; align-self: stretch; flex-shrink: 0; border-bottom: 0; border-right: 1px solid var(--surface-line);
+    border-radius: calc(var(--pt-radius-lg) - 1px) 0 0 calc(var(--pt-radius-lg) - 1px); }
+  .source-identity-rail .source-identity-rail__poster img { object-position: 50% 30%; }
+  .source-identity-rail .source-identity-rail__poster-note { display: none; }
   .source-identity-rail > div:last-child { padding: var(--ds-pad-card); gap: var(--ds-gap-item); min-width: 0; }
-  .source-identity-rail__overview { display: none; }
+  .source-identity-rail__overview-wrap { display: none; }
   .source-identity-rail__tmdb { margin-top: var(--ds-space-1); justify-content: flex-start; }
 }
 
