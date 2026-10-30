@@ -49,3 +49,20 @@ export function countLines(heightPx: number, lineHeightPx: number): number {
   if (!(lineHeightPx > 0) || !(heightPx > 0)) return 0;
   return Math.max(1, Math.round(heightPx / lineHeightPx));
 }
+
+/**
+ * 「手动匹配」按钮收成封面角上的放大镜：只要「完整按钮 + 封面目标高」下全文放不下
+ * （会被折叠，或要靠回差从封面借行），就进紧凑模式，把按钮那一行的高度还给简介。
+ *
+ * 只吃「完整按钮」口径的输入（与当前模式无关），所以模式切换本身不会反过来改变判断，不会来回跳。
+ */
+export function shouldCompactRematch(
+  availableWithFullButtonPx: number,
+  lineHeightPx: number,
+  totalLines: number,
+): boolean {
+  if (!Number.isFinite(lineHeightPx) || lineHeightPx <= 0) return false;
+  if (!Number.isFinite(totalLines) || totalLines <= 0) return false;
+  const avail = Number.isFinite(availableWithFullButtonPx) ? Math.max(0, availableWithFullButtonPx) : 0;
+  return totalLines > Math.floor((avail + EPS) / lineHeightPx);
+}

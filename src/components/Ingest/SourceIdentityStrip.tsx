@@ -7,7 +7,7 @@ import { Image as ImageIcon, Search, LoaderCircle, X, RefreshCw } from 'lucide-r
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { FilmMetaBlock, buildFilmRatings } from '@/components/Ingest/FilmMetaBlock';
 import { resolveFilmTitles } from '@/utils/filmTitles';
-import { computeSynopsisClamp, countLines } from '@/core/synopsisClamp';
+import { computeSynopsisClamp, countLines, shouldCompactRematch } from '@/core/synopsisClamp';
 
 /** 桌面（lg）左栏才做自适应折叠；窄屏是单行条，简介整段隐藏（见 ds.css）。 */
 const DESKTOP_QUERY = '(min-width: 1024px)';
@@ -22,6 +22,8 @@ const TOGGLE_RESERVE_PX = 24;
 interface SynopsisLayout {
   clamp: number | null;
   posterMinPx: number | null;
+  /** 「手动匹配」收成封面角上的放大镜（仅 lg）。 */
+  compact: boolean;
 }
 
 const px = (v: string) => {
@@ -92,8 +94,10 @@ export const SourceIdentityStrip: React.FC = () => {
   const metaRef = useRef<HTMLDivElement>(null);
   const footRef = useRef<HTMLDivElement>(null);
   const sizerRef = useRef<HTMLParagraphElement>(null);
+  const rematchRef = useRef<HTMLButtonElement>(null);
+  const rematchRowRef = useRef<HTMLDivElement>(null);
   const [overviewExpanded, setOverviewExpanded] = useState(false);
-  const [layout, setLayout] = useState<SynopsisLayout>({ clamp: null, posterMinPx: null });
+  const [layout, setLayout] = useState<SynopsisLayout>({ clamp: null, posterMinPx: null, compact: false });
 
   useEffect(() => {
     setOverviewExpanded(false);
@@ -110,7 +114,7 @@ export const SourceIdentityStrip: React.FC = () => {
     const meta = metaRef.current;
     const foot = footRef.current;
     if (!rail || !body || !col || !meta || !foot) return;
-    let next: SynopsisLayout = { clamp: null, posterMinPx: null };
+    let next: SynopsisLayout = { clamp: null, posterMinPx: null, compact: false };
     if (window.matchMedia(DESKTOP_QUERY).matches) {
       const railH = rail.clientHeight;
       const naturalPoster = rail.clientWidth * 1.5;
@@ -118,14 +122,27 @@ export const SourceIdentityStrip: React.FC = () => {
       const bs = getComputedStyle(body);
       const cs = getComputedStyle(col);
       const sizer = sizerRef.current;
-      const fixed =
+      // 完整按钮那一行的高度：紧凑模式下完整按钮仍在 DOM 里（脱离文档流、不可见），照样能量。
+      const btn = rematchRef.current;
+      const row = rematchRowRef.current;
+      const btnIsOut = Boolean(btn && btn.dataset.collapsed === 'true');
+      const rowPx = btn && row
+        ? btn.offsetHeight + (row.childElementCount > 1 ? px(getComputedStyle(row).rowGap) : 0)
+        : 0;
+      const fixedBase =
         px(bs.paddingTop) + px(bs.paddingBottom) + px(bs.rowGap) +
-        foot.offsetHeight + meta.offsetHeight + (sizer ? px(cs.rowGap) : 0);
+        meta.offsetHeight + (sizer ? px(cs.rowGap) : 0);
+      // 先用「完整按钮」口径决定模式，再按选定模式定尺寸——两步分开，避免自激。
+      const footFull = foot.offsetHeight + (btnIsOut ? rowPx : 0);
       let clamp: number | null = null;
       let textPx = 0;
+      let compact = false;
+      let fixed = fixedBase + footFull;
       if (sizer) {
         const lh = px(getComputedStyle(sizer).lineHeight);
         const total = countLines(sizer.offsetHeight, lh);
+        compact = rowPx > 0 && shouldCompactRematch(railH - posterTarget - fixed, lh, total);
+        if (compact) fixed -= rowPx;
         clamp = computeSynopsisClamp(railH - posterTarget - fixed, lh, total, {
           toggleReservePx: TOGGLE_RESERVE_PX,
         });
@@ -136,9 +153,11 @@ export const SourceIdentityStrip: React.FC = () => {
       // 2px：吸收行高小数（20.3px）与边框的取整误差。
       const room = Math.floor(railH - fixed - Math.ceil(textPx) - 2);
       const posterMinPx = Math.max(POSTER_HARD_FLOOR_PX, Math.min(Math.floor(posterTarget), room));
-      next = { clamp, posterMinPx };
+      next = { clamp, posterMinPx, compact };
     }
-    setLayout((prev) => (prev.clamp === next.clamp && prev.posterMinPx === next.posterMinPx ? prev : next));
+    setLayout((prev) =>
+      prev.clamp === next.clamp && prev.posterMinPx === next.posterMinPx && prev.compact === next.compact ? prev : next,
+    );
   }, []);
 
   useLayoutEffect(() => {
@@ -164,6 +183,23 @@ export const SourceIdentityStrip: React.FC = () => {
 
   const clampLines = overviewExpanded ? null : layout.clamp;
   const showToggle = Boolean(overview) && (layout.clamp !== null || overviewExpanded);
+
+  // 紧凑模式下完整按钮仍留在 DOM 里量高度：脱离文档流、不可见、inert，读屏和 Tab 都跳过它。
+  const rematchButton = (
+    <button
+      ref={rematchRef}
+      type="button"
+      onClick={() => setTmdbManualOpen(true)}
+      data-collapsed={layout.compact ? 'true' : 'false'}
+      aria-hidden={layout.compact || undefined}
+      inert={layout.compact || undefined}
+      tabIndex={layout.compact ? -1 : undefined}
+      className={`ui-action ui-action--secondary w-full${layout.compact ? ' pointer-events-none invisible absolute inset-x-0 bottom-0' : ''}`}
+    >
+      <Search className="h-4 w-4" aria-hidden="true" />
+      {rematchLabel}
+    </button>
+  );
 
   return (
     <aside
@@ -210,6 +246,18 @@ export const SourceIdentityStrip: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
+        {layout.compact ? (
+          <button
+            type="button"
+            onClick={() => setTmdbManualOpen(true)}
+            aria-label={rematchLabel}
+            className="source-identity-rail__rematch-fab"
+            data-testid="rematch-compact"
+          >
+            <Search className="h-4 w-4" aria-hidden="true" />
+            <span className="source-identity-rail__rematch-tip" aria-hidden="true">{rematchLabel}</span>
+          </button>
+        ) : null}
       </div>
 
       <div ref={bodyRef} className="source-identity-rail__body ds-card flex min-h-0 flex-1 flex-col gap-[var(--ds-gap-group)]">
@@ -342,8 +390,8 @@ export const SourceIdentityStrip: React.FC = () => {
           </AnimatePresence>
         </div>
 
-        <div ref={footRef} className="shrink-0 pt-1">
-          <div className="flex flex-col gap-2">
+        <div ref={footRef} className="relative shrink-0 pt-1">
+          <div ref={rematchRowRef} className="flex flex-col gap-2">
             {tmdbData && tmdbAlternateSuggestion ? (
               <>
                 <button
@@ -356,24 +404,10 @@ export const SourceIdentityStrip: React.FC = () => {
                   <RefreshCw className="h-4 w-4" aria-hidden="true" />
                   更换候选
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setTmdbManualOpen(true)}
-                  className="ui-action ui-action--secondary w-full"
-                >
-                  <Search className="h-4 w-4" aria-hidden="true" />
-                  手动匹配
-                </button>
+                {rematchButton}
               </>
             ) : (
-              <button
-                type="button"
-                onClick={() => setTmdbManualOpen(true)}
-                className="ui-action ui-action--secondary w-full"
-              >
-                <Search className="h-4 w-4" aria-hidden="true" />
-                {rematchLabel}
-              </button>
+              rematchButton
             )}
           </div>
           {tmdbData ? (

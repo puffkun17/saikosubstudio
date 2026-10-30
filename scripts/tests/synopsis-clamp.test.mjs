@@ -48,3 +48,14 @@ test('countLines 吸收亚像素误差', () => {
   assert.equal(countLines(0, LH), 0);
   assert.equal(countLines(10, LH), 1);
 });
+
+test('手动匹配收成放大镜：完整按钮口径下全文放不下才收', () => {
+  const { shouldCompactRematch: compact } = loadCore()('core/synopsisClamp');
+  assert.equal(compact(7 * LH, LH, 7), false); // 刚好放下 → 保留完整按钮
+  assert.equal(compact(7 * LH - 0.4, LH, 7), false); // 亚像素误差不算
+  assert.equal(compact(6 * LH, LH, 7), true); // 多 1 行（回差区）也收：把按钮那行还给简介/封面
+  assert.equal(compact(2 * LH, LH, 12), true); // 要折叠 → 收
+  assert.equal(compact(0, LH, 1), true);
+  assert.equal(compact(100, 0, 5), false); // 无效输入 → 不收
+  assert.equal(compact(100, LH, 0), false); // 没有简介 → 不收
+});
