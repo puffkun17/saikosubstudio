@@ -9,6 +9,9 @@ const {
   clearTmdbClientCache,
   uniqueQueries,
   prepareCleanQuery,
+  TmdbRequestError,
+  parseRetryAfterMs,
+  isTmdbRateLimitError,
 } = core('core/tmdbSearch');
 
 test('mergeResults: appends new media_type:id keys only', () => {
@@ -71,4 +74,42 @@ test('runSearch: cache hit skips second fetch', async () => {
   assert.equal(first[0].id, 42);
   assert.equal(second[0].id, 42);
   assert.equal(second, first);
+});
+
+test('runSearch: 429 surfaces as rate-limit error with Retry-After (not an empty result)', async () => {
+  clearTmdbClientCache();
+  const fetchFn = async () => ({
+    ok: false,
+    status: 429,
+    headers: { get: (name) => (name.toLowerCase() === 'retry-after' ? '60' : null) },
+    json: async () => ({ error: 'rate_limited' }),
+  });
+  await assert.rejects(
+    runSearch({ query: 'Busy', fetchFn, cacheEnabled: true }),
+    (error) => {
+      assert.ok(error instanceof TmdbRequestError);
+      assert.ok(isTmdbRateLimitError(error));
+      assert.equal(error.retryAfterMs, 60_000);
+      return true;
+    },
+  );
+});
+
+test('runSearch: 5xx throws; other 4xx stays an empty result', async () => {
+  clearTmdbClientCache();
+  const res = (status) => async () => ({ ok: false, status, headers: { get: () => null }, json: async () => ({}) });
+  await assert.rejects(runSearch({ query: 'Down', fetchFn: res(502), cacheEnabled: false }), (error) => {
+    assert.ok(error instanceof TmdbRequestError);
+    assert.equal(isTmdbRateLimitError(error), false);
+    return true;
+  });
+  assert.deepEqual(await runSearch({ query: 'Bad', fetchFn: res(400), cacheEnabled: false }), []);
+});
+
+test('parseRetryAfterMs: seconds, HTTP-date, junk', () => {
+  assert.equal(parseRetryAfterMs('5'), 5000);
+  assert.equal(parseRetryAfterMs(null), null);
+  assert.equal(parseRetryAfterMs('soon'), null);
+  const now = Date.parse('2026-10-30T04:00:00Z');
+  assert.equal(parseRetryAfterMs('Fri, 30 Oct 2026 04:00:30 GMT', now), 30_000);
 });

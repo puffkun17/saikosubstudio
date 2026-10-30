@@ -9,6 +9,7 @@ import {
 import {
   mergeResults,
   prepareCleanQuery,
+  isTmdbRateLimitError,
   runSearch,
   scriptPartsFromQuery,
   uniqueQueries,
@@ -72,6 +73,7 @@ export type MediaTmdbSlice = Pick<
   | 'setTmdbSuggestions'
   | 'setSelectedSuggestion'
   | 'swapTmdbAlternate'
+  | 'cancelTmdbSearch'
   | 'searchTmdb'
   | 'searchTmdbManual'
   | 'selectTmdbSuggestion'
@@ -154,13 +156,18 @@ export const createMediaTmdbSlice: StateCreator<StudioState, [], [], MediaTmdbSl
     ).slice(0, 2);
     if (unique.length > 0) set({ tmdbSuggestions: unique });
   },
+  cancelTmdbSearch: () => {
+    // Invalidate any in-flight search so a late answer cannot apply behind the user's back.
+    tmdbSearchRequestId += 1;
+    set({ isSearchingTmdb: false });
+  },
   searchTmdb: async (query, options) => {
     const requestId = ++tmdbSearchRequestId;
     const taskIdAtStart = get().selectedTaskId;
     const isCurrentRequest = () => requestId === tmdbSearchRequestId && get().selectedTaskId === taskIdAtStart;
     const silent = options?.silent ?? false;
     const rawSearchStr = query.trim();
-    if (!rawSearchStr) return;
+    if (!rawSearchStr) return { kind: 'skipped' };
 
     const parsed = parseMediaFilename(rawSearchStr);
     const fallbackParsed = options?.fallbackTitle ? parseMediaFilename(options.fallbackTitle) : null;
@@ -217,7 +224,7 @@ export const createMediaTmdbSlice: StateCreator<StudioState, [], [], MediaTmdbSl
         });
         if (!silent) get().addLog('文件名信息不足，请补充片名后再匹配影片资料', 'info');
       }
-      return;
+      return { kind: 'skipped' };
     }
 
     set({ isSearchingTmdb: true });
@@ -337,7 +344,7 @@ export const createMediaTmdbSlice: StateCreator<StudioState, [], [], MediaTmdbSl
         seasonHint,
       });
 
-      if (!isCurrentRequest()) return;
+      if (!isCurrentRequest()) return { kind: 'stale' };
       set({
         tmdbSuggestions: sortedResults,
         tmdbAlternateSuggestion: luckyAlternate,
@@ -367,7 +374,7 @@ export const createMediaTmdbSlice: StateCreator<StudioState, [], [], MediaTmdbSl
           action: 'openTmdbManual',
           actionLabel: '补充年份',
         });
-        return;
+        return { kind: 'answered' };
       }
 
       if (sortedResults.length > 0) {
@@ -385,7 +392,7 @@ export const createMediaTmdbSlice: StateCreator<StudioState, [], [], MediaTmdbSl
             actionLabel: '查看结果',
           });
           set({ tmdbManualOpen: !silent });
-          return;
+          return { kind: 'answered' };
         }
 
         if (!silent) {
@@ -436,19 +443,27 @@ export const createMediaTmdbSlice: StateCreator<StudioState, [], [], MediaTmdbSl
         });
         if (!silent) get().addLog('未能自动匹配影片信息，可手动选择结果', 'error');
       }
+      return { kind: 'answered' };
     } catch (e: unknown) {
-      if (!isCurrentRequest()) return;
+      if (!isCurrentRequest()) return { kind: 'stale' };
       const message = e instanceof Error ? e.message : String(e);
-      get().setStatusNotice({
-        id: 'media-match',
-        tone: 'alert',
-        title: '影片信息匹配失败',
-        message,
-        meta: '影片资料检索',
-        action: 'openTmdbManual',
-        actionLabel: '重新搜索',
-      });
-      if (!silent) get().addLog(`影片信息匹配失败: ${message}`, 'error');
+      const rateLimited = isTmdbRateLimitError(e);
+      // Ceremony owns retry / manual choice while it runs — no duplicate notice behind it.
+      if (!options?.ceremony) {
+        get().setStatusNotice({
+          id: 'media-match',
+          tone: rateLimited ? 'warning' : 'alert',
+          title: rateLimited ? '影片资料请求过于频繁' : '影片信息匹配失败',
+          message,
+          meta: '影片资料检索',
+          action: 'openTmdbManual',
+          actionLabel: '重新搜索',
+        });
+      }
+      if (!silent) get().addLog(`影片信息匹配失败: ${message}`, rateLimited ? 'info' : 'error');
+      return rateLimited
+        ? { kind: 'rate_limited', retryAfterMs: e.retryAfterMs }
+        : { kind: 'failed', message };
     } finally {
       // Clear spinner if we still own the search slot, even after a task switch (S8).
       // Result application still uses isCurrentRequest() (request id + selected task).

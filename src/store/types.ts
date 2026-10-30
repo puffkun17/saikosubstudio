@@ -144,6 +144,17 @@ export type SubtitleEditRecord = {
   after: string;
 };
 
+/** Result of an automatic TMDB search, as seen by the import ceremony. */
+export type TmdbSearchOutcome =
+  /** TMDB answered and the result (match / candidates / none) is applied locally. */
+  | { kind: 'answered' }
+  /** No search was needed or possible. */
+  | { kind: 'skipped' }
+  /** Superseded by a newer search or a task switch. */
+  | { kind: 'stale' }
+  | { kind: 'rate_limited'; retryAfterMs: number | null }
+  | { kind: 'failed'; message: string };
+
 export interface StudioState {
   workflowStep: number;
   isIngestClearing: boolean;
@@ -276,7 +287,21 @@ export interface StudioState {
   setTasks: (tasks: TaskPair[] | ((prev: TaskPair[]) => TaskPair[])) => void;
   setRefScreenshot: (url: string | null) => void;
   triggerTempGuides: () => void;
-  searchTmdb: (query: string, options?: { silent?: boolean; fallbackTitle?: string }) => Promise<void>;
+  /**
+   * Auto search. Resolves once the TMDB answer is applied locally (or known to be absent).
+   * `ceremony`: the import ceremony owns retry / manual choice, so failures post no notice.
+   */
+  searchTmdb: (
+    query: string,
+    options?: { silent?: boolean; fallbackTitle?: string; ceremony?: boolean },
+  ) => Promise<TmdbSearchOutcome>;
+  /** Invalidate the in-flight auto / manual search (late answers are dropped). */
+  cancelTmdbSearch: () => void;
+  /**
+   * Run the selected task's automatic TMDB match (the search selectTask normally defers).
+   * Returns `skipped` when the task needs no search (has metadata / no usable title).
+   */
+  autoMatchTask: (taskId: string, options?: { ceremony?: boolean }) => Promise<TmdbSearchOutcome>;
   searchTmdbManual: (query: string, type: TmdbMediaType, year: string) => Promise<void>;
   selectTmdbSuggestion: (s: TmdbSuggestion, options?: { silent?: boolean }) => Promise<void>;
   /** 在当前片源与已缓存的同名备选之间切换（不重新搜索）。 */
@@ -285,7 +310,8 @@ export interface StudioState {
   
   // Complex Workflows
   initializeLibrary: () => void;
-  selectTask: (taskId: string) => void;
+  /** `deferAutoMatch`: caller runs `autoMatchTask` itself (import ceremony). */
+  selectTask: (taskId: string, opts?: { deferAutoMatch?: boolean }) => void;
   bindTrack: (taskId: string, trackKey: 'zh' | 'en' | 'commentary', fileId: string) => void;
   swapPrimaryTracks: (taskId: string) => void;
   /** Prefer content file id (mintFileId); basename still accepted for older callers. */
@@ -315,7 +341,10 @@ export interface StudioState {
    * UI callers should `await runRecognitionJob` then pass `{ recognized: true }` so the Worker
    * did the heavy work off the main thread (ceremony timing unchanged).
    */
-  processFiles: (files: Subfile[], opts?: { recognized?: boolean }) => void;
+  processFiles: (
+    files: Subfile[],
+    opts?: { recognized?: boolean; deferAutoMatch?: boolean },
+  ) => Promise<string | null>;
   runSubtitleMerge: () => void;
   /** Workbench episode tabs: keep this episode's result, open the other one (saved result or fresh merge). */
   switchEpisode: (taskId: string) => void;

@@ -16,10 +16,19 @@ import {
   smartDetectTitle,
   isMainPathSecondaryLanguage,
 } from '../../utils/subtitleCore';
-import type { StudioState, Subfile } from '../types';
+import type { StudioState, Subfile, TmdbSearchOutcome } from '../types';
 import { bumpTmdbSelectionRequestId, taskDisplayTitle } from './mediaTmdb';
 
 const normalizeMediaIdentityTitle = (value: string) => cleanFilename(value).toLowerCase().replace(/\s+/g, ' ').trim();
+
+/**
+ * Auto TMDB match prepared by selectTask({ deferAutoMatch }) for the import ceremony.
+ * Kept (not consumed) so the ceremony can retry; replaced on every selectTask.
+ */
+let deferredAutoMatch: {
+  taskId: string;
+  run: (options?: { ceremony?: boolean }) => Promise<TmdbSearchOutcome>;
+} | null = null;
 
 /** Bumped on each runSubtitleMerge so a slower earlier job cannot overwrite within the same task (S9). */
 let mergeRequestId = 0;
@@ -57,6 +66,7 @@ export type IngestSlice = Pick<
   | 'setSelectedTaskId'
   | 'setTasks'
   | 'selectTask'
+  | 'autoMatchTask'
   | 'bindTrack'
   | 'swapPrimaryTracks'
   | 'removeFileFromTask'
@@ -116,7 +126,12 @@ export const createIngestSlice: StateCreator<StudioState, [], [], IngestSlice> =
     const nextTasks = typeof tasks === 'function' ? tasks(state.tasks) : tasks;
     return { tasks: nextTasks };
   }),
-  selectTask: (taskId) => {
+  autoMatchTask: async (taskId, options) => {
+    const entry = deferredAutoMatch;
+    if (!entry || entry.taskId !== taskId || get().selectedTaskId !== taskId) return { kind: 'skipped' };
+    return entry.run(options);
+  },
+  selectTask: (taskId, opts) => {
     bumpTmdbSelectionRequestId();
     const task = get().tasks.find(t => t.id === taskId);
     if (!task) return;
@@ -222,18 +237,32 @@ export const createIngestSlice: StateCreator<StudioState, [], [], IngestSlice> =
       }
     }));
 
+    deferredAutoMatch = null;
     if (!task.tmdbData && !inheritedMetadata && !get().tmdbData) {
-      setTimeout(() => {
+      const runAutoMatch = async (options?: { ceremony?: boolean }): Promise<TmdbSearchOutcome> => {
         // Prefer the raw identity filename so Title.Year.SxxExx keeps its year in search.
         if (identitySourceName) {
-          get().searchTmdb(identitySourceName, { fallbackTitle: task.title });
-        } else if (cleanName) {
-          get().searchTmdb(`${cleanName} ${task.epKey || ''}`.trim(), { fallbackTitle: task.title });
-        } else if (task.epKey) {
+          return get().searchTmdb(identitySourceName, { fallbackTitle: task.title, ceremony: options?.ceremony });
+        }
+        if (cleanName) {
+          return get().searchTmdb(`${cleanName} ${task.epKey || ''}`.trim(), {
+            fallbackTitle: task.title,
+            ceremony: options?.ceremony,
+          });
+        }
+        if (task.epKey) {
           set({ tmdbManualOpen: true });
           get().addLog(`已识别为 ${task.epKey}，请补充剧名以关联片源信息`, 'info');
         }
-      }, 50);
+        return { kind: 'skipped' };
+      };
+      if (opts?.deferAutoMatch) {
+        deferredAutoMatch = { taskId, run: runAutoMatch };
+      } else {
+        setTimeout(() => {
+          void runAutoMatch();
+        }, 50);
+      }
     }
 
     const assFile = [task.zh, task.en].find(f => f && f.name.toLowerCase().endsWith('.ass'));
@@ -410,14 +439,20 @@ export const createIngestSlice: StateCreator<StudioState, [], [], IngestSlice> =
       setTimeout(() => get().setStatusNotice(notice), 0);
     });
 
-    setTimeout(() => {
-      if (tasks.length > 0) {
+    const selected = new Promise<string | null>((resolve) => {
+      setTimeout(() => {
+        if (tasks.length === 0) {
+          resolve(null);
+          return;
+        }
         const activeId = get().selectedTaskId || tasks[0].id;
-        get().selectTask(activeId);
-      }
-    }, 50);
+        get().selectTask(activeId, { deferAutoMatch: opts?.deferAutoMatch });
+        resolve(activeId);
+      }, 50);
+    });
 
     get().addLog(`已加载/更新 ${newFiles.length} 个文件。当前文件总数: ${uploadedFiles.length}`, 'success');
+    return selected;
   },
   switchEpisode: (taskId) => {
     const state = get();

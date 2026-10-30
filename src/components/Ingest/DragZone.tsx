@@ -81,6 +81,9 @@ export const DragZone: React.FC = () => {
 
   const {
     isParsing,
+    ceremony,
+    retryMatch,
+    chooseManualSearch,
     importSummary,
     queuedItems,
     setQueuedItems,
@@ -167,6 +170,23 @@ export const DragZone: React.FC = () => {
           <p className="text-base font-semibold tracking-tight text-[var(--v4-text)]">
             文件仅在本地处理
           </p>
+          {ceremony?.needsChoice ? (
+            <div className="mt-2 flex flex-col items-center gap-2.5" data-ingest-match-choice>
+              <p className="max-w-[22rem] px-4 text-center text-sm text-balance text-[var(--ink-muted)]">
+                {ceremony.choiceReason === 'failed'
+                  ? '影片资料没有取到。可以再试一次，或自己输入片名。'
+                  : '影片资料还没回来。可以再试一次，或自己输入片名。'}
+              </p>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={retryMatch} className="ui-action">
+                  重试
+                </button>
+                <button type="button" onClick={chooseManualSearch} className="ui-action ui-action--secondary">
+                  手动搜索
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     );

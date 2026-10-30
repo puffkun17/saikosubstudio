@@ -15,6 +15,39 @@ export const clearTmdbClientCache = (): void => {
   tmdbClientCache.clear();
 };
 
+/**
+ * TMDB 请求失败（429 限流 / 5xx 代理或上游故障）。
+ * 以前 `!res.ok` 一律当成「没有结果」，限流和故障会被伪装成「未匹配到」；
+ * 仪式需要区分「有答复」与「没答复」，所以这两类改为抛出。其余 4xx 仍按空结果处理。
+ */
+export class TmdbRequestError extends Error {
+  readonly status: number;
+  /** 仅 429：Retry-After 换算成毫秒；缺失或无法解析为 null。 */
+  readonly retryAfterMs: number | null;
+  constructor(status: number, retryAfterMs: number | null = null) {
+    super(status === 429 ? '影片资料请求过于频繁，稍后自动重试' : `影片资料服务暂不可用（${status}）`);
+    this.name = 'TmdbRequestError';
+    this.status = status;
+    this.retryAfterMs = retryAfterMs;
+  }
+  get isRateLimited(): boolean {
+    return this.status === 429;
+  }
+}
+
+/** Retry-After: delta-seconds or HTTP-date → ms (null when absent / unparsable). */
+export const parseRetryAfterMs = (value: string | null | undefined, now = Date.now()): number | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (/^\d+(\.\d+)?$/.test(trimmed)) return Math.round(Number(trimmed) * 1000);
+  const at = Date.parse(trimmed);
+  if (Number.isNaN(at)) return null;
+  return Math.max(0, at - now);
+};
+
+export const isTmdbRateLimitError = (error: unknown): error is TmdbRequestError =>
+  error instanceof TmdbRequestError && error.status === 429;
+
 export type TmdbSearchEndpoint = 'multi' | 'tv' | 'movie';
 
 export type RunTmdbSearchOptions = {
@@ -82,6 +115,10 @@ export const runSearch = async (opts: RunTmdbSearchOptions): Promise<TmdbSuggest
   }
   const fetchFn = opts.fetchFn ?? tmdbFetch;
   const res = await fetchFn(url);
+  if (res.status === 429) {
+    throw new TmdbRequestError(429, parseRetryAfterMs(res.headers?.get?.('Retry-After')));
+  }
+  if (res.status >= 500) throw new TmdbRequestError(res.status);
   if (!res.ok) return [];
   const data = await res.json() as { results?: TmdbSuggestion[] };
   const searchResults = mode === 'manual'
