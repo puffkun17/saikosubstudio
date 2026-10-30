@@ -26,3 +26,8 @@
 - Mobile workbench info bar (390px): the title is truncated to "S." because `.workflow-info-bar` is a fixed single row (`--info-bar-h`) holding back + title + `OutputModeControl` + 「打开预览」. Already present on 98730de (cf-pages-hosted), not introduced by paper tokens. A fix needs a layout change (two-row info bar on narrow screens, or moving the output switch out of the bar), so it is left for a separate pass.
 - ~~`/feedback` top tray still highlights 「导入」 as the current step~~ — **done in `design/no-green`**: real cause was the trailing slash (`/feedback/` is served by Workers assets auto-trailing-slash, so `isInfoPage` missed it). `SystemTray` now strips trailing slashes before matching `/about` / `/feedback`, so no step is marked current on info pages.
 - Tray step indicator (top + mobile bottom) now marks only the current step (cream sheet slides under it); the old "steps passed" progress fill is gone, so a non-current step never looks selected. The old fill behaviour was already on 98730de (orange fill for steps ≤ current).
+
+## Act 1 icons (feat/act1-icons)
+
+- `AGENTS.md` still says local dark surfaces use `data-paper="chrome"` (green tray); after `design/no-green` (9e0a5a7) the tray is plain paper and `[data-paper="chrome"]` no longer exists. Root `DESIGN.md` §3.7 is correct; AGENTS.md wording needs a follow-up. Not changed here.
+- `--fmt-*` / `--lang-*` identity tokens in `globals.css` are kept untouched (DESIGN.md §9), but after A1 no component references them any more. Decide later whether subtitle-style UI should use them or whether they can be removed.

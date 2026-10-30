@@ -1,59 +1,64 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'motion/react';
-import { springSnappy } from '@/lib/motion';
+import { motion, useReducedMotion } from 'motion/react';
+
+/**
+ * Act 1 文件图标与语言牌（A1，2026-10-30）。
+ *
+ * 只用纸 / 墨 / 酒红三类 token（DESIGN.md §3）；`--fmt-*`、`--lang-*` 身份色 token 保留不动，但图标不再引用。
+ * 为 B（常驻舞台）准备：
+ * - 纸片本体是**不透明**的 `--paper-raised`，叠放时下层不透出；描边按像素固定（non-scaling-stroke）。
+ * - 尺寸档位按用途命名：账本行 20 / 列表 28 / 32 / 舞台 token 40。
+ * - `tone` 只表达选中（酒红）与弱化（faint），不表达格式或语言。
+ * - 纯 SVG 的 `FileFormatGlyph` 和 `LanguageTile` 单独导出，B 可以直接放进自己的 motion 层。
+ */
 
 export type FileFormat = 'srt' | 'ass' | 'zip' | 'rar' | '7z' | 'folder' | 'unknown';
+export type FileGlyphKind = 'document' | 'archive' | 'folder';
+export type IconTone = 'default' | 'accent' | 'faint';
+export type FileIconSize = 'sm' | 'md' | 'lg' | 'xl';
 
-type Size = 'sm' | 'md' | 'lg' | 'xl';
+/** sm = 账本行，md = 列表 / 选择器，lg = 面板，xl = 舞台 token。 */
+export const FILE_ICON_PX: Record<FileIconSize, number> = { sm: 20, md: 28, lg: 32, xl: 40 };
 
-/** Adobe-like glyphs need a bit of size so the 3-letter code stays crisp. */
-const SIZE_PX: Record<Size, number> = { sm: 24, md: 30, lg: 36, xl: 44 };
+/** 屏幕像素描边：小尺寸略细，舞台略粗，保证在 1x / 2x 屏上都落在整像素附近。 */
+const STROKE_PX: Record<FileIconSize, number> = { sm: 1.25, md: 1.5, lg: 1.5, xl: 1.75 };
 
 const TIPS: Record<FileFormat, string> = {
   srt: 'SRT 字幕',
   ass: 'ASS 字幕',
   zip: 'ZIP 压缩包',
   rar: 'RAR 压缩包',
-  '7z': '7Z 压缩包',
+  '7z': '7z 压缩包',
   folder: '文件夹',
   unknown: '文件',
 };
 
-/**
- * Adobe Creative Cloud file-badge language:
- * one flat sheet · darker dog-ear · huge uppercase code · no decoration.
- */
-type AdobePalette = {
-  face: string;
-  fold: string;
-  ink: string;
-};
-
-/**
- * Ridgeline 调和版：在原 Adobe 高饱和色上整体降饱和、偏暖，
- * 让徽章融进 奶油/墨绿/柑橘 三色体系而不是像贴纸浮在纸面上。
- */
-const ADOBE: Record<FileFormat, AdobePalette> = {
-  srt: { face: 'var(--fmt-srt-face)', fold: 'var(--fmt-srt-fold)', ink: 'var(--fmt-ink)' },
-  ass: { face: 'var(--fmt-ass-face)', fold: 'var(--fmt-ass-fold)', ink: 'var(--fmt-ink)' },
-  zip: { face: 'var(--fmt-zip-face)', fold: 'var(--fmt-zip-fold)', ink: 'var(--fmt-ink)' },
-  rar: { face: 'var(--fmt-rar-face)', fold: 'var(--fmt-rar-fold)', ink: 'var(--fmt-ink)' },
-  '7z': { face: 'var(--fmt-7z-face)', fold: 'var(--fmt-7z-fold)', ink: 'var(--fmt-ink)' },
-  folder: { face: 'var(--fmt-folder-face)', fold: 'var(--fmt-folder-fold)', ink: 'var(--fmt-ink)' },
-  unknown: { face: 'var(--fmt-unknown-face)', fold: 'var(--fmt-unknown-fold)', ink: 'var(--fmt-ink)' },
-};
-
+/** 印在纸片上的格式字。`7z` 是 7-Zip 的正式写法，保持小写完整两字。 */
 const CODE: Record<FileFormat, string> = {
   srt: 'SRT',
   ass: 'ASS',
   zip: 'ZIP',
   rar: 'RAR',
-  '7z': '7Z',
-  folder: 'DIR',
-  unknown: 'FILE',
+  '7z': '7z',
+  folder: '',
+  unknown: '',
 };
+
+const KIND: Record<FileFormat, FileGlyphKind> = {
+  srt: 'document',
+  ass: 'document',
+  unknown: 'document',
+  zip: 'archive',
+  rar: 'archive',
+  '7z': 'archive',
+  folder: 'folder',
+};
+
+export const fileFormatCode = (format: FileFormat): string => CODE[format];
+export const fileFormatLabel = (format: FileFormat): string => TIPS[format];
+export const fileGlyphKind = (format: FileFormat): FileGlyphKind => KIND[format];
 
 /** Resolve format from filename or explicit extension. */
 export const resolveFileFormat = (nameOrExt?: string | null): FileFormat => {
@@ -70,124 +75,115 @@ export const resolveFileFormat = (nameOrExt?: string | null): FileFormat => {
   return 'unknown';
 };
 
-/** 三类剪影：文档（折角纸）· 压缩包（带盖箱体 + 卡扣）· 文件夹（标签页）。 */
-const GLYPH_KIND: Record<FileFormat, 'document' | 'archive' | 'folder'> = {
-  srt: 'document',
-  ass: 'document',
-  unknown: 'document',
-  zip: 'archive',
-  rar: 'archive',
-  '7z': 'archive',
-  folder: 'folder',
+type ToneColors = { line: string; ink: string; body: string; detail: string };
+
+const TONE: Record<IconTone, ToneColors> = {
+  default: {
+    line: 'var(--ink-muted)',
+    ink: 'var(--ink-strong)',
+    body: 'var(--paper-raised)',
+    detail: 'var(--ink-faint)',
+  },
+  accent: {
+    line: 'var(--accent)',
+    ink: 'var(--accent-text)',
+    // 不透明的酒红淡底：叠放时不透出下层纸片
+    body: 'color-mix(in srgb, var(--accent) 8%, var(--paper-raised))',
+    detail: 'var(--accent-line)',
+  },
+  faint: {
+    line: 'var(--ink-faint)',
+    ink: 'var(--ink-muted)',
+    body: 'var(--paper-raised)',
+    detail: 'var(--rule-strong)',
+  },
 };
 
-const GLYPH_FONT = 'ui-sans-serif, system-ui, "Segoe UI", sans-serif';
+const MONO_STYLE: React.CSSProperties = {
+  fontFamily: 'var(--pt-font-mono)',
+  fontWeight: 600,
+  fontVariantLigatures: 'none',
+};
 
-const AdobeFileGlyph: React.FC<{ format: FileFormat }> = ({ format }) => {
-  const { face, fold, ink } = ADOBE[format];
+interface FileFormatGlyphProps {
+  format: FileFormat;
+  size?: FileIconSize;
+  tone?: IconTone;
+  /** 是否把格式字印在纸片上。sm（20 px）默认不印，字放到图标旁边。 */
+  withCode?: boolean;
+}
+
+/**
+ * 纯 SVG 图标，24 单位网格：
+ * - 文档（srt/ass/未知）：竖向纸片 + 右上折角，格式字压在下半部。
+ * - 压缩包（zip/rar/7z）：同一张纸片，但没有折角，顶部一道封条 + 竖向系绳 —— “捆起来的一叠”，B 里可以做“拆封”。
+ * - 文件夹：横向标签夹，无字。
+ */
+export const FileFormatGlyph: React.FC<FileFormatGlyphProps> = ({
+  format,
+  size = 'md',
+  tone = 'default',
+  withCode = size !== 'sm',
+}) => {
+  const c = TONE[tone];
+  const kind = KIND[format];
   const code = CODE[format];
-  const kind = GLYPH_KIND[format];
+  const sw = STROKE_PX[size];
+  const stroke = {
+    stroke: c.line,
+    strokeWidth: sw,
+    strokeLinejoin: 'round' as const,
+    strokeLinecap: 'round' as const,
+    vectorEffect: 'non-scaling-stroke' as const,
+  };
 
   if (kind === 'folder') {
     return (
-      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="h-full w-full">
-        {/* 后板 + 标签页 */}
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="block h-full w-full">
         <path
-          d="M5 14c0-2.2 1.8-4 4-4h9.4c1.1 0 2.1.4 2.8 1.2l1.8 2c.7.8 1.7 1.2 2.8 1.2H39c2.2 0 4 1.8 4 4v3H5v-7.4Z"
-          fill={fold}
+          d="M2.75 6.5c0-.83.67-1.5 1.5-1.5h4.6c.4 0 .78.16 1.06.44L11.5 7h8.25c.83 0 1.5.67 1.5 1.5v9.75c0 .83-.67 1.5-1.5 1.5H4.25c-.83 0-1.5-.67-1.5-1.5V6.5Z"
+          fill={c.body}
+          {...stroke}
         />
-        {/* 前板：微梯形，像真实吊挂文件夹的前袋 */}
-        <path
-          d="M6.6 20.5h34.8c1.6 0 2.8 1.5 2.5 3.1l-2.3 12.9c-.3 1.9-2 3.3-3.9 3.3H10.3c-1.9 0-3.6-1.4-3.9-3.3L4.1 23.6c-.3-1.6.9-3.1 2.5-3.1Z"
-          fill={face}
-        />
-        <path
-          d="M7.2 21.6h33.6c1 0 1.7.9 1.5 1.9l-2.2 12.5c-.2 1.3-1.4 2.3-2.7 2.3H10.6c-1.3 0-2.5-1-2.7-2.3L5.7 23.5c-.2-1 .5-1.9 1.5-1.9Z"
-          stroke="rgba(255,255,255,0.16)"
-          strokeWidth="0.75"
-          fill="none"
-        />
-        <text
-          x="24"
-          y="33.5"
-          textAnchor="middle"
-          fill={ink}
-          fontSize="10.5"
-          fontWeight="800"
-          fontFamily={GLYPH_FONT}
-          letterSpacing="0.05em"
-        >
-          DIR
-        </text>
+        <path d="M2.75 9.75h18.5" {...stroke} stroke={c.detail} />
       </svg>
     );
   }
 
+  const codeSize = code.length <= 2 ? 7.4 : 6.4;
+
   if (kind === 'archive') {
     return (
-      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="h-full w-full">
-        {/* 箱体 */}
-        <path
-          d="M7 15h34v25c0 2.2-1.8 4-4 4H11c-2.2 0-4-1.8-4-4V15Z"
-          fill={face}
-        />
-        {/* 箱盖：比箱体略宽，压出「盖住」的层次 */}
-        <rect x="4.5" y="6.5" width="39" height="10.5" rx="2.5" fill={fold} />
-        {/* 卡扣搭在盖与箱的接缝上 */}
-        <rect x="20" y="13" width="8" height="8.5" rx="1.75" fill={fold} />
-        <rect x="22.4" y="15.4" width="3.2" height="3.7" rx="0.9" fill={ink} opacity="0.9" />
-        {/* 内侧描边 */}
-        <path
-          d="M8.1 18.2h31.8v21.4c0 1.5-1.2 2.7-2.7 2.7H10.8c-1.5 0-2.7-1.2-2.7-2.7V18.2Z"
-          stroke="rgba(255,255,255,0.13)"
-          strokeWidth="0.75"
-          fill="none"
-        />
-        <text
-          x="24"
-          y="36.5"
-          textAnchor="middle"
-          fill={ink}
-          fontSize={code.length <= 2 ? 13.5 : 12}
-          fontWeight="800"
-          fontFamily={GLYPH_FONT}
-          letterSpacing="0.06em"
-        >
-          {code}
-        </text>
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="block h-full w-full">
+        <rect x="4.25" y="2.75" width="15.5" height="18.5" rx="1.5" fill={c.body} {...stroke} />
+        {/* 封条 + 系绳 */}
+        <path d="M4.25 8.25h15.5" {...stroke} />
+        <path d="M12 2.75v5.5" {...stroke} stroke={c.detail} />
+        {withCode && code && (
+          <text x="12" y="17.6" textAnchor="middle" fontSize={codeSize} fill={c.ink} style={MONO_STYLE}>
+            {code}
+          </text>
+        )}
       </svg>
     );
   }
 
   return (
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="h-full w-full">
-      {/* Face */}
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="block h-full w-full">
       <path
-        d="M8 4h22l10 10v26c0 2.2-1.8 4-4 4H8c-2.2 0-4-1.8-4-4V8c0-2.2 1.8-4 4-4Z"
-        fill={face}
+        d="M5.75 2.75h8.5l4.5 4.5v12.5c0 .83-.67 1.5-1.5 1.5h-11.5c-.83 0-1.5-.67-1.5-1.5V4.25c0-.83.67-1.5 1.5-1.5Z"
+        fill={c.body}
+        {...stroke}
       />
-      {/* Dog-ear */}
-      <path d="M30 4v8c0 1.1.9 2 2 2h8L30 4Z" fill={fold} />
-      {/* Soft inner highlight — Adobe sheets often have a hairline edge */}
-      <path
-        d="M8.6 5.2h20.6L38.8 15v24.4c0 1.4-1.1 2.6-2.5 2.6H8.6c-1.4 0-2.5-1.2-2.5-2.6V7.7c0-1.4 1.1-2.5 2.5-2.5Z"
-        stroke="rgba(255,255,255,0.14)"
-        strokeWidth="0.75"
-        fill="none"
-      />
-      {/* Extension code — the whole point of the glyph */}
-      <text
-        x="22"
-        y="30"
-        textAnchor="middle"
-        fill={ink}
-        fontSize={code.length <= 2 ? 15 : code.length === 3 ? 13.5 : 11}
-        fontWeight="800"
-        fontFamily={GLYPH_FONT}
-        letterSpacing="0.06em"
-      >
-        {code}
-      </text>
+      <path d="M14.25 2.75v3c0 .83.67 1.5 1.5 1.5h3" {...stroke} />
+      {withCode && code ? (
+        <text x="11.5" y="17.6" textAnchor="middle" fontSize={codeSize} fill={c.ink} style={MONO_STYLE}>
+          {code}
+        </text>
+      ) : (
+        // 未知格式：两道发丝线代表“有内容的纸”，不编造格式字
+        <path d="M7.75 13h7.5M7.75 16.25h5" {...stroke} stroke={c.detail} />
+      )}
     </svg>
   );
 };
@@ -196,34 +192,43 @@ interface FileFormatIconProps {
   format?: FileFormat;
   /** Filename or extension used when `format` is omitted. */
   name?: string;
-  size?: Size;
+  size?: FileIconSize;
+  tone?: IconTone;
   className?: string;
+  /** 在图标旁边显示格式字。sm 档默认显示（因为 20 px 纸片上不印字）。 */
   showLabel?: boolean;
 }
 
-/**
- * Adobe-style format badges: flat color sheet, dog-ear, bold uppercase code.
- */
 export const FileFormatIcon: React.FC<FileFormatIconProps> = ({
   format,
   name,
   size = 'md',
+  tone = 'default',
   className = '',
-  showLabel = false,
+  showLabel,
 }) => {
   const resolved = format || resolveFileFormat(name);
   const tip = TIPS[resolved];
-  const px = SIZE_PX[size];
-  const label = CODE[resolved];
+  const px = FILE_ICON_PX[size];
+  const code = CODE[resolved];
+  const labelVisible = (showLabel ?? size === 'sm') && code !== '';
 
   return (
-    <span className={`inline-flex shrink-0 items-center gap-1.5 ${className}`} title={tip}>
+    <span
+      className={`inline-flex shrink-0 items-center gap-1 ${className}`}
+      title={tip}
+      data-file-format={resolved}
+    >
       <span style={{ width: px, height: px }} className="inline-block">
-        <AdobeFileGlyph format={resolved} />
+        <FileFormatGlyph format={resolved} size={size} tone={tone} />
       </span>
-      {showLabel && (
-        <span className="font-mono text-xs font-semibold tracking-wide text-[var(--v4-text-muted)]">
-          {label}
+      {labelVisible && (
+        <span
+          aria-hidden="true"
+          className="text-[11px] leading-none"
+          style={{ ...MONO_STYLE, color: tone === 'accent' ? 'var(--accent-text)' : 'var(--ink-muted)' }}
+        >
+          {code}
         </span>
       )}
       <span className="sr-only">{tip}</span>
@@ -232,7 +237,7 @@ export const FileFormatIcon: React.FC<FileFormatIconProps> = ({
 };
 
 /** Map free-form labels / codes to a stable language key. */
-const resolveLangKey = (lang?: string, label?: string): string => {
+export const resolveLangKey = (lang?: string, label?: string): string => {
   const raw = (lang || label || '').trim();
   if (!raw) return 'unknown';
   const lower = raw.toLowerCase();
@@ -281,153 +286,148 @@ const resolveLangKey = (lang?: string, label?: string): string => {
   return raw;
 };
 
-type LangVisual = {
-  label: string;
-  face: string;
-  ink: string;
-  mark: string;
+export type LangVisual = { key: string; label: string; mark: string };
+
+const LANG_VISUAL: Record<string, Omit<LangVisual, 'key'>> = {
+  'zh-CN': { label: '简中', mark: '简' },
+  'zh-TW': { label: '繁中', mark: '繁' },
+  zh: { label: '中文', mark: '中' },
+  en: { label: '英语', mark: 'En' },
+  ja: { label: '日语', mark: 'あ' },
+  ko: { label: '韩语', mark: '한' },
+  fr: { label: '法语', mark: 'Fr' },
+  es: { label: '西语', mark: 'Es' },
+  pt: { label: '葡语', mark: 'Pt' },
+  de: { label: '德语', mark: 'De' },
+  it: { label: '意语', mark: 'It' },
+  latin: { label: '拉丁', mark: 'La' },
+  bilingual: { label: '双语', mark: '双' },
+  commentary: { label: '导评', mark: '评' },
+  unknown: { label: '待识别', mark: '?' },
 };
+
+/** 语言 → 牌面字与中文名。未知值回落到首字，不编造语言。 */
+export const languageVisual = (lang?: string, label?: string): LangVisual => {
+  const key = resolveLangKey(lang, label);
+  const known = LANG_VISUAL[key];
+  if (known) return { key, ...known };
+  const fallback = label || lang || '未知';
+  return { key, label: fallback, mark: fallback.slice(0, 1) || '?' };
+};
+
+export type LangMarkSize = 'sm' | 'md' | 'lg';
+/** sm = 账本行 / 舞台 token 角标，md = 列表，lg = 面板。 */
+export const LANG_TILE_PX: Record<LangMarkSize, number> = { sm: 18, md: 22, lg: 26 };
+const LANG_FONT_PX: Record<LangMarkSize, { cjk: number; latin: number }> = {
+  sm: { cjk: 11, latin: 10 },
+  md: { cjk: 13, latin: 11.5 },
+  lg: { cjk: 15, latin: 13 },
+};
+
+const isLatinMark = (mark: string) => /^[\x20-\x7e]+$/.test(mark);
 
 /**
- * Language colors avoid file-icon hues
- * (SRT teal / ASS plum / ZIP citrus / RAR brick / 7Z indigo).
- * 芯片描边 / 底色 / 文字色不再写死浅色 hex，而是用 color-mix 掺入当前表面的
- * --v4-text / --v4-line-strong：奶油面上自动变深、墨绿面上自动变浅，两边都可读。
+ * 纯文字语言牌：圆角 4、1 px 控件边、不透明纸底、墨字，不填色块。
+ * 待识别用虚线边（形状区分状态，不只靠颜色）。
  */
-const LANG_VISUAL: Record<string, LangVisual> = {
-  'zh-CN': { label: '简中', face: 'var(--lang-zh-cn-face)', ink: 'var(--lang-zh-cn-ink)', mark: '简' },
-  'zh-TW': { label: '繁中', face: 'var(--lang-zh-tw-face)', ink: 'var(--lang-zh-tw-ink)', mark: '繁' },
-  zh: { label: '中文', face: 'var(--lang-zh-face)', ink: 'var(--lang-zh-ink)', mark: '中' },
-  en: { label: '英语', face: 'var(--lang-en-face)', ink: 'var(--lang-en-ink)', mark: 'En' },
-  ja: { label: '日语', face: 'var(--lang-ja-face)', ink: 'var(--lang-ja-ink)', mark: 'あ' },
-  ko: { label: '韩语', face: 'var(--lang-ko-face)', ink: 'var(--lang-ko-ink)', mark: '한' },
-  fr: { label: '法语', face: 'var(--lang-fr-face)', ink: 'var(--lang-fr-ink)', mark: 'Fr' },
-  es: { label: '西语', face: 'var(--lang-es-face)', ink: 'var(--lang-es-ink)', mark: 'Ñ' },
-  pt: { label: '葡语', face: 'var(--lang-latin-face)', ink: 'var(--lang-latin-ink)', mark: 'Pt' },
-  de: { label: '德语', face: 'var(--lang-latin-face)', ink: 'var(--lang-latin-ink)', mark: 'De' },
-  it: { label: '意语', face: 'var(--lang-latin-face)', ink: 'var(--lang-latin-ink)', mark: 'It' },
-  latin: { label: '拉丁', face: 'var(--lang-latin-face)', ink: 'var(--lang-latin-ink)', mark: 'L' },
-  bilingual: { label: '双语', face: 'var(--lang-bilingual-face)', ink: 'var(--lang-bilingual-ink)', mark: '双' },
-  commentary: { label: '导评', face: 'var(--lang-commentary-face)', ink: 'var(--lang-commentary-ink)', mark: '评' },
-  unknown: { label: '待识别', face: 'var(--lang-unknown-face)', ink: 'var(--lang-unknown-ink)', mark: '?' },
-};
-
-/** 表面自适应的芯片配色：随 data-paper（sheet/theater）自动取得可读对比。 */
-const chipSurfaceStyle = (face: string): React.CSSProperties => ({
-  borderColor: `color-mix(in srgb, ${face} 48%, var(--v4-line-strong))`,
-  background: `color-mix(in srgb, ${face} 12%, transparent)`,
-  // 文字侧更靠近主色，避免浅奶油上「有色但发灰」
-  color: `color-mix(in srgb, ${face} 28%, var(--v4-text))`,
-  fontWeight: 600,
-});
-
-type MarkSize = 'md' | 'lg';
-
-/** Fixed tile — larger glyph, tighter padding. */
-const LangTile: React.FC<{ visual: LangVisual; flipKey?: string; size?: MarkSize }> = ({
-  visual,
-  flipKey,
-  size = 'md',
-}) => {
-  const { face, ink, mark } = visual;
-  const isWide = mark.length > 1;
-  const isLg = size === 'lg';
+export const LanguageTile: React.FC<{
+  visual: LangVisual;
+  size?: LangMarkSize;
+  tone?: IconTone;
+  className?: string;
+}> = ({ visual, size = 'md', tone = 'default', className = '' }) => {
+  const reduce = useReducedMotion();
+  const px = LANG_TILE_PX[size];
+  const latin = isLatinMark(visual.mark);
+  const pending = visual.key === 'unknown';
+  const fontPx = latin ? LANG_FONT_PX[size].latin : LANG_FONT_PX[size].cjk;
+  const borderColor = tone === 'accent' ? 'var(--accent)' : tone === 'faint' ? 'var(--rule-strong)' : 'var(--rule-control)';
+  const color = tone === 'accent' ? 'var(--accent-text)' : tone === 'faint' ? 'var(--ink-muted)' : 'var(--ink-strong)';
+  const background = tone === 'accent' ? 'color-mix(in srgb, var(--accent) 8%, var(--paper-raised))' : 'var(--paper-raised)';
 
   return (
-    <motion.span
-      key={flipKey ?? mark}
-      initial={{ rotateY: 75, opacity: 0 }}
-      animate={{ rotateY: 0, opacity: 1 }}
-      transition={springSnappy}
-      className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-md ${
-        isLg ? 'h-9 w-9' : 'h-8 w-8'
-      }`}
+    <span
       aria-hidden="true"
-      style={{ background: face }}
+      data-lang-key={visual.key}
+      className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[var(--pt-radius-sm)] border leading-none ${className}`}
+      style={{
+        height: px,
+        minWidth: px,
+        paddingInline: latin && visual.mark.length > 1 ? 3 : 0,
+        borderColor,
+        borderStyle: pending ? 'dashed' : 'solid',
+        background,
+        color,
+      }}
     >
-      <span
-        className={`font-sans font-bold leading-none tracking-normal ${
-          isLg
-            ? isWide ? 'text-[15px]' : 'text-[17px]'
-            : isWide ? 'text-[14px]' : 'text-[16px]'
-        }`}
-        style={{ color: ink }}
+      {/* 牌面变化（如 待识别 → 简中）时只做 150 ms 透明度交替，不翻转、不位移 */}
+      <motion.span
+        key={visual.mark}
+        initial={reduce ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.15, ease: [0.2, 0, 0, 1] }}
+        style={{
+          fontSize: fontPx,
+          fontWeight: 600,
+          fontFamily: latin ? 'var(--pt-font-mono)' : 'var(--pt-font-ui)',
+        }}
       >
-        {mark}
-      </span>
-    </motion.span>
+        {visual.mark}
+      </motion.span>
+    </span>
   );
 };
 
-/** Language mark: unique color + glyph per language. */
+/** Language mark: 文字牌 + 可选中文名。双语 = 两块牌并成一块（共用中缝）。 */
 export const LanguageMark: React.FC<{
   lang?: string;
   label?: string;
   languagePair?: { primary: string; secondary: string };
-  size?: MarkSize;
+  size?: LangMarkSize;
+  tone?: IconTone;
+  /** 是否在牌后显示中文名（默认显示，保持现有列表的可读性）。 */
+  showLabel?: boolean;
   className?: string;
-}> = ({ lang, label, languagePair, size = 'md', className = '' }) => {
-  const isLg = size === 'lg';
-  const shellClass = `inline-flex shrink-0 items-center gap-1 rounded-md border pl-0.5 pr-2 ${
-    isLg ? 'h-9' : 'h-8'
-  } ${className}`;
-  const labelClass = `font-mono font-semibold leading-none tracking-normal ${
-    isLg ? 'text-sm' : 'text-xs'
-  }`;
+}> = ({ lang, label, languagePair, size = 'md', tone = 'default', showLabel = true, className = '' }) => {
+  const labelClass = `leading-none ${size === 'lg' ? 'text-[13px]' : 'text-xs'}`;
+  const labelColor = tone === 'accent' ? 'var(--accent-text)' : 'var(--ink-muted)';
 
   if (languagePair) {
-    const primaryKey = resolveLangKey(languagePair.primary);
-    const secondaryKey = resolveLangKey(languagePair.secondary);
-    const primary = LANG_VISUAL[primaryKey] || LANG_VISUAL.unknown;
-    const secondary = LANG_VISUAL[secondaryKey] || LANG_VISUAL.unknown;
+    const primary = languageVisual(languagePair.primary);
+    const secondary = languageVisual(languagePair.secondary);
     return (
       <span
-        className={shellClass}
-        style={chipSurfaceStyle(LANG_VISUAL.bilingual.face)}
+        className={`inline-flex shrink-0 items-center gap-1.5 ${className}`}
         title={`${primary.label} / ${secondary.label}`}
+        data-lang-pair={`${primary.key}+${secondary.key}`}
       >
-        <span className="relative inline-flex items-center">
-          {/* 两块语言牌相向吸合，暗示「配对成功」 */}
-          <motion.span
-            initial={{ x: -5 }}
-            animate={{ x: 0 }}
-            transition={springSnappy}
-            className="inline-flex"
-          >
-            <LangTile visual={primary} flipKey={`p-${primaryKey}`} size={size} />
-          </motion.span>
-          <motion.span
-            initial={{ x: 5 }}
-            animate={{ x: 0 }}
-            transition={springSnappy}
-            className="-ml-1.5 inline-flex"
-          >
-            <LangTile visual={secondary} flipKey={`s-${secondaryKey}`} size={size} />
-          </motion.span>
+        <span className="inline-flex items-center">
+          <LanguageTile visual={primary} size={size} tone={tone} className="rounded-r-none" />
+          <LanguageTile visual={secondary} size={size} tone={tone} className="-ml-px rounded-l-none" />
         </span>
-        <span className={labelClass}>双语</span>
+        {showLabel && (
+          <span className={labelClass} style={{ color: labelColor }}>
+            双语
+          </span>
+        )}
+        <span className="sr-only">{`双语：${primary.label} / ${secondary.label}`}</span>
       </span>
     );
   }
 
   if (!lang && !label) return null;
-
-  const key = resolveLangKey(lang, label);
-  const visual = LANG_VISUAL[key] || {
-    ...LANG_VISUAL.unknown,
-    label: label || lang || '未知',
-    mark: (label || lang || '?').slice(0, 1),
-  };
+  const visual = languageVisual(lang, label);
 
   return (
-    <span
-      className={shellClass}
-      style={chipSurfaceStyle(visual.face)}
-      title={visual.label}
-    >
-      {/* key 变化（如 待识别 → 简中）时翻牌，提示「语言已识别」 */}
-      <LangTile visual={visual} flipKey={key} size={size} />
-      <span className={labelClass}>{visual.label}</span>
+    <span className={`inline-flex shrink-0 items-center gap-1.5 ${className}`} title={visual.label}>
+      <LanguageTile visual={visual} size={size} tone={tone} />
+      {showLabel ? (
+        <span className={labelClass} style={{ color: labelColor }}>
+          {visual.label}
+        </span>
+      ) : (
+        <span className="sr-only">{visual.label}</span>
+      )}
     </span>
   );
 };
