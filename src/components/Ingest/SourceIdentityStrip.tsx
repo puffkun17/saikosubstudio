@@ -3,25 +3,26 @@
 import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
-import { Image as ImageIcon, Search, LoaderCircle, X, RefreshCw } from 'lucide-react';
+import { Image as ImageIcon, Search, LoaderCircle, X, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { FilmMetaBlock, buildFilmRatings } from '@/components/Ingest/FilmMetaBlock';
 import { resolveFilmTitles } from '@/utils/filmTitles';
-import { computeSynopsisClamp, countLines, shouldCompactRematch } from '@/core/synopsisClamp';
+import {
+  computeSynopsisLayout,
+  countLines,
+  shouldCompactRematch,
+  SYNOPSIS_TOGGLE_PX,
+} from '@/core/synopsisClamp';
 
 /** 桌面（lg）左栏才做自适应折叠；窄屏是单行条，简介整段隐藏（见 ds.css）。 */
 const DESKTOP_QUERY = '(min-width: 1024px)';
-/** 封面最少占左栏高度的比例 / 下限：简介可以向封面「借」高度，但借到这里为止，再不够就折叠。 */
-const POSTER_SHARE = 0.45;
-const POSTER_FLOOR_PX = 180;
-/** 封面让高度的底线：低于它就不再压封面，改为左栏内滚动（只在极矮窗口出现）。 */
+/** 封面优先：完整 2:3 不裁切。只有极矮窗口（连「2 行简介 + 展开按钮」都放不下）才等比缩小，最低到这里，再不够左栏自己滚动。 */
 const POSTER_HARD_FLOOR_PX = 120;
-/** 「展开」按钮：mt-1 (4px) + h-5 (20px)。 */
-const TOGGLE_RESERVE_PX = 24;
 
 interface SynopsisLayout {
   clamp: number | null;
-  posterMinPx: number | null;
+  /** 封面高度：null = 按栏宽完整 2:3；数值 = 极矮窗口下等比缩小后的高度（不裁切，左右留纸色）。 */
+  posterPx: number | null;
   /** 「手动匹配」收成封面角上的放大镜（仅 lg）。 */
   compact: boolean;
 }
@@ -97,7 +98,7 @@ export const SourceIdentityStrip: React.FC = () => {
   const rematchRef = useRef<HTMLButtonElement>(null);
   const rematchRowRef = useRef<HTMLDivElement>(null);
   const [overviewExpanded, setOverviewExpanded] = useState(false);
-  const [layout, setLayout] = useState<SynopsisLayout>({ clamp: null, posterMinPx: null, compact: false });
+  const [layout, setLayout] = useState<SynopsisLayout>({ clamp: null, posterPx: null, compact: false });
 
   useEffect(() => {
     setOverviewExpanded(false);
@@ -114,11 +115,10 @@ export const SourceIdentityStrip: React.FC = () => {
     const meta = metaRef.current;
     const foot = footRef.current;
     if (!rail || !body || !col || !meta || !foot) return;
-    let next: SynopsisLayout = { clamp: null, posterMinPx: null, compact: false };
+    let next: SynopsisLayout = { clamp: null, posterPx: null, compact: false };
     if (window.matchMedia(DESKTOP_QUERY).matches) {
       const railH = rail.clientHeight;
       const naturalPoster = rail.clientWidth * 1.5;
-      const posterTarget = Math.min(naturalPoster, Math.max(POSTER_FLOOR_PX, railH * POSTER_SHARE));
       const bs = getComputedStyle(body);
       const cs = getComputedStyle(col);
       const sizer = sizerRef.current;
@@ -132,31 +132,28 @@ export const SourceIdentityStrip: React.FC = () => {
       const fixedBase =
         px(bs.paddingTop) + px(bs.paddingBottom) + px(bs.rowGap) +
         meta.offsetHeight + (sizer ? px(cs.rowGap) : 0);
-      // 先用「完整按钮」口径决定模式，再按选定模式定尺寸——两步分开，避免自激。
       const footFull = foot.offsetHeight + (btnIsOut ? rowPx : 0);
       let clamp: number | null = null;
-      let textPx = 0;
       let compact = false;
-      let fixed = fixedBase + footFull;
+      let posterPx: number | null = null;
       if (sizer) {
         const lh = px(getComputedStyle(sizer).lineHeight);
         const total = countLines(sizer.offsetHeight, lh);
-        compact = rowPx > 0 && shouldCompactRematch(railH - posterTarget - fixed, lh, total);
-        if (compact) fixed -= rowPx;
-        clamp = computeSynopsisClamp(railH - posterTarget - fixed, lh, total, {
-          toggleReservePx: TOGGLE_RESERVE_PX,
-        });
-        textPx = clamp === null ? sizer.offsetHeight : clamp * lh + TOGGLE_RESERVE_PX;
+        // 1) 先用「完整按钮 + 完整封面」口径决定要不要收成放大镜（与当前模式无关，不会自激）。
+        const availFull = railH - naturalPoster - fixedBase - footFull;
+        compact = rowPx > 0 && shouldCompactRematch(availFull, lh, total);
+        // 2) 再按选定模式给简介定行数。
+        const avail = availFull + (compact ? rowPx : 0);
+        clamp = computeSynopsisLayout(avail, lh, total, { toggleReservePx: SYNOPSIS_TOGGLE_PX }).clamp;
+        // 3) 封面只在放不下时等比缩小。2px 吸收行高小数（20.3px）与边框的取整误差。
+        const textPx = clamp === null ? sizer.offsetHeight : clamp * lh + SYNOPSIS_TOGGLE_PX;
+        const room = Math.floor(railH - fixedBase - footFull + (compact ? rowPx : 0) - Math.ceil(textPx) - 2);
+        if (room < naturalPoster) posterPx = Math.max(POSTER_HARD_FLOOR_PX, room);
       }
-      // 封面是弹性的那一块：回差的 1–2 行、或「至少 3 行」放不下的部分，都从封面高度里让出来，
-      // 但不低于 POSTER_HARD_FLOOR_PX（再矮就让左栏自己滚动）。
-      // 2px：吸收行高小数（20.3px）与边框的取整误差。
-      const room = Math.floor(railH - fixed - Math.ceil(textPx) - 2);
-      const posterMinPx = Math.max(POSTER_HARD_FLOOR_PX, Math.min(Math.floor(posterTarget), room));
-      next = { clamp, posterMinPx, compact };
+      next = { clamp, posterPx, compact };
     }
     setLayout((prev) =>
-      prev.clamp === next.clamp && prev.posterMinPx === next.posterMinPx && prev.compact === next.compact ? prev : next,
+      prev.clamp === next.clamp && prev.posterPx === next.posterPx && prev.compact === next.compact ? prev : next,
     );
   }, []);
 
@@ -210,7 +207,8 @@ export const SourceIdentityStrip: React.FC = () => {
       <div
         className="source-identity-rail__poster relative w-full border-b border-[var(--v4-line)]"
         data-poster-state={showPoster ? 'image' : posterFailed ? 'failed' : isSearchingTmdb ? 'searching' : 'empty'}
-        style={layout.posterMinPx !== null ? { minHeight: layout.posterMinPx } : undefined}
+        data-poster-fit={layout.posterPx !== null ? 'scaled' : 'full'}
+        style={layout.posterPx !== null ? { height: layout.posterPx, aspectRatio: 'auto' } : undefined}
       >
         <AnimatePresence mode="wait">
           {showPoster && posterUrl ? (
@@ -261,7 +259,7 @@ export const SourceIdentityStrip: React.FC = () => {
       </div>
 
       <div ref={bodyRef} className="source-identity-rail__body ds-card flex min-h-0 flex-1 flex-col gap-[var(--ds-gap-group)]">
-        <div ref={colRef} className="flex min-h-0 flex-1 flex-col gap-[var(--ds-gap-item)] overflow-y-auto">
+        <div ref={colRef} className="-mx-1 flex min-h-0 flex-1 flex-col gap-[var(--ds-gap-item)] overflow-y-auto px-1">
           <div ref={metaRef} className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <h3
@@ -339,10 +337,13 @@ export const SourceIdentityStrip: React.FC = () => {
                   type="button"
                   aria-expanded={overviewExpanded}
                   aria-controls={overviewId}
-                  className="v4-focus-ring mt-1 h-5 rounded-sm text-xs font-semibold leading-5 text-[var(--v4-accent-strong)] hover:underline"
+                  className="source-identity-rail__toggle v4-focus-ring"
                   onClick={() => setOverviewExpanded((v) => !v)}
                 >
-                  {overviewExpanded ? '收起' : '展开'}
+                  {overviewExpanded ? '收起简介' : '展开全文'}
+                  {overviewExpanded
+                    ? <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                    : <ChevronDown className="h-4 w-4" aria-hidden="true" />}
                 </button>
               )}
             </div>

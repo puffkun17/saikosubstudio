@@ -68,3 +68,42 @@ test('390x844 移动端：不收（单行条，简介隐藏）', async ({ page }
   await seed(page, LONG);
   await expect(page.getByTestId('rematch-compact')).toHaveCount(0);
 });
+
+const clampOf = (page: Page) =>
+  page.locator('.source-identity-rail__overview').evaluate((el) => (el as HTMLElement).style.webkitLineClamp || null);
+
+test('1280x900 长简介：封面完整 2:3，简介让位，展开按钮 ≥44px 可切换', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/');
+  await waitForStore(page);
+  await seed(page, LONG);
+  const poster = page.locator('.source-identity-rail__poster');
+  await expect(poster).toHaveAttribute('data-poster-fit', 'full');
+  const pb = await poster.boundingBox();
+  expect(Math.round(pb!.height)).toBe(Math.round(pb!.width * 1.5));
+  expect(Number(await clampOf(page))).toBeGreaterThanOrEqual(2);
+  const toggle = page.locator('.source-identity-rail__toggle');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await expect(page.getByTestId('rematch-compact')).toBeVisible(); // 简介被截断时放大镜出现
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(toggle).toHaveText(/收起简介/);
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+});
+
+test('1280x720 长简介：最后才缩封面，等比不裁切，简介至少 2 行', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/');
+  await waitForStore(page);
+  await seed(page, LONG);
+  const poster = page.locator('.source-identity-rail__poster');
+  await expect(poster).toHaveAttribute('data-poster-fit', 'scaled');
+  const pb = await poster.boundingBox();
+  expect(pb!.height).toBeLessThan(pb!.width * 1.5);
+  expect(pb!.height).toBeGreaterThanOrEqual(120);
+  expect(await clampOf(page)).toBe('2');
+  const rail = page.locator('.source-identity-rail');
+  expect(await rail.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(0);
+});

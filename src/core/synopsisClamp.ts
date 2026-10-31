@@ -1,47 +1,61 @@
 /**
- * 第 2 页左侧作品卡：简介自适应折叠阈值（纯函数，单测见 scripts/tests/synopsis-clamp.test.mjs）。
+ * 第 2 页左侧作品卡：封面优先的简介布局（纯函数，单测见 scripts/tests/synopsis-clamp.test.mjs）。
  *
- * 规则：
- * 1. 全文放得下（totalLines ≤ 可用整行数）→ null，不折叠、不出「展开」。
- * 2. 放不下，但只多出 ≤ slackLines（默认 2）行 → 也返回 null：宁可让封面让出这 1–2 行，
- *    也不让用户为了一两行去点「展开」。
- * 3. 否则折叠到「扣掉展开按钮高度后还能完整放下的整行数」，至少 minLines（默认 3）行。
+ * 规则（lg 桌面）：
+ * 1. 封面优先：按栏宽完整 2:3 显示，不裁切。简介只拿剩下的空间。
+ * 2. 剩余空间放得下全文 → 全文，无「展开」。
+ * 3. 放不下 → 先扣掉「展开」按钮（44px 触控高度），折叠到能完整放下的整行数，至少 minLines（默认 2）行。
+ * 4. 连「最少行数 + 展开按钮」都放不下（极矮窗口）→ 才让封面等比缩小（deficitPx 告诉调用方要让多少）。
  */
-export interface SynopsisClampOptions {
+export interface SynopsisLayoutOptions {
   /** 折叠时至少显示的行数。 */
   minLines?: number;
-  /** 溢出不超过这么多行时直接显示全文。 */
-  slackLines?: number;
-  /** 折叠后「展开」按钮占的高度（px），从可用空间里扣掉。 */
+  /** 折叠后「展开」按钮占的高度（px）。 */
   toggleReservePx?: number;
 }
 
-export const SYNOPSIS_MIN_LINES = 3;
-export const SYNOPSIS_SLACK_LINES = 2;
+export interface SynopsisLayoutResult {
+  /** 折叠到几行；null = 显示全文。 */
+  clamp: number | null;
+  /** 封面需要让出的高度（px），0 = 封面保持完整尺寸。 */
+  deficitPx: number;
+}
+
+export const SYNOPSIS_MIN_LINES = 2;
+/** 「展开 / 收起」按钮：44px 触控高度。 */
+export const SYNOPSIS_TOGGLE_PX = 44;
 
 /** 半像素容差：行高常是小数（14px × 1.45 = 20.3px），避免 4.999 行被算成 4 行。 */
 const EPS = 0.5;
 
-export function computeSynopsisClamp(
+const NONE: SynopsisLayoutResult = { clamp: null, deficitPx: 0 };
+
+/**
+ * @param availablePx 封面按完整尺寸摆好、标题/标签/底部都扣掉之后，留给简介（含展开按钮）的高度。
+ */
+export function computeSynopsisLayout(
   availablePx: number,
   lineHeightPx: number,
   totalLines: number,
-  options: SynopsisClampOptions = {},
-): number | null {
-  const minLines = options.minLines ?? SYNOPSIS_MIN_LINES;
-  const slackLines = options.slackLines ?? SYNOPSIS_SLACK_LINES;
+  options: SynopsisLayoutOptions = {},
+): SynopsisLayoutResult {
+  const minLines = Math.max(1, options.minLines ?? SYNOPSIS_MIN_LINES);
   const reserve = Math.max(0, options.toggleReservePx ?? 0);
-  if (!Number.isFinite(lineHeightPx) || lineHeightPx <= 0) return null;
-  if (!Number.isFinite(totalLines) || totalLines <= 0) return null;
-  const avail = Number.isFinite(availablePx) ? Math.max(0, availablePx) : 0;
+  if (!Number.isFinite(lineHeightPx) || lineHeightPx <= 0) return NONE;
+  if (!Number.isFinite(totalLines) || totalLines <= 0) return NONE;
+  const avail = Number.isFinite(availablePx) ? availablePx : 0;
 
-  const fitAll = Math.floor((avail + EPS) / lineHeightPx);
-  if (totalLines <= fitAll) return null;
-  if (totalLines - fitAll <= slackLines) return null;
+  const fitAll = Math.floor((Math.max(0, avail) + EPS) / lineHeightPx);
+  if (totalLines <= fitAll) return NONE;
+
+  // 全文不超过最少行数：不折叠（折叠也省不了几行），不够的从封面让。
+  if (totalLines <= minLines) {
+    return { clamp: null, deficitPx: Math.max(0, Math.ceil(totalLines * lineHeightPx - avail)) };
+  }
 
   const fitWithToggle = Math.floor((Math.max(0, avail - reserve) + EPS) / lineHeightPx);
-  const lines = Math.max(minLines, fitWithToggle);
-  return lines >= totalLines ? null : lines;
+  if (fitWithToggle >= minLines) return { clamp: fitWithToggle, deficitPx: 0 };
+  return { clamp: minLines, deficitPx: Math.max(0, Math.ceil(minLines * lineHeightPx + reserve - avail)) };
 }
 
 /** 从实测高度换算总行数（四舍五入吸收亚像素误差）。 */
@@ -51,8 +65,8 @@ export function countLines(heightPx: number, lineHeightPx: number): number {
 }
 
 /**
- * 「手动匹配」按钮收成封面角上的放大镜：只要「完整按钮 + 封面目标高」下全文放不下
- * （会被折叠，或要靠回差从封面借行），就进紧凑模式，把按钮那一行的高度还给简介。
+ * 「手动匹配」收成封面角上的放大镜：在「完整按钮」口径下简介会被折叠（全文放不下）就收，
+ * 把按钮那一行还给简介。
  *
  * 只吃「完整按钮」口径的输入（与当前模式无关），所以模式切换本身不会反过来改变判断，不会来回跳。
  */

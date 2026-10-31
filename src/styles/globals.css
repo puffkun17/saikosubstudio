@@ -1468,20 +1468,50 @@ body {
     scrollbar-width: thin;
   }
 
+  /* 封面优先：完整 2:3、不收缩；极矮窗口由 JS 给出等比缩小后的高度，图片 contain 居中，两侧露纸色，不裁切。 */
   .source-identity-rail__poster {
-    flex: 0 1 auto;
-    min-height: 120px;
+    flex: 0 0 auto;
+    background: var(--paper-sunken);
+  }
+
+  .source-identity-rail__poster img {
+    object-fit: contain;
+    object-position: 50% 50%;
   }
 
   .source-identity-rail__body {
     flex: 1 0 auto;
   }
 
-  /* 展开后全文可能超出：封面先缩到最小高度，剩下的在简介列里滚动。 */
+  /* 展开后全文可能超出：封面不动，简介列内滚动。 */
   .source-identity-rail[data-synopsis-expanded] .source-identity-rail__body {
     flex: 1 1 auto;
     min-height: 0;
   }
+}
+
+.source-identity-rail__toggle {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  /* 简介列左右各留 4px（-mx-1 px-1），按钮用这 4px 做 hover 底和内嵌焦点环，文字仍与正文左对齐。 */
+  margin-left: -4px;
+  padding: 0 8px 0 4px;
+  border-radius: var(--pt-radius-md);
+  color: var(--accent-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.source-identity-rail__toggle:hover {
+  background: var(--accent-soft);
+}
+
+.source-identity-rail__toggle.v4-focus-ring:focus-visible {
+  outline-offset: -2px;
 }
 
 .source-identity-rail__title,
