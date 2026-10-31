@@ -1384,43 +1384,163 @@ body {
   height: 100%;
 }
 
-/* Keep poster 2:3, but clamp height so Import ready-state fits one desktop screen. */
+/* 封面满铺：宽度贴卡片两边、顶部用卡片内圆角；盒子按 2:3，cover 裁切不变形。
+   lg 上左栏高度只跟右栏走（contain: size），封面可以在 min-height（由 JS 按左栏高度给出）之上
+   向简介让出高度：空间够时是完整 2:3，不够时从下方裁一点，再不够才折叠简介。 */
 .source-identity-rail__poster {
   aspect-ratio: 2 / 3;
   width: 100%;
-  max-height: min(36vh, 220px);
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: calc(var(--pt-radius-lg) - 1px) calc(var(--pt-radius-lg) - 1px) 0 0;
   background: var(--v4-panel-muted);
 }
 
 .source-identity-rail__poster img {
-  object-fit: contain;
-  object-position: center;
+  object-fit: cover;
+  object-position: 50% 20%;
 }
 
-.source-identity-rail__title,
-.source-identity-rail__alt {
-  text-wrap: balance;
+/* 空间紧时「手动匹配」收成封面右下角的放大镜：32px 圆钮，半透明纸底 + 轻微毛玻璃，墨色图标，
+   酒红焦点环；::before 把可点区域扩到 44px。模式切换不做动画。 */
+.source-identity-rail__rematch-fab {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--rule-strong) 70%, transparent);
+  background: color-mix(in srgb, var(--paper-raised) 84%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: var(--ink-strong);
+  cursor: pointer;
+}
+
+.source-identity-rail__rematch-fab::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+}
+
+.source-identity-rail__rematch-fab:hover {
+  background: var(--paper-raised);
+  color: var(--accent-text);
+}
+
+.source-identity-rail__rematch-fab:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: 2px;
+}
+
+.source-identity-rail__rematch-tip {
+  position: absolute;
+  right: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  background: var(--paper-raised);
+  color: var(--ink-strong);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  box-shadow: var(--pt-elev-float);
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.source-identity-rail__rematch-fab:hover .source-identity-rail__rematch-tip,
+.source-identity-rail__rematch-fab:focus-visible .source-identity-rail__rematch-tip {
+  visibility: visible;
 }
 
 @media (min-width: 1024px) {
+  .source-identity-rail {
+    contain: size;
+    overflow: hidden auto;
+    scrollbar-width: thin;
+  }
+
+  /* 封面优先：完整 2:3、不收缩；极矮窗口由 JS 给出等比缩小后的高度，图片 contain 居中，两侧露纸色，不裁切。 */
   .source-identity-rail__poster {
-    max-height: min(32vh, 200px);
+    flex: 0 0 auto;
+    background: var(--paper-sunken);
+  }
+
+  .source-identity-rail__poster img {
+    object-fit: contain;
+    object-position: 50% 50%;
+  }
+
+  .source-identity-rail__body {
+    flex: 1 0 auto;
+  }
+
+  /* 展开后全文可能超出：封面不动，简介列内滚动。 */
+  .source-identity-rail[data-synopsis-expanded] .source-identity-rail__body {
+    flex: 1 1 auto;
+    min-height: 0;
   }
 }
 
-@media (min-width: 1024px) and (min-height: 900px) {
-  .source-identity-rail__poster {
-    max-height: min(40vh, 260px);
-  }
+.source-identity-rail__toggle {
+  position: relative;
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 4px;
+  /* 版面只占 28px，紧贴简介；::before 上下各扩 8px，触控区 44px（简介列 pb-2/-mb-2 留出下方 8px，不被滚动容器裁掉）。 */
+  min-height: 28px;
+  /* 简介列左右各留 4px（-mx-1 px-1），按钮用这 4px 做 hover 底和内嵌焦点环，文字仍与正文左对齐。 */
+  margin-left: -4px;
+  padding: 0 8px 0 4px;
+  border-radius: var(--pt-radius-md);
+  color: var(--accent-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.source-identity-rail__toggle::before {
+  content: '';
+  position: absolute;
+  inset: -8px 0;
+}
+
+.source-identity-rail__toggle:hover {
+  background: var(--accent-soft);
+}
+
+.source-identity-rail__toggle.v4-focus-ring:focus-visible {
+  outline-offset: -2px;
+}
+
+/* 标题行：思源宋体只给主标题（.font-display 挂在主标题 span 上）；原名与年份走 UI 无衬线、次级墨色。
+ * 一行放得下：「主标题 原名 年份」；放不下（JS 量一行版自然宽度决定）：「主标题 年份」/「原名」，各自单行省略，年份不省略。 */
+.source-identity-rail__main {
+  font-weight: 700; /* 思源宋体只有 500/700，主标题用粗的一档 */
+}
+
+.source-identity-rail__alt {
+  font-family: var(--font-sans);
+  font-size: 0.75em;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--v4-text-muted);
+}
+
+.source-identity-rail__year {
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 1023px) {
-  .source-identity-rail__poster {
-    max-width: 10rem;
-    max-height: none;
-    margin-inline: auto;
-  }
-
   .ingest-shell--ready {
     overflow-y: auto;
   }

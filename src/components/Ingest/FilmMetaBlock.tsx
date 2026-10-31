@@ -15,6 +15,8 @@ type FilmMetaBlockProps = {
   /** Max genre badges; rest omitted */
   maxGenres?: number;
   className?: string;
+  /** 评分行与类型标签行之间的间距（Tailwind gap 类）。 */
+  gapClassName?: string;
 };
 
 /**
@@ -26,13 +28,14 @@ export const FilmMetaBlock: React.FC<FilmMetaBlockProps> = ({
   genres = [],
   maxGenres = 6,
   className = '',
+  gapClassName = 'gap-1.5',
 }) => {
   const visibleRatings = ratings.filter((item) => item.brand);
   const visibleGenres = genres.filter(Boolean).slice(0, maxGenres);
   if (visibleRatings.length === 0 && visibleGenres.length === 0) return null;
 
   return (
-    <div className={`flex flex-col gap-1.5 ${className}`.trim()}>
+    <div className={`flex flex-col ${gapClassName} ${className}`.trim()}>
       {visibleRatings.length > 0 && (
         <div className="ui-rating-row" aria-label="评分">
           {visibleRatings.map((item) => {
