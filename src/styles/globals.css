@@ -1491,11 +1491,13 @@ body {
 }
 
 .source-identity-rail__toggle {
+  position: relative;
   display: flex;
   width: fit-content;
   align-items: center;
   gap: 4px;
-  min-height: 44px;
+  /* 版面只占 28px，紧贴简介；::before 上下各扩 8px，触控区 44px（简介列 pb-2/-mb-2 留出下方 8px，不被滚动容器裁掉）。 */
+  min-height: 28px;
   /* 简介列左右各留 4px（-mx-1 px-1），按钮用这 4px 做 hover 底和内嵌焦点环，文字仍与正文左对齐。 */
   margin-left: -4px;
   padding: 0 8px 0 4px;
@@ -1506,6 +1508,12 @@ body {
   line-height: 20px;
 }
 
+.source-identity-rail__toggle::before {
+  content: '';
+  position: absolute;
+  inset: -8px 0;
+}
+
 .source-identity-rail__toggle:hover {
   background: var(--accent-soft);
 }
@@ -1514,9 +1522,14 @@ body {
   outline-offset: -2px;
 }
 
-.source-identity-rail__title,
-.source-identity-rail__alt {
-  text-wrap: balance;
+/* 标题行：主标题 + 原名 + 年份同一段文字，自然换行，最多 2 行省略。 */
+.source-identity-rail__heading {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
 }
 
 @media (max-width: 1023px) {

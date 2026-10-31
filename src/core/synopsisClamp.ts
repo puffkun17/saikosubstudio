@@ -4,7 +4,7 @@
  * 规则（lg 桌面）：
  * 1. 封面优先：按栏宽完整 2:3 显示，不裁切。简介只拿剩下的空间。
  * 2. 剩余空间放得下全文 → 全文，无「展开」。
- * 3. 放不下 → 先扣掉「展开」按钮（44px 触控高度），折叠到能完整放下的整行数，至少 minLines（默认 2）行。
+ * 3. 放不下 → 先扣掉「展开」按钮（排版高 28px，触控区用伪元素扩到 44px），折叠到能完整放下的整行数，至少 minLines（默认 2）行。
  * 4. 连「最少行数 + 展开按钮」都放不下（极矮窗口）→ 才让封面等比缩小（deficitPx 告诉调用方要让多少）。
  */
 export interface SynopsisLayoutOptions {
@@ -22,8 +22,10 @@ export interface SynopsisLayoutResult {
 }
 
 export const SYNOPSIS_MIN_LINES = 2;
-/** 「展开 / 收起」按钮：44px 触控高度。 */
-export const SYNOPSIS_TOGGLE_PX = 44;
+/** 「展开 / 收起」按钮在版面里占的高度（px）。触控区由 CSS ::before 上下各扩 8px，达到 44px。 */
+export const SYNOPSIS_TOGGLE_PX = 28;
+/** 「展开 / 收起」按钮的触控高度（px）。 */
+export const SYNOPSIS_TOGGLE_HIT_PX = 44;
 
 /** 半像素容差：行高常是小数（14px × 1.45 = 20.3px），避免 4.999 行被算成 4 行。 */
 const EPS = 0.5;

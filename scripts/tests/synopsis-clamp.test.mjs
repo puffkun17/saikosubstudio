@@ -3,13 +3,14 @@ import assert from 'node:assert/strict';
 import { loadCore } from './_compile.mjs';
 
 const core = loadCore()('core/synopsisClamp');
-const { computeSynopsisLayout: layout, countLines, shouldCompactRematch: compact, SYNOPSIS_MIN_LINES, SYNOPSIS_TOGGLE_PX } = core;
+const { computeSynopsisLayout: layout, countLines, shouldCompactRematch: compact, SYNOPSIS_MIN_LINES, SYNOPSIS_TOGGLE_PX, SYNOPSIS_TOGGLE_HIT_PX } = core;
 const LH = 20.3; // 14px × 1.45（ds-body）
 const T = { toggleReservePx: 44 };
 
-test('常量：至少 2 行，展开按钮 44px', () => {
+test('常量：至少 2 行，展开按钮排版 28px、触控 44px', () => {
   assert.equal(SYNOPSIS_MIN_LINES, 2);
-  assert.equal(SYNOPSIS_TOGGLE_PX, 44);
+  assert.equal(SYNOPSIS_TOGGLE_PX, 28);
+  assert.equal(SYNOPSIS_TOGGLE_HIT_PX, 44);
 });
 
 test('全文放得下 → 全文，封面不让', () => {
@@ -58,4 +59,10 @@ test('手动匹配收成放大镜：完整按钮口径下会折叠才收', () =>
   assert.equal(compact(2 * LH, LH, 12), true);
   assert.equal(compact(100, 0, 5), false);
   assert.equal(compact(100, LH, 0), false);
+});
+
+test('排版 28px 的按钮比 44px 多让出简介行', () => {
+  const avail = 6 * LH;
+  assert.deepEqual(layout(avail, LH, 20, { toggleReservePx: SYNOPSIS_TOGGLE_PX }), { clamp: 4, deficitPx: 0 });
+  assert.deepEqual(layout(avail, LH, 20, { toggleReservePx: 44 }), { clamp: 3, deficitPx: 0 });
 });

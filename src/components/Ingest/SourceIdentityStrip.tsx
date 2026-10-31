@@ -18,6 +18,8 @@ import {
 const DESKTOP_QUERY = '(min-width: 1024px)';
 /** 封面优先：完整 2:3 不裁切。只有极矮窗口（连「2 行简介 + 展开按钮」都放不下）才等比缩小，最低到这里，再不够左栏自己滚动。 */
 const POSTER_HARD_FLOOR_PX = 120;
+/** TMDB 署名在完整「手动匹配」按钮下方的间距（mt-3），与 JSX 保持一致。 */
+const TMDB_LINK_GAP_PX = 12;
 
 interface SynopsisLayout {
   clamp: number | null;
@@ -25,6 +27,8 @@ interface SynopsisLayout {
   posterPx: number | null;
   /** 「手动匹配」收成封面角上的放大镜（仅 lg）。 */
   compact: boolean;
+  /** 标题行超过 2 行被截断：此时把完整标题放进 title 提示。 */
+  titleTruncated: boolean;
 }
 
 const px = (v: string) => {
@@ -33,7 +37,8 @@ const px = (v: string) => {
 };
 
 /**
- * Work-level identity rail — poster, title (once), episode, overview, rematch.
+ * Work-level identity rail — poster, one-line title (main + original + year), overview, rematch.
+ * No episode label: the card is the work; episode info lives in the file list (multi-file batches).
  * Task-level counts / CTAs live in the info bar (see TaskList).
  */
 export const SourceIdentityStrip: React.FC = () => {
@@ -64,7 +69,6 @@ export const SourceIdentityStrip: React.FC = () => {
   const activeTask = tasks.find((task) => task.id === selectedTaskId) || tasks[0];
   const optimisticTitle = customFilename || activeTask?.title || '待匹配影片';
   const needsTitleInput = Boolean(activeTask?.title.includes('待补充片名'));
-  const episodeKey = activeTask?.epKey?.toUpperCase() || null;
 
   const filmNotice = [...statusNotices]
     .reverse()
@@ -76,6 +80,10 @@ export const SourceIdentityStrip: React.FC = () => {
     tmdbData?.originalTitle,
     optimisticTitle,
   );
+  // 标题合成一行：中文主标题 + 原名（优先拉丁/英文名，没有才用原文字形）+ 年份。原名与主标题相同时只显示一次。
+  const altTitle = originalLatin || originalScript || null;
+  const year = tmdbData?.year?.trim() || null;
+  const fullTitleText = [mainTitle, originalScript, originalLatin, year].filter(Boolean).join(' ');
   const hasScore = Boolean(tmdbData && tmdbData.voteAverage > 0);
   const genres = tmdbData?.genres ?? [];
   const showFilmMeta = hasScore || genres.length > 0;
@@ -93,12 +101,13 @@ export const SourceIdentityStrip: React.FC = () => {
   const bodyRef = useRef<HTMLDivElement>(null);
   const colRef = useRef<HTMLDivElement>(null);
   const metaRef = useRef<HTMLDivElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const footRef = useRef<HTMLDivElement>(null);
   const sizerRef = useRef<HTMLParagraphElement>(null);
   const rematchRef = useRef<HTMLButtonElement>(null);
   const rematchRowRef = useRef<HTMLDivElement>(null);
   const [overviewExpanded, setOverviewExpanded] = useState(false);
-  const [layout, setLayout] = useState<SynopsisLayout>({ clamp: null, posterPx: null, compact: false });
+  const [layout, setLayout] = useState<SynopsisLayout>({ clamp: null, posterPx: null, compact: false, titleTruncated: false });
 
   useEffect(() => {
     setOverviewExpanded(false);
@@ -115,7 +124,9 @@ export const SourceIdentityStrip: React.FC = () => {
     const meta = metaRef.current;
     const foot = footRef.current;
     if (!rail || !body || !col || !meta || !foot) return;
-    let next: SynopsisLayout = { clamp: null, posterPx: null, compact: false };
+    const heading = headingRef.current;
+    const titleTruncated = Boolean(heading && heading.scrollHeight > heading.clientHeight + 1);
+    let next: SynopsisLayout = { clamp: null, posterPx: null, compact: false, titleTruncated };
     if (window.matchMedia(DESKTOP_QUERY).matches) {
       const railH = rail.clientHeight;
       const naturalPoster = rail.clientWidth * 1.5;
@@ -126,8 +137,11 @@ export const SourceIdentityStrip: React.FC = () => {
       const btn = rematchRef.current;
       const row = rematchRowRef.current;
       const btnIsOut = Boolean(btn && btn.dataset.collapsed === 'true');
+      // 紧凑模式省下的高度：按钮本身 + 它与「更换候选」之间的行距；没有「更换候选」时，
+      // TMDB 署名的上边距（mt-3）也一起收掉，署名紧贴「展开全文」下方 12px（body gap）。
+      const hasTmdbLink = Boolean(foot.querySelector('.source-identity-rail__tmdb'));
       const rowPx = btn && row
-        ? btn.offsetHeight + (row.childElementCount > 1 ? px(getComputedStyle(row).rowGap) : 0)
+        ? btn.offsetHeight + (row.childElementCount > 1 ? px(getComputedStyle(row).rowGap) : hasTmdbLink ? TMDB_LINK_GAP_PX : 0)
         : 0;
       const fixedBase =
         px(bs.paddingTop) + px(bs.paddingBottom) + px(bs.rowGap) +
@@ -150,16 +164,18 @@ export const SourceIdentityStrip: React.FC = () => {
         const room = Math.floor(railH - fixedBase - footFull + (compact ? rowPx : 0) - Math.ceil(textPx) - 2);
         if (room < naturalPoster) posterPx = Math.max(POSTER_HARD_FLOOR_PX, room);
       }
-      next = { clamp, posterPx, compact };
+      next = { clamp, posterPx, compact, titleTruncated };
     }
     setLayout((prev) =>
-      prev.clamp === next.clamp && prev.posterPx === next.posterPx && prev.compact === next.compact ? prev : next,
+      prev.clamp === next.clamp && prev.posterPx === next.posterPx && prev.compact === next.compact && prev.titleTruncated === next.titleTruncated
+        ? prev
+        : next,
     );
   }, []);
 
   useLayoutEffect(() => {
     measure();
-  }, [measure, overview, tmdbData, showFilmMeta, episodeKey]);
+  }, [measure, overview, tmdbData, showFilmMeta, fullTitleText]);
 
   useEffect(() => {
     if (typeof ResizeObserver === 'undefined') return;
@@ -259,52 +275,45 @@ export const SourceIdentityStrip: React.FC = () => {
       </div>
 
       <div ref={bodyRef} className="source-identity-rail__body ds-card flex min-h-0 flex-1 flex-col gap-[var(--ds-gap-group)]">
-        <div ref={colRef} className="-mx-1 flex min-h-0 flex-1 flex-col gap-[var(--ds-gap-item)] overflow-y-auto px-1">
+        <div
+          ref={colRef}
+          className="source-identity-rail__col -mx-1 -mb-2 flex min-h-0 flex-col gap-[var(--ds-gap-group)] overflow-y-auto px-1 pb-2"
+        >
           <div ref={metaRef} className="min-w-0">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-              <h3
-                className="source-identity-rail__title font-display min-w-0 text-[1.15rem] leading-snug text-[var(--v4-text)] md:text-[1.25rem]"
-                title={mainTitle}
-              >
-                {mainTitle}
-              </h3>
-              {tmdbData?.year ? (
-                <span className="shrink-0 font-mono text-[15px] font-semibold tabular-nums text-[var(--v4-text-muted)]">
-                  {tmdbData.year}
-                </span>
+            <h3
+              ref={headingRef}
+              className="source-identity-rail__heading font-display text-[1.15rem] leading-snug text-[var(--v4-text)] md:text-[1.25rem]"
+              title={layout.titleTruncated ? fullTitleText : undefined}
+            >
+              <span className="source-identity-rail__title font-semibold">{mainTitle}</span>
+              {altTitle ? (
+                <>
+                  {' '}
+                  <span className="source-identity-rail__alt text-[0.75em] font-normal text-[var(--v4-text-muted)]">
+                    {altTitle}
+                    {year ? '\u00A0' : null}
+                    {year ? <span className="tabular-nums">{year}</span> : null}
+                  </span>
+                </>
+              ) : year ? (
+                <>
+                  {'\u00A0'}
+                  <span className="source-identity-rail__alt text-[0.75em] font-normal tabular-nums text-[var(--v4-text-muted)]">
+                    {year}
+                  </span>
+                </>
               ) : null}
-              {episodeKey ? (
-                <span className="shrink-0 font-mono text-[13px] font-semibold tabular-nums text-[var(--v4-text-muted)]">
-                  {episodeKey}
-                </span>
-              ) : null}
-            </div>
-
-            {originalScript ? (
-              <p
-                className="source-identity-rail__alt prose-serif mt-1.5 text-[14px] text-[var(--v4-text-muted)]"
-                title={originalScript}
-              >
-                {originalScript}
-              </p>
-            ) : null}
-            {originalLatin ? (
-              <p
-                className="source-identity-rail__alt mt-0.5 font-mono text-[12.5px] font-medium tracking-wide text-[var(--v4-text-faint)]"
-                title={originalLatin}
-              >
-                {originalLatin}
-              </p>
-            ) : null}
+            </h3>
             {!tmdbData && !originalScript && !originalLatin ? (
-              <p className="mt-1.5 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
+              <p className="mt-2 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
                 用于命名与预览背景，可稍后补充。
               </p>
             ) : null}
 
             {showFilmMeta && (
               <FilmMetaBlock
-                className="mt-2.5"
+                className="mt-2"
+                gapClassName="gap-2"
                 ratings={buildFilmRatings(tmdbData?.voteAverage)}
                 genres={genres}
                 maxGenres={4}
@@ -391,7 +400,10 @@ export const SourceIdentityStrip: React.FC = () => {
           </AnimatePresence>
         </div>
 
-        <div ref={footRef} className="relative shrink-0 pt-1">
+        <div
+          ref={footRef}
+          className={`source-identity-rail__foot relative shrink-0${layout.clamp === null && !overviewExpanded ? ' mt-auto' : ''}`}
+        >
           <div ref={rematchRowRef} className="flex flex-col gap-2">
             {tmdbData && tmdbAlternateSuggestion ? (
               <>
@@ -416,7 +428,7 @@ export const SourceIdentityStrip: React.FC = () => {
               href="https://www.themoviedb.org/"
               target="_blank"
               rel="noopener noreferrer"
-              className="source-identity-rail__tmdb mt-3 flex w-full items-center justify-center gap-2 text-xs font-medium text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)]"
+              className={`source-identity-rail__tmdb ${layout.compact && !tmdbAlternateSuggestion ? 'mt-0' : 'mt-3'} flex w-full items-center justify-center gap-2 text-xs font-medium text-[var(--v4-text-muted)] transition-colors hover:text-[var(--v4-text)]`}
               title="This product uses the TMDB API but is not endorsed or certified by TMDB."
             >
               <span>Powered by</span>
