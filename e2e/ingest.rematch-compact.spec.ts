@@ -123,37 +123,127 @@ test('1280x720 长简介：最后才缩封面，等比不裁切，简介至少 2
   expect(await rail.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(0);
 });
 
-test('作品卡标题合成一行：不显示集号，原名与年份同行，年份不落单', async ({ page }) => {
+/** 标题区的几何与字体：排法、各段字体、年份是否完整可见且在第 1 行。 */
+async function titleInfo(page: Page) {
+  return page.locator('.source-identity-rail__heading').evaluate((h) => {
+    const hb = h.getBoundingClientRect();
+    const year = h.querySelector<HTMLElement>('.source-identity-rail__year');
+    const alts = Array.from(h.querySelectorAll<HTMLElement>('.source-identity-rail__alt'));
+    const yb = year?.getBoundingClientRect();
+    const firstRow = h.firstElementChild!.getBoundingClientRect();
+    const rows = Array.from(h.children).filter((c) => (c as HTMLElement).offsetHeight > 0).length;
+    return {
+      mode: h.getAttribute('data-title-mode'),
+      text: (h.textContent ?? '').replace(/\s+/g, ' ').trim(),
+      rows,
+      titleAttr: h.getAttribute('title'),
+      bodyFont: getComputedStyle(document.body).fontFamily,
+      mainFont: getComputedStyle(h.querySelector('.source-identity-rail__title')!).fontFamily,
+      altFonts: alts.map((el) => getComputedStyle(el).fontFamily),
+      altColors: alts.map((el) => getComputedStyle(el).color),
+      yearVisible: Boolean(
+        year && yb && year.scrollWidth <= year.clientWidth + 1 && yb.right <= hb.right + 0.5 && yb.left >= hb.left - 0.5 &&
+          yb.top >= firstRow.top - 0.5 && yb.bottom <= firstRow.bottom + 0.5,
+      ),
+    };
+  });
+}
+
+async function altLine(page: Page) {
+  return page.locator('.source-identity-rail__heading').evaluate((h) => {
+    const a = h.querySelector<HTMLElement>('.source-identity-rail__alt-line')!;
+    const fs = (el: Element | null) => (el ? parseFloat(getComputedStyle(el).fontSize) : NaN);
+    return {
+      fontPx: fs(a),
+      fits: a.scrollWidth <= a.clientWidth + 1,
+      headingPx: fs(h),
+      mainPx: fs(h.querySelector('.source-identity-rail__title')),
+      yearPx: fs(h.querySelector('.source-identity-rail__year')),
+    };
+  });
+}
+
+function expectSansSecondary(info: Awaited<ReturnType<typeof titleInfo>>) {
+  // 原名 / 年份与正文同一套 UI 无衬线（Geist 打头），不能落到宋体或 serif 回退。
+  expect(info.bodyFont).toMatch(/^"?Geist Sans"?/);
+  expect(info.altFonts.length).toBeGreaterThan(0);
+  for (const f of info.altFonts) {
+    expect(f).toBe(info.bodyFont);
+    expect(f).not.toMatch(/Serif|Songti|(^|,\s*)serif\s*$/);
+  }
+}
+
+test('作品卡标题一行：「流人 Slow Horses 2022」，不显示集号，次级部分走无衬线', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/');
   await waitForStore(page);
   await seed(page, SHORT);
-  const heading = page.locator('.source-identity-rail__heading');
-  await expect(heading).toHaveText('流人 Slow Horses\u00A02022');
+  const info = await titleInfo(page);
+  expect(info.mode).toBe('one');
+  expect(info.text).toBe('流人 Slow Horses 2022');
+  expect(info.rows).toBe(1);
+  expect(info.yearVisible).toBe(true);
+  expect(info.titleAttr).toBeNull();
+  expectSansSecondary(info);
+  expect(info.mainFont).toMatch(/Noto Serif SC/); // 主标题保留思源宋体（DESIGN.md：宋体只给片名）
   await expect(page.locator('.source-identity-rail__title')).toHaveText('流人');
-  await expect(heading).not.toHaveAttribute('title', /.+/);
   expect(await page.locator('.source-identity-rail').innerText()).not.toMatch(/S\d{2}E\d{2}/i);
 });
 
-test('长片名：最多 2 行省略，完整标题放进 title 提示；原名与主标题相同只显示一次', async ({ page }) => {
+test('长片名：两行「中文名 年份」/「原名」，年份永远可见，完整标题放进 title；同名只显示一次', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/');
   await waitForStore(page);
-  await seed(page, SHORT, { title: '奇爱博士', originalTitle: 'Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb', year: '1964' });
-  const heading = page.locator('.source-identity-rail__heading');
-  const lines = await heading.evaluate((el) => Math.round(el.clientHeight / parseFloat(getComputedStyle(el).lineHeight)));
-  expect(lines).toBe(2);
-  await expect(heading).toHaveAttribute('title', '奇爱博士 Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb 1964');
+  const long = 'Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb';
+  await seed(page, SHORT, { title: '奇爱博士', originalTitle: long, year: '1964' });
+  let info = await titleInfo(page);
+  expect(info.mode).toBe('two');
+  expect(info.rows).toBe(2);
+  expect(info.text).toBe(`奇爱博士 1964 ${long}`);
+  expect(info.yearVisible).toBe(true);
+  expect(info.titleAttr).toBe(`奇爱博士 ${long} 1964`);
+  expectSansSecondary(info);
+  // 原名在第 2 行先逐档缩字（不低于 11px），11px 仍放不下才省略；中文名和年份不缩。
+  let alt = await altLine(page);
+  expect(alt.fontPx).toBe(11);
+  expect(alt.fits).toBe(false);
+  expect(alt.mainPx).toBeCloseTo(alt.headingPx, 1);
+  expect(alt.yearPx).toBeCloseTo(alt.headingPx * 0.75, 1);
+
+  // 缩一点就能放下：字号介于 11px 与基准之间，不省略，也不需要 title 提示
+  await seed(page, SHORT, { title: '瞬息全宇宙', originalTitle: 'Everything Everywhere All at Once', year: '2022' });
+  info = await titleInfo(page);
+  expect(info.mode).toBe('two');
+  alt = await altLine(page);
+  expect(alt.fontPx).toBeGreaterThanOrEqual(11);
+  expect(alt.fontPx).toBeLessThan(alt.yearPx);
+  expect(alt.fits).toBe(true);
+  expect(info.titleAttr).toBeNull();
+  expect(info.yearVisible).toBe(true);
+
+  // 中文名本身就超长：省略中文名，年份不省略
+  await seed(page, SHORT, { title: '一个非常非常非常非常非常非常非常长的中文片名测试', originalTitle: 'X', year: '1999' });
+  info = await titleInfo(page);
+  expect(info.mode).toBe('two');
+  expect(info.yearVisible).toBe(true);
+  const main = page.locator('.source-identity-rail__title');
+  expect(await main.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+  expect(info.titleAttr).toBe('一个非常非常非常非常非常非常非常长的中文片名测试 X 1999');
 
   await seed(page, SHORT, { title: 'Slow Horses', originalTitle: 'Slow Horses', year: '2022' });
-  await expect(heading).toHaveText('Slow Horses\u00A02022');
+  info = await titleInfo(page);
+  expect(info.text).toBe('Slow Horses 2022');
+  expect(info.mode).toBe('one');
 });
 
-test('390x844 移动端：单行条同样不显示集号，标题同一行', async ({ page }) => {
+test('390x844 移动端：单行条同样不显示集号，标题同一套排法', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await waitForStore(page);
   await seed(page, LONG);
-  await expect(page.locator('.source-identity-rail__heading')).toHaveText('流人 Slow Horses\u00A02022');
+  const info = await titleInfo(page);
+  expect(info.text).toMatch(/^流人 (Slow Horses 2022|2022 Slow Horses)$/);
+  expect(info.yearVisible).toBe(true);
+  expectSansSecondary(info);
   expect(await page.locator('.source-identity-rail').innerText()).not.toMatch(/S\d{2}E\d{2}/i);
 });

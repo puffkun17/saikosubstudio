@@ -20,6 +20,10 @@ const DESKTOP_QUERY = '(min-width: 1024px)';
 const POSTER_HARD_FLOOR_PX = 120;
 /** TMDB 署名在完整「手动匹配」按钮下方的间距（mt-3），与 JSX 保持一致。 */
 const TMDB_LINK_GAP_PX = 12;
+/** 标题各段之间的读屏/复制用空格（视觉间距由 padding 给）。 */
+/** 第 2 行原名自动缩字的下限；再小就省略号 + title 提示。 */
+const ALT_FONT_FLOOR_PX = 11;
+const SEP = <span className="sr-only"> </span>;
 
 interface SynopsisLayout {
   clamp: number | null;
@@ -29,6 +33,10 @@ interface SynopsisLayout {
   compact: boolean;
   /** 标题行超过 2 行被截断：此时把完整标题放进 title 提示。 */
   titleTruncated: boolean;
+  /** 标题排法：one = 「主标题 原名 年份」一行放得下；two = 「主标题 年份」/「原名」两行。 */
+  titleMode: 'one' | 'two';
+  /** 两行模式下第 2 行原名的字号（px）；null = 基准字号（标题的 0.75em）。 */
+  altFontPx: number | null;
 }
 
 const px = (v: string) => {
@@ -80,7 +88,8 @@ export const SourceIdentityStrip: React.FC = () => {
     tmdbData?.originalTitle,
     optimisticTitle,
   );
-  // 标题合成一行：中文主标题 + 原名（优先拉丁/英文名，没有才用原文字形）+ 年份。原名与主标题相同时只显示一次。
+  // 标题：中文主标题 + 原名（优先拉丁/英文名，没有才用原文字形）+ 年份。原名与主标题相同时只显示一次。
+  // 一行放得下 →「主标题 原名 年份」；放不下 →「主标题 年份」（主标题可省略，年份永远可见）/「原名」（单行省略）。
   const altTitle = originalLatin || originalScript || null;
   const year = tmdbData?.year?.trim() || null;
   const fullTitleText = [mainTitle, originalScript, originalLatin, year].filter(Boolean).join(' ');
@@ -102,12 +111,16 @@ export const SourceIdentityStrip: React.FC = () => {
   const colRef = useRef<HTMLDivElement>(null);
   const metaRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const titleProbeRef = useRef<HTMLSpanElement>(null);
+  const altProbeRef = useRef<HTMLSpanElement>(null);
   const footRef = useRef<HTMLDivElement>(null);
   const sizerRef = useRef<HTMLParagraphElement>(null);
   const rematchRef = useRef<HTMLButtonElement>(null);
   const rematchRowRef = useRef<HTMLDivElement>(null);
   const [overviewExpanded, setOverviewExpanded] = useState(false);
-  const [layout, setLayout] = useState<SynopsisLayout>({ clamp: null, posterPx: null, compact: false, titleTruncated: false });
+  const [layout, setLayout] = useState<SynopsisLayout>({
+    clamp: null, posterPx: null, compact: false, titleTruncated: false, titleMode: 'one', altFontPx: null,
+  });
 
   useEffect(() => {
     setOverviewExpanded(false);
@@ -124,9 +137,30 @@ export const SourceIdentityStrip: React.FC = () => {
     const meta = metaRef.current;
     const foot = footRef.current;
     if (!rail || !body || !col || !meta || !foot) return;
+    // 标题排法只看「一行版」的自然宽度和标题栏宽度，两者都不受排法影响，所以不会来回切换。
     const heading = headingRef.current;
-    const titleTruncated = Boolean(heading && heading.scrollHeight > heading.clientHeight + 1);
-    let next: SynopsisLayout = { clamp: null, posterPx: null, compact: false, titleTruncated };
+    const probe = titleProbeRef.current;
+    const titleMode: SynopsisLayout['titleMode'] =
+      heading && probe && probe.offsetWidth > heading.clientWidth + 0.5 ? 'two' : 'one';
+    // 第 2 行原名：按基准字号下的自然宽度 / 可用宽度直接算出能放下的字号（0.5px 一档，向下取），
+    // 不低于 11px；同样只依赖与排法无关的量尺，所以不会来回跳。
+    let altFontPx: number | null = null;
+    const altProbe = altProbeRef.current;
+    if (heading && altProbe && titleMode === 'two') {
+      const natural = altProbe.offsetWidth;
+      const base = px(getComputedStyle(altProbe).fontSize);
+      const avail = heading.clientWidth - 1;
+      if (natural > avail && base > 0) {
+        altFontPx = Math.max(ALT_FONT_FLOOR_PX, Math.floor(((base * avail) / natural) * 2) / 2);
+        if (altFontPx >= base) altFontPx = null;
+      }
+    }
+    const titleTruncated = Boolean(
+      heading && titleMode === 'two' &&
+      Array.from(heading.querySelectorAll<HTMLElement>('[data-title-fit]'))
+        .some((el) => el.scrollWidth > el.clientWidth + 1),
+    );
+    let next: SynopsisLayout = { clamp: null, posterPx: null, compact: false, titleTruncated, titleMode, altFontPx };
     if (window.matchMedia(DESKTOP_QUERY).matches) {
       const railH = rail.clientHeight;
       const naturalPoster = rail.clientWidth * 1.5;
@@ -164,10 +198,12 @@ export const SourceIdentityStrip: React.FC = () => {
         const room = Math.floor(railH - fixedBase - footFull + (compact ? rowPx : 0) - Math.ceil(textPx) - 2);
         if (room < naturalPoster) posterPx = Math.max(POSTER_HARD_FLOOR_PX, room);
       }
-      next = { clamp, posterPx, compact, titleTruncated };
+      next = { clamp, posterPx, compact, titleTruncated, titleMode, altFontPx };
     }
     setLayout((prev) =>
-      prev.clamp === next.clamp && prev.posterPx === next.posterPx && prev.compact === next.compact && prev.titleTruncated === next.titleTruncated
+      prev.clamp === next.clamp && prev.posterPx === next.posterPx && prev.compact === next.compact &&
+        prev.titleTruncated === next.titleTruncated && prev.titleMode === next.titleMode &&
+        prev.altFontPx === next.altFontPx
         ? prev
         : next,
     );
@@ -180,15 +216,20 @@ export const SourceIdentityStrip: React.FC = () => {
   useEffect(() => {
     if (typeof ResizeObserver === 'undefined') return;
     let frame = 0;
+    let alive = true;
     const schedule = () => {
+      if (!alive) return;
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(measure);
     };
     const ro = new ResizeObserver(schedule);
-    for (const el of [railRef.current, metaRef.current, footRef.current, sizerRef.current]) {
+    // 字体换上后一行版的自然宽度会变，再量一次。
+    void document.fonts?.ready.then(schedule);
+    for (const el of [railRef.current, metaRef.current, footRef.current, sizerRef.current, titleProbeRef.current, altProbeRef.current, headingRef.current]) {
       if (el) ro.observe(el);
     }
     return () => {
+      alive = false;
       cancelAnimationFrame(frame);
       ro.disconnect();
     };
@@ -282,28 +323,54 @@ export const SourceIdentityStrip: React.FC = () => {
           <div ref={metaRef} className="min-w-0">
             <h3
               ref={headingRef}
-              className="source-identity-rail__heading font-display text-[1.15rem] leading-snug text-[var(--v4-text)] md:text-[1.25rem]"
+              data-title-mode={layout.titleMode}
+              className="source-identity-rail__heading relative overflow-hidden text-[1.15rem] leading-snug text-[var(--v4-text)] md:text-[1.25rem]"
               title={layout.titleTruncated ? fullTitleText : undefined}
             >
-              <span className="source-identity-rail__title font-semibold">{mainTitle}</span>
-              {altTitle ? (
+              {layout.titleMode === 'one' || !altTitle ? (
+                <span className="flex min-w-0 items-baseline">
+                  <span data-title-fit="" className="source-identity-rail__title source-identity-rail__main font-display min-w-0 truncate">
+                    {mainTitle}
+                  </span>
+                  {altTitle ? (
+                    <span className="source-identity-rail__alt min-w-0 shrink truncate pl-[0.4em]">{SEP}{altTitle}</span>
+                  ) : null}
+                  {year ? <span className="source-identity-rail__alt source-identity-rail__year shrink-0 pl-[0.4em]">{SEP}{year}</span> : null}
+                </span>
+              ) : (
                 <>
-                  {' '}
-                  <span className="source-identity-rail__alt text-[0.75em] font-normal text-[var(--v4-text-muted)]">
-                    {altTitle}
-                    {year ? '\u00A0' : null}
-                    {year ? <span className="tabular-nums">{year}</span> : null}
+                  <span className="flex min-w-0 items-baseline">
+                    <span data-title-fit="" className="source-identity-rail__title source-identity-rail__main font-display min-w-0 truncate">
+                      {mainTitle}
+                    </span>
+                    {year ? <span className="source-identity-rail__alt source-identity-rail__year shrink-0 pl-[0.4em]">{SEP}{year}</span> : null}
+                  </span>
+                  <span
+                    data-title-fit=""
+                    className="source-identity-rail__alt source-identity-rail__alt-line block truncate"
+                    style={layout.altFontPx ? { fontSize: `${layout.altFontPx}px` } : undefined}
+                  >
+                    {SEP}{altTitle}
                   </span>
                 </>
-              ) : year ? (
-                <>
-                  {'\u00A0'}
-                  <span className="source-identity-rail__alt text-[0.75em] font-normal tabular-nums text-[var(--v4-text-muted)]">
-                    {year}
-                  </span>
-                </>
-              ) : null}
+              )}
             </h3>
+            {/* 量尺：一行版的自然宽度（同字号），不可见、不占位、不进标题文本，只用来决定排法。 */}
+            <div aria-hidden="true" className="pointer-events-none invisible relative h-0 overflow-hidden">
+              <span
+                ref={titleProbeRef}
+                className="absolute left-0 top-0 whitespace-nowrap text-[1.15rem] leading-snug md:text-[1.25rem]"
+              >
+                <span className="source-identity-rail__main font-display">{mainTitle}</span>
+                {altTitle ? <span className="source-identity-rail__alt pl-[0.4em]">{altTitle}</span> : null}
+                {year ? <span className="source-identity-rail__alt source-identity-rail__year pl-[0.4em]">{year}</span> : null}
+              </span>
+              {altTitle ? (
+                <span className="absolute left-0 top-0 whitespace-nowrap text-[1.15rem] leading-snug md:text-[1.25rem]">
+                  <span ref={altProbeRef} className="source-identity-rail__alt">{altTitle}</span>
+                </span>
+              ) : null}
+            </div>
             {!tmdbData && !originalScript && !originalLatin ? (
               <p className="mt-2 text-xs font-medium leading-relaxed text-[var(--v4-text-muted)]">
                 用于命名与预览背景，可稍后补充。

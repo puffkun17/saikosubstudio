@@ -1522,14 +1522,22 @@ body {
   outline-offset: -2px;
 }
 
-/* 标题行：主标题 + 原名 + 年份同一段文字，自然换行，最多 2 行省略。 */
-.source-identity-rail__heading {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  overflow-wrap: anywhere;
-  text-wrap: pretty;
+/* 标题行：思源宋体只给主标题（.font-display 挂在主标题 span 上）；原名与年份走 UI 无衬线、次级墨色。
+ * 一行放得下：「主标题 原名 年份」；放不下（JS 量一行版自然宽度决定）：「主标题 年份」/「原名」，各自单行省略，年份不省略。 */
+.source-identity-rail__main {
+  font-weight: 700; /* 思源宋体只有 500/700，主标题用粗的一档 */
+}
+
+.source-identity-rail__alt {
+  font-family: var(--font-sans);
+  font-size: 0.75em;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--v4-text-muted);
+}
+
+.source-identity-rail__year {
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 1023px) {
