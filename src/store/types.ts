@@ -310,6 +310,8 @@ export interface StudioState {
   /** 在当前片源与已缓存的同名备选之间切换（不重新搜索）。 */
   swapTmdbAlternate: () => Promise<void>;
   shuffleBackdrop: () => void;
+  /** Next still in list order. Used when the carousel is on: change means next, then pause. */
+  cycleBackdrop: () => void;
   
   // Complex Workflows
   initializeLibrary: () => void;

@@ -386,7 +386,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                 vectorEffect="non-scaling-stroke"
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               />
               {videoEnd !== undefined && videoEnd < 0.999 && (
                 <line
@@ -460,7 +460,7 @@ export const SourceMatchPanel: React.FC<SourceMatchPanelProps> = ({
                     jumpToMark(primary);
                   }}
                 >
-                  <span className="flex items-center justify-center transition-transform group-hover:scale-125">
+                  <span className="flex items-center justify-center opacity-80 transition-opacity group-hover:opacity-100">
                     <InspectionMarkGlyph kind={cluster.kind} size={8} />
                   </span>
                   {count > 1 && (

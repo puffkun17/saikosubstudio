@@ -1,21 +1,27 @@
+import { flushSync } from 'react-dom';
+
 /**
  * Act 1 舞台过渡开关（dragzone-proposal §5 方案 B）。
  *
- * - `STAGE_SHARED_HANDOFF`：第 1 页（清单 + 等待态）→ 第 2 页（任务页）用共享元素接续：
- *   文件行带 objectId 作 layoutId，从清单里的位置移到任务页的轨道行。关掉 = 回到
- *   「先退场再进场」（AnimatePresence mode="wait"），即方案 C 的退路起点。
- * - URL `?handoff=off` 临时关掉（对比 / 性能基线用），不写进任何存储。
+ * - `STAGE_SHARED_HANDOFF`：第 1 页（清单 + 等待态）→ 第 2 页（任务页）用共享元素接续。
+ *   默认关（方案 C）：先退场再进场（AnimatePresence mode="wait"）。4× CPU 下交接约多掉 2 帧。
+ *   URL `?handoff=on` 临时打开做对比；`?handoff=off` 强制关闭。不写进任何存储。
+ *   打开时只给将出现在任务主/副/旁白轨上的 objectId 保留 layoutId，包壳与未入轨叶不投影。
  */
-export const STAGE_SHARED_HANDOFF = true;
+export const STAGE_SHARED_HANDOFF = false;
 
 export const stageSharedHandoffEnabled = (): boolean => {
-  if (!STAGE_SHARED_HANDOFF) return false;
-  if (typeof window === 'undefined') return true;
-  try {
-    return new URLSearchParams(window.location.search).get('handoff') !== 'off';
-  } catch {
-    return true;
+  let query: string | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      query = new URLSearchParams(window.location.search).get('handoff');
+    } catch {
+      query = null;
+    }
   }
+  if (query === 'on') return true;
+  if (query === 'off') return false;
+  return STAGE_SHARED_HANDOFF;
 };
 
 /** 交接窗口：放行后这么久内挂载的任务页才带 layoutId（之后去掉，免得换轨时又飞一次）。 */
@@ -45,10 +51,9 @@ export const enterWorkbenchTransition = (update: () => void): void => {
   }
   const root = doc.documentElement;
   root.dataset.actTransition = 'enter-workbench';
-  const transition = doc.startViewTransition(async () => {
-    update();
-    // zustand → React 的同步提交在微任务里完成；等一个宏任务，保证新页面已经写进 DOM 再截「新」画面。
-    await new Promise<void>((resolve) => { window.setTimeout(resolve, 0); });
+  // flushSync 在回调返回前提交 React，VT 截到新画面。不再等 setTimeout(0)。
+  const transition = doc.startViewTransition(() => {
+    flushSync(update);
   });
   void transition.finished.finally(() => {
     if (root.dataset.actTransition === 'enter-workbench') delete root.dataset.actTransition;

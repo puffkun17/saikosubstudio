@@ -7,6 +7,7 @@ import { MiddleTruncate } from '@/components/ui/MiddleTruncate';
 import { EASE_OUT, MOTION_S, springNoBounce } from '@/core/motion';
 import { workTitleOf } from '@/core/workGrouping';
 import { CLEAR_CONFIRM_TIMEOUT_MS } from '@/components/Ingest/dragzone/QueueActionBar';
+import { useHandoffLayoutAllow } from '@/components/Ingest/dragzone/handoffLayout';
 import { groupDisplayNames, SharedPrefixLine } from '@/components/Ingest/dragzone/QueueTree';
 import type { PreflightItem } from '@/components/Ingest/dragzone/preflight';
 
@@ -57,6 +58,7 @@ export const StagingTray = ({
   onClear: () => void;
 }) => {
   const reduce = useReducedMotion();
+  const layoutAllow = useHandoffLayoutAllow();
   const [confirmingClear, setConfirmingClear] = useState(false);
 
   useEffect(() => {
@@ -117,7 +119,7 @@ export const StagingTray = ({
                     return (
                       <motion.li
                         key={item.objectId}
-                        layoutId={reduce ? undefined : item.objectId}
+                        layoutId={reduce || (layoutAllow && !layoutAllow.has(item.objectId)) ? undefined : item.objectId}
                         initial={reduce ? { opacity: 0 } : false}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0, transition: { duration: reduce ? MOTION_S.reduced : MOTION_S.exit } }}

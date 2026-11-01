@@ -52,6 +52,7 @@ export const TheaterStep: React.FC = () => {
     setSceneBackground,
     tmdbBackdrop,
     tmdbBackdropList,
+    cycleBackdrop,
     theaterAspect,
     showGuides,
     tempShowGuides,
@@ -75,6 +76,7 @@ export const TheaterStep: React.FC = () => {
     setSceneBackground: state.setSceneBackground,
     tmdbBackdrop: state.tmdbBackdrop,
     tmdbBackdropList: state.tmdbBackdropList,
+    cycleBackdrop: state.cycleBackdrop,
     theaterAspect: state.theaterAspect,
     showGuides: state.showGuides,
     tempShowGuides: state.tempShowGuides,
@@ -270,15 +272,14 @@ export const TheaterStep: React.FC = () => {
       <div className="relative z-[var(--z-raised)] flex flex-col gap-2 border-b border-[var(--v4-line)] bg-[var(--v4-canvas-raised)] px-3 py-2 md:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-4">
-            <motion.button
-            whileHover={{ scale: 1.03, y: -0.5 }}
-            whileTap={{ scale: 0.97 }}
+            <button
+            type="button"
             className="ui-action ui-action--secondary ui-action--icon"
             onClick={handleBack}
             aria-label="返回工作台"
           >
             <ChevronLeft className="w-4 h-4" />
-            </motion.button>
+            </button>
           
             <div>
               <h2 className="ds-head">字幕预览</h2>
@@ -375,9 +376,18 @@ export const TheaterStep: React.FC = () => {
             <div className="ds-dock__body">
               {dock === 'style' && <StyleSidebar tone="theater" embedded />}
               {dock === 'export' && <ExportPanel onOpenStyle={() => toggleDock('style')} />}
-              {(dock === 'aspect' || dock === 'backdrop') && <TheaterDockOptions panel={dock} />}
+              {(dock === 'aspect' || dock === 'backdrop') && (
+                <TheaterDockOptions
+                  panel={dock}
+                  carouselOn={slideshow && dock === 'backdrop'}
+                  onAdvanceStill={() => {
+                    cycleBackdrop();
+                    setSlideshow(false);
+                  }}
+                />
+              )}
               {dock === 'backdrop' && tmdbBackdropList.length > 1 && (
-                <label className="ds-check ds-dock__group" title="按播放进度切换剧照">
+                <label className="ds-check ds-dock__group" title={slideshow ? '按播放进度换剧照。点「下一张」会暂停。' : '按播放进度切换剧照'}>
                   <input type="checkbox" checked={slideshow} onChange={(e) => setSlideshow(e.target.checked)} />
                   剧照轮播
                 </label>
@@ -396,10 +406,9 @@ export const TheaterStep: React.FC = () => {
               aria-label="点击空白处、按 Esc 或 L 退出关灯"
               title="点击空白处、按 Esc 或 L 退出关灯"
               initial={{ opacity: 0 }}
-              // 关灯像影院调光：先快速压到六成，再缓缓沉到全暗；开灯一步到位（快出）。
-              animate={{ opacity: [0, 0.62, 1] }}
-              exit={{ opacity: 0, transition: { duration: 0.26, ease: [0.16, 1, 0.3, 1] } }}
-              transition={{ duration: 0.68, times: [0, 0.38, 1], ease: [0.16, 1, 0.3, 1] }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.15, ease: [0.16, 1, 0.3, 1] } }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               className="lights-off-scrim"
               onClick={() => setLightsOff(false)}
             />
@@ -410,9 +419,9 @@ export const TheaterStep: React.FC = () => {
             <motion.div
               role="status"
               aria-live="polite"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 4 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               data-paper="theater"
               className="lights-off-exit-tip pointer-events-none fixed bottom-8 left-1/2 z-[calc(var(--z-dim)+1)] w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 text-center"

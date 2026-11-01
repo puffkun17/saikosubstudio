@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, LayoutDashboard } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, LayoutDashboard } from 'lucide-react';
 import { ScoreRing } from '@/components/Workbench/ScoreRing';
 import type { WorkbenchScoreBreakdown } from '@/core/workbenchScore';
 import {
@@ -86,7 +86,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
             onClick={() => onFocusChange('review')}
             aria-pressed={focus === 'review' || focus == null}
           >
-            ⚠ 待复核
+            <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+            待复核
           </button>
           <span className="wb-grp__p">
             已处理 <b>{counts.reviewChecked}</b> / {counts.reviewTotal}

@@ -128,8 +128,10 @@ async function titleInfo(page: Page) {
   return page.locator('.source-identity-rail__heading').evaluate((h) => {
     const hb = h.getBoundingClientRect();
     const year = h.querySelector<HTMLElement>('.source-identity-rail__year');
+    const title = h.querySelector<HTMLElement>('.source-identity-rail__title');
     const alts = Array.from(h.querySelectorAll<HTMLElement>('.source-identity-rail__alt'));
     const yb = year?.getBoundingClientRect();
+    const tb = title?.getBoundingClientRect();
     const firstRow = h.firstElementChild!.getBoundingClientRect();
     const rows = Array.from(h.children).filter((c) => (c as HTMLElement).offsetHeight > 0).length;
     return {
@@ -141,6 +143,7 @@ async function titleInfo(page: Page) {
       mainFont: getComputedStyle(h.querySelector('.source-identity-rail__title')!).fontFamily,
       altFonts: alts.map((el) => getComputedStyle(el).fontFamily),
       altColors: alts.map((el) => getComputedStyle(el).color),
+      titleYearGap: tb && yb ? yb.left - tb.right : null,
       yearVisible: Boolean(
         year && yb && year.scrollWidth <= year.clientWidth + 1 && yb.right <= hb.right + 0.5 && yb.left >= hb.left - 0.5 &&
           yb.top >= firstRow.top - 0.5 && yb.bottom <= firstRow.bottom + 0.5,
@@ -208,7 +211,8 @@ test('长片名：两行「中文名 年份」/「原名」，年份永远可见
   expect(alt.fontPx).toBe(11);
   expect(alt.fits).toBe(false);
   expect(alt.mainPx).toBeCloseTo(alt.headingPx, 1);
-  expect(alt.yearPx).toBeCloseTo(alt.headingPx * 0.75, 1);
+  expect(alt.yearPx).toBeCloseTo(alt.headingPx * 0.62, 1);
+  expect(alt.yearPx).toBeLessThan(alt.mainPx);
 
   // 缩一点就能放下：字号介于 11px 与基准之间，不省略，也不需要 title 提示
   await seed(page, SHORT, { title: '瞬息全宇宙', originalTitle: 'Everything Everywhere All at Once', year: '2022' });
@@ -216,7 +220,7 @@ test('长片名：两行「中文名 年份」/「原名」，年份永远可见
   expect(info.mode).toBe('two');
   alt = await altLine(page);
   expect(alt.fontPx).toBeGreaterThanOrEqual(11);
-  expect(alt.fontPx).toBeLessThan(alt.yearPx);
+  expect(alt.fontPx).toBeLessThanOrEqual(alt.headingPx * 0.75 + 0.5);
   expect(alt.fits).toBe(true);
   expect(info.titleAttr).toBeNull();
   expect(info.yearVisible).toBe(true);
@@ -226,6 +230,8 @@ test('长片名：两行「中文名 年份」/「原名」，年份永远可见
   info = await titleInfo(page);
   expect(info.mode).toBe('two');
   expect(info.yearVisible).toBe(true);
+  expect(info.titleYearGap).toBeGreaterThanOrEqual(-1);
+  expect(info.titleYearGap).toBeLessThan(16);
   const main = page.locator('.source-identity-rail__title');
   expect(await main.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
   expect(info.titleAttr).toBe('一个非常非常非常非常非常非常非常长的中文片名测试 X 1999');

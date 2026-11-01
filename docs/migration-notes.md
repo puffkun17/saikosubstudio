@@ -89,3 +89,47 @@
 7. ViewTransition 实测 377–403 ms，比 0.25 s 动画长（含快照和一次 setTimeout）；看能否去掉 setTimeout。
 
 8. （2026-10-31，PR #62 titlerow 轮发现，未处理）移动端（<1024，如 390x844）第 2 页作品卡单行条的高度由外层 grid 行分配决定（约 217–230px），比内容（标题 + 评分/标签 + 手动匹配 + 署名，约 150px）高，标签与「手动匹配」之间留有较大空白。属于 IngestStep 外层 grid 的行高分配，不在本轮范围。
+
+## Final interaction patch（fix/operate-vibe-final）
+
+当前架构的最后一轮交互补丁。不重做舞台、不改品牌皮肤、不恢复交接默认开启。
+
+### 已落地
+
+- `STAGE_SHARED_HANDOFF` 默认 `false`（方案 C，`AnimatePresence mode="wait"`）。`?handoff=on` 仍可打开共享元素交接，`?handoff=off` 强制关闭。打开时只给任务主/副/旁白轨的 `sourceObjectId` 保留 `layoutId`。
+- `enterWorkbenchTransition` 去掉 `setTimeout(0)`，改用 `flushSync` 在 View Transition 回调里提交 DOM。
+- `BottomStatusDeck` / `SoftLogMarquee` 进出 ≤0.25s；底栏状态卡用稳定 key，文案和步骤点不再整卡重挂。未使用的 `transitionSlow` 从 0.42s 收到 0.25s。
+- 导入动作条稳态为「取消 ← · 继续添加 · 开始合轴 →」。清空导入 / 确认移除整条替换该栏，不再跟主按钮并排。纸面、酒红 `#7A2233`、按钮圆角 6 / 确认条圆角 8。
+- 片名优先：中文名占剩余宽度并只在贴近年份时省略；年份更小、更静，不预留空洞。工作台顶栏去掉 56% 片名帽。
+- 悬停只换底色，按下再深。去掉按钮全局 `scale(0.97)`，以及剧场 / TMDB / 样式色点 / 删除钮 / 时长选择 / 片源标记 / 清单入场上的缩放和装饰位移。
+- `.wb-sel` 改为淡底 `--accent-soft` + `--accent-text`，去掉实心酒红和下划线。就绪的主按钮（开始合轴 / 打开预览）用 `.ui-action--solid`。
+- InfoHint：`lang="zh"`、`text-wrap: balance`、稍宽；字幕序列说明改写，避免末行孤字。
+- 剧照：抽屉改为覆盖预览，不再挤开画布。轮播开着时「更换剧照」变成「下一张，并暂停轮播」（`cycleBackdrop`）。
+- 字幕基线导标改为纸色字 + 更深底，满足深底上的 AA，不再用酒红字。
+- 工作台「待复核」等处的 ⚠ 换成 Lucide `AlertTriangle`。
+- `border-accent-neon` 改为 `border-[var(--paper-raised)]`。
+- 关灯暗幕 0.68s、删除钮多段、TMDB 空态 1.5s 缩放循环、片源曲线 0.85s，都收到 ≤0.25s；空态不再循环缩放。
+- 重新匹配放大镜去掉 `backdrop-filter: blur(6px)`，改实色 `--paper-raised`。
+- 历史 / 手动检索改走 `OverlayPortal` + `--z-modal` + `--pt-scrim`。矮视口（<820px 高）对话框从顶托盘下方起排，不再垂直居中钻进顶栏。
+- 窄屏作品卡改为内容高度，封面不再用 132px 最小高度把单行条撑高；「手动匹配」不再在窄屏被 `mt-auto` 推开。
+- 对齐面板眉题去掉英文 `uppercase` + 宽字距（一行改动）。
+
+### Operate 五项（此后交互改动先过这张表）
+
+1. 取消在左，修改在中，确认在右；破坏性确认替换动作条，不并排顶主按钮。
+2. 主操作锚点固定在行尾；段控件选中是淡底，不是第二个实心主按钮。
+3. 中文短说明不留末行孤字（`lang="zh"`、`text-wrap: balance`，必要时改文案或加宽）。
+4. 片名大于年份：片名吃剩余宽度，年份更小更静，不为年份留空洞再截片名。
+5. 短时侧栏覆盖主画布，不把画布挤走。
+
+### 推迟（本轮不做）
+
+- 仪式 token 编排、layoutStage 坐标、常驻 Act1 舞台重写、混合压缩包按条目拆分、第 2 页「更多文件」、压缩包内同路径 objectId 冲突。
+- 把 `STAGE_SHARED_HANDOFF` 重新默认打开。
+- feedback-mailer、纸面换肤、impeccable 安装 / hooks、架构重写。
+- 时长选择器拖动时的数字横摆（不是悬停缩放，拆掉会改交互模型）。
+- 多作品提示 1.1s 描边（一次性注意环，不是循环缩放）。
+- 信息栏 / 行内提示里仍有的 4–6px 透明度位移（`WorkflowChrome`、`InlineMessageBar`、`MultiWorkNotice`）。不是悬停玩具，再收会扩 diff。
+- 文档墨绿残留：`docs/design/preview.html`、`docs/design-archive/*`、`docs/ui-spec-v1.md`。上面历史段落里 BrandMark 仍写着旧 `#1a3d37` / `#ef8d5f`，运行时 logo 以 `BrandMark.tsx` 为准，不要从这段抄色。
+- 工作台窄屏信息栏标题被挤成「S.」（需要两行信息栏，单独排）。
+- 手动检索 390px 时片名框里的搜索图标压住首字（仪式笔记里的旧项，未改布局）。

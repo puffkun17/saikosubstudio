@@ -270,7 +270,7 @@ function DurationPicker({
                     onClick={toggleEdit}
                     disabled={disabled}
                     aria-label={isEditing ? 'Save duration' : 'Edit duration'}
-                    className='w-12 h-12 bg-[var(--v4-panel)] ring-1 ring-[var(--v4-line)] flex justify-center items-center text-[var(--v4-text-muted)] active:scale-90 transition-transform disabled:active:scale-100'
+                    className='flex h-12 w-12 items-center justify-center bg-[var(--v4-panel)] text-[var(--v4-text-muted)] ring-1 ring-[var(--v4-line)] transition-colors active:bg-[var(--v4-panel-muted)]'
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
                         <motion.path fill="currentColor" stroke="currentColor" strokeWidth={0} strokeLinejoin="round" strokeLinecap="round" style={{ strokeWidth: iconStrokeWidth, strokeOpacity: iconStrokeOpacity }} d={iconPath} />

@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { InlineMessageBar } from '@/components/Global/InlineMessageBar';
 import { buildMergeReviewQueue, type MergeReviewItem } from '@/utils/timeline/alignmentDiff';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
+import { AlertTriangle } from 'lucide-react';
 import { useUiModalFocus } from '@/hooks/useUiModalFocus';
 import { computeWorkbenchScore } from '@/core/workbenchScore';
 import {
@@ -309,7 +310,8 @@ export const WorkbenchStep: React.FC = () => {
           <OutputModeControl />
           {counts.reviewRemaining > 0 ? (
             <span className="wb-gate" title="软提示：不阻断打开预览">
-              ⚠ 还有 {counts.reviewRemaining} 项待复核
+              <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+              还有 {counts.reviewRemaining} 项待复核
             </span>
           ) : null}
           <WorkflowContinueInFlow />
@@ -419,9 +421,9 @@ export const WorkbenchStep: React.FC = () => {
                 aria-modal="true"
                 aria-labelledby="workbench-back-title"
                 aria-describedby="workbench-back-description"
-                initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 className="ui-modal"
                 tabIndex={-1}
               >

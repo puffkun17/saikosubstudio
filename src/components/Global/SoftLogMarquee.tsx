@@ -34,10 +34,10 @@ export const SoftLogMarquee: React.FC = () => {
       <AnimatePresence mode="wait" initial={false}>
         <motion.p
           key={active.id}
-          initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={shouldReduceMotion ? undefined : { opacity: 0, y: -6 }}
-          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+          initial={shouldReduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={shouldReduceMotion ? undefined : { opacity: 0 }}
+          transition={{ duration: shouldReduceMotion ? 0.15 : 0.25, ease: [0.16, 1, 0.3, 1] }}
           className="soft-log-marquee__text"
         >
           {active.msg}

@@ -4,6 +4,7 @@ import React from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useWorkflowChromeOptional, type BottomStatusConfig } from '@/components/Global/WorkflowChrome';
 import { SoftLogMarquee } from '@/components/Global/SoftLogMarquee';
+import { MOTION_S } from '@/core/motion';
 
 /**
  * 底栏状态甲板：工序进度 / 统计走这里；无状态时回落 SoftLogMarquee。
@@ -19,14 +20,14 @@ export const BottomStatusDeck: React.FC = () => {
       <AnimatePresence mode="wait" initial={false}>
         {status ? (
           <motion.div
-            key={`${status.title}:${status.subtitle || ''}:${status.steps?.map((s) => `${s.label}${s.done}`).join('') || ''}`}
+            key="deck-status"
             role="status"
             aria-live="polite"
             aria-label="工序状态"
-            initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={shouldReduceMotion ? undefined : { opacity: 0, y: -6 }}
-            transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+            initial={shouldReduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={shouldReduceMotion ? undefined : { opacity: 0 }}
+            transition={{ duration: shouldReduceMotion ? MOTION_S.reduced : MOTION_S.slow, ease: [0.16, 1, 0.3, 1] }}
             className="bottom-status-deck__card min-w-0"
           >
             <p className="bottom-status-deck__title truncate" title={status.title}>
@@ -65,7 +66,7 @@ export const BottomStatusDeck: React.FC = () => {
             initial={shouldReduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={shouldReduceMotion ? undefined : { opacity: 0 }}
-            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: shouldReduceMotion ? MOTION_S.reduced : MOTION_S.slow, ease: [0.16, 1, 0.3, 1] }}
             className="min-w-0"
           >
             <SoftLogMarquee />

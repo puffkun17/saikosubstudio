@@ -597,16 +597,22 @@ body {
   padding: 0.55rem 0.85rem 0.55rem 1rem;
 }
 
-/* 年份锚点：Geist Mono 数字体，与 CJK 片名刻意区分，不作 chip */
+/* 年份是次级元数据：紧贴片名，更小、更静，不跟片名抢等宽槽。 */
+.workflow-info-bar__title {
+  min-width: 0;
+}
+
 .workflow-info-bar__year {
+  flex: none;
+  margin-left: 0.4em;
   font-family: var(--font-mono);
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "zero" 1;
-  letter-spacing: var(--tracking-eyebrow);
+  font-feature-settings: "tnum" 1;
+  letter-spacing: 0;
   line-height: 1;
-  color: var(--v4-text-muted);
+  color: var(--ink-muted);
 }
 
 @media (min-width: 768px) {
@@ -616,7 +622,7 @@ body {
   }
 
   .workflow-info-bar__year {
-    font-size: 17px;
+    font-size: 13px;
   }
 }
 
@@ -1195,15 +1201,66 @@ body {
     color var(--v4-dur-fast) var(--v4-ease),
     background-color var(--v4-dur-fast) var(--v4-ease),
     border-color var(--v4-dur-fast) var(--v4-ease),
-    filter var(--v4-dur-fast) var(--v4-ease),
-    transform var(--v4-dur-fast) var(--v4-ease),
-    opacity var(--v4-dur-fast) var(--v4-ease),
-    box-shadow var(--v4-dur-fast) var(--v4-ease);
+    opacity var(--v4-dur-fast) var(--v4-ease);
 }
 
 .ui-action:hover {
   border-color: color-mix(in srgb, var(--v4-accent) 65%, transparent);
   background: color-mix(in srgb, var(--v4-accent) 22%, transparent);
+}
+
+.ui-action:active {
+  background: color-mix(in srgb, var(--v4-accent) 30%, var(--paper-sheet));
+}
+
+/* 就绪的主确认：实心酒红，压过段控件的淡选中。 */
+.ui-action--solid {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.ui-action--solid:hover {
+  border-color: transparent;
+  background: var(--accent-hover);
+  color: var(--accent-ink);
+}
+
+.ui-action--solid:active {
+  border-color: transparent;
+  background: var(--accent-press);
+  color: var(--accent-ink);
+}
+
+/* 导入动作条：取消在左，修改与确认在右。破坏性确认整条替换，不并排顶主按钮。 */
+.ingest-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ingest-action-bar__side,
+.ingest-action-bar__main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ingest-action-bar .ui-action {
+  border-radius: var(--pt-radius-md);
+}
+
+.ingest-action-bar--confirm {
+  justify-content: space-between;
+  gap: 12px;
+  width: min(22rem, 68vw);
+  min-width: 0;
+  padding: 4px;
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--pt-radius-lg);
+  background: var(--paper-raised);
 }
 
 .ui-action:disabled {
@@ -1379,9 +1436,16 @@ body {
 }
 
 .source-identity-rail {
-  align-self: stretch;
+  align-self: start;
   min-height: 0;
-  height: 100%;
+  height: auto;
+}
+
+@media (min-width: 1024px) {
+  .source-identity-rail {
+    align-self: stretch;
+    height: 100%;
+  }
 }
 
 /* 封面满铺：宽度贴卡片两边、顶部用卡片内圆角；盒子按 2:3，cover 裁切不变形。
@@ -1401,8 +1465,8 @@ body {
   object-position: 50% 20%;
 }
 
-/* 空间紧时「手动匹配」收成封面右下角的放大镜：32px 圆钮，半透明纸底 + 轻微毛玻璃，墨色图标，
-   酒红焦点环；::before 把可点区域扩到 44px。模式切换不做动画。 */
+/* 空间紧时「手动匹配」收成封面右下角的放大镜：32px 实色纸钮，墨色图标，酒红焦点环。
+   ::before 把可点区域扩到 44px。模式切换不做动画。不用毛玻璃。 */
 .source-identity-rail__rematch-fab {
   position: absolute;
   right: 8px;
@@ -1413,10 +1477,8 @@ body {
   width: 32px;
   height: 32px;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--rule-strong) 70%, transparent);
-  background: color-mix(in srgb, var(--paper-raised) 84%, transparent);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  border: 1px solid var(--rule-strong);
+  background: var(--paper-raised);
   color: var(--ink-strong);
   cursor: pointer;
 }
@@ -1522,8 +1584,24 @@ body {
   outline-offset: -2px;
 }
 
-/* 标题行：思源宋体只给主标题（.font-display 挂在主标题 span 上）；原名与年份走 UI 无衬线、次级墨色。
- * 一行放得下：「主标题 原名 年份」；放不下（JS 量一行版自然宽度决定）：「主标题 年份」/「原名」，各自单行省略，年份不省略。 */
+/* 标题行：思源宋体只给主标题。原名次级；年份更小、更静，紧贴片名，不单独占一槽把片名截出空洞。
+ * 一行放得下：「主标题 原名 年份」；放不下：「主标题 年份」/「原名」。年份不省略。 */
+.source-identity-rail__line {
+  display: flex;
+  align-items: baseline;
+  width: 100%;
+  min-width: 0;
+  gap: 0.35em;
+}
+
+.source-identity-rail__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 0 1 auto;
+}
+
 .source-identity-rail__main {
   font-weight: 700; /* 思源宋体只有 500/700，主标题用粗的一档 */
 }
@@ -1537,6 +1615,12 @@ body {
 }
 
 .source-identity-rail__year {
+  flex: none;
+  font-family: var(--font-sans);
+  font-size: 0.62em;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--ink-muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1548,6 +1632,20 @@ body {
 
 .ui-modal-layer {
   z-index: var(--z-modal);
+}
+
+/* 矮视口（如 720）不要把对话框垂直居中到顶托盘下面。 */
+.ui-modal-layer.ui-modal-layer--below-tray {
+  align-items: start;
+  overflow: auto;
+  padding-top: calc(var(--tray-h) + 12px);
+}
+
+@media (min-height: 820px) {
+  .ui-modal-layer.ui-modal-layer--below-tray {
+    align-items: center;
+    padding-top: 1rem;
+  }
 }
 
 .v4-focus-ring:focus-visible {
@@ -1687,15 +1785,9 @@ body {
   scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
-/* Unified press feedback for every interactive control (framer whileTap wins if present). */
+/* Press is a darker surface. No scale, translate, or glow. */
 button:not(:disabled):active {
-  transform: scale(0.97);
-}
-
-button {
-  transition-property: transform;
-  transition-duration: var(--v5-dur-fast);
-  transition-timing-function: var(--v5-ease);
+  transform: none;
 }
 
 /* 关灯模式：全屏压暗层，盖过双托盘；放映区提到 --z-dim-stage 之上保持点亮。 */

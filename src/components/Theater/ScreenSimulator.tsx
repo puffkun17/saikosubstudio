@@ -327,7 +327,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
 
           {subtitle.status === 'loading' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-30 select-none bg-[var(--pt-scrim)]">
-              <div className="w-6 h-6 border-2 border-accent-neon border-t-transparent rounded-full animate-spin mb-3" />
+              <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-[var(--paper-raised)] border-t-transparent" />
               <span className="text-white/55 text-sm font-medium">
                 {subtitle.progress ? `字幕载入中 ${Math.round(subtitle.progress * 100)}%` : '正在载入字幕'}
               </span>
@@ -371,17 +371,17 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
             style={{
               bottom: `${paddingBottomCqh}cqh`,
               opacity: (guides.show || guides.temp) ? 1 : 0,
-              borderColor: isMagnetic ? 'var(--accent-text)' : 'color-mix(in srgb, var(--accent-text) 55%, transparent)',
+              borderColor: isMagnetic ? 'var(--paper-raised)' : 'color-mix(in srgb, var(--paper-raised) 72%, transparent)',
               borderStyle: isMagnetic ? 'solid' : 'dashed',
             }}
           >
-            <span className="absolute left-3 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-xs font-semibold tracking-[var(--tracking-eyebrow-wide)] text-[var(--v5-orange-strong)]">
+            <span className="absolute left-3 -top-6 rounded bg-black/85 px-1.5 py-0.5 text-xs font-semibold text-[var(--paper-raised)]">
               字幕基线
             </span>
-            <span className="absolute -left-px -top-1 h-2 w-px bg-[var(--v5-orange-strong)]" />
-            <span className="absolute -right-px -top-1 h-2 w-px bg-[var(--v5-orange-strong)]" />
+            <span className="absolute -left-px -top-1 h-2 w-px bg-[var(--paper-raised)]" />
+            <span className="absolute -right-px -top-1 h-2 w-px bg-[var(--paper-raised)]" />
             {isMagnetic && (
-               <div className="absolute right-4 -top-6 rounded bg-black/72 px-1.5 py-0.5 text-xs font-semibold text-[var(--v5-orange-strong)]">
+               <div className="absolute right-4 -top-6 rounded bg-black/85 px-1.5 py-0.5 text-xs font-semibold text-[var(--paper-raised)]">
                  已贴合参考线
                </div>
             )}

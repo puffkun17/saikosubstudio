@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Trash2, X } from 'lucide-react';
 import { useStudioStore } from '@/store/useStudioStore';
 import { useUiModalFocus } from '@/hooks/useUiModalFocus';
+import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import { RETENTION_DAYS_DEFAULT } from '@/core/taskStore';
 
 /**
@@ -28,21 +29,24 @@ export const HistoryPanel: React.FC = () => {
   useUiModalFocus(isLibraryOpen, ref, close);
 
   return (
+    <OverlayPortal>
     <AnimatePresence>
       {isLibraryOpen && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 p-3 sm:p-4"
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="ui-modal-layer ui-modal-layer--below-tray fixed inset-0 grid justify-items-center bg-[var(--pt-scrim)] p-3 sm:p-4"
           onClick={(e) => { if (e.target === e.currentTarget) close(); }}
         >
           <motion.div
             ref={ref}
             data-paper="sheet"
-            initial={{ y: 12, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 12, opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="history-panel ui-modal ui-modal--wide flex max-h-[85vh] w-full flex-col overflow-hidden !p-0"
             role="dialog"
             aria-modal="true"
@@ -119,5 +123,6 @@ export const HistoryPanel: React.FC = () => {
         </motion.div>
       )}
     </AnimatePresence>
+    </OverlayPortal>
   );
 };

@@ -12,16 +12,14 @@
   --wb-done: var(--ink-strong);
 }
 
-/* Selected (DESIGN.md §6): wine fill, accent-ink text, bold, underline */
+/* Selected: soft accent fill + accent text. Solid wine is reserved for the ready primary CTA. */
 .wb-sel {
-  background: var(--accent) !important;
-  color: var(--accent-ink) !important;
-  font-weight: 700;
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
-  border-color: var(--accent) !important;
-  letter-spacing: 0.025em;
+  background: var(--accent-soft) !important;
+  color: var(--accent-text) !important;
+  font-weight: 600;
+  text-decoration: none;
+  border-color: var(--accent-line) !important;
+  letter-spacing: 0;
 }
 
 .wb-sel:focus-visible,

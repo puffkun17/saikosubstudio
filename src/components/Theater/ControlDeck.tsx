@@ -116,7 +116,12 @@ export const TheaterSystemChrome: React.FC<{
 };
 
 /** 停靠面板内容：画幅 / 剧照（样式与显示亮度在「样式」面板）。选中即生效，面板保持打开以便对照画面。 */
-export const TheaterDockOptions: React.FC<{ panel: 'aspect' | 'backdrop' }> = ({ panel }) => {
+export const TheaterDockOptions: React.FC<{
+  panel: 'aspect' | 'backdrop';
+  /** 轮播开着时，「更换」改成下一张并暂停，避免两个心智同时转。 */
+  carouselOn?: boolean;
+  onAdvanceStill?: () => void;
+}> = ({ panel, carouselOn = false, onAdvanceStill }) => {
   const {
     theaterAspect, setTheaterAspect, tmdbBackdrop, tmdbBackdropList, setTmdbBackdrop, shuffleBackdrop,
   } = useStudioStore(useShallow((state) => ({
@@ -154,10 +159,20 @@ export const TheaterDockOptions: React.FC<{ panel: 'aspect' | 'backdrop' }> = ({
         {canShuffleBackdrop ? (
           <MenuItem
             icon={<Shuffle className="h-4 w-4 stroke-[2]" aria-hidden="true" />}
-            title="更换剧照"
-            description={tmdbBackdrop ? '随机选取另一张' : '需先启用影片剧照'}
+            title={carouselOn ? '下一张' : '更换剧照'}
+            description={
+              !tmdbBackdrop
+                ? '需先启用影片剧照'
+                : carouselOn
+                  ? '下一张，并暂停轮播'
+                  : '随机选取另一张'
+            }
             disabled={!tmdbBackdrop}
-            onClick={() => { if (tmdbBackdrop) shuffleBackdrop(); }}
+            onClick={() => {
+              if (!tmdbBackdrop) return;
+              if (carouselOn && onAdvanceStill) onAdvanceStill();
+              else shuffleBackdrop();
+            }}
           />
         ) : null}
       </div>

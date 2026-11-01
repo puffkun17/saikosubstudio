@@ -259,7 +259,7 @@ export const SourceIdentityStrip: React.FC = () => {
     <aside
       ref={railRef}
       data-synopsis-expanded={overviewExpanded ? '' : undefined}
-      className="source-identity-rail v4-panel flex h-full min-h-0 w-full flex-col overflow-hidden"
+      className="source-identity-rail v4-panel flex h-auto min-h-0 w-full flex-col self-start overflow-hidden lg:h-full lg:self-stretch"
     >
       <div
         className="source-identity-rail__poster relative w-full border-b border-[var(--v4-line)]"
@@ -328,22 +328,22 @@ export const SourceIdentityStrip: React.FC = () => {
               title={layout.titleTruncated ? fullTitleText : undefined}
             >
               {layout.titleMode === 'one' || !altTitle ? (
-                <span className="flex min-w-0 items-baseline">
-                  <span data-title-fit="" className="source-identity-rail__title source-identity-rail__main font-display min-w-0 truncate">
+                <span className="source-identity-rail__line">
+                  <span data-title-fit="" className="source-identity-rail__title source-identity-rail__main font-display">
                     {mainTitle}
                   </span>
                   {altTitle ? (
-                    <span className="source-identity-rail__alt min-w-0 shrink truncate pl-[0.4em]">{SEP}{altTitle}</span>
+                    <span className="source-identity-rail__alt min-w-0 shrink truncate">{SEP}{altTitle}</span>
                   ) : null}
-                  {year ? <span className="source-identity-rail__alt source-identity-rail__year shrink-0 pl-[0.4em]">{SEP}{year}</span> : null}
+                  {year ? <span className="source-identity-rail__year">{SEP}{year}</span> : null}
                 </span>
               ) : (
                 <>
-                  <span className="flex min-w-0 items-baseline">
-                    <span data-title-fit="" className="source-identity-rail__title source-identity-rail__main font-display min-w-0 truncate">
+                  <span className="source-identity-rail__line">
+                    <span data-title-fit="" className="source-identity-rail__title source-identity-rail__main font-display">
                       {mainTitle}
                     </span>
-                    {year ? <span className="source-identity-rail__alt source-identity-rail__year shrink-0 pl-[0.4em]">{SEP}{year}</span> : null}
+                    {year ? <span className="source-identity-rail__year">{SEP}{year}</span> : null}
                   </span>
                   <span
                     data-title-fit=""
@@ -469,7 +469,7 @@ export const SourceIdentityStrip: React.FC = () => {
 
         <div
           ref={footRef}
-          className={`source-identity-rail__foot relative shrink-0${layout.clamp === null && !overviewExpanded ? ' mt-auto' : ''}`}
+          className={`source-identity-rail__foot relative shrink-0${layout.clamp === null && !overviewExpanded ? ' lg:mt-auto' : ''}`}
         >
           <div ref={rematchRowRef} className="flex flex-col gap-2">
             {tmdbData && tmdbAlternateSuggestion ? (

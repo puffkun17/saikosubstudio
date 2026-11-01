@@ -69,6 +69,7 @@ export type MediaTmdbSlice = Pick<
   | 'setTmdbData'
   | 'setTmdbBackdrop'
   | 'shuffleBackdrop'
+  | 'cycleBackdrop'
   | 'setTmdbManualOpen'
   | 'setTmdbManualInput'
   | 'setTmdbSuggestions'
@@ -125,6 +126,22 @@ export const createMediaTmdbSlice: StateCreator<StudioState, [], [], MediaTmdbSl
       }));
     }
     get().addLog("已更换背景图", "success");
+  },
+  cycleBackdrop: () => {
+    const { tmdbBackdropList, tmdbBackdrop, selectedTaskId } = get();
+    if (!tmdbBackdropList || tmdbBackdropList.length <= 1) {
+      get().addLog("当前影视没有其他备用剧照可选", "info");
+      return;
+    }
+    const index = tmdbBackdropList.indexOf(tmdbBackdrop || '');
+    const nextBackdrop = tmdbBackdropList[(index + 1) % tmdbBackdropList.length];
+    set({ tmdbBackdrop: nextBackdrop });
+    if (selectedTaskId) {
+      set(state => ({
+        tasks: state.tasks.map(t => t.id === selectedTaskId ? { ...t, tmdbBackdrop: nextBackdrop } : t)
+      }));
+    }
+    get().addLog("已切换到下一张剧照", "success");
   },
   setTmdbManualOpen: (tmdbManualOpen) => set({ tmdbManualOpen }),
   setTmdbManualInput: (tmdbManualInput) => set({ tmdbManualInput }),

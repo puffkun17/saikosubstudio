@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import type { MergeReviewItem } from '@/utils/timeline/alignmentDiff';
 import type { LineKind, SubRow } from '@/utils/subtitleCore';
 import {
@@ -41,7 +42,7 @@ export const InlineReview: React.FC<InlineReviewProps> = ({
       <div className="wb-inline" data-testid="inline-review-suspect" onClick={(e) => e.stopPropagation()}>
         <div className="wb-inline__body" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
           <div className="flex flex-wrap items-start gap-3">
-            <span className="wb-inline__k">⚠ 类别待定</span>
+            <span className="wb-inline__k"><AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />类别待定</span>
             <p className="wb-inline__r">
               系统不太确定这行是对白还是附加内容。请选择类别；分类会影响「智能 / 清洁」模式是否隐去它。
               {item.reason ? `（${item.reason}）` : ''}
@@ -83,7 +84,7 @@ export const InlineReview: React.FC<InlineReviewProps> = ({
   return (
     <div className="wb-inline" data-testid="inline-review-structure" onClick={(e) => e.stopPropagation()}>
       <div className="wb-inline__body">
-        <span className="wb-inline__k">⚠ 结构差异 · {kindLabel}</span>
+        <span className="wb-inline__k"><AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />结构差异 · {kindLabel}</span>
         <p className="wb-inline__r">{item.reason}</p>
         <div className="wb-inline__btns">
           <button type="button" className="wb-btn pri wb-focus-ring" onClick={onMarkReviewed}>
