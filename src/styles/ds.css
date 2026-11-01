@@ -202,11 +202,15 @@
 .ds-dock [data-paper] { background: transparent; }
 
 /* ── Special-line navigation (spec §6.3) ─────────────────────────────────── */
-.ds-chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: var(--pt-radius-md);
-  border: 1px solid var(--surface-line); color: var(--ds-ink); font-size: var(--ds-fs-meta); font-weight: var(--ds-fw-medium); cursor: pointer; }
-.ds-chip:hover { border-color: var(--v5-accent); }
-.ds-chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.ds-chip__count { font-variant-numeric: tabular-nums; opacity: .75; }
+/* Selectable tag — same height, border, type, and soft selected state as .wb-pill / .wb-cat.
+   Solid wine stays on .ui-action--solid, not on a pressed chip. */
+.ds-chip { display: inline-flex; align-items: center; gap: 6px; height: var(--ds-ctl-h-xs); padding: 0 var(--ds-ctl-px-sm); border-radius: var(--pt-radius-md);
+  border: 1px solid var(--surface-line); background: var(--v5-panel); color: var(--ink-strong); font-size: var(--ds-fs-meta); font-weight: var(--ds-fw-strong);
+  line-height: var(--ds-ctl-lh); cursor: pointer; white-space: nowrap; }
+.ds-chip:hover { border-color: var(--accent-line); }
+.ds-chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-text); font-weight: var(--ds-fw-strong); }
+.ds-chip__count { font-variant-numeric: tabular-nums; font-weight: var(--ds-fw-strong); color: var(--ink-muted); opacity: 1; }
+.ds-chip[aria-pressed="true"] .ds-chip__count { color: var(--accent-text); }
 .ds-pager { display: inline-flex; align-items: center; height: 28px; border: 1px solid var(--rule-control); border-radius: var(--pt-radius-md); }
 .ds-pager__btn { width: 28px; height: 100%; font-size: 16px; line-height: 1; color: var(--ds-ink); cursor: pointer; }
 .ds-pager__btn:hover { color: var(--v5-accent); }
@@ -216,7 +220,20 @@
 .ds-coach__close { padding: 2px 8px; border-radius: 6px; font-weight: var(--ds-fw-medium); color: var(--v5-accent-strong); cursor: pointer; }
 .timeline-marks { position: absolute; inset: 0 2px; pointer-events: none; }
 .timeline-marks__tick { position: absolute; top: 50%; width: 2px; height: 12px; margin-left: -1px; transform: translateY(-50%);
-  border-radius: 1px; background: var(--v5-accent); opacity: .8; }
+  border-radius: 1px; background: var(--v5-accent); opacity: 1; }
+.timeline-marks__tick--dim { opacity: 0.45; background: var(--ink-muted); }
+/* Special-line focus: the track (non-hits) drops to the same 0.45 as .wb-row.dim; the thumb stays unless the playhead itself is off-hit. */
+.v9-timeline-dial-slider.is-focus-dim { background: color-mix(in srgb, var(--v4-line) 45%, transparent); }
+.v9-timeline-dial-slider.is-focus-dim::-webkit-slider-runnable-track {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--v4-accent) 32%, transparent) 0 var(--timeline-progress, 0%),
+    color-mix(in srgb, var(--v4-line) 45%, transparent) var(--timeline-progress, 0%) 100%
+  );
+}
+.v9-timeline-dial-slider.is-focus-dim::-moz-range-track { background: color-mix(in srgb, var(--v4-line) 45%, transparent); }
+.v9-timeline-dial-slider.is-playhead-dim::-webkit-slider-thumb,
+.v9-timeline-dial-slider.is-playhead-dim::-moz-range-thumb { opacity: 0.45; }
 .timeline-marks__pulse { position: absolute; top: 50%; width: 22px; height: 22px; margin-left: -11px; transform: translateY(-50%);
   border-radius: 50%; border: 2px solid var(--v5-accent); animation: tlPulse 1.1s ease-out forwards; }
 @keyframes tlPulse { 0% { opacity: 1; transform: translateY(-50%) scale(.5); } 100% { opacity: 0; transform: translateY(-50%) scale(1.8); } }

@@ -27,6 +27,8 @@ interface ScreenSimulatorProps {
   isPreviewPlaying?: boolean;
   theaterAspect: string;
   guides: { show: boolean; temp: boolean };
+  /** Special-line focus: this cue is not a hit. Same 0.45 as `.wb-row.dim`. */
+  cueDimmed?: boolean;
 }
 
 /** Preview fade window (ASS-like). Kept modest so styles stay readable. */
@@ -56,15 +58,16 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
   isPreviewPlaying = false,
   theaterAspect,
   guides,
+  cueDimmed = false,
 }) => {
   const activeSub = subtitle.status === 'ready' && subtitle.data ? subtitle.data[previewIndex] : null;
   
   const scale = style.globalScale || 1.0;
 
   const activeRange = activeSub?.ts ? parseSubtitleRange(activeSub.ts) : null;
-  const fadeOpacity = isPreviewPlaying && activeRange
+  const fadeOpacity = (isPreviewPlaying && activeRange
     ? cueOpacity(previewClockMs, activeRange.startMs, activeRange.endMs)
-    : 1;
+    : 1) * (cueDimmed ? 0.45 : 1);
 
   // 注意：大量使用 cqh（container query height）单位
   // 要求现代浏览器支持（Chrome 105+ / Safari 16+ / Firefox 110+）
@@ -349,6 +352,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
           {topElement && fadeOpacity > 0.01 && (
             <div 
               className="absolute left-[5%] right-[5%] z-40 flex select-none flex-col items-center justify-start text-center pointer-events-none"
+              data-cue-dim={cueDimmed ? 'true' : undefined}
               style={{ top: `${paddingBottomCqh * 0.8}cqh`, opacity: fadeOpacity }}
             >
               {topElement}
@@ -359,6 +363,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
           {bottomElement && fadeOpacity > 0.01 && (
             <div 
               className="absolute left-[5%] right-[5%] z-40 flex select-none flex-col items-center justify-end text-center pointer-events-none"
+              data-cue-dim={cueDimmed ? 'true' : undefined}
               style={{ bottom: `${paddingBottomCqh}cqh`, opacity: fadeOpacity }}
             >
               {bottomElement}

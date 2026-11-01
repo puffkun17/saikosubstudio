@@ -41,7 +41,7 @@ export const DockToggle: React.FC<{
 }> = ({ id, active, onToggle, icon, label, primary }) => (
   <button
     type="button"
-    className={primary || active === id ? 'ui-action' : 'ui-action ui-action--secondary'}
+    className={primary ? 'ui-action ui-action--solid' : active === id ? 'ui-action' : 'ui-action ui-action--secondary'}
     aria-expanded={active === id}
     aria-controls="theater-dock"
     data-dock={id}

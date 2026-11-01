@@ -28,6 +28,7 @@ const SimulatorWithClock: React.FC<{
   previewIndex: number;
   theaterAspect: string;
   guides: { show: boolean; temp: boolean };
+  cueDimmed?: boolean;
 }> = (props) => {
   const previewClockMs = useStudioStore((state) => state.previewClockMs);
   const isPreviewPlaying = useStudioStore((state) => state.isPreviewPlaying);
@@ -151,6 +152,11 @@ export const TheaterStep: React.FC = () => {
     goRow(special[kind][0]);
   };
   const activeIdx = specialKind ? special[specialKind] : [];
+  const specialFocus = Boolean(specialKind);
+  const onSpecialHit = specialFocus && activeIdx.includes(safePreviewIndex);
+  const dimMarks = specialFocus
+    ? kinds.flatMap((kind) => (kind === specialKind ? [] : special[kind]))
+    : undefined;
   const [coachSeen, setCoachSeen] = useState(true);
   useEffect(() => {
     try { setCoachSeen(localStorage.getItem('saiko_coach_special') === '1'); } catch { /* private mode */ }
@@ -301,7 +307,10 @@ export const TheaterStep: React.FC = () => {
           className={`flex-1 flex min-h-0 flex-col overflow-hidden relative lg:flex-row ${isLightsOff ? 'lights-off-stage' : ''}`}
         >
         {/* L0 舞台：隔离内部 z，避免电视框压过样式面板 */}
-        <div className="relative z-[var(--z-theater-stage)] isolate flex min-w-0 flex-1 flex-col items-center justify-center gap-3 p-3 md:p-5 xl:p-6">
+        <div
+          className={`relative z-[var(--z-theater-stage)] isolate flex min-w-0 flex-1 flex-col items-center justify-center gap-3 p-3 md:p-5 xl:p-6${specialFocus ? ' theater-stage--focus' : ''}`}
+          data-special-focus={specialKind ?? undefined}
+        >
           <div className="flex-1 w-full min-h-0 flex items-center justify-center">
             <SimulatorBoundary>
               <SimulatorWithClock
@@ -311,6 +320,7 @@ export const TheaterStep: React.FC = () => {
                 previewIndex={safePreviewIndex}
                 theaterAspect={theaterAspect}
                 guides={{ show: showGuides, temp: tempShowGuides }}
+                cueDimmed={specialFocus && !onSpecialHit}
               />
             </SimulatorBoundary>
           </div>
@@ -352,13 +362,15 @@ export const TheaterStep: React.FC = () => {
           )}
 
           {/* 播放条：几何避让由抽屉 bottom 让出，禁止临时抬 z。 */}
-          <div className="theater-stage-chrome relative flex w-full max-w-[1080px] shrink-0 px-1">
+            <div className="theater-stage-chrome relative flex w-full max-w-[1080px] shrink-0 px-1">
             <TimelineControls
               variant="theater"
               theaterChrome={{
                 lightsOff: isLightsOff,
-                marks: specialKind ? activeIdx : undefined,
+                marks: specialFocus ? activeIdx : undefined,
+                dimMarks,
                 pulse,
+                playheadDim: specialFocus && !onSpecialHit,
               }}
             />
           </div>

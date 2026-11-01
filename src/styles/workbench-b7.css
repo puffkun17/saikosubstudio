@@ -28,20 +28,19 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-/* Soft gate badge near 打开预览 */
+/* Status readout in the info bar — text, not a tag or action. */
 .wb-gate {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  height: 24px;
-  padding: 0 9px;
-  border-radius: var(--pt-radius-sm);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--ds-fs-meta);
+  font-weight: var(--ds-fw-strong);
+  line-height: var(--ds-ctl-lh);
   white-space: nowrap;
   color: #8f3530;
-  background: color-mix(in srgb, var(--wb-cat-review) 8%, var(--v5-panel));
-  border: 1px solid color-mix(in srgb, var(--wb-cat-review) 35%, transparent);
+  background: transparent;
+  border: 0;
+  padding: 0;
 }
 
 /* Compact output mode segment */
@@ -215,30 +214,36 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Selectable tag — same geometry as .wb-cat and .ds-chip (see block at end of this file). */
 .wb-pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 24px;
-  padding: 0 9px;
+  gap: 6px;
+  height: var(--ds-ctl-h-xs);
+  padding: 0 var(--ds-ctl-px-sm);
   border-radius: var(--pt-radius-md);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--ds-fs-meta);
+  font-weight: var(--ds-fw-strong);
+  line-height: var(--ds-ctl-lh);
   color: var(--ink-strong);
-  background: color-mix(in srgb, var(--wb-cat-review) 7%, var(--v5-panel));
-  border: 1px solid color-mix(in srgb, var(--wb-cat-review) 40%, transparent);
+  background: var(--v5-panel);
+  border: 1px solid var(--surface-line);
   white-space: nowrap;
   cursor: pointer;
 }
 
-.wb-pill.wb-sel {
-  border-radius: var(--pt-radius-md);
+.wb-pill i,
+.ds-chip__count {
+  font-style: normal;
+  font-weight: var(--ds-fw-strong);
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+  opacity: 1;
 }
 
-.wb-pill i {
-  font-style: normal;
-  color: var(--v5-text-muted);
-  font-variant-numeric: tabular-nums;
+.wb-pill.wb-sel i,
+.ds-chip[aria-pressed="true"] .ds-chip__count {
+  color: var(--accent-text);
 }
 
 .wb-prog {
@@ -451,14 +456,60 @@
   overflow: hidden;
 }
 
-.wb-inline__body {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 8px 14px 9px 16px;
+/* Content (copy + category tags) and the action slot are separate rows of one grid.
+   Actions stay in the top-right cell; they do not sit in the content flow. */
+.wb-inline__sheet {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
+  row-gap: 8px;
+  align-items: start;
+  padding: 8px 12px 10px 16px;
   border-top: 1px solid var(--v5-line);
   background: color-mix(in srgb, var(--wb-cat-review) 4%, var(--paper-raised));
+}
+
+.wb-inline__copy {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 12px;
+  min-width: 0;
+}
+
+.wb-inline__actions {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.wb-inline__actions .ui-action {
+  min-height: var(--ds-ctl-h-sm);
+}
+
+@media (max-width: 720px) {
+  .wb-inline__sheet {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wb-inline__actions {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .wb-inline__copy {
+    grid-row: 2;
+  }
+
+  .wb-inline .wb-cats {
+    grid-row: 3;
+  }
 }
 
 .wb-inline__k {
@@ -479,77 +530,96 @@
   line-height: 1.45;
 }
 
-.wb-inline__btns {
-  margin-left: auto;
+.wb-cats {
+  grid-column: 1 / -1;
+  grid-row: 2;
   display: flex;
-  gap: 8px;
-  flex: none;
   flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
 }
 
-.wb-btn {
-  height: 32px;
-  padding: 0 14px;
+.wb-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--ds-ctl-h-xs);
+  padding: 0 var(--ds-ctl-px-sm);
   border-radius: var(--pt-radius-md);
-  font-size: 14px;
-  font-weight: 600;
-  border: 1px solid var(--v5-line-strong);
+  border: 1px solid var(--surface-line);
   background: var(--v5-panel);
   color: var(--ink-strong);
+  font-size: var(--ds-fs-meta);
+  font-weight: var(--ds-fw-strong);
+  line-height: var(--ds-ctl-lh);
   white-space: nowrap;
   cursor: pointer;
 }
 
-.wb-btn.pri {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-ink);
-  font-weight: 700;
-  letter-spacing: 0.025em;
-}
-
-.wb-btn.pri span {
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
-}
-
-.wb-btn.gh {
-  border-color: transparent;
-  color: var(--v5-text-muted);
-}
-
-.wb-cats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  width: 100%;
-  margin-top: 2px;
-}
-
-.wb-cat {
-  height: 26px;
-  padding: 0 10px;
-  border-radius: var(--pt-radius-md);
-  font-size: 13px;
-  font-weight: 600;
-  border: 1px solid var(--v5-line-strong);
-  background: var(--v5-panel);
-  color: var(--ink-strong);
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-}
-
-.wb-cat.guess {
-  border: 1.5px dashed var(--ink-strong);
-}
-
 .wb-cat small {
-  font-size: 11px;
-  color: var(--v5-text-muted);
+  font-size: var(--ds-fs-micro);
+  font-weight: var(--ds-fw-medium);
+  color: var(--ink-muted);
+}
+
+/* Dialogue edit: field hugs the line; cancel/save stay on that row, flush right. */
+.wb-line-edit {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.wb-line-edit__fields {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  max-width: calc(100% - 9.5rem);
+}
+
+.wb-line-edit__input {
+  display: block;
+  box-sizing: border-box;
+  width: var(--wb-edit-w, 12em);
+  max-width: 100%;
+  min-width: 0;
+  border-radius: var(--pt-radius-md);
+  border: 1px solid var(--v4-line);
+  background: var(--v4-panel-muted);
+  padding: 0.3rem 0.7rem;
+  font-size: 0.875rem;
   font-weight: 500;
+  line-height: 1.45;
+  color: var(--v4-text);
+}
+
+.wb-line-edit__input--sub {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--v4-text-muted);
+}
+
+.wb-line-edit__input:focus {
+  border-color: var(--v4-accent);
+  background: var(--v4-accent-soft);
+  outline: none;
+}
+
+.wb-line-edit__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.wb-line-edit__actions .ui-action {
+  min-height: var(--ds-ctl-h-sm);
 }
 
 /* Marker rail */
