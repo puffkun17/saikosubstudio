@@ -58,6 +58,12 @@ export type InfoBarConfig = {
     tone?: 'ok' | 'progress' | 'warn' | 'muted';
   };
   onBack?: () => void;
+  /**
+   * 状态与设置（输出模式、待复核计数）。不是操作槽。
+   * 渲染在操作簇左侧，用分隔线隔开。
+   */
+  display?: React.ReactNode;
+  /** 第二象限操作槽：只放会改流程的动作。 */
   actions?: React.ReactNode;
 } | null;
 
@@ -229,9 +235,21 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
                 </div>
               )}
             </div>
-            {config.actions && (
-              <div className="flex shrink-0 flex-nowrap items-center justify-end gap-1.5 self-center sm:gap-2">
-                {config.actions}
+            {(config.display || config.actions) && (
+              <div className="workflow-info-bar__end">
+                {config.display ? (
+                  <div className="workflow-info-bar__status" data-infobar-status>
+                    {config.display}
+                  </div>
+                ) : null}
+                {config.actions ? (
+                  <div
+                    className={`workflow-info-bar__actions${config.display ? ' has-status' : ''}`}
+                    data-infobar-actions
+                  >
+                    {config.actions}
+                  </div>
+                ) : null}
               </div>
             )}
           </div>

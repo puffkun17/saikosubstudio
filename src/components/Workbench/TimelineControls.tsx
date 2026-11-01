@@ -12,10 +12,14 @@ interface TimelineControlsProps {
   /** 放映厅：关灯仍保留播放+进度；画幅辅助线放在播放单元外侧，不打断进度条。 */
   theaterChrome?: {
     lightsOff: boolean;
-    /** 选中特殊行分类时，在时间轴上画出该类的刻度（行号）。 */
+    /** 选中特殊行分类时，在时间轴上画出该类的刻度（行号）。命中刻度保持全亮。 */
     marks?: number[];
+    /** 其他特殊行刻度：与第二幕非命中行一样降到 0.45。 */
+    dimMarks?: number[];
     /** 每次跳转短暂高亮落点。 */
     pulse?: { row: number; key: number } | null;
+    /** 当前播放头不在选中分类上。 */
+    playheadDim?: boolean;
   };
 }
 
@@ -383,12 +387,19 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
                 if (scrubTimeMs !== null) endScrub(event.currentTarget.value);
               }}
               style={timelineStyle}
-              className="v9-timeline-dial-slider w-full min-w-0"
+              className={`v9-timeline-dial-slider w-full min-w-0${theaterChrome?.marks ? ' is-focus-dim' : ''}${theaterChrome?.playheadDim ? ' is-playhead-dim' : ''}`}
               aria-label={`字幕预览时间，第 ${tipLine} 行，${timelinePercent}%`}
               title={`第 ${tipLine} 行 · ${timelinePercent}%`}
+              data-timeline-focus={theaterChrome?.marks ? 'true' : undefined}
             />
-            {(theaterChrome?.marks?.length || theaterChrome?.pulse) ? (
+            {(theaterChrome?.marks?.length || theaterChrome?.dimMarks?.length || theaterChrome?.pulse) ? (
               <div className="timeline-marks" aria-hidden="true">
+                {(theaterChrome?.dimMarks ?? []).map((row) => {
+                  const r = processedSubs?.[row];
+                  if (!r) return null;
+                  const pct = (parseSubtitleRange(r.ts).startMs / sharedDurationMs) * 100;
+                  return <span key={`dim-${row}`} className="timeline-marks__tick timeline-marks__tick--dim" style={{ left: `${pct}%` }} />;
+                })}
                 {(theaterChrome?.marks ?? []).map((row) => {
                   const r = processedSubs?.[row];
                   if (!r) return null;

@@ -2,10 +2,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronUp, FilePlus, FolderPlus, HardDrive, Plus } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
 import { FOLDER_UNSUPPORTED_HINT } from '@/components/Ingest/dragzone/environment';
-import { EASE_OUT, MOTION_S } from '@/core/motion';
 
 /** 清空确认窗口：超时自动收回，避免误触后一直挂着危险按钮。 */
 export const CLEAR_CONFIRM_TIMEOUT_MS = 4000;
@@ -13,7 +11,8 @@ export const CLEAR_CONFIRM_TIMEOUT_MS = 4000;
 /**
  * 队列底栏（list v2，问题 3）：像对话框页脚，一处收齐所有动作。
  *
- * 桌面：左「仅在本地读取」，右依次「清空」（文字次按钮，二次确认）→「+ 继续添加」（描边次按钮，菜单向上开）→「整理文件 >」（主按钮，最右）。
+ * 桌面：左「仅在本地读取」，右依次「清空」→「+ 继续添加」→「整理文件 >」。
+ * 清空二次确认整条替换底栏（继续添加与主按钮先让开），取消在左、清空在右。
  * 390 px：底栏 sticky 贴底；上一行是说明 + 两个紧凑次按钮，下一行「整理文件」占满整行。
  * 「整理文件」仍由 WorkflowContinueInFlow 渲染，点击行为不变。
  */
@@ -30,18 +29,20 @@ export const QueueActionBar = ({
   onPickFolder: () => void;
   folderPickSupported: boolean;
 }) => {
-  const reduce = useReducedMotion();
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmingClear, setConfirmingClear] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuOpen && !confirmingClear) return;
     const onPointerDown = (event: MouseEvent) => {
+      if (!menuOpen) return;
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
     };
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMenuOpen(false);
+      if (event.key !== 'Escape') return;
+      if (menuOpen) setMenuOpen(false);
+      if (confirmingClear) setConfirmingClear(false);
     };
     document.addEventListener('mousedown', onPointerDown);
     document.addEventListener('keydown', onKey);
@@ -49,7 +50,7 @@ export const QueueActionBar = ({
       document.removeEventListener('mousedown', onPointerDown);
       document.removeEventListener('keydown', onKey);
     };
-  }, [menuOpen]);
+  }, [menuOpen, confirmingClear]);
 
   useEffect(() => {
     if (!confirmingClear) return;
@@ -57,44 +58,16 @@ export const QueueActionBar = ({
     return () => window.clearTimeout(timer);
   }, [confirmingClear]);
 
-  const swap = {
-    initial: reduce ? false : { opacity: 0 },
-    animate: { opacity: 1 },
-    exit: reduce ? undefined : { opacity: 0 },
-    transition: { duration: reduce ? 0 : MOTION_S.fast, ease: EASE_OUT },
-  } as const;
-
   const clearControl = (
-    <AnimatePresence initial={false} mode="wait">
-      {confirmingClear ? (
-        <motion.span key="confirm" {...swap} role="group" aria-label="确认清空" className="inline-flex items-center gap-1" data-queue-clear-confirm>
-          <span className="whitespace-nowrap px-1 text-sm text-[var(--v4-text-muted)]">清空 {itemCount} 项？</span>
-          <button
-            type="button"
-            className="ui-action ui-action--danger"
-            onClick={() => { setConfirmingClear(false); onClear(); }}
-            data-queue-clear-yes
-          >
-            清空
-          </button>
-          <button type="button" className="ui-action ui-action--quiet" onClick={() => setConfirmingClear(false)}>
-            取消
-          </button>
-        </motion.span>
-      ) : (
-        <motion.span key="idle" {...swap} className="inline-flex">
-          <button
-            type="button"
-            className="ui-action ui-action--quiet"
-            onClick={() => setConfirmingClear(true)}
-            aria-label="清空导入队列"
-            data-queue-clear
-          >
-            清空
-          </button>
-        </motion.span>
-      )}
-    </AnimatePresence>
+    <button
+      type="button"
+      className="ui-action ui-action--quiet"
+      onClick={() => { setMenuOpen(false); setConfirmingClear(true); }}
+      aria-label="清空导入队列"
+      data-queue-clear
+    >
+      清空
+    </button>
   );
 
   const addControl = (
@@ -142,9 +115,38 @@ export const QueueActionBar = ({
     </div>
   );
 
+  if (confirmingClear) {
+    return (
+      <div
+        className="ingest-action-bar ingest-action-bar--cover"
+        data-queue-action-bar
+        data-queue-clear-confirm
+        role="group"
+        aria-label="确认清空"
+      >
+        <span className="ingest-action-bar__note inline-flex min-w-0 items-center text-sm font-medium text-[var(--v4-text-muted)] md:text-[15px]">
+          清空 {itemCount} 项？
+        </span>
+        <div className="ingest-action-bar__cover-actions">
+          <button type="button" className="ui-action ui-action--quiet" onClick={() => setConfirmingClear(false)}>
+            取消
+          </button>
+          <button
+            type="button"
+            className="ui-action ui-action--danger"
+            onClick={() => { setConfirmingClear(false); onClear(); }}
+            data-queue-clear-yes
+          >
+            清空
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="ingest-action-bar" data-queue-action-bar>
-      <span className={`ingest-action-bar__note inline-flex min-w-0 items-center gap-2 text-sm font-medium text-[var(--v4-text-muted)] md:text-[15px] ${confirmingClear ? 'max-md:hidden' : ''}`}>
+      <span className="ingest-action-bar__note inline-flex min-w-0 items-center gap-2 text-sm font-medium text-[var(--v4-text-muted)] md:text-[15px]">
         <HardDrive className="h-4 w-4 shrink-0" aria-hidden="true" />
         <span className="truncate">仅在本地读取<span className="max-md:hidden">，不上传</span></span>
       </span>

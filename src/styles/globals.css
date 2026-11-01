@@ -602,6 +602,36 @@ body {
   min-width: 0;
 }
 
+/* Identity stays on the left. Status/settings sit in their own slot; only actions occupy the right cluster. */
+.workflow-info-bar__end {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.workflow-info-bar__status {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.workflow-info-bar__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.workflow-info-bar__actions.has-status {
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--v4-line);
+}
+
 .workflow-info-bar__year {
   flex: none;
   margin-left: 0.4em;
@@ -2015,11 +2045,6 @@ button:not(:disabled):active {
   background: var(--v4-accent-strong);
   border: 2px solid var(--v4-panel-raised);
   margin-top: -5px;
-  transition: transform 0.15s;
-}
-
-.v9-timeline-dial-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
 }
 
 .v9-timeline-dial-slider::-moz-range-track {
@@ -2077,15 +2102,10 @@ button:not(:disabled):active {
   background: var(--paper-raised);
   border: 2.5px solid var(--accent);
   margin-top: -5.5px;
-  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
-}
-
-.glass-slider-input::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .glass-slider-input::-webkit-slider-thumb:active {
-  transform: scale(0.95);
   background: var(--paper-sunken);
 }
 
@@ -2208,6 +2228,30 @@ button:not(:disabled):active {
   .ingest-action-bar__secondary { gap: 0.5rem; }
   .ingest-action-bar__primary .workflow-continue-in-flow { width: auto; align-items: flex-end; }
   .ingest-action-bar__primary .workflow-continue-in-flow > button { width: auto; }
+}
+
+/* Destructive confirm covers the whole action bar: add + primary are not rendered beside it. */
+.ingest-action-bar.ingest-action-bar--cover {
+  display: flex;
+  width: 100%;
+  grid-template-columns: none;
+  grid-template-areas: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 4px 4px 10px;
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--pt-radius-lg);
+  background: var(--paper-raised);
+}
+
+.ingest-action-bar__cover-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-left: auto;
 }
 
 /* Act 1 → Act 2（进入工作台）的 View Transition：整页交叉淡入，0.25 s；减少动态 0.15 s 纯淡入淡出。

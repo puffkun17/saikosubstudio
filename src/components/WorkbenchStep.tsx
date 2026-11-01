@@ -305,18 +305,18 @@ export const WorkbenchStep: React.FC = () => {
         tmdbData ? undefined : '未匹配',
       ].filter((item): item is string => Boolean(item)),
       onBack: () => setWorkflowStep(1),
-      actions: (
+      display: (
         <>
           <OutputModeControl />
           {counts.reviewRemaining > 0 ? (
-            <span className="wb-gate" title="软提示：不阻断打开预览">
+            <span className="wb-gate" role="status" title="软提示：不阻断打开预览">
               <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
               还有 {counts.reviewRemaining} 项待复核
             </span>
           ) : null}
-          <WorkflowContinueInFlow />
         </>
       ),
+      actions: <WorkflowContinueInFlow />,
     });
     return () => setInfoBar(null);
   }, [

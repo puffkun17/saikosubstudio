@@ -20,6 +20,12 @@ interface SequenceListProps {
 
 const LONG_PRESS_MS = 450;
 
+/** Dialogue field hugs the line (CJK ≈ 1em) and caps before it shoves Cancel/Save onto the next row. */
+const editFieldWidth = (value: string) => {
+  const units = Math.min(28, Math.max(8, Array.from(value).length + 1));
+  return `${units}em`;
+};
+
 export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, listController = null }) => {
   const {
     processedSubs,
@@ -503,39 +509,43 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
                   <div className="flex min-w-0 flex-col gap-0.5 pr-1">
                     <span className={`ds-mono text-[length:var(--ds-fs-micro)] tabular-nums md:hidden ${isActive ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--ds-ink-3)]'}`}>{startTime} → {endTime}</span>
                     {editingIndex === sub.index ? (
-                      <div className="z-10 flex w-full cursor-auto select-text flex-col gap-2" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="text"
-                          value={draftZh}
-                          onChange={(e) => setDraftZh(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') commitEditing();
-                            if (e.key === 'Escape') cancelEditing();
-                          }}
-                          className="w-full rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-1.5 text-sm font-medium leading-relaxed text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]"
-                          placeholder="中文字幕文本"
-                          autoFocus
-                        />
-                        {enText && (
+                      <div className="wb-line-edit z-10 cursor-auto select-text" data-line-edit onClick={(e) => e.stopPropagation()}>
+                        <div className="wb-line-edit__fields">
                           <input
                             type="text"
-                            value={draftSecondary}
-                            onChange={(e) => setDraftSecondary(e.target.value)}
+                            value={draftZh}
+                            onChange={(e) => setDraftZh(e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') commitEditing();
                               if (e.key === 'Escape') cancelEditing();
                             }}
-                            className="w-full rounded-lg border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-3 py-1.5 text-xs font-normal leading-relaxed text-[var(--v4-text-muted)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-accent-soft)]"
-                            placeholder="副字幕文本"
+                            className="wb-line-edit__input"
+                            style={{ '--wb-edit-w': editFieldWidth(draftZh || '中文字幕文本') } as React.CSSProperties}
+                            placeholder="中文字幕文本"
+                            autoFocus
                           />
-                        )}
-                        <div className="mt-1 flex justify-end gap-2">
-                          <button type="button" className="ui-action ui-action--quiet cursor-pointer" onClick={(e) => { e.stopPropagation(); cancelEditing(); }}>
+                          {enText && (
+                            <input
+                              type="text"
+                              value={draftSecondary}
+                              onChange={(e) => setDraftSecondary(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') commitEditing();
+                                if (e.key === 'Escape') cancelEditing();
+                              }}
+                              className="wb-line-edit__input wb-line-edit__input--sub"
+                              style={{ '--wb-edit-w': editFieldWidth(draftSecondary || '副字幕文本') } as React.CSSProperties}
+                              placeholder="副字幕文本"
+                            />
+                          )}
+                        </div>
+                        <div className="wb-line-edit__actions">
+                          <button type="button" className="ui-action ui-action--quiet" onClick={(e) => { e.stopPropagation(); cancelEditing(); }}>
                             <X className="h-4 w-4" aria-hidden="true" />取消
                           </button>
                           <button
                             type="button"
-                            className="ui-action cursor-pointer"
+                            className="ui-action ui-action--solid"
                             onClick={(e) => { e.stopPropagation(); commitEditing(); }}
                           >
                             <Check className="h-4 w-4" aria-hidden="true" />保存
