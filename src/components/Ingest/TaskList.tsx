@@ -471,77 +471,77 @@ export const TaskList: React.FC = () => {
     setInfoBar({
       title: taskBarTitle,
       localChips: taskBarMeta,
-      actions: (
-        <>
-          {pendingCancelUpload ? (
-            <>
-              <button
-                type="button"
-                className="ui-action ui-action--danger"
-                onClick={() => { cancelCurrentUpload(); setPendingCancelUpload(false); }}
-              >
-                清空本次导入
-              </button>
-              <button
-                type="button"
-                className="ui-action ui-action--quiet"
-                onClick={() => setPendingCancelUpload(false)}
-              >
-                返回
-              </button>
-            </>
-          ) : (
+      actions: pendingDeleteId === activeTask.id ? (
+        <div className="ingest-action-bar ingest-action-bar--confirm" role="group" aria-label="确认移除当前任务">
+          <button
+            type="button"
+            className="ui-action ui-action--quiet"
+            onClick={() => setPendingDeleteId(null)}
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            className="ui-action ui-action--danger"
+            onClick={() => { deleteTask(activeTask.id); setPendingDeleteId(null); }}
+          >
+            确认移除
+          </button>
+        </div>
+      ) : pendingCancelUpload ? (
+        <div className="ingest-action-bar ingest-action-bar--confirm" role="group" aria-label="确认取消导入">
+          <button
+            type="button"
+            className="ui-action ui-action--quiet"
+            onClick={() => setPendingCancelUpload(false)}
+          >
+            返回
+          </button>
+          <button
+            type="button"
+            className="ui-action ui-action--danger"
+            onClick={() => { cancelCurrentUpload(); setPendingCancelUpload(false); }}
+          >
+            清空本次导入
+          </button>
+        </div>
+      ) : (
+        <div className="ingest-action-bar">
+          <div className="ingest-action-bar__side">
             <button
               type="button"
               className="ui-action ui-action--quiet"
-              onClick={() => setPendingCancelUpload(true)}
+              onClick={() => { setPendingDeleteId(null); setPendingCancelUpload(true); }}
               title="取消导入并返回上传入口"
             >
               <RotateCcw className="h-4 w-4" />
               <span className="hidden sm:inline">取消导入</span>
               <span className="sm:hidden">取消</span>
             </button>
-          )}
-          <button
-            type="button"
-            className="ui-action ui-action--secondary"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Plus className="h-4 w-4" />
-            继续添加
-          </button>
-          <span data-testid="ingest-primary-cta" className="inline-flex">
-            <WorkflowContinueInFlow className="min-w-[8.5rem] justify-center" />
-          </span>
-          {pendingDeleteId === activeTask.id ? (
-            <>
-              <button
-                type="button"
-                className="ui-action ui-action--danger"
-                onClick={() => { deleteTask(activeTask.id); setPendingDeleteId(null); }}
-              >
-                确认移除
-              </button>
-              <button
-                type="button"
-                className="ui-action ui-action--quiet"
-                onClick={() => setPendingDeleteId(null)}
-              >
-                取消
-              </button>
-            </>
-          ) : (
             <button
               type="button"
               className="ui-action ui-action--quiet"
-              onClick={() => setPendingDeleteId(activeTask.id)}
+              onClick={() => { setPendingCancelUpload(false); setPendingDeleteId(activeTask.id); }}
               aria-label="移除当前字幕任务"
             >
               <Trash2 className="h-4 w-4" />
               <span className="hidden md:inline">移除</span>
             </button>
-          )}
-        </>
+          </div>
+          <div className="ingest-action-bar__main">
+            <button
+              type="button"
+              className="ui-action ui-action--secondary"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Plus className="h-4 w-4" />
+              继续添加
+            </button>
+            <span data-testid="ingest-primary-cta" className="inline-flex">
+              <WorkflowContinueInFlow className="min-w-[8.5rem] justify-center" />
+            </span>
+          </div>
+        </div>
       ),
     });
     return () => setInfoBar(null);
@@ -615,7 +615,7 @@ export const TaskList: React.FC = () => {
                 字幕序列
               </h4>
               <InfoHint label="字幕序列说明">
-                选择要处理的字幕文件。双语单文件会自动识别；分开的主字幕与副字幕将按时间轴合并。同语种（含简繁）不能作为合轴对。
+                选择要处理的字幕文件。双语单文件会自动识别；分开的主字幕与副字幕按时间轴合并。同语种（含简繁）不能配成合轴组合。
               </InfoHint>
               {activeTask.isBilingualSingle && (
                 <span className="rd-chip rd-chip--tight text-[var(--v4-text-muted)]">
@@ -658,7 +658,6 @@ export const TaskList: React.FC = () => {
                       animate={{
                         y: liveShiftY,
                         opacity: isDragging ? 0.28 : 1,
-                        scale: isDropTarget ? 1.01 : 1,
                       }}
                       transition={{ type: 'spring', stiffness: 420, damping: 32, mass: 0.7 }}
                       className={`grid grid-cols-[7.25rem_minmax(0,1fr)_2rem] items-center gap-2 overflow-visible rounded-xl ${
@@ -775,8 +774,8 @@ export const TaskList: React.FC = () => {
                           }}
                         >
                           <motion.div
-                            initial={{ opacity: 0.85, scale: 0.98 }}
-                            animate={{ opacity: 1, scale: 1.03 }}
+                            initial={{ opacity: 0.85 }}
+                            animate={{ opacity: 1 }}
                             transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
                             className="flex items-center gap-2 rounded-[var(--radius-xl)] border border-[var(--v4-accent)]/40 bg-[var(--v4-panel-raised)] px-3 py-2.5 shadow-[var(--pt-elev-float)]"
                             style={{ height: dragCardSize.h }}

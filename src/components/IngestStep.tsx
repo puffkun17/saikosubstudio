@@ -53,8 +53,8 @@ export const IngestStep: React.FC = () => {
           <motion.div 
             key="ready-state"
             data-stage-zone="ledger"
-            initial={shared || reduce ? { opacity: 0 } : { opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={fade}
             className="z-10 mx-auto grid w-full max-w-[1180px] min-h-0 flex-1 grid-cols-1 gap-[var(--ds-gap-section)] lg:grid-cols-[minmax(200px,240px)_minmax(0,1fr)] lg:items-stretch lg:gap-[var(--ds-gap-group)]"
           >

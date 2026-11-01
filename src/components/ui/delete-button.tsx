@@ -25,22 +25,15 @@ const PANEL = 84;
 const HOLD = { deleted: 1400, kept: 600 };
 
 const EASE = [0.32, 0.72, 0, 1] as const;
-const EASE_LID = [0.34, 1.1, 0.64, 1] as const;
 
-const WIDTH = { duration: 0.62, ease: EASE } as const;
-const LID = { duration: 0.6, ease: EASE_LID } as const;
-const WALL = { duration: 0.56, ease: EASE } as const;
-const IN = { duration: 0.44, ease: EASE, delay: 0.14 } as const;
-const OUT = { duration: 0.3, ease: EASE } as const;
+const WIDTH = { duration: 0.25, ease: EASE } as const;
+const LID = { duration: 0.25, ease: EASE } as const;
+const WALL = { duration: 0.25, ease: EASE } as const;
+const IN = { duration: 0.2, ease: EASE } as const;
+const OUT = { duration: 0.15, ease: EASE } as const;
 const TAP = { duration: 0.2, ease: EASE } as const;
 const SWAP = { duration: 0.22, ease: EASE } as const;
-const SETTLE = { duration: 0.45, ease: EASE } as const;
-const PRESS = {
-  type: "spring",
-  stiffness: 520,
-  damping: 18,
-  mass: 0.5,
-} as const;
+const SETTLE = { duration: 0.25, ease: EASE } as const;
 const INSTANT = { duration: 0 } as const;
 
 const SURFACE = "border border-[var(--v4-line)] bg-[var(--v4-panel)]";
@@ -62,13 +55,13 @@ const ICON = {
 } as const;
 
 const panelMotion = {
-  hidden: { opacity: 0, x: -6, transition: OUT },
-  shown: { opacity: 1, x: 0, transition: { ...IN, staggerChildren: 0.07 } },
+  hidden: { opacity: 0, transition: OUT },
+  shown: { opacity: 1, transition: IN },
 };
 
 const circleMotion = {
-  hidden: { opacity: 0, scale: 0.9, transition: OUT },
-  shown: { opacity: 1, scale: 1, transition: IN },
+  hidden: { opacity: 0, transition: OUT },
+  shown: { opacity: 1, transition: IN },
 };
 
 function Circle({
@@ -88,9 +81,7 @@ function Circle({
         type="button"
         aria-label={label}
         onClick={onClick}
-        whileHover={reduced ? undefined : { scale: 1.03 }}
-        whileTap={reduced ? undefined : { scale: 0.84 }}
-        transition={PRESS}
+        transition={TAP}
         className={CIRCLE}
       >
         <svg
@@ -132,7 +123,6 @@ export function DeleteButton({
   const top = useMotionValue(WALL_TOP);
   const wall = useTransform(top, (y) => WALL_BASE - y);
   const bin = useMotionTemplate`M19 ${top}v${wall}a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V${top}`;
-  const settle = useMotionValue(1);
 
   useEffect(() => {
     const walls = animate(
@@ -145,16 +135,9 @@ export function DeleteButton({
 
   useEffect(() => {
     if (status === "idle") return;
-    const nudge =
-      status === "kept" && !reduced
-        ? animate(settle, [1, 0.86, 1], SETTLE)
-        : null;
     const done = setTimeout(() => setStatus("idle"), HOLD[status]);
-    return () => {
-      nudge?.stop();
-      clearTimeout(done);
-    };
-  }, [status, reduced, settle]);
+    return () => clearTimeout(done);
+  }, [status]);
 
   const resolve = (next: Exclude<Status, "idle">) => {
     setOpen(false);
@@ -186,7 +169,6 @@ export function DeleteButton({
           setStatus("idle");
           setOpen(true);
         }}
-        whileTap={reduced ? undefined : { scale: 0.94 }}
         transition={TAP}
         className={cn(
           "relative z-10 grid h-12 w-12 place-items-center rounded-md",
@@ -202,9 +184,9 @@ export function DeleteButton({
               height="20"
               stroke={ACCENT}
               strokeWidth="2.5"
-              initial={{ opacity: 0, scale: 0.6 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.6 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={timing(SWAP)}
             >
               <motion.path
@@ -223,7 +205,6 @@ export function DeleteButton({
               stroke="currentColor"
               strokeWidth="2"
               className="overflow-visible"
-              style={{ scale: settle }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

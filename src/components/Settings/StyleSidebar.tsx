@@ -84,7 +84,7 @@ const ColorPicker = ({
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono font-medium text-[var(--v4-text-muted)] tabular-nums">{value}</span>
           <div
-            className="w-5 h-5 rounded-full border border-[var(--v4-line-strong)] shadow-sm relative transition-all duration-200 group-hover:scale-105"
+            className="w-5 h-5 rounded-full border border-[var(--v4-line-strong)] relative transition-colors duration-150 group-hover:border-[var(--accent)]"
             style={{ backgroundColor: value }}
           >
             {isOpen && (
@@ -111,12 +111,12 @@ const ColorPicker = ({
                   key={c}
                   type="button"
                   onClick={() => onChange(c)}
-                  className={`h-5 w-5 rounded-full border transition-all cursor-pointer ${value === c ? 'border-[var(--v4-accent-strong)] ring-1 ring-[var(--accent-line)] scale-105' : 'border-[var(--v4-line)] hover:border-[var(--v4-line-strong)] hover:scale-105'}`}
+                  className={`h-5 w-5 rounded-full border transition-colors cursor-pointer ${value === c ? 'border-[var(--v4-accent-strong)] ring-1 ring-[var(--accent-line)]' : 'border-[var(--v4-line)] hover:border-[var(--v4-line-strong)]'}`}
                   style={{ backgroundColor: c }}
                 />
               ))}
               <div
-                className="relative h-5 w-5 rounded-full overflow-hidden border border-[var(--v4-line)] hover:border-[var(--v4-line-strong)] hover:scale-105 shrink-0 cursor-pointer transition-all"
+                className="relative h-5 w-5 rounded-full overflow-hidden border border-[var(--v4-line)] hover:border-[var(--v4-line-strong)] shrink-0 cursor-pointer transition-colors"
                 title="自定义颜色"
               >
                 <div className="absolute inset-0 bg-[conic-gradient(red,yellow,green,cyan,blue,magenta,red)] opacity-80" />

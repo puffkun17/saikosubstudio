@@ -7,6 +7,7 @@ import { FileFormatIcon, LanguageMark, resolveFileFormat } from '@/components/ui
 import { MiddleTruncate } from '@/components/ui/MiddleTruncate';
 import { splitSharedPrefix } from '@/core/sharedNamePrefix';
 import { EASE_OUT, MOTION_S, springNoBounce } from '@/core/motion';
+import { stageObjectMotion, useHandoffLayoutAllow } from '@/components/Ingest/dragzone/handoffLayout';
 import {
   buildRenderNodes,
   formatBytes,
@@ -27,10 +28,13 @@ const TRACK_GRID = 'grid grid-cols-[auto_minmax(0,1fr)_4.75rem_auto] items-cente
 const LEAF_S = MOTION_S.slow;
 const LONG_MOVE = springNoBounce(MOTION_S.longMove);
 
-/** 舞台对象：同一个 objectId 在清单与暂存区之间移动时用 layoutId 接上；减少动效时不做位移。 */
-const stageObjectProps = (objectId: string, reduce: boolean | null) => (reduce
-  ? {}
-  : { layoutId: objectId, layout: 'position' as const });
+/** 舞台对象：同一个 objectId 在清单与暂存区之间移动时用 layoutId 接上；减少动效时不做位移。
+ *  交接打开后只保留将进入任务轨的 id（allowed），其余叶不再投影。 */
+const stageObjectProps = (
+  objectId: string,
+  reduce: boolean | null,
+  allowed: ReadonlySet<string> | null,
+) => stageObjectMotion(objectId, reduce, allowed);
 
 /** 一组文件名的显示名：有共同前缀就只显示尾巴，否则显示全名。 */
 export const groupDisplayNames = (names: string[]) => {
@@ -117,6 +121,7 @@ export const ArchiveSubtree = ({
   item: PreflightItem;
   shouldReduceMotion: boolean | null;
 }) => {
+  const layoutAllow = useHandoffLayoutAllow();
   if (item.kind !== 'zip' && item.kind !== 'archive') return null;
   const { display } = groupDisplayNames((item.archiveEntries || []).map((entry) => entry.name));
   if (item.archivePeekStatus !== 'error' && !(item.archiveEntries && item.archiveEntries.length > 0)) return null;
@@ -128,10 +133,10 @@ export const ArchiveSubtree = ({
       {item.archiveEntries?.map((entry, entryIndex) => (
         <motion.div
           key={entry.objectId ?? `${item.key}:${entry.name}`}
-          {...(entry.objectId ? stageObjectProps(entry.objectId, shouldReduceMotion) : {})}
+          {...(entry.objectId ? stageObjectProps(entry.objectId, shouldReduceMotion, layoutAllow) : {})}
           data-stage-object={entry.objectId}
-          initial={shouldReduceMotion ? false : { opacity: 0, x: -8 }}
-          animate={{ opacity: 1, x: 0 }}
+          initial={shouldReduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{
             duration: shouldReduceMotion ? 0 : LEAF_S,
             delay: shouldReduceMotion ? 0 : leafDelayMs(entryIndex) / 1000,
@@ -170,6 +175,7 @@ export const QueueTree = ({
   /** 等待态里只读：不显示移除按钮（占位保持列宽，行不跳）。 */
   readOnly?: boolean;
 }) => {
+  const layoutAllow = useHandoffLayoutAllow();
   const renderNodes = buildRenderNodes(queuedItems);
   const removePlaceholder = <span className="h-9 w-9" aria-hidden="true" />;
 
@@ -182,8 +188,8 @@ export const QueueTree = ({
       {renderNodes.map((node, nodeIndex) => {
         // 文件「落桌」：从上方轻降 + 微缩回位，像放到桌面上
         const landing = {
-          initial: shouldReduceMotion ? false : { opacity: 0, y: -14, scale: 1.03 },
-          animate: { opacity: 1, y: 0, scale: 1 },
+          initial: shouldReduceMotion ? false : { opacity: 0 },
+          animate: { opacity: 1 },
           transition: {
             duration: shouldReduceMotion ? 0 : MOTION_S.slow,
             delay: shouldReduceMotion ? 0 : Math.min(nodeIndex * 0.05, 0.2),
@@ -242,10 +248,10 @@ export const QueueTree = ({
                   return (
                     <motion.div
                       key={item.objectId}
-                      {...stageObjectProps(item.objectId, shouldReduceMotion)}
+                      {...stageObjectProps(item.objectId, shouldReduceMotion, layoutAllow)}
                       data-stage-object={item.objectId}
-                      initial={shouldReduceMotion ? false : { opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
+                      initial={shouldReduceMotion ? false : { opacity: 0 }}
+                      animate={{ opacity: 1 }}
                       transition={{
                         duration: shouldReduceMotion ? 0 : LEAF_S,
                         delay: shouldReduceMotion ? 0 : leafDelayMs(leafIndex) / 1000,
@@ -284,7 +290,7 @@ export const QueueTree = ({
             <motion.div
               key={item.objectId}
               {...landing}
-              {...stageObjectProps(item.objectId, shouldReduceMotion)}
+              {...stageObjectProps(item.objectId, shouldReduceMotion, layoutAllow)}
               data-stage-object={item.objectId}
               className="min-w-0 rounded-md px-0.5 py-1 md:py-1.5"
             >
@@ -305,7 +311,7 @@ export const QueueTree = ({
           <motion.div
             key={item.objectId}
             {...landing}
-            {...stageObjectProps(item.objectId, shouldReduceMotion)}
+            {...stageObjectProps(item.objectId, shouldReduceMotion, layoutAllow)}
             data-stage-object={item.objectId}
             className="min-w-0"
           >

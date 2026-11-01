@@ -14,8 +14,8 @@ export const transitionFast: Transition = { duration: 0.16, ease: EASE_OUT_QUINT
 /** 240ms —— 常规元素进出场。 */
 export const transitionBase: Transition = { duration: 0.24, ease: EASE_OUT_QUINT };
 
-/** 420ms —— 大面积面板 / 场景切换。 */
-export const transitionSlow: Transition = { duration: 0.42, ease: EASE_OUT_QUINT };
+/** 250ms —— Operate 上限。旧 420ms 预设已压到帽。 */
+export const transitionSlow: Transition = { duration: 0.25, ease: EASE_OUT_QUINT };
 
 /** 轻弹簧 —— 徽章吸合、小元件归位。 */
 export const springSnappy: Transition = { type: 'spring', stiffness: 420, damping: 30 };

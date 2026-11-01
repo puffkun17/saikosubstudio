@@ -135,7 +135,7 @@
 @media (max-width: 1023px) {
   .source-identity-rail { flex-direction: row; height: auto; align-items: stretch; }
   /* 单行条：封面贴左边满高，cover 居中裁切；左侧用卡片内圆角。 */
-  .source-identity-rail .source-identity-rail__poster { width: 88px; aspect-ratio: auto; min-height: 132px; align-self: stretch; flex-shrink: 0; border-bottom: 0; border-right: 1px solid var(--surface-line);
+  .source-identity-rail .source-identity-rail__poster { width: 84px; aspect-ratio: auto; min-height: 0; height: auto; align-self: stretch; flex-shrink: 0; border-bottom: 0; border-right: 1px solid var(--surface-line);
     border-radius: calc(var(--pt-radius-lg) - 1px) 0 0 calc(var(--pt-radius-lg) - 1px); }
   .source-identity-rail .source-identity-rail__poster img { object-position: 50% 30%; }
   .source-identity-rail .source-identity-rail__poster-note { display: none; }
@@ -169,15 +169,21 @@
 
 /* ── Theater dock: one right panel for every preview option (spec §6.1) ──── */
 .ds-dock {
-  /* surface = .theater-style-shell: solid paper (lights off: data-paper="theater") */
+  /* Overlay drawer: covers the canvas, does not push it. Solid paper, not glass. */
   display: flex; flex-direction: column; min-height: 0; flex-shrink: 0;
   color: var(--ds-ink); border-radius: 0; border-width: 0 0 0 1px;
-  position: relative; z-index: var(--z-theater-style);
+  position: absolute; z-index: var(--z-theater-style);
+  background: var(--paper-sheet);
+  box-shadow: var(--pt-elev-float);
 }
-@media (min-width: 1024px) { .ds-dock { width: 360px; height: 100%; } }
+@media (min-width: 1024px) {
+  .ds-dock { top: 0; right: 0; bottom: 0; width: 360px; height: auto; }
+}
 @media (max-width: 1023px) {
-  /* bottom sheet in flow: the stage above shrinks and the frame stays fully visible */
-  .ds-dock { width: 100%; max-height: 48%; border-width: 1px 0 0 0; border-radius: var(--pt-radius-lg) var(--pt-radius-lg) 0 0; }
+  .ds-dock {
+    left: 0; right: 0; bottom: 0; top: auto; width: 100%; max-height: 48%;
+    border-width: 1px 0 0 0; border-radius: var(--pt-radius-lg) var(--pt-radius-lg) 0 0;
+  }
 }
 .ds-dock__head { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-gap-item);
   padding: var(--ds-pad-card); border-bottom: 1px solid var(--surface-line); }

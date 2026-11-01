@@ -521,13 +521,13 @@ export const AlignmentDiffPanel: React.FC<AlignmentDiffPanelProps> = ({
                         <div key={`${item.id}-src-${sourceIndex}`} className="rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel)] px-2.5 py-2 text-xs leading-5">
                           {source.primary && (
                             <div>
-                              <div className="text-xs font-medium uppercase tracking-[var(--tracking-eyebrow-wide)] text-[var(--v4-accent-strong)]/70">主字幕 #{source.primary.cueIndex}</div>
+                              <div className="text-xs font-medium text-[var(--v4-accent-strong)]/70">主字幕 #{source.primary.cueIndex}</div>
                               <div className="mt-0.5 whitespace-pre-wrap text-[var(--v4-text-muted)]">{source.primary.text}</div>
                             </div>
                           )}
                           {source.secondary && (
                             <div className={source.primary ? 'mt-1.5 border-t border-[var(--v4-line)] pt-1.5' : ''}>
-                              <div className="text-xs font-medium uppercase tracking-[var(--tracking-eyebrow-wide)] text-[var(--v4-text-faint)]">副字幕 #{source.secondary.cueIndex}</div>
+                              <div className="text-xs font-medium text-[var(--v4-text-faint)]">副字幕 #{source.secondary.cueIndex}</div>
                               <div className="mt-0.5 whitespace-pre-wrap text-[var(--v4-text-faint)]">{source.secondary.text}</div>
                             </div>
                           )}

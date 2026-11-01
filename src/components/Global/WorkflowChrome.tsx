@@ -189,7 +189,7 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
                 </button>
               )}
               {/* 片名 + 年份锚点：年份紧跟片名，等宽数字体与 CJK 片名区分 */}
-              <div className="flex min-w-0 max-w-full shrink items-baseline gap-2 sm:max-w-[min(56%,28rem)] sm:shrink-0 md:gap-2.5">
+              <div className="workflow-info-bar__title flex min-w-0 flex-1 items-baseline">
                 <h2
                   className="ds-title min-w-0 truncate"
                   title={config.title}
@@ -199,7 +199,7 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
                 {yearAnchor ? (
                   <time
                     dateTime={yearAnchor}
-                    className="workflow-info-bar__year shrink-0"
+                    className="workflow-info-bar__year"
                     title={`${yearAnchor} 年`}
                   >
                     {yearAnchor}
@@ -208,7 +208,7 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
               </div>
               {/* 旁侧：静态元数据（非 chip / 非按钮） */}
               {(metaBadges.length > 0 || localChips.length > 0) && (
-                <div className="hidden min-w-0 flex-1 flex-col justify-center gap-0.5 sm:flex">
+                <div className="hidden min-w-0 max-w-[42%] shrink flex-col justify-center gap-0.5 sm:flex">
                   {metaBadges.length > 0 && (
                     <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
                       {metaBadges.map((item) => (
@@ -292,7 +292,7 @@ export const WorkflowContinueInFlow: React.FC<{
         aria-describedby={blockedNotice ? 'forward-action-blocked-hint' : undefined}
         disabled={forwardAction.disabled && !forwardAction.disabledReason ? true : undefined}
         onClick={handleClick}
-        className={`ui-action ${sizeClass} ${isReady ? '' : 'opacity-70'} ${className}`.trim()}
+        className={`ui-action ${sizeClass} ${isReady ? 'ui-action--solid' : 'opacity-70'} ${className}`.trim()}
       >
         {forwardAction.label}
         <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />

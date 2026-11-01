@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { parseSrt } from '@/utils/subtitleCore';
 import { AssStylePreview } from '@/components/Ingest/AssStylePreview';
 import { useUiModalFocus } from '@/hooks/useUiModalFocus';
+import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import {
   compareTmdbRank,
   isHighConfidenceTmdbPick,
@@ -143,7 +144,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
             className="ui-action ui-action--secondary group"
             onClick={() => setTmdbManualOpen(true)}
           >
-            <Search className="h-4 w-4 group-hover:scale-110 group-hover:rotate-6 transition-transform" />
+            <Search className="h-4 w-4" />
             {tmdbData ? '重新检索' : '手动检索'}
           </button>
         )}
@@ -160,12 +161,10 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
             <div className="flex flex-row gap-5 items-start w-full">
               {/* Maximized Poster Image */}
               {tmdbData.posterUrl ? (
-                <motion.img
-                  whileHover={{ scale: 1.015, y: -2 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                <img
                   src={tmdbData.posterUrl}
                   alt={tmdbData.title}
-                  className="aspect-[2/3] h-auto w-32 shrink-0 cursor-pointer rounded-[var(--radius-md)] border border-[var(--v4-line-strong)] object-cover shadow-[var(--elevation-1)] transition-all duration-300 sm:w-36 xl:w-40"
+                  className="aspect-[2/3] h-auto w-32 shrink-0 rounded-[var(--radius-md)] border border-[var(--v4-line-strong)] object-cover sm:w-36 xl:w-40"
                 />
               ) : (
                 <div className="flex aspect-[2/3] w-32 flex-shrink-0 items-center justify-center rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] text-[var(--v4-text-faint)] sm:w-36 xl:w-40" />
@@ -226,16 +225,9 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
 
                 {tmdbData.isAnime && (
                   <div className="ui-meta ui-meta--key mt-0.5 w-max select-none gap-1.5">
-                    <motion.span
-                      animate={{ scale: [1, 1.12, 1], y: [0, -1.5, 0] }}
-                      transition={{
-                        scale: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
-                        y: { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
-                      }}
-                      className="inline-flex"
-                    >
+                    <span className="inline-flex text-[var(--state-warning)]">
                       <Sparkles className="h-4 w-4 stroke-[2]" aria-hidden="true" />
-                    </motion.span>
+                    </span>
                     动漫预设模板已激活
                   </div>
                 )}
@@ -298,21 +290,23 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
     )}
 
       {/* Manual Search Floating Modal */}
+      <OverlayPortal>
       <AnimatePresence>
         {tmdbManualOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70 p-4"
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="ui-modal-layer ui-modal-layer--below-tray fixed inset-0 grid justify-items-center bg-[var(--pt-scrim)] p-4"
             onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
           >
             <motion.div
               ref={searchModalRef}
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="ui-modal flex max-h-[min(78vh,640px)] w-full max-w-xl flex-col overflow-hidden !p-0"
               role="dialog"
               aria-modal="true"
@@ -545,7 +539,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
                   </button>
                   <button
                     type="button"
-                    className="action-required-button ui-action ui-action--lg min-w-[8.5rem] disabled:cursor-not-allowed disabled:opacity-35"
+                    className={`action-required-button ui-action ui-action--lg min-w-[8.5rem] disabled:cursor-not-allowed disabled:opacity-35 ${pendingSuggestion ? 'ui-action--solid' : ''}`}
                     onClick={() => pendingSuggestion && void handleApplySuggestion(pendingSuggestion)}
                     disabled={!pendingSuggestion || isApplyingSuggestion}
                   >
@@ -558,6 +552,7 @@ export const TmdbPanel: React.FC<TmdbPanelProps> = ({ mode = 'panel' }) => {
           </motion.div>
         )}
       </AnimatePresence>
+      </OverlayPortal>
     </>
   );
 };
