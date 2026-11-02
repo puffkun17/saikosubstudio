@@ -184,24 +184,34 @@
   flex-wrap: wrap;
 }
 
+/* D soft-sel tag — same geometry / selected skin as .wb-pill (not E solid wine). */
 .wb-grp__t {
-  font-size: 15px;
-  font-weight: 800;
-  color: #8f3530;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: transparent;
-  border: 0;
-  padding: 0;
+  height: var(--ds-ctl-h-xs);
+  padding: 0 var(--ds-ctl-px-sm);
+  border-radius: var(--pt-radius-md);
+  font-size: var(--ds-fs-meta);
+  font-weight: var(--ds-fw-strong);
+  line-height: var(--ds-ctl-lh);
+  color: #8f3530;
+  background: var(--v5-panel);
+  border: 1px solid var(--surface-line);
+  white-space: nowrap;
   cursor: pointer;
 }
 
-.wb-grp__t.is-on {
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
-  color: var(--ink-strong);
+.wb-grp__t:hover {
+  border-color: var(--accent-line);
+}
+
+.wb-grp__t.is-on,
+.wb-grp__t.wb-sel {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent-text);
+  text-decoration: none;
 }
 
 .wb-grp__p {
