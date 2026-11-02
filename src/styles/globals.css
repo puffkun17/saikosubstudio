@@ -1033,10 +1033,13 @@ body {
 }
 
 /*
- * Affordance taxonomy — keep these three visually distinct:
- *   .ui-meta*     静态信息（不可点）
- *   .ui-choice*   同级可选项（确认选中，不跳页/不提交流程）
- *   .ui-action*   动作（按了会改内容 / 推进流程）
+ * Affordance taxonomy — keep visually distinct:
+ *   A .ui-meta*          静态信息（不可点）
+ *   B InfoHint ⓘ         tip / hover 说明
+ *   C .ui-action--info   信息入口（开抽屉/概览；非流程推进）
+ *   D .wb-pill / .ds-chip 数据筛选软选（accent-soft，非酒红实心）
+ *   E .ui-action*        动作（改内容 / 推进流程）；主前进用 --solid
+ *   .ui-choice*          同级可选项（确认选中，不跳页）
  */
 
 /* —— Meta: plain type, no box, no hover affordance —— */
@@ -1328,6 +1331,28 @@ body {
 
 .ui-action--quiet:hover {
   background: var(--v4-panel-muted);
+  color: var(--v4-text);
+}
+
+/* Info entry (layer C) — open drawers / inspect, not flow advance.
+   Same family as InfoHint: bordered muted panel + muted ink; accent soft on hover.
+   Must NOT reuse ui-action--quiet (E dismiss/back). Solid wine stays on E primary. */
+.ui-action--info {
+  min-height: 2.25rem;
+  border-color: var(--v4-line);
+  background: var(--v4-panel-muted);
+  color: var(--v4-text-muted);
+  font-weight: 600;
+}
+
+.ui-action--info:hover {
+  border-color: var(--v4-line-strong);
+  background: var(--v4-accent-soft);
+  color: var(--v4-accent-strong);
+}
+
+.ui-action--info:focus-visible {
+  border-color: var(--v4-accent);
   color: var(--v4-text);
 }
 

@@ -82,7 +82,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         <div className="wb-grp__top">
           <button
             type="button"
-            className={`wb-grp__t wb-focus-ring ${isReviewFocus && !auxChild ? 'is-on' : ''}`}
+            className={`wb-grp__t wb-focus-ring ${isReviewFocus && !auxChild ? 'is-on wb-sel' : ''}`}
             onClick={() => onFocusChange('review')}
             aria-pressed={focus === 'review' || focus == null}
           >
@@ -186,13 +186,14 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         </div>
         <button
           type="button"
-          className="ui-action ui-action--quiet ui-action--icon wb-focus-ring"
+          className="ui-action ui-action--info wb-focus-ring"
           aria-label="打开概览"
           title="概览"
           onClick={onOpenOverview}
           data-testid="open-overview"
         >
-          <LayoutDashboard className="h-4 w-4" />
+          <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+          概览
         </button>
       </div>
     </section>

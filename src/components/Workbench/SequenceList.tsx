@@ -289,15 +289,8 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
                 {selectedIndexes.size > 1 ? ` · 已选 ${selectedIndexes.size}` : ''}
               </span>
               {listController?.filterStatus ? (
-                <span className="inline-flex flex-wrap items-center gap-1.5 text-xs text-[var(--v4-text-muted)]">
-                  <span>{listController.filterStatus}</span>
-                  <button
-                    type="button"
-                    className="font-semibold text-[var(--ink-strong)] underline decoration-2 underline-offset-2 wb-focus-ring rounded"
-                    onClick={listController.onClearFocus}
-                  >
-                    清除
-                  </button>
+                <span className="ui-meta text-xs" role="status">
+                  {listController.filterStatus}
                 </span>
               ) : null}
               {isOverlimit && !showAllSubs && (
@@ -312,6 +305,17 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
               )}
             </div>
               <div className="flex shrink-0 items-center gap-1.5">
+                {listController?.filterStatus ? (
+                  <button
+                    type="button"
+                    className="ui-action ui-action--quiet"
+                    onClick={listController.onClearFocus}
+                    aria-label="清除筛选，返回默认复核"
+                    title="清除筛选"
+                  >
+                    清除
+                  </button>
+                ) : null}
                 <button type="button" onClick={undoEdit} disabled={!canUndo} className="ui-action ui-action--quiet ui-action--icon" aria-label="撤销字幕文本修改" title="撤销 (Ctrl+Z)">
                   <Undo2 className="h-4 w-4" aria-hidden="true" />
                 </button>
