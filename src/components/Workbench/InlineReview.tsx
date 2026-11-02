@@ -108,7 +108,7 @@ const ReviewActions = ({
   onSkip: () => void;
 }) => (
   <div className="wb-inline__actions" role="group" aria-label="复核操作" data-inline-actions>
-    <button type="button" className="ui-action ui-action--solid" title={primaryTitle} onClick={onPrimary}>
+    <button type="button" className="ui-action ui-action--secondary" title={primaryTitle} onClick={onPrimary}>
       {primary}
     </button>
     {onEdit ? (

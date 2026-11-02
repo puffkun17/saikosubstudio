@@ -41,7 +41,7 @@ export const AuxiliaryPolicy: React.FC = () => {
         <div className="flex items-center gap-2">
           <h2 className="ds-label">辅助字幕</h2>
           <InfoHint label="辅助字幕说明" side="right">
-            SDH 音效、标题告示、歌词、旁白、署名等非对白行。完整：全部保留；智能：隐去环境音与配乐类 SDH；清洁：另隐去其余 SDH 与旁白说明。标题告示、歌词、署名不受影响。只决定保留哪些行，不改样式。
+            SDH、标题告示、歌词、旁白、署名等非对白行。完整：全部保留；智能：隐去环境音与配乐类 SDH；清洁：另隐去其余 SDH 与旁白说明。标题告示、歌词、署名不受影响。只决定保留哪些行，不改样式。
           </InfoHint>
         </div>
         <p className="ds-meta">

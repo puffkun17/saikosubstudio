@@ -316,14 +316,15 @@ body {
   color: var(--accent-text);
 }
 
-/* Narrow chrome (≤843): top essentials only — LOCAL / scale % yield space to wordmark. */
+/* Narrow chrome (≤843): keep scale − / 100% / + compact; LOCAL label may hide elsewhere. */
 @media (max-width: 843px) {
-  .system-tray__scale-pct {
-    display: none;
+  .system-tray__scale {
+    padding-inline: 0;
   }
 
-  .system-tray__scale {
-    padding-inline: 0.65rem;
+  .system-tray__scale-pct {
+    min-width: 2.4rem;
+    font-size: var(--ds-fs-meta);
   }
 
   /* Bottom workflow segments: readable labels, ≥44px targets */

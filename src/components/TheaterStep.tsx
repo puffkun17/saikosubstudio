@@ -296,7 +296,7 @@ export const TheaterStep: React.FC = () => {
           <div className="relative flex flex-wrap items-center justify-end gap-2">
             <TheaterSystemChrome dock={dock} onToggle={toggleDock} />
             <DockToggle id="style" active={dock} onToggle={toggleDock} icon={<SlidersHorizontal className="h-4 w-4 stroke-[2]" aria-hidden="true" />} label="样式" />
-            <DockToggle id="export" active={dock} onToggle={toggleDock} primary icon={<SquareArrowRightExit className="h-4 w-4" aria-hidden="true" />} label="导出字幕" />
+            <DockToggle id="export" active={dock} onToggle={toggleDock} icon={<SquareArrowRightExit className="h-4 w-4" aria-hidden="true" />} label="导出选项" />
           </div>
         </div>
       </div>

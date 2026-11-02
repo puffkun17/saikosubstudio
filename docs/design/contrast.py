@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """WCAG 2.x contrast check for paper-tokens. Run: python3 docs/design/contrast.py
-Values mirror src/styles/paper-tokens.css; alpha fills are composited over their surface."""
+Values mirror src/styles/paper-tokens.css; alpha fills are composited over their surface.
+App dark theme (html[data-theme=dark]) reuses the theater warm near-black palette — covered by D checks."""
 import sys
 
 def hx(h):
@@ -22,7 +23,7 @@ L = dict(  # light / paper (default)
     danger='#B0361C', warning='#8A5A0B', success='#2D6640', info='#2E5A84', focus='#2E5A84',
     on_solid='#FFF8F1',
 )
-D = dict(  # theater (lights-off) dark scope
+D = dict(  # theater (lights-off) + app html[data-theme=dark] (same warm near-black DNA)
     desk='#121110', sheet='#1A1917', raised='#23211E', sunken='#0D0C0B',
     ink_strong='#EEE8DC', ink_body='#D6CFC2', ink_muted='#A39B8E', ink_faint='#7A7368', ink_placeholder='#968E82',
     rule_hair='#33302B', rule_strong='#4A4640', rule_control='#7A7368',
@@ -91,7 +92,7 @@ chk('[progress] bar ink-strong vs track paper-sunken (3:1 UI)', L['ink_strong'],
 # --- the only green left: small success marks
 chk('[success] check glyph on-solid on success dot', L['on_solid'], L['success'], 4.5)
 chk('[success] success dot vs paper-raised (3:1 UI)', L['success'], L['raised'], 3.0)
-# --- theater dark
+# --- theater / app dark theme (same token values)
 for s in ('desk', 'sheet', 'raised'):
     for k in ('ink_strong', 'ink_body', 'ink_muted', 'accent_text', 'danger', 'warning', 'success', 'info'):
         chk(f'[theater] {k.replace("_","-")} on paper-{s}', D[k], D[s], 4.5)

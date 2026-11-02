@@ -357,6 +357,9 @@ export const DragZone: React.FC = () => {
               <p className="ingest-local-add__formats" aria-label="支持的格式">
                 SRT · ASS · ZIP · RAR · 7Z
               </p>
+              <p className="ingest-local-add__loop mt-3 text-center text-[length:var(--ds-fs-meta)] font-medium leading-[var(--pt-leading-ui)] text-[var(--ink-muted)]">
+                导入→合轴与样式→导出 ASS/SRT；不导出视频
+              </p>
             </motion.div>
           ) : (
             <motion.div
