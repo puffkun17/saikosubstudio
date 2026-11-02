@@ -11,6 +11,7 @@ import { motion, AnimatePresence, LayoutGroup, useReducedMotion } from 'motion/r
 import { EASE_OUT, MOTION_S } from '@/core/motion';
 import { stageSharedHandoffEnabled } from '@/core/stageFlags';
 import { InlineMessageBar } from '@/components/Global/InlineMessageBar';
+import { ResumeDraftBanner } from '@/components/Global/ResumeDraftBanner';
 
 export const IngestStep: React.FC = () => {
   const { 
@@ -44,6 +45,7 @@ export const IngestStep: React.FC = () => {
       }`}
     >
       <InlineMessageBar className="mx-auto mb-2 w-full max-w-[1180px] shrink-0 md:mb-3" />
+      <ResumeDraftBanner />
       {/* initial={false}: returning to 导入 remounts IngestStep; do not fade the empty shell in again. */}
       {/* Act 1 舞台（plan B）：所有区共用一个 LayoutGroup，objectId 作 layoutId 跨区接续。
           第 1 页 → 第 2 页：flag 开 = popLayout 共享元素交接；flag 关 = mode="wait" 先退后进（方案 C 退路）。 */}

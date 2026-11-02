@@ -37,10 +37,17 @@
   font-weight: var(--ds-fw-strong);
   line-height: var(--ds-ctl-lh);
   white-space: nowrap;
-  color: #8f3530;
+  color: var(--state-danger);
   background: transparent;
   border: 0;
   padding: 0;
+  cursor: pointer;
+}
+
+.wb-gate.is-on,
+.wb-gate.wb-sel {
+  color: var(--accent-text);
+  text-decoration: none;
 }
 
 /* Compact output mode segment */
@@ -66,10 +73,10 @@
 }
 
 .wb-out__btn {
-  height: 30px;
-  padding: 0 10px;
-  font-size: 13px;
-  font-weight: 600;
+  height: var(--ds-ctl-h-xs);
+  padding: 0 var(--ds-ctl-px-sm);
+  font-size: var(--ds-fs-meta);
+  font-weight: var(--pt-weight-strong);
   color: var(--v5-text-muted);
   background: transparent;
   border: 0;
@@ -129,7 +136,7 @@
   display: grid;
   place-items: center;
   font-size: 19px;
-  font-weight: 800;
+  font-weight: var(--pt-weight-strong);
   font-variant-numeric: tabular-nums;
   color: var(--ink-strong);
 }
@@ -150,7 +157,7 @@
 
 .wb-score__sub strong {
   color: var(--ink-strong);
-  font-weight: 700;
+  font-weight: var(--pt-weight-strong);
   font-variant-numeric: tabular-nums;
   font-size: 13px;
 }
@@ -195,7 +202,7 @@
   font-size: var(--ds-fs-meta);
   font-weight: var(--ds-fw-strong);
   line-height: var(--ds-ctl-lh);
-  color: #8f3530;
+  color: var(--state-danger);
   background: var(--v5-panel);
   border: 1px solid var(--surface-line);
   white-space: nowrap;
@@ -278,12 +285,12 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  height: 30px;
-  padding: 0 10px;
+  height: var(--ds-ctl-h-xs);
+  padding: 0 var(--ds-ctl-px-sm);
   border-radius: var(--pt-radius-md);
   border: 1px solid var(--v5-line-strong);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--ds-fs-meta);
+  font-weight: var(--pt-weight-strong);
   color: var(--v5-text-muted);
   white-space: nowrap;
   flex: none;
@@ -365,7 +372,7 @@
   flex: none;
   font-variant-numeric: tabular-nums;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: var(--pt-weight-strong);
   color: var(--ink-strong);
 }
 
@@ -442,7 +449,7 @@
   background: var(--state-success);
   color: var(--state-on-solid);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: var(--pt-weight-strong);
 }
 
 .wb-mk {
@@ -527,8 +534,8 @@
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  font-weight: 700;
-  color: #8f3530;
+  font-weight: var(--pt-weight-strong);
+  color: var(--state-danger);
   flex: none;
 }
 
@@ -727,7 +734,7 @@
 
 .wb-drawer__hd h2 {
   font-size: 16px;
-  font-weight: 800;
+  font-weight: var(--pt-weight-strong);
   color: var(--ink-strong);
 }
 
@@ -738,7 +745,7 @@
 
 .wb-drawer .sec h3 {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: var(--pt-weight-strong);
   margin-bottom: 10px;
   display: flex;
   justify-content: space-between;
@@ -773,7 +780,7 @@
 .wb-vit b {
   display: block;
   font-size: 18px;
-  font-weight: 800;
+  font-weight: var(--pt-weight-strong);
   font-variant-numeric: tabular-nums;
   color: var(--ink-strong);
 }
@@ -819,7 +826,7 @@
 
 .wb-form .row2 span:last-child {
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
+  font-weight: var(--pt-weight-strong);
   white-space: nowrap;
 }
 

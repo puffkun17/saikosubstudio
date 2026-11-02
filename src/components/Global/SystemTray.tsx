@@ -4,7 +4,7 @@ import { enterWorkbenchTransition } from '@/core/stageFlags';
 import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react';
 
 import { useLocationPathname } from '@/hooks/useLocationPathname';
-import { Archive, ArrowLeft, Menu, PenLine, RotateCcw, Scale, X } from 'lucide-react';
+import { Archive, ArrowLeft, Menu, Minus, PenLine, Plus, RotateCcw, Scale, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
@@ -39,16 +39,40 @@ const trayCtrl =
  */
 const trayLabel = 'whitespace-nowrap'; // spec: core entries are icon + text
 
+const SCALE_MIN = 1.0;
+const SCALE_MAX = 1.3;
+const SCALE_STEP = 0.1;
+const THEME_STORAGE_KEY = 'nexus_site_theme';
+
 const getDefaultScale = () => {
   if (typeof window === 'undefined') return 1.0;
 
   const savedScale = localStorage.getItem('nexus_site_scale');
   if (savedScale) {
     const parsed = parseFloat(savedScale);
-    if (!isNaN(parsed) && parsed >= 1.0 && parsed <= 1.3) return parsed;
+    if (!isNaN(parsed) && parsed >= SCALE_MIN && parsed <= SCALE_MAX) return parsed;
   }
 
   return 1.0;
+};
+
+const roundScale = (value: number) => Math.round(value * 10) / 10;
+
+const readStoredTheme = (): 'light' | 'dark' => {
+  if (typeof window === 'undefined') return 'light';
+  const saved = localStorage.getItem(THEME_STORAGE_KEY);
+  if (saved === 'light' || saved === 'dark') return saved;
+  try {
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+  } catch {
+    /* ignore */
+  }
+  return 'light';
+};
+
+const applyDocumentTheme = (theme: 'light' | 'dark') => {
+  if (typeof document === 'undefined') return;
+  document.documentElement.setAttribute('data-theme', theme);
 };
 
 const EMPTY_LOCAL_STAMP = { zoneShort: 'LOCAL', zoneCity: '' };
@@ -163,11 +187,15 @@ export const SystemTray = () => {
     () => EMPTY_LOCAL_STAMP,
   );
   const [scale, setScale] = useState(getDefaultScale);
+  const [theme, setTheme] = useState<'light' | 'dark'>(readStoredTheme);
   const [pendingReset, setPendingReset] = useState(false);
+  const [pendingLeaveHref, setPendingLeaveHref] = useState<string | null>(null);
   const [opsMenuOpen, setOpsMenuOpen] = useState(false);
   const resetModalRef = useRef<HTMLDivElement>(null);
+  const leaveModalRef = useRef<HTMLDivElement>(null);
   const opsMenuRef = useRef<HTMLDivElement>(null);
   useUiModalFocus(pendingReset, resetModalRef, () => setPendingReset(false));
+  useUiModalFocus(Boolean(pendingLeaveHref), leaveModalRef, () => setPendingLeaveHref(null));
   useUiModalFocus(opsMenuOpen, opsMenuRef, () => setOpsMenuOpen(false));
   const pathname = useLocationPathname();
   const isNarrowChrome = useNarrowChrome();
@@ -231,14 +259,15 @@ export const SystemTray = () => {
 
   const confirmLeaveSession = (href: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (!hasSessionWork) return;
-    const ok = window.confirm(
-      '当前导入尚未结束。离开本页会丢失未存档的进度；已写入「存档」的项目仍可恢复。确定离开？',
-    );
-    if (!ok) {
-      event.preventDefault();
-      return;
-    }
-    void href;
+    event.preventDefault();
+    setOpsMenuOpen(false);
+    setPendingLeaveHref(href);
+  };
+
+  const proceedLeaveSession = () => {
+    const href = pendingLeaveHref;
+    setPendingLeaveHref(null);
+    if (href) window.location.assign(href);
   };
 
   const handleStepClick = (targetStep: number) => {
@@ -268,13 +297,14 @@ export const SystemTray = () => {
     if (targetStep === 3) {
       if (!hasWorkbenchData) {
         emitGateToast(
-          '请先添加字幕',
+          hasUploadData ? '导入尚未完成' : '请先添加字幕',
           hasUploadData
-            ? '在工作台确认轨道后，再打开预览。'
+            ? '在导入页点「开始合轴」后，再打开预览。'
             : '加入文件并整理后，再进入工作台与预览。',
           '3',
         );
-        if (!hasUploadData) focusIngestDropZone();
+        if (hasUploadData && workflowStep !== 1) setWorkflowStep(1);
+        else focusIngestDropZone();
         return;
       }
       setWorkflowStep(3);
@@ -286,12 +316,22 @@ export const SystemTray = () => {
     document.documentElement.style.setProperty('--site-scale', String(scale));
   }, [scale]);
 
-  const cycleScale = () => {
-    const nextScales: Record<number, number> = { 1.0: 1.1, 1.1: 1.2, 1.2: 1.3, 1.3: 1.0 };
-    const next = nextScales[scale] || 1.0;
+  const bumpScale = (delta: number) => {
+    const next = roundScale(Math.min(SCALE_MAX, Math.max(SCALE_MIN, scale + delta)));
     setScale(next);
-    localStorage.setItem('nexus_site_scale', String(next));
-    document.documentElement.style.setProperty('--site-scale', String(next));
+  };
+
+  const resetScale = () => {
+    setScale(1.0);
+  };
+
+  useEffect(() => {
+    applyDocumentTheme(theme);
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
   useEffect(() => {
@@ -436,7 +476,7 @@ export const SystemTray = () => {
             className="v4-focus-ring flex h-11 min-w-0 shrink cursor-pointer items-center gap-2 whitespace-nowrap rounded-md text-[20px] font-semibold leading-none tracking-tight text-[var(--ink-strong)] transition-colors duration-150 hover:text-[var(--ink-body)] sm:gap-2.5 sm:text-[22px] md:text-[24px]"
             aria-label="返回导入页"
           >
-            <BrandMark className="h-9 w-9 shrink-0 rounded-[var(--radius-md)] sm:h-10 sm:w-10" />
+            <BrandMark title="" className="h-9 w-9 shrink-0 rounded-[var(--radius-md)] sm:h-10 sm:w-10" />
             {isNarrowChrome ? (
               <>
                 <span className="hidden whitespace-nowrap min-[360px]:inline min-[420px]:hidden">Saiko</span>
@@ -466,19 +506,52 @@ export const SystemTray = () => {
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
-          <button
-            type="button"
-            onClick={cycleScale}
-            className={`${trayCtrl} system-tray__scale cursor-pointer select-none font-mono`}
-            title="调节网页整体缩放"
+          <div
+            className="system-tray__scale inline-flex h-8 shrink-0 items-center overflow-hidden rounded-md border border-[var(--tray-line-control)] bg-[var(--tray-fill)] font-mono"
+            role="group"
             aria-label={`网页缩放 ${Math.round(scale * 100)}%`}
+            title="调节网页整体缩放"
           >
-            <span className="system-tray__accent text-[length:var(--type-control)] font-bold tracking-wide">A±</span>
-            <span
-              className="system-tray__scale-pct text-[length:var(--type-control)] font-bold text-[var(--tray-ink)]"
+            <button
+              type="button"
+              className="v4-focus-ring inline-flex h-full w-7 items-center justify-center text-[var(--tray-ink)] disabled:opacity-40"
+              onClick={() => bumpScale(-SCALE_STEP)}
+              disabled={scale <= SCALE_MIN}
+              aria-label="缩小网页"
+            >
+              <Minus className="h-3.5 w-3.5 stroke-[2.5]" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="system-tray__scale-pct v4-focus-ring inline-flex h-full min-w-[2.75rem] items-center justify-center px-1 text-[length:var(--type-control)] font-semibold text-[var(--tray-ink)]"
+              onClick={resetScale}
+              aria-label="重置缩放为 100%"
+              title="重置为 100%"
               suppressHydrationWarning
             >
               {Math.round(scale * 100)}%
+            </button>
+            <button
+              type="button"
+              className="v4-focus-ring inline-flex h-full w-7 items-center justify-center text-[var(--tray-ink)] disabled:opacity-40"
+              onClick={() => bumpScale(SCALE_STEP)}
+              disabled={scale >= SCALE_MAX}
+              aria-label="放大网页"
+            >
+              <Plus className="h-3.5 w-3.5 stroke-[2.5]" aria-hidden="true" />
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className={`${trayCtrl} cursor-pointer select-none`}
+            title={theme === 'dark' ? '切换为浅色' : '切换为深色'}
+            aria-label={theme === 'dark' ? '当前深色，点击切换为浅色' : '当前浅色，点击切换为深色'}
+            aria-pressed={theme === 'dark'}
+          >
+            <span className="system-tray__accent text-[length:var(--type-control)] font-semibold tracking-wide">
+              {theme === 'dark' ? '深色' : '浅色'}
             </span>
           </button>
 
@@ -577,6 +650,50 @@ export const SystemTray = () => {
                 <PenLine className="h-5 w-5 text-[var(--v4-accent-strong)]" aria-hidden="true" />
                 反馈
               </a>
+            </div>
+          </div>
+        </OverlayPortal>
+      )}
+
+      {pendingLeaveHref && (
+        <OverlayPortal>
+          <div
+            className="ui-modal-layer fixed inset-0 grid place-items-center bg-[var(--pt-scrim)] p-4"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) setPendingLeaveHref(null);
+            }}
+          >
+            <div
+              ref={leaveModalRef}
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="leave-session-title"
+              aria-describedby="leave-session-description"
+              className="ui-modal"
+              tabIndex={-1}
+            >
+              <h2 id="leave-session-title" className="text-lg font-semibold text-[var(--v4-text)]">
+                确定离开？
+              </h2>
+              <p id="leave-session-description" className="mt-1.5 text-sm leading-6 text-[var(--v4-text-muted)]">
+                当前导入尚未结束。离开本页会丢失未存档的进度；已写入「存档」的项目仍可恢复。确定离开？
+              </p>
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  className="ui-action ui-action--quiet w-full"
+                  onClick={() => setPendingLeaveHref(null)}
+                >
+                  继续编辑
+                </button>
+                <button
+                  type="button"
+                  className="ui-action ui-action--solid w-full"
+                  onClick={proceedLeaveSession}
+                >
+                  确定离开
+                </button>
+              </div>
             </div>
           </div>
         </OverlayPortal>

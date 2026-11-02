@@ -309,10 +309,16 @@ export const WorkbenchStep: React.FC = () => {
         <>
           <OutputModeControl />
           {counts.reviewRemaining > 0 ? (
-            <span className="wb-gate" role="status" title="软提示：不阻断打开预览">
+            <button
+              type="button"
+              className={`wb-gate wb-focus-ring ${effectiveFocus === 'review' ? 'is-on wb-sel' : ''}`}
+              title="点击后只筛选待复核项；仍可打开预览"
+              aria-pressed={effectiveFocus === 'review'}
+              onClick={() => handleFocusChange('review')}
+            >
               <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
               还有 {counts.reviewRemaining} 项待复核
-            </span>
+            </button>
           ) : null}
         </>
       ),
@@ -331,6 +337,8 @@ export const WorkbenchStep: React.FC = () => {
     setIsSettingsOpen,
     setWorkflowStep,
     counts.reviewRemaining,
+    effectiveFocus,
+    handleFocusChange,
   ]);
 
   useEffect(() => {

@@ -68,7 +68,7 @@ export const STRUCTURE_KIND_LABEL: Record<string, string> = {
 export const SUSPECT_CATEGORY_OPTIONS: Array<{ kind: Exclude<LineKind, 'credit'>; label: string }> = [
   { kind: 'dialogue', label: '对白' },
   { kind: 'narration', label: '旁白' },
-  { kind: 'sound', label: '音效' },
+  { kind: 'sound', label: 'SDH' },
   { kind: 'screen', label: '标题告示' },
   { kind: 'lyrics', label: '歌词' },
 ];

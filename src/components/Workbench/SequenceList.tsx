@@ -305,7 +305,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
               )}
             </div>
               <div className="flex shrink-0 items-center gap-1.5">
-                {listController?.filterStatus ? (
+                {listController?.focus && listController.focus !== 'review' ? (
                   <button
                     type="button"
                     className="ui-action ui-action--quiet"
@@ -549,7 +549,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
                           </button>
                           <button
                             type="button"
-                            className="ui-action ui-action--solid"
+                            className="ui-action ui-action--secondary"
                             onClick={(e) => { e.stopPropagation(); commitEditing(); }}
                           >
                             <Check className="h-4 w-4" aria-hidden="true" />保存

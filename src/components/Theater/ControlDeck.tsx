@@ -27,7 +27,7 @@ export const DOCK_TITLES: Record<TheaterDockId, string> = {
   aspect: '画幅',
   backdrop: '剧照',
   style: '样式',
-  export: '导出字幕',
+  export: '导出选项',
 };
 
 /** 工具栏入口：不再弹下拉，统一打开右侧停靠面板（spec v1.1 §6）。 */

@@ -84,9 +84,11 @@ SaikoSubStudio 是一个字幕工作台：导入（Ingest）→ 校对与编辑�
 
 `--focus-ring: #2E5A84`（sheet 6.74:1），2px 环 + 2px 间隙，只在 `:focus-visible` 时出现，鼠标点击不出环。焦点色用蓝而不用酒红，这样主按钮上的焦点也看得见。
 
-### 3.7 局部深色表面（没有系统暗色模式）
+### 3.7 深色主题与局部深色表面
 
-App 不跟随 `prefers-color-scheme`。默认就是浅色纸面（`:root` 与 `[data-paper="sheet"]` 相同；sheet 用来在深色局部里重新放一块浅纸）。深色只出现在关灯放映这一个局部，用属性切换，组件不需要改写。
+全站主题挂在 `html[data-theme="light|dark"]`（托盘小开关 + `localStorage nexus_site_theme`；首次无存档时可用系统偏好作默认）。深色 remap 与关灯放映同族暖近黑，**不是**冷蓝灰、也不是反相。
+
+局部仍用属性：`:root` / `[data-paper="sheet"]` 为浅纸（sheet 用来在深色里重新放一块浅纸）；`[data-paper="theater"]` 关灯放映必须继续在 Act 3 局部覆盖主题。组件尽量读语义 token，不必为主题各写一套。
 
 **纸面托盘（顶栏/底栏/步骤条）**：不再是单独的深色作用域（旧 `[data-paper="chrome"]` 墨绿托盘已删除），直接用默认浅色 token。底 `--paper-sunken #EAE3D6`，与页面之间一条 `--rule-hair` 发丝线；字 `--ink-strong`（13.61）/ `--ink-body`（9.52）/ `--ink-muted`（5.50）；托盘按钮 `--paper-raised` 底 + `--tray-line-control`（= `--ink-placeholder`，sunken 上 4.11）边，图标酒红。**当前步骤 = `--paper-raised` 纸片 + 墨字（17.08）+ 酒红下划线**；其余步骤统一中性（sunken 底 + 发丝分隔线），不按“已走过”填充。
 

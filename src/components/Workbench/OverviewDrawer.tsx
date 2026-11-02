@@ -160,7 +160,7 @@ export const OverviewDrawer: React.FC<OverviewDrawerProps> = ({
                   onClose();
                 }}
               >
-                打开合轴复核明细（旧版弹窗）
+                打开合轴复核明细
               </button>
             </section>
           ) : null}
