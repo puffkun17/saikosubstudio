@@ -1,6 +1,7 @@
 # SaikoSubStudio 设计基础 · Paper Ledger
 
-> 状态：已接线（`design/paper-tokens`；`design/no-green` 去掉墨绿托盘）。本文件取代旧的 Ridgeline（奶油/森林绿/橘）`DESIGN.md`。
+> 状态：已接线（`design/paper-tokens`；`design/no-green` 去掉墨绿托盘）。本文件是**唯一活设计规矩**，取代旧的 Ridgeline（奶油/森林绿/橘）`DESIGN.md`。
+> **已作废（勿再当 Spec）**：Ridgeline 墨绿品牌色、柑橘强调 `#ef8d5f`、实心橙主按钮、选中态「实心橙块 + 绿字」、`data-paper="chrome"` 绿托盘。
 > 旧的 `DESIGN.md`、`DESIGN_AUDIT.md`、`DESIGN_BACKLOG.md`、`DESIGN_PLAN.md` 已归档到 `docs/design-archive/`，只作历史参考。
 >
 > Token 源文件：`src/styles/paper-tokens.css` · 旧变量映射：`docs/design/token-mapping.md` · 对比度脚本：`docs/design/contrast.py` · 预览：`docs/design/preview.html`
@@ -162,7 +163,40 @@ SaikoSubStudio 是一个字幕工作台：导入（Ingest）→ 校对与编辑�
 
 **浏览器表面**：`::selection` 用 `--selection-bg`；`caret-color: var(--accent)`；滚动条 thumb 用 `--scrollbar-thumb`；`accent-color: var(--accent)`。
 
-## 7. 动效（Operate）
+
+## 7. 交互分层（A–E）
+
+适用于导入确认 / 工作台 / 预览的 InfoBar 与幕内控件（Act 2 契约；导入页同吃）。实现皮：`.ui-action` / `.ui-action--info` / `.ui-action--solid` 等（见 `src/styles/globals.css`）。
+
+| 层 | 含义 | 形态 |
+|---|---|---|
+| **A** | 信息展示 | 排印 / 轻元数据；非按钮 |
+| **B** | ⓘ 提示 | 只放补充说明；点击区 ≥32 |
+| **C** | 信息录入 | 输入、开抽屉/概览等入口；用 `.ui-action--info` 等，**禁用** `ui-action--quiet` |
+| **D** | 数据筛选 | 显式筛选/模式切换（如 OutputMode）；可点但不是流程推进 |
+| **E** | 操作 | 确认、清除、前进、危险确认；真控件，不是下划线伪链 |
+
+**InfoBar**
+- `status` / display：**A**，若有模式切换则为 **A + 显式 D**（如 OutputMode）。
+- `actions`：**只放 E**。
+- 每屏 **一个** 实心主前进（酒红 `.ui-action--solid`），默认落在右下（例：工作台「打开预览」）。
+- 返回：**左下 XOR 顶栏 chevron**，二者只留一条，不双轨。
+- 清除 / 关闭类：必须是真 **E** 控件，禁止做成 quiet 下划线文字装内容。
+- 闸门红字：默认锁在 **A**（只读提示）；用户点进筛选后才升为 **D**（软选皮）。
+- 主钮 ≤1：同一视图不得出现第二个实心酒红主按钮。
+
+## 8. 信息层级 / 跨区从属
+
+跨区原则：任务身份、片源信息、操作钮 **不得同权同皮**。A–E 管控件语义；本节管「谁压过谁」。
+
+1. **任务身份 / 任务切换 > 剧集 · TMDB 片源信息。**
+2. 任务轨放在 **InfoBar 主位**，或紧贴标题旁的任务轨；不要压在内容卡里当附属 chip。
+3. 「N 个任务 · 格式 · 来源」是 **轻 A** 元数据，不得做成按钮皮，也不得与任务轨抢一级。
+4. 海报 / TMDB / 片名 / 年份 / 类型标签留在 **片源卡**；类型是片源附属 A，视觉权重低于任务轨。
+5. 取消、移除、继续添加、开始合轴等属 **E**，与 A 元数据、片源标签 **不同皮**；危险项用确认槽或图标，避免一排 quiet 字钮。
+6. 任务名有空间就完整显示，禁止无必要的硬 `max-width` + truncate；不够再 truncate 并保留 `title`。
+
+## 9. 动效（Operate）
 
 - 时长：`--motion-fast` 150（hover、颜色）· `--motion-base` 200（展开、切换）· `--motion-slow` 250（抽屉、对话框，上限）· `--motion-exit` 150（退出比进入快）。
 - 曲线：进入 `--motion-ease-out`，退出 `--motion-ease-in`。
@@ -171,7 +205,7 @@ SaikoSubStudio 是一个字幕工作台：导入（Ingest）→ 校对与编辑�
 - `prefers-reduced-motion`：时长都压到 150，`--motion-move` 归零（位移去掉，颜色/透明度保留）。
 - **唯一例外（Act 1 舞台，2026-10-30 批准）**：跨区远距离移动（文件从列表落到舞台 / 暂存区）`visualDuration` ≤ 350，弹簧 bounce 0，只动 transform。其余一律 ≤ 250、无回弹。代码常量见 `src/core/motion.ts`。
 
-## 8. 要做 / 不要做
+## 10. 要做 / 不要做
 
 | 要做 | 不要做 |
 |---|---|
@@ -183,8 +217,10 @@ SaikoSubStudio 是一个字幕工作台：导入（Ingest）→ 校对与编辑�
 | skeleton 占位 | 全屏转圈、页面入场动画 |
 | 圆角 6/8 | 胶囊按钮、20px 大圆角面板 |
 | 400/500/600 两档墨 | 700 粗体、灰上加灰的三四层文字 |
+| 任务轨压过片源卡；E 与 A 不同皮 | 任务 / TMDB / 操作钮同权同皮 |
+| 酒红实心主钮 ≤1 | Ridgeline 实心橙、选中「橙块+绿字」、绿托盘 |
 
-## 9. 不在本次范围
+## 11. 不在本次范围
 
 - 字幕样式本身（`--lang-*`、`--fmt-*`、烧录预设的颜色）是用户内容的身份色，不迁移到这套 token。
 - 工作台分类色（`--wb-cat-*`，含 review 的 `#B8433C`）是数据编码，本次保留不动，记录在 `docs/migration-notes.md`；以后再评估是否收进 `--state-*`。
