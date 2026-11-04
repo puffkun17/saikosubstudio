@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ChevronLeft, ChevronRight, LayoutDashboard } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LayoutDashboard } from 'lucide-react';
 import { ScoreRing } from '@/components/Workbench/ScoreRing';
 import type { WorkbenchScoreBreakdown } from '@/core/workbenchScore';
 import {
@@ -15,6 +15,8 @@ type ReviewCardProps = {
   score: WorkbenchScoreBreakdown;
   counts: ReviewGroupCounts;
   focus: ReviewFocusId | null;
+  /** Filter is on and matched nothing — the axis is fully dimmed. */
+  emptyFocus?: boolean;
   onFocusChange: (focus: ReviewFocusId | null) => void;
   pagerItems: ReviewPagerItem[];
   pagerIndex: number;
@@ -32,6 +34,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   score,
   counts,
   focus,
+  emptyFocus = false,
   onFocusChange,
   pagerItems,
   pagerIndex,
@@ -40,7 +43,6 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
 }) => {
   const [auxOpen, setAuxOpen] = useState(false);
   const auxRef = useRef<HTMLDivElement>(null);
-  const isReviewFocus = focus === 'review' || focus === 'structure' || focus === 'suspect' || focus == null;
   const auxChild = focus === 'screen' || focus === 'credit' || focus === 'sound' ? focus : null;
   const progress = counts.reviewTotal > 0
     ? Math.round((counts.reviewChecked / counts.reviewTotal) * 100)
@@ -65,42 +67,29 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
 
   return (
     <section className="wb-card v4-panel" data-testid="review-card" aria-label="复核总览">
-      <div className="wb-score">
+      <div className="wb-score" title={`总分 ${score.total}。质量、契合度与处理后可到的分数在概览。`}>
         <ScoreRing score={score.total} />
-        <div className="wb-score__sub">
-          <div className="k">
-            <span>质量 <strong>{score.quality}</strong></span>
-            <span>契合度 <strong>{score.fit}</strong></span>
-          </div>
-          <small>处理完可到 {score.potential}</small>
-        </div>
+        <span className="wb-sr">总分 {score.total}</span>
       </div>
 
       <div className="wb-vr hidden sm:block" aria-hidden="true" />
 
       <div className="wb-grp">
-        <div className="wb-grp__top">
-          <button
-            type="button"
-            className={`wb-grp__t wb-focus-ring ${isReviewFocus && !auxChild ? 'is-on wb-sel' : ''}`}
-            onClick={() => onFocusChange('review')}
-            aria-pressed={focus === 'review' || focus == null}
-          >
-            <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-            待复核
-          </button>
-          <span className="wb-grp__p">
-            已处理 <b>{counts.reviewChecked}</b> / {counts.reviewTotal}
-          </span>
-        </div>
-        <div className="wb-prog" aria-hidden="true">
+        <button
+          type="button"
+          className={`wb-prog wb-focus-ring${focus === 'review' ? ' is-on' : ''}`}
+          aria-pressed={focus === 'review'}
+          aria-label={`复核进度 ${counts.reviewChecked} / ${counts.reviewTotal}`}
+          title={`已核对 ${counts.reviewChecked} / ${counts.reviewTotal}。点按只看待复核。`}
+          onClick={() => onFocusChange(focus === 'review' ? null : 'review')}
+        >
           <span style={{ width: `${progress}%` }} />
-        </div>
+        </button>
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             className={`wb-pill wb-focus-ring ${focus === 'structure' ? 'wb-sel' : ''}`}
-            onClick={() => onFocusChange('structure')}
+            onClick={() => onFocusChange(focus === 'structure' ? null : 'structure')}
             aria-pressed={focus === 'structure'}
           >
             结构差异 <i>{counts.structure}</i>
@@ -108,12 +97,18 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
           <button
             type="button"
             className={`wb-pill wb-focus-ring ${focus === 'suspect' ? 'wb-sel' : ''}`}
-            onClick={() => onFocusChange('suspect')}
+            onClick={() => onFocusChange(focus === 'suspect' ? null : 'suspect')}
             aria-pressed={focus === 'suspect'}
+            data-testid="focus-suspect"
           >
             类别待定 <i>{counts.suspect}</i>
           </button>
         </div>
+        {emptyFocus && focus ? (
+          <p className="wb-empty-note" role="status" data-testid="focus-empty">
+            {REVIEW_FOCUS_LABEL[focus]} · 无命中
+          </p>
+        ) : null}
       </div>
 
       <div className="relative" ref={auxRef}>
@@ -139,8 +134,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                   type="button"
                   role="menuitemradio"
                   aria-checked={auxChild === child.id}
-                  disabled={count <= 0}
                   className={`wb-aux__item wb-focus-ring ${auxChild === child.id ? 'wb-sel' : ''}`}
+                  title={count <= 0 ? `${REVIEW_FOCUS_LABEL[child.id]} · 无命中` : undefined}
                   onClick={() => {
                     onFocusChange(child.id);
                     setAuxOpen(false);

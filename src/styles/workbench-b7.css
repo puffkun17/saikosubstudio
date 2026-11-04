@@ -264,12 +264,34 @@
 }
 
 .wb-prog {
-  height: 6px;
+  height: 8px;
+  width: 100%;
+  min-height: 0;
+  appearance: none;
+  border: 0;
   border-radius: 3px;
   background: var(--v5-panel-muted);
   outline: 1px solid var(--v5-line);
   outline-offset: -1px;
   overflow: hidden;
+  padding: 0;
+  line-height: 0;
+  cursor: pointer;
+}
+
+.wb-prog.is-on {
+  outline-color: var(--accent-line);
+}
+
+.wb-prog.is-on > span {
+  background: var(--accent);
+}
+
+.wb-empty-note {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-muted);
 }
 
 .wb-prog > span {
@@ -577,6 +599,319 @@
   font-size: var(--ds-fs-micro);
   font-weight: var(--ds-fw-medium);
   color: var(--ink-muted);
+}
+
+/* Task identity on the Act 2 info bar. No hard max-width — long names scroll or ellipsize only at the edge. */
+.wb-task-identity {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.wb-task-name {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wb-task-switch {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.wb-task-switch__tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-body);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.wb-task-switch__tab[aria-selected="true"] {
+  background: var(--paper-raised);
+  color: var(--ink-strong);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.wb-task-switch__tab:disabled {
+  cursor: wait;
+  color: var(--ink-faint);
+}
+
+.wb-task-switch__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--rule-strong);
+}
+
+.wb-task-switch__dot.is-done {
+  background: var(--accent);
+}
+
+.wb-source-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.wb-source-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+.wb-source-year {
+  margin-left: 0.4em;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+
+.wb-source-genres {
+  display: inline-flex;
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.wb-genre {
+  flex: none;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.wb-source-count {
+  flex: none;
+}
+
+.wb-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Dial: labels ride the playhead — row above, time below. No side readout strip. */
+.wb-dial-track {
+  /* Room for above/below labels without changing subtitle row height. */
+  padding-block: 1.15rem;
+}
+
+.wb-playhead-labels {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  grid-template-rows: auto 6px auto;
+  align-items: center;
+  justify-items: center;
+  width: max-content;
+  max-width: min(11rem, 42vw);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.wb-playhead-labels__above {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  pointer-events: auto;
+  color: var(--accent-text);
+}
+
+.wb-playhead-labels__input {
+  width: 2.6rem;
+  padding: 0;
+  text-align: right;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-text) 35%, transparent);
+}
+
+.wb-playhead-labels__rail {
+  width: 1px;
+  height: 6px;
+  visibility: hidden;
+}
+
+.wb-playhead-labels__below {
+  color: var(--ink-muted);
+}
+
+.wb-playhead-labels__muted {
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+/* Provenance: struck + revised on one baseline; fill width, no tall stack, no empty right */
+.wb-cue__pair {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.wb-cue__pair > .wb-cue__was,
+.wb-cue__pair > .wb-cue__now {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: var(--ds-lh-tight);
+}
+
+.wb-cue__pair > .wb-cue__was {
+  flex: 0 1 42%;
+  max-width: 48%;
+}
+
+.wb-cue__pair > .wb-cue__now {
+  flex: 1 1 auto;
+}
+
+.wb-cue__pair-sep {
+  flex: none;
+  color: var(--ink-muted);
+  font-size: var(--ds-fs-micro);
+  opacity: 0.65;
+}
+
+.wb-row.is-editing {
+  z-index: 12;
+  overflow: visible;
+}
+
+.wb-cue {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wb-cue__now {
+  color: var(--ink-strong);
+  font-size: var(--ds-fs-head);
+  font-weight: 500;
+  line-height: var(--ds-lh-tight);
+  overflow-wrap: anywhere;
+}
+
+.wb-cue__sub {
+  margin-top: 2px;
+  color: var(--ink-body);
+  font-weight: 400;
+  font-size: var(--ds-fs-meta);
+  line-height: 1.45;
+}
+
+.wb-cue__was {
+  color: var(--ink-muted);
+  font-weight: 400;
+  line-height: 1.45;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  overflow-wrap: anywhere;
+}
+
+.wb-cue__was .wb-cue__sub {
+  color: var(--ink-muted);
+}
+
+/* Edit slot floats on the content axis. It does not add a column. */
+.wb-edit-slot {
+  position: absolute;
+  z-index: 6;
+  left: 0;
+  top: calc(100% + 6px);
+  display: flex;
+  width: min(34rem, 100%);
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--rule-control);
+  border-radius: 8px;
+  background: var(--paper-raised);
+  box-shadow: var(--pt-elev-float);
+}
+
+.wb-edit-slot .wb-line-edit__input {
+  width: 100%;
+}
+
+.wb-edit-slot__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wb-edit-slot__actions,
+.wb-edit-history {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wb-edit-dock {
+  position: absolute;
+  right: 28px;
+  bottom: 10px;
+  z-index: 4;
+  padding: 4px;
+  border: 1px solid var(--rule-control);
+  border-radius: 8px;
+  background: var(--paper-raised);
+  box-shadow: var(--pt-elev-float);
 }
 
 /* Dialogue edit: field hugs the line; cancel/save stay on that row, flush right. */

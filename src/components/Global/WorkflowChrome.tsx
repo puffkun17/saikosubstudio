@@ -59,6 +59,15 @@ export type InfoBarConfig = {
   };
   onBack?: () => void;
   /**
+   * 主位身份。传入时替换片名 h2（Act 2 任务轨压过 TMDB 片名）。
+   * `title` 仍作为信息栏动画键，不直接画出来。
+   */
+  identity?: React.ReactNode;
+  /**
+   * 片源附属：片名、年份、类型、任务数。轻 A，排在任务轨之后。
+   */
+  sourceMeta?: React.ReactNode;
+  /**
    * 状态与设置（输出模式、待复核计数）。不是操作槽。
    * 渲染在操作簇左侧，用分隔线隔开。
    */
@@ -194,26 +203,32 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
                   <ChevronLeft className="h-5 w-5" />
                 </button>
               )}
-              {/* 片名 + 年份锚点：年份紧跟片名，等宽数字体与 CJK 片名区分 */}
-              <div className="workflow-info-bar__title flex min-w-0 flex-1 items-baseline">
-                <h2
-                  className="ds-title min-w-0 truncate"
-                  title={config.title}
-                >
-                  {config.title}
-                </h2>
-                {yearAnchor ? (
-                  <time
-                    dateTime={yearAnchor}
-                    className="workflow-info-bar__year"
-                    title={`${yearAnchor} 年`}
+              {config.identity ? (
+                <div className="workflow-info-bar__identity">{config.identity}</div>
+              ) : (
+                /* 片名 + 年份锚点：年份紧跟片名，等宽数字体与 CJK 片名区分 */
+                <div className="workflow-info-bar__title flex min-w-0 flex-1 items-baseline">
+                  <h2
+                    className="ds-title min-w-0 truncate"
+                    title={config.title}
                   >
-                    {yearAnchor}
-                  </time>
-                ) : null}
-              </div>
-              {/* 旁侧：静态元数据（非 chip / 非按钮） */}
-              {(metaBadges.length > 0 || localChips.length > 0) && (
+                    {config.title}
+                  </h2>
+                  {yearAnchor ? (
+                    <time
+                      dateTime={yearAnchor}
+                      className="workflow-info-bar__year"
+                      title={`${yearAnchor} 年`}
+                    >
+                      {yearAnchor}
+                    </time>
+                  ) : null}
+                </div>
+              )}
+              {config.sourceMeta ? (
+                <div className="workflow-info-bar__source hidden md:flex">{config.sourceMeta}</div>
+              ) : (metaBadges.length > 0 || localChips.length > 0) ? (
+                /* 旁侧：静态元数据（非 chip / 非按钮） */
                 <div className="hidden min-w-0 max-w-[42%] shrink flex-col justify-center gap-0.5 sm:flex">
                   {metaBadges.length > 0 && (
                     <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
@@ -233,7 +248,7 @@ const WorkflowInfoBar: React.FC<{ config: InfoBarConfig }> = ({ config }) => {
                     </p>
                   )}
                 </div>
-              )}
+              ) : null}
             </div>
             {(config.display || config.actions) && (
               <div className="workflow-info-bar__end">

@@ -9,10 +9,12 @@ import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 interface TimelineControlsProps {
   variant?: 'full' | 'compact' | 'theater';
   timelineDurationMs?: number;
+  /** Act 2 dial: row / time / percent live on the bar; an empty filter still dims the track. */
+  focusChrome?: TimelineFocusChrome;
   /** 放映厅：关灯仍保留播放+进度；画幅辅助线放在播放单元外侧，不打断进度条。 */
   theaterChrome?: {
     lightsOff: boolean;
-    /** 选中特殊行分类时，在时间轴上画出该类的刻度（行号）。命中刻度保持全亮。 */
+    /** 选中特殊行分类时，在时间轴上画出该类的刻度（行号）。命中刻度保持全亮。空数组 = 该分类 0 命中，整条变暗。 */
     marks?: number[];
     /** 其他特殊行刻度：与第二幕非命中行一样降到 0.45。 */
     dimMarks?: number[];
@@ -27,6 +29,50 @@ type TimelinePoint = {
   rowIndex: number;
   startMs: number;
   endMs: number;
+};
+
+/** Focus ticks on the dial. `active` with an empty `marks` list dims the whole track. */
+export type TimelineFocusChrome = {
+  active: boolean;
+  /** 0-based row indexes that stay bright. */
+  marks?: number[];
+  pulse?: { row: number; key: number } | null;
+  playheadDim?: boolean;
+};
+
+const sliderFocusClass = (active: boolean, playheadDim: boolean) =>
+  `${active ? ' is-focus-dim' : ''}${playheadDim ? ' is-playhead-dim' : ''}`;
+
+const TimelineFocusLayer: React.FC<{
+  rows: { ts: string }[];
+  durationMs: number;
+  marks: number[];
+  dimMarks?: number[];
+  pulse?: { row: number; key: number } | null;
+}> = ({ rows, durationMs, marks, dimMarks, pulse }) => {
+  if (marks.length === 0 && !(dimMarks && dimMarks.length) && !pulse) return null;
+  const leftOf = (row: number) => {
+    const cue = rows[row];
+    if (!cue) return null;
+    return `${(parseSubtitleRange(cue.ts).startMs / durationMs) * 100}%`;
+  };
+  return (
+    <div className="timeline-marks" aria-hidden="true">
+      {(dimMarks ?? []).map((row) => {
+        const left = leftOf(row);
+        if (left == null) return null;
+        return <span key={`dim-${row}`} className="timeline-marks__tick timeline-marks__tick--dim" style={{ left }} />;
+      })}
+      {marks.map((row) => {
+        const left = leftOf(row);
+        if (left == null) return null;
+        return <span key={row} className="timeline-marks__tick" style={{ left }} />;
+      })}
+      {pulse && leftOf(pulse.row) != null ? (
+        <span key={pulse.key} className="timeline-marks__pulse" style={{ left: leftOf(pulse.row) ?? undefined }} />
+      ) : null}
+    </div>
+  );
 };
 
 const findNearestPoint = (points: TimelinePoint[], targetMs: number): TimelinePoint => {
@@ -70,6 +116,7 @@ const findActivePoint = (points: TimelinePoint[], targetMs: number): TimelinePoi
 export const TimelineControls: React.FC<TimelineControlsProps> = ({
   variant = 'full',
   timelineDurationMs,
+  focusChrome,
   theaterChrome,
 }) => {
   const {
@@ -203,6 +250,8 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
   const timelineStyle = {
     '--timeline-progress': `${timelinePercent}%`,
   } as React.CSSProperties;
+  const tipPoint = findActivePoint(timelinePoints, displayTimeMs) || findNearestPoint(timelinePoints, displayTimeMs);
+  const tipLine = tipPoint.rowIndex + 1;
 
   const revealTarget = (targetIdx: number) => {
     if (targetIdx >= 100 && !showAllSubs) setShowAllSubs(true);
@@ -274,8 +323,6 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
     setIsPreviewPlaying(true);
   };
 
-  const timeReadout = `${formatMsClock(displayTimeMs)} / ${formatMsClock(sharedDurationMs)}`;
-
   const playButton = (
     <button
       type="button"
@@ -318,10 +365,8 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
 
   if (variant === 'theater') {
     const lightsOff = Boolean(theaterChrome?.lightsOff);
-    const tipPoint = findActivePoint(timelinePoints, displayTimeMs)
-      || findNearestPoint(timelinePoints, displayTimeMs);
-    const tipLine = tipPoint.rowIndex + 1;
     const showSliderTip = sliderTip !== null;
+    const theaterFocusOn = theaterChrome?.marks != null;
 
     const updateSliderTip = (clientX: number, clientY: number) => {
       setSliderTip({ x: clientX, y: clientY });
@@ -387,33 +432,20 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
                 if (scrubTimeMs !== null) endScrub(event.currentTarget.value);
               }}
               style={timelineStyle}
-              className={`v9-timeline-dial-slider w-full min-w-0${theaterChrome?.marks ? ' is-focus-dim' : ''}${theaterChrome?.playheadDim ? ' is-playhead-dim' : ''}`}
+              className={`v9-timeline-dial-slider w-full min-w-0${sliderFocusClass(theaterFocusOn, Boolean(theaterChrome?.playheadDim))}`}
               aria-label={`字幕预览时间，第 ${tipLine} 行，${timelinePercent}%`}
               title={`第 ${tipLine} 行 · ${timelinePercent}%`}
-              data-timeline-focus={theaterChrome?.marks ? 'true' : undefined}
+              data-timeline-focus={theaterFocusOn ? 'true' : undefined}
+              data-focus-empty={theaterFocusOn && (theaterChrome?.marks?.length ?? 0) === 0 ? 'true' : undefined}
             />
-            {(theaterChrome?.marks?.length || theaterChrome?.dimMarks?.length || theaterChrome?.pulse) ? (
-              <div className="timeline-marks" aria-hidden="true">
-                {(theaterChrome?.dimMarks ?? []).map((row) => {
-                  const r = processedSubs?.[row];
-                  if (!r) return null;
-                  const pct = (parseSubtitleRange(r.ts).startMs / sharedDurationMs) * 100;
-                  return <span key={`dim-${row}`} className="timeline-marks__tick timeline-marks__tick--dim" style={{ left: `${pct}%` }} />;
-                })}
-                {(theaterChrome?.marks ?? []).map((row) => {
-                  const r = processedSubs?.[row];
-                  if (!r) return null;
-                  const pct = (parseSubtitleRange(r.ts).startMs / sharedDurationMs) * 100;
-                  return <span key={row} className="timeline-marks__tick" style={{ left: `${pct}%` }} />;
-                })}
-                {theaterChrome?.pulse && processedSubs?.[theaterChrome.pulse.row] ? (
-                  <span
-                    key={theaterChrome.pulse.key}
-                    className="timeline-marks__pulse"
-                    style={{ left: `${(parseSubtitleRange(processedSubs[theaterChrome.pulse.row].ts).startMs / sharedDurationMs) * 100}%` }}
-                  />
-                ) : null}
-              </div>
+            {theaterFocusOn ? (
+              <TimelineFocusLayer
+                rows={processedSubs}
+                durationMs={sharedDurationMs}
+                marks={theaterChrome?.marks ?? []}
+                dimMarks={theaterChrome?.dimMarks}
+                pulse={theaterChrome?.pulse}
+              />
             ) : null}
             {showSliderTip && (
               <div
@@ -447,45 +479,73 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
     );
   }
 
+  const dialFocusOn = Boolean(focusChrome?.active);
+  const dialMarks = focusChrome?.marks ?? [];
+
   return (
-    <div className="v9-dial-slider-container flex w-full min-w-0 flex-row items-center justify-between gap-3">
+    <div className="v9-dial-slider-container flex w-full min-w-0 flex-row items-center gap-3" data-testid="timeline-instrument">
       <div className="v9-dial-slider-wrapper flex min-w-0 flex-1 items-center gap-2.5">
         {playButton}
-        <input
-          type="range"
-          min="0"
-          max={sharedDurationMs}
-          step="16"
-          value={displayTimeMs}
-          onChange={event => handleTimelineChange(event.target.value)}
-          onPointerDown={beginScrub}
-          onPointerUp={event => endScrub(event.currentTarget.value)}
-          onPointerCancel={() => { isPointerScrubbing.current = false; setScrubTimeMs(null); }}
-          onBlur={event => { if (scrubTimeMs !== null) endScrub(event.currentTarget.value); }}
-          style={timelineStyle}
-          className="v9-timeline-dial-slider w-full"
-          aria-label="字幕时间轴位置"
-        />
-        <span className="hidden min-w-[8.5rem] text-right font-mono text-xs font-semibold tabular-nums text-[var(--v4-text-muted)] md:block">
-          {timeReadout}
-        </span>
+        <div className="wb-dial-track relative min-w-0 flex-1">
+          <input
+            type="range"
+            min="0"
+            max={sharedDurationMs}
+            step="16"
+            value={displayTimeMs}
+            onChange={event => handleTimelineChange(event.target.value)}
+            onPointerDown={beginScrub}
+            onPointerUp={event => endScrub(event.currentTarget.value)}
+            onPointerCancel={() => { isPointerScrubbing.current = false; setScrubTimeMs(null); }}
+            onBlur={event => { if (scrubTimeMs !== null) endScrub(event.currentTarget.value); }}
+            style={timelineStyle}
+            className={`v9-timeline-dial-slider w-full${sliderFocusClass(dialFocusOn, Boolean(focusChrome?.playheadDim))}`}
+            aria-label={`字幕时间轴，第 ${tipLine} 行，共 ${processedSubs.length} 行，${formatMsClock(displayTimeMs)} / ${formatMsClock(sharedDurationMs)}`}
+            data-timeline-focus={dialFocusOn ? 'true' : undefined}
+            data-focus-empty={dialFocusOn && dialMarks.length === 0 ? 'true' : undefined}
+          />
+          {dialFocusOn ? (
+            <TimelineFocusLayer
+              rows={processedSubs}
+              durationMs={sharedDurationMs}
+              marks={dialMarks}
+              pulse={focusChrome?.pulse}
+            />
+          ) : null}
+          {/* 行数贴指针上方、时间贴下方：动线锚点在指针，不另开读数条 */}
+          <div
+            className="wb-playhead-labels"
+            style={{
+              left: `clamp(3.25rem, ${timelinePercent}%, calc(100% - 3.25rem))`,
+            }}
+            data-testid="playhead-labels"
+          >
+            <form
+              onSubmit={handleJumpToLine}
+              className="wb-playhead-labels__above"
+              aria-label="当前行"
+            >
+              <span className="wb-sr">行</span>
+              <input
+                type="number"
+                min="1"
+                max={processedSubs.length}
+                value={jumpLineVal}
+                onChange={event => setJumpLineVal(event.target.value)}
+                onBlur={() => handleJumpToLine()}
+                className="v9-dial-gauge-input no-spin wb-playhead-labels__input"
+                aria-label="跳转到字幕行"
+              />
+              <span>/ {processedSubs.length}</span>
+            </form>
+            <span className="wb-playhead-labels__rail" aria-hidden="true" />
+            <span className="wb-playhead-labels__below" aria-label="时间进度">
+              {formatMsClock(displayTimeMs)}
+              <span className="wb-playhead-labels__muted"> / {formatMsClock(sharedDurationMs)}</span>
+            </span>
+          </div>
+        </div>
       </div>
-
-      <form onSubmit={handleJumpToLine} className="v9-dial-gauge flex shrink-0 items-center gap-2 self-end sm:self-auto">
-        <span className="v9-dial-gauge-label">行</span>
-        <input
-          type="number"
-          min="1"
-          max={processedSubs.length}
-          value={jumpLineVal}
-          onChange={event => setJumpLineVal(event.target.value)}
-          onBlur={() => handleJumpToLine()}
-          className="v9-dial-gauge-input no-spin"
-          aria-label="跳转到字幕行"
-        />
-        <div className="h-3 w-px bg-[var(--v4-line-strong)]" />
-        <span className="v9-dial-gauge-value">{timelinePercent}%</span>
-      </form>
     </div>
   );
 };

@@ -4,14 +4,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { SequenceList } from '@/components/Workbench/SequenceList';
-import { EpisodeTabs } from '@/components/Workbench/EpisodeTabs';
 import { ReviewCard } from '@/components/Workbench/ReviewCard';
+import { WorkbenchSourceMeta, WorkbenchTaskIdentity, taskIdentityLabel } from '@/components/Workbench/Act2Identity';
 import { OverviewDrawer } from '@/components/Workbench/OverviewDrawer';
 import { OutputModeControl } from '@/components/Workbench/OutputModeControl';
 import { reviewTaskKey } from '@/core/reviewKey';
 import { reviewNoticeMessage, reviewNoticeTitle } from '@/components/Global/ReviewNoticeSync';
 import { useWorkflowChrome, WorkflowContinueInFlow } from '@/components/Global/WorkflowChrome';
-import { resolveFilmTitles } from '@/utils/filmTitles';
 import { MergeReviewModal } from '@/components/Workbench/MergeReviewModal';
 import { motion, AnimatePresence } from 'motion/react';
 import { InlineMessageBar } from '@/components/Global/InlineMessageBar';
@@ -21,14 +20,12 @@ import { AlertTriangle } from 'lucide-react';
 import { useUiModalFocus } from '@/hooks/useUiModalFocus';
 import { computeWorkbenchScore } from '@/core/workbenchScore';
 import {
-  REVIEW_FOCUS_LABEL,
   buildPagerItems,
   buildRailHitsForFocus,
   computeReviewGroupCounts,
   focusedArrayIndexes,
   type ReviewFocusId,
 } from '@/core/workbenchReview';
-import { lineCountLabel } from '@/core/lineKinds';
 import type { WorkbenchListController } from '@/components/Workbench/workbenchFocus';
 import type { LineKind } from '@/utils/subtitleCore';
 import { EMPTY_CHECKED_IDS } from '@/lib/emptyCheckedIds';
@@ -36,19 +33,15 @@ import { EMPTY_CHECKED_IDS } from '@/lib/emptyCheckedIds';
 export const WorkbenchStep: React.FC = () => {
   const {
     processedSubs,
-    customFilename,
+    tasks,
     setWorkflowStep,
     setProcessedSubs,
     selectedTaskId,
     isSettingsOpen,
     setIsSettingsOpen,
-    tmdbData,
     mergeReviewCheckedByTask,
     markMergeReviewChecked,
     setStatusNotice,
-    filenameEpKey,
-    activeTaskTitle,
-    auxMode,
     setPreviewIndex,
     setJumpLineVal,
     setShowAllSubs,
@@ -56,19 +49,15 @@ export const WorkbenchStep: React.FC = () => {
     setLineKind,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
-    customFilename: state.customFilename,
+    tasks: state.tasks,
     setWorkflowStep: state.setWorkflowStep,
     setProcessedSubs: state.setProcessedSubs,
     selectedTaskId: state.selectedTaskId,
     isSettingsOpen: state.isSettingsOpen,
     setIsSettingsOpen: state.setIsSettingsOpen,
-    tmdbData: state.tmdbData,
     mergeReviewCheckedByTask: state.mergeReviewCheckedByTask,
     markMergeReviewChecked: state.markMergeReviewChecked,
     setStatusNotice: state.setStatusNotice,
-    filenameEpKey: state.filenameEpKey,
-    auxMode: state.customStyle.auxiliaryMode || 'keep',
-    activeTaskTitle: state.tasks.find((t) => t.id === state.selectedTaskId)?.title ?? '',
     setPreviewIndex: state.setPreviewIndex,
     setJumpLineVal: state.setJumpLineVal,
     setShowAllSubs: state.setShowAllSubs,
@@ -87,7 +76,8 @@ export const WorkbenchStep: React.FC = () => {
     setIsReviewModalOpen(true);
     setReviewFocusNonce((v) => v + 1);
   }, []);
-  const [focus, setFocus] = useState<ReviewFocusId | null>('review');
+  // null = dashboard at rest (no dim). A category click is the filter.
+  const [focus, setFocus] = useState<ReviewFocusId | null>(null);
   const [pagerIndex, setPagerIndex] = useState(0);
   const [highlightArrayIndex, setHighlightArrayIndex] = useState<number | null>(null);
   const [highlightNonce, setHighlightNonce] = useState(0);
@@ -127,18 +117,19 @@ export const WorkbenchStep: React.FC = () => {
     [processedSubs, checkedIds, sourceDurationMs],
   );
 
-  const effectiveFocus: ReviewFocusId = focus ?? 'review';
+  /** Pager / side rail keep walking the review queue when no filter is on. Dimming uses `focus` only. */
+  const pagerFocus: ReviewFocusId = focus ?? 'review';
 
   const pagerItems = useMemo(() => {
     if (!processedSubs) return [];
-    const onlyUnresolved = effectiveFocus === 'review'
-      || effectiveFocus === 'structure'
-      || effectiveFocus === 'suspect';
-    return buildPagerItems(processedSubs, effectiveFocus, reviewQueue ?? undefined, {
+    const onlyUnresolved = pagerFocus === 'review'
+      || pagerFocus === 'structure'
+      || pagerFocus === 'suspect';
+    return buildPagerItems(processedSubs, pagerFocus, reviewQueue ?? undefined, {
       onlyUnresolved,
       checkedIds,
     });
-  }, [processedSubs, effectiveFocus, reviewQueue, checkedIds]);
+  }, [processedSubs, pagerFocus, reviewQueue, checkedIds]);
 
   const safePagerIndex = pagerItems.length === 0
     ? 0
@@ -146,8 +137,8 @@ export const WorkbenchStep: React.FC = () => {
   const activeItem = pagerItems[safePagerIndex] ?? null;
 
   const focusedIndexes = useMemo(
-    () => (processedSubs ? focusedArrayIndexes(processedSubs, effectiveFocus, reviewQueue ?? undefined) : null),
-    [processedSubs, effectiveFocus, reviewQueue],
+    () => (processedSubs && focus ? focusedArrayIndexes(processedSubs, focus, reviewQueue ?? undefined) : null),
+    [processedSubs, focus, reviewQueue],
   );
 
   const passedArrayIndexes = useMemo(() => {
@@ -164,19 +155,9 @@ export const WorkbenchStep: React.FC = () => {
   }, [processedSubs, reviewQueue, checkedSet]);
 
   const railHits = useMemo(
-    () => buildRailHitsForFocus(processedSubs ?? [], effectiveFocus, reviewQueue ?? undefined, checkedIds),
-    [processedSubs, effectiveFocus, reviewQueue, checkedIds],
+    () => buildRailHitsForFocus(processedSubs ?? [], pagerFocus, reviewQueue ?? undefined, checkedIds),
+    [processedSubs, pagerFocus, reviewQueue, checkedIds],
   );
-
-  const filterStatus = useMemo(() => {
-    if (!processedSubs) return null;
-    const label = REVIEW_FOCUS_LABEL[effectiveFocus];
-    const shown = focusedIndexes?.size ?? processedSubs.length;
-    if (effectiveFocus === 'review') {
-      return `显示 ${counts.reviewRemaining} / ${processedSubs.length} · 待复核`;
-    }
-    return `显示 ${shown} / ${processedSubs.length} · ${label}`;
-  }, [processedSubs, effectiveFocus, focusedIndexes, counts.reviewRemaining]);
 
   const jumpToArrayIndex = useCallback((arrayIndex: number) => {
     if (!processedSubs || arrayIndex < 0 || arrayIndex >= processedSubs.length) return;
@@ -194,18 +175,9 @@ export const WorkbenchStep: React.FC = () => {
   }, [pagerItems, jumpToArrayIndex]);
 
   const handleFocusChange = useCallback((next: ReviewFocusId | null) => {
-    setFocus(next ?? 'review');
+    setFocus(next);
     setPagerIndex(0);
   }, []);
-
-  // When focus changes, jump to first item of the new set
-  useEffect(() => {
-    if (!pagerItems.length) return;
-    const item = pagerItems[0];
-    if (item) {
-      // Don't auto-scroll on every checked-id change — only when focus identity changes
-    }
-  }, [effectiveFocus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const advanceAfterResolve = useCallback((resolvedId: string) => {
     const remaining = pagerItems.filter((item) => item.id !== resolvedId);
@@ -242,18 +214,15 @@ export const WorkbenchStep: React.FC = () => {
   const listController: WorkbenchListController | null = useMemo(() => {
     if (!processedSubs?.length) return null;
     return {
-      focus: effectiveFocus,
+      focus,
       focusedIndexes,
       passedArrayIndexes,
-      activeItem: (effectiveFocus === 'review' || effectiveFocus === 'structure' || effectiveFocus === 'suspect')
-        ? activeItem
-        : activeItem,
+      activeItem,
       checkedReviewIds: checkedSet,
       highlightArrayIndex,
       highlightNonce,
       railHits,
-      filterStatus,
-      onClearFocus: () => setFocus('review'),
+      onClearFocus: () => setFocus(null),
       onMarkReviewed,
       onConfirmCategory,
       onIgnore,
@@ -261,7 +230,7 @@ export const WorkbenchStep: React.FC = () => {
     };
   }, [
     processedSubs,
-    effectiveFocus,
+    focus,
     focusedIndexes,
     passedArrayIndexes,
     activeItem,
@@ -269,7 +238,6 @@ export const WorkbenchStep: React.FC = () => {
     highlightArrayIndex,
     highlightNonce,
     railHits,
-    filterStatus,
     onMarkReviewed,
     onConfirmCategory,
     onIgnore,
@@ -290,20 +258,13 @@ export const WorkbenchStep: React.FC = () => {
   }, [isReviewModalOpen, isSettingsOpen, setIsSettingsOpen, showBackConfirm, overviewOpen]);
 
   useEffect(() => {
-    const workTitle = resolveFilmTitles(
-      tmdbData?.title,
-      tmdbData?.originalTitle,
-      activeTaskTitle || customFilename || '字幕调校',
-    ).main;
+    const activeTask = tasks.find((task) => task.id === selectedTaskId);
+    const reviewOn = focus === 'review';
+    const gateLabel = `待核 ${counts.reviewRemaining}`;
     setInfoBar({
-      // Title + year + ep once in the bar; line count is the only chip (no second title).
-      title: workTitle,
-      year: tmdbData?.year || undefined,
-      badges: filenameEpKey ? [filenameEpKey.toUpperCase()] : undefined,
-      localChips: [
-        lineCountLabel(processedSubs, auxMode),
-        tmdbData ? undefined : '未匹配',
-      ].filter((item): item is string => Boolean(item)),
+      title: taskIdentityLabel(activeTask),
+      identity: <WorkbenchTaskIdentity />,
+      sourceMeta: <WorkbenchSourceMeta />,
       onBack: () => setWorkflowStep(1),
       display: (
         <>
@@ -311,13 +272,18 @@ export const WorkbenchStep: React.FC = () => {
           {counts.reviewRemaining > 0 ? (
             <button
               type="button"
-              className={`wb-gate wb-focus-ring ${effectiveFocus === 'review' ? 'is-on wb-sel' : ''}`}
-              title="点击后只筛选待复核项；仍可打开预览"
-              aria-pressed={effectiveFocus === 'review'}
-              onClick={() => handleFocusChange('review')}
+              className={`wb-gate wb-focus-ring${reviewOn ? ' is-on wb-sel' : ''}`}
+              data-testid="wb-gate"
+              data-layer={reviewOn ? 'd' : 'a'}
+              title={reviewOn
+                ? `正在只看待复核。已核对 ${counts.reviewChecked} / ${counts.reviewTotal}`
+                : `还有 ${counts.reviewRemaining} 项待复核。点击只看这些行。已核对 ${counts.reviewChecked} / ${counts.reviewTotal}`}
+              aria-pressed={reviewOn}
+              aria-label={reviewOn ? `${gateLabel}，筛选已打开` : gateLabel}
+              onClick={() => handleFocusChange(reviewOn ? null : 'review')}
             >
               <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-              还有 {counts.reviewRemaining} 项待复核
+              {gateLabel}
             </button>
           ) : null}
         </>
@@ -326,18 +292,14 @@ export const WorkbenchStep: React.FC = () => {
     });
     return () => setInfoBar(null);
   }, [
-    processedSubs,
-    auxMode,
-    customFilename,
-    filenameEpKey,
-    activeTaskTitle,
-    isSettingsOpen,
-    tmdbData,
+    tasks,
+    selectedTaskId,
     setInfoBar,
-    setIsSettingsOpen,
     setWorkflowStep,
     counts.reviewRemaining,
-    effectiveFocus,
+    counts.reviewChecked,
+    counts.reviewTotal,
+    focus,
     handleFocusChange,
   ]);
 
@@ -369,12 +331,12 @@ export const WorkbenchStep: React.FC = () => {
         <div className="flex-1 p-[var(--ds-gap-group)] min-h-0 min-w-0 overflow-hidden flex flex-col items-center z-10">
           <div className="max-w-[1280px] w-full flex-1 min-h-0 flex flex-col gap-[var(--ds-gap-group)] overflow-hidden">
             <InlineMessageBar />
-            <EpisodeTabs />
             {processedSubs && processedSubs.length > 0 && (
               <ReviewCard
                 score={score}
                 counts={counts}
-                focus={effectiveFocus}
+                focus={focus}
+                emptyFocus={Boolean(focus && focusedIndexes && focusedIndexes.size === 0)}
                 onFocusChange={handleFocusChange}
                 pagerItems={pagerItems}
                 pagerIndex={safePagerIndex}
@@ -384,7 +346,7 @@ export const WorkbenchStep: React.FC = () => {
             )}
             <div className="flex min-h-[50vh] flex-1 flex-col overflow-hidden">
               <SequenceList
-                key={selectedTaskId || customFilename}
+                key={selectedTaskId || 'workbench'}
                 timelineDurationMs={sourceDurationMs}
                 listController={listController}
               />
