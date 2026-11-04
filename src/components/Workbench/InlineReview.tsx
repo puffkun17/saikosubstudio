@@ -62,7 +62,7 @@ export const InlineReview: React.FC<InlineReviewProps> = ({
           )}
         </div>
         <ReviewActions
-          primary={isSuspect ? `确认「${pickedLabel}」` : '已核对'}
+          primary="核"
           primaryTitle={isSuspect ? `确认类别为${pickedLabel}并标为已核对` : '标为已核对'}
           onPrimary={isSuspect ? () => onConfirmCategory(picked) : onMarkReviewed}
           onEdit={onEdit}
@@ -108,14 +108,14 @@ const ReviewActions = ({
   onSkip: () => void;
 }) => (
   <div className="wb-inline__actions" role="group" aria-label="复核操作" data-inline-actions>
-    <button type="button" className="ui-action ui-action--secondary" title={primaryTitle} onClick={onPrimary}>
+    <button type="button" className="ui-action ui-action--secondary" title={primaryTitle} aria-label={primaryTitle} onClick={onPrimary}>
       {primary}
     </button>
     {onEdit ? (
-      <button type="button" className="ui-action ui-action--secondary" onClick={onEdit}>修改</button>
+      <button type="button" className="ui-action ui-action--secondary" title="修改这行字幕" aria-label="修改" onClick={onEdit}>改</button>
     ) : null}
-    <button type="button" className="ui-action ui-action--quiet" title="保留现状并标为已核对" onClick={onSkip}>
-      保留
+    <button type="button" className="ui-action ui-action--secondary" title="保留现状并标为已核对" aria-label="保留" onClick={onSkip}>
+      留
     </button>
   </div>
 );

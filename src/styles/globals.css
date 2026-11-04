@@ -603,6 +603,20 @@ body {
   min-width: 0;
 }
 
+/* Act 2：任务轨占主位，片源行让位并先被挤掉。任务名不设硬 max-width。 */
+.workflow-info-bar__identity {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.workflow-info-bar__source {
+  flex: 1 1 0;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
 /* Identity stays on the left. Status/settings sit in their own slot; only actions occupy the right cluster. */
 .workflow-info-bar__end {
   display: flex;

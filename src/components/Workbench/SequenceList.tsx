@@ -12,6 +12,7 @@ import { MarkerRail } from '@/components/Workbench/MarkerRail';
 import { InlineReview } from '@/components/Workbench/InlineReview';
 import type { WorkbenchListController } from '@/components/Workbench/workbenchFocus';
 import { REVIEW_FOCUS_LABEL } from '@/core/workbenchReview';
+import { isRowDimmed, lineProvenance, splitCueLines } from '@/core/workbenchAxis';
 
 interface SequenceListProps {
   timelineDurationMs?: number;
@@ -20,10 +21,14 @@ interface SequenceListProps {
 
 const LONG_PRESS_MS = 450;
 
-/** Dialogue field hugs the line (CJK ≈ 1em) and caps before it shoves Cancel/Save onto the next row. */
-const editFieldWidth = (value: string) => {
-  const units = Math.min(28, Math.max(8, Array.from(value).length + 1));
-  return `${units}em`;
+const CueBlock: React.FC<{ text: string; struck?: boolean }> = ({ text, struck = false }) => {
+  const { primary, secondary } = splitCueLines(text);
+  return (
+    <div className={struck ? 'wb-cue__was' : 'wb-cue__now'}>
+      <div>{primary}</div>
+      {secondary ? <div className="wb-cue__sub">{secondary}</div> : null}
+    </div>
+  );
 };
 
 export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, listController = null }) => {
@@ -41,6 +46,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
     redoSubtitleEdit,
     canUndo,
     canRedo,
+    editHistory,
     lyricPosition,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
@@ -56,6 +62,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
     redoSubtitleEdit: state.redoSubtitleEdit,
     canUndo: state.editHistory.length > 0,
     canRedo: state.editFuture.length > 0,
+    editHistory: state.editHistory,
     lyricPosition: state.customStyle.lyricPosition ?? 'top',
   })));
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -274,72 +281,73 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
   ) : null;
 
   const focusedIndexes = listController?.focusedIndexes ?? null;
+  const focusActive = focusedIndexes != null;
   const highlightIndex = listController?.highlightArrayIndex ?? null;
   const highlightNonce = listController?.highlightNonce ?? 0;
+  const historyButtons = (
+    <div className="wb-edit-history" role="group" aria-label="字幕编辑记录">
+      <button type="button" onClick={undoEdit} disabled={!canUndo} className="ui-action ui-action--secondary ui-action--icon" aria-label="撤销字幕文本修改" title="撤销字幕修改 (Ctrl+Z)">
+        <Undo2 className="h-4 w-4" aria-hidden="true" />
+      </button>
+      <button type="button" onClick={redoEdit} disabled={!canRedo} className="ui-action ui-action--secondary ui-action--icon" aria-label="重做字幕文本修改" title="重做字幕修改 (Ctrl+Shift+Z)">
+        <Redo2 className="h-4 w-4" aria-hidden="true" />
+      </button>
+    </div>
+  );
 
   return (
     <div className="v4-panel flex flex-1 flex-col overflow-hidden">
       {total > 0 && (
-        <div className="timeline-head flex flex-col gap-2 p-[var(--ds-pad-card)] border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] flex-shrink-0 lg:flex-row lg:items-center lg:gap-4">
-            <div className="flex items-center justify-between gap-4 lg:order-2 lg:shrink-0">
-            <div className="min-w-0 flex flex-wrap items-center gap-3">
-              <span className="ds-label whitespace-nowrap">时间轴</span>
-              <span className="ui-meta-row tabular-nums">
-                {isOverlimit && !showAllSubs ? `${LIMIT} / ${total} 行` : `${total} 行`}
-                {selectedIndexes.size > 1 ? ` · 已选 ${selectedIndexes.size}` : ''}
-              </span>
-              {listController?.filterStatus ? (
-                <span className="ui-meta text-xs" role="status">
-                  {listController.filterStatus}
-                </span>
-              ) : null}
-              {isOverlimit && !showAllSubs && (
-                <span className="hidden sm:inline text-xs text-[var(--v4-text-faint)] truncate">
-                  当前只显示前 {LIMIT} 行，拖动进度时会自动展开
-                </span>
-              )}
-              {canCollapse && (
-                <span className="hidden sm:inline text-xs text-[var(--v4-text-faint)] truncate">
-                  已展开全部
-                </span>
-              )}
-            </div>
-              <div className="flex shrink-0 items-center gap-1.5">
-                {listController?.focus && listController.focus !== 'review' ? (
-                  <button
-                    type="button"
-                    className="ui-action ui-action--quiet"
-                    onClick={listController.onClearFocus}
-                    aria-label="清除筛选，返回默认复核"
-                    title="清除筛选"
-                  >
-                    清除
-                  </button>
-                ) : null}
-                <button type="button" onClick={undoEdit} disabled={!canUndo} className="ui-action ui-action--quiet ui-action--icon" aria-label="撤销字幕文本修改" title="撤销 (Ctrl+Z)">
-                  <Undo2 className="h-4 w-4" aria-hidden="true" />
-                </button>
-                <button type="button" onClick={redoEdit} disabled={!canRedo} className="ui-action ui-action--quiet ui-action--icon" aria-label="重做字幕文本修改" title="重做 (Ctrl+Shift+Z)">
-                  <Redo2 className="h-4 w-4" aria-hidden="true" />
-                </button>
-                {hasMore && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllSubs(true)}
-                    className="ui-action ui-action--secondary"
-                  >
-                    <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                    显示全部
-                  </button>
-                )}
-                {foldButton}
-              </div>
+        <div className="timeline-head flex flex-wrap items-center gap-2 border-b border-[var(--v4-line)] bg-[var(--v4-panel-muted)] p-[var(--ds-pad-card)]">
+          <div className="min-w-0 flex-1">
+            <TimelineControls
+              timelineDurationMs={timelineDurationMs}
+              focusChrome={focusedIndexes != null ? {
+                active: true,
+                marks: Array.from(focusedIndexes),
+                playheadDim: !focusedIndexes.has(previewIndex),
+                pulse: highlightIndex != null && highlightNonce > 0
+                  ? { row: highlightIndex, key: highlightNonce }
+                  : null,
+              } : undefined}
+            />
           </div>
-          <div className="min-w-0 flex-1 lg:order-1"><TimelineControls timelineDurationMs={timelineDurationMs} /></div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {focusActive ? (
+              <button
+                type="button"
+                className="ui-action ui-action--secondary"
+                onClick={listController?.onClearFocus}
+                aria-label="清除筛选"
+                title="清除筛选"
+                data-testid="clear-focus"
+              >
+                清除
+              </button>
+            ) : null}
+            {selectedIndexes.size > 1 ? (
+              <span className="ui-meta-row tabular-nums">已选 {selectedIndexes.size}</span>
+            ) : null}
+            {hasMore && (
+              <button
+                type="button"
+                onClick={() => setShowAllSubs(true)}
+                className="ui-action ui-action--secondary"
+                title={isOverlimit && !showAllSubs ? `当前只显示前 ${LIMIT} 行，拖动进度时会自动展开` : undefined}
+              >
+                <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                显示全部
+              </button>
+            )}
+            {foldButton}
+          </div>
         </div>
       )}
 
-      <div className="wb-list-shell">
+      <div
+        className="wb-list-shell"
+        data-focus-empty={focusedIndexes != null && focusedIndexes.size === 0 ? 'true' : undefined}
+      >
       <div ref={listRef} className="wb-list-shell__scroll">
         {visibleSubs.length > 0 ? (
           <div className="flex flex-col relative">
@@ -353,7 +361,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
               const rowIndex = sub.index - 1;
               const isActive = previewIndex === rowIndex;
               const isSelected = selectedIndexes.has(rowIndex);
-              const isDimmed = Boolean(focusedIndexes && focusedIndexes.size > 0 && !focusedIndexes.has(rowIndex));
+              const isDimmed = isRowDimmed(focusedIndexes, rowIndex);
               const isPassedMark = Boolean(listController?.passedArrayIndexes.has(rowIndex));
               const showInline = Boolean(
                 activeReview
@@ -363,10 +371,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
               );
               const isSweep = highlightIndex === rowIndex && highlightNonce > 0;
               const inActiveGroup = activeArrayIndexes.has(rowIndex);
-              const normalizedText = sub.text.replace(/\\N/gi, '\n');
-              const parts = normalizedText.split('\n');
-              const zhText = parts[0] || '';
-              const enText = parts[1] || '';
+              const enText = splitCueLines(sub.text).secondary;
               const isLyric = sub.type === 'lyrics' || sub.cueKind === 'lyrics' || isLyricText(sub.text);
               const isCredit = !isLyric && (
                 sub.type === 'credit'
@@ -418,7 +423,10 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
               const startTime = sub.ts.split(' --> ')[0]?.replace(',', '.').trim() || '';
               const endTime = sub.ts.split(' --> ')[1]?.replace(',', '.').trim() || '';
 
-              const rowClass = `wb-row group relative grid grid-cols-[2.5rem_minmax(0,1fr)_1.75rem] md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] items-center gap-2 md:gap-3 py-1.5 px-3 md:px-4 border-b border-[var(--v4-line)] cursor-pointer select-none text-left overflow-hidden transition-colors duration-150
+              const editing = editingIndex === sub.index;
+              const provenance = lineProvenance(editHistory, sub.index, sub.text);
+              const struckText = provenance?.before ?? sub.text;
+              const rowClass = `wb-row group relative grid grid-cols-[2.5rem_minmax(0,1fr)_1.75rem] md:grid-cols-[4.25rem_minmax(9.5rem,auto)_minmax(0,1fr)_2.25rem] items-center gap-2 md:gap-3 py-1.5 px-3 md:px-4 border-b border-[var(--v4-line)] cursor-pointer select-none text-left ${editing ? 'is-editing' : 'overflow-hidden'} transition-colors duration-150
                 ${isActive ? 'glass-lens-active' : isSelected ? 'bg-[var(--v4-accent-soft)]/55' : 'bg-transparent hover:bg-[var(--v4-panel-muted)]'}
                 ${(isLyric || isCredit) && !isActive && !isSelected ? 'bg-[var(--v4-panel-muted)]/50' : ''}
                 ${isDimmed ? 'dim' : ''}
@@ -471,7 +479,8 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
                   }}
                   tabIndex={0}
                   aria-selected={isSelected}
-                  aria-label={`第 ${sub.index} 行字幕，按 F2 编辑；Shift 连选，⌥/⌘/Ctrl 跳选`}
+                  data-dim={isDimmed ? 'true' : 'false'}
+                  aria-label={`第 ${sub.index} 行字幕${provenance ? '，已修改' : ''}，按 F2 编辑；Shift 连选，⌥/⌘/Ctrl 跳选`}
                   className={rowClass}
                 >
                   <div className={`flex min-w-0 items-center gap-1 self-center pl-0.5 font-mono text-xs font-semibold tabular-nums whitespace-nowrap ${isActive ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--v4-text-muted)]'}`}>
@@ -510,71 +519,74 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
                     </div>
                   </div>
 
-                  <div className="flex min-w-0 flex-col gap-0.5 pr-1">
+                  <div className="wb-cue min-w-0 pr-1">
                     <span className={`ds-mono text-[length:var(--ds-fs-micro)] tabular-nums md:hidden ${isActive ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--ds-ink-3)]'}`}>{startTime} → {endTime}</span>
-                    {editingIndex === sub.index ? (
-                      <div className="wb-line-edit z-10 cursor-auto select-text" data-line-edit onClick={(e) => e.stopPropagation()}>
-                        <div className="wb-line-edit__fields">
+                    {editing ? (
+                      <CueBlock text={struckText} struck />
+                    ) : provenance ? (
+                      <>
+                        <CueBlock text={provenance.before} struck />
+                        <CueBlock text={sub.text} />
+                      </>
+                    ) : (
+                      <CueBlock text={sub.text} />
+                    )}
+                    {editing ? (
+                      <div
+                        className="wb-edit-slot"
+                        data-line-edit
+                        data-testid="wb-edit-slot"
+                        onClick={(e) => e.stopPropagation()}
+                        onDoubleClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="text"
+                          value={draftZh}
+                          onChange={(e) => setDraftZh(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') commitEditing();
+                            if (e.key === 'Escape') cancelEditing();
+                          }}
+                          className="wb-line-edit__input"
+                          placeholder="中文字幕文本"
+                          aria-label="修改后的字幕"
+                          autoFocus
+                        />
+                        {(enText || draftSecondary) ? (
                           <input
                             type="text"
-                            value={draftZh}
-                            onChange={(e) => setDraftZh(e.target.value)}
+                            value={draftSecondary}
+                            onChange={(e) => setDraftSecondary(e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') commitEditing();
                               if (e.key === 'Escape') cancelEditing();
                             }}
-                            className="wb-line-edit__input"
-                            style={{ '--wb-edit-w': editFieldWidth(draftZh || '中文字幕文本') } as React.CSSProperties}
-                            placeholder="中文字幕文本"
-                            autoFocus
+                            className="wb-line-edit__input wb-line-edit__input--sub"
+                            placeholder="副字幕文本"
+                            aria-label="修改后的副字幕"
                           />
-                          {enText && (
-                            <input
-                              type="text"
-                              value={draftSecondary}
-                              onChange={(e) => setDraftSecondary(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') commitEditing();
-                                if (e.key === 'Escape') cancelEditing();
-                              }}
-                              className="wb-line-edit__input wb-line-edit__input--sub"
-                              style={{ '--wb-edit-w': editFieldWidth(draftSecondary || '副字幕文本') } as React.CSSProperties}
-                              placeholder="副字幕文本"
-                            />
-                          )}
-                        </div>
-                        <div className="wb-line-edit__actions">
-                          <button type="button" className="ui-action ui-action--quiet" onClick={(e) => { e.stopPropagation(); cancelEditing(); }}>
-                            <X className="h-4 w-4" aria-hidden="true" />取消
-                          </button>
-                          <button
-                            type="button"
-                            className="ui-action ui-action--secondary"
-                            onClick={(e) => { e.stopPropagation(); commitEditing(); }}
-                          >
-                            <Check className="h-4 w-4" aria-hidden="true" />保存
-                          </button>
+                        ) : null}
+                        <div className="wb-edit-slot__bar">
+                          {historyButtons}
+                          <div className="wb-edit-slot__actions">
+                            <button type="button" className="ui-action ui-action--secondary" onClick={(e) => { e.stopPropagation(); cancelEditing(); }}>
+                              <X className="h-4 w-4" aria-hidden="true" />取消
+                            </button>
+                            <button
+                              type="button"
+                              className="ui-action ui-action--secondary"
+                              onClick={(e) => { e.stopPropagation(); commitEditing(); }}
+                            >
+                              <Check className="h-4 w-4" aria-hidden="true" />保存
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    ) : (
-                      <>
-                        <div className="break-words font-sans text-[length:var(--ds-fs-head)] font-medium leading-[var(--ds-lh-tight)] text-[var(--v4-text)]">
-                          {zhText}
-                        </div>
-                        {enText && (
-                          <div
-                            className="mt-0.5 break-words text-[length:var(--ds-fs-meta)] font-normal leading-[var(--ds-lh-tight)] text-[var(--ds-ink-2)]"
-                            style={{ fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }}
-                          >
-                            {enText}
-                          </div>
-                        )}
-                      </>
-                    )}
+                    ) : null}
                   </div>
 
                   <div className="flex items-center justify-end self-center">
-                    {editingIndex !== sub.index && (
+                    {!editing && (
                       <button
                         type="button"
                         className={`v4-focus-ring inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-[var(--v4-text-muted)] transition-opacity hover:bg-[var(--v4-accent-soft)] hover:text-[var(--v4-text)] pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto focus-visible:pointer-events-auto focus-visible:opacity-100 ${
@@ -591,7 +603,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
                     )}
                   </div>
                 </div>
-                {showInline && activeReview && listController ? (
+                {showInline && activeReview && listController && !editing ? (
                   <InlineReview
                     item={activeReview}
                     row={sub}
@@ -650,6 +662,11 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
           lastVisibleArrayIndex={visibleRange.last}
           onJump={listController.onJumpToArrayIndex}
         />
+      ) : null}
+      {editingIndex == null && (canUndo || canRedo) ? (
+        <div className="wb-edit-dock" data-testid="wb-edit-dock">
+          {historyButtons}
+        </div>
       ) : null}
       </div>
     </div>

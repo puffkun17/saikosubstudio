@@ -16,7 +16,6 @@ export type WorkbenchListController = {
   highlightArrayIndex: number | null;
   highlightNonce: number;
   railHits: MarkerRailHit[];
-  filterStatus: string | null;
   onClearFocus: () => void;
   onMarkReviewed: (itemId: string) => void;
   onConfirmCategory: (item: MergeReviewItem, kind: Exclude<LineKind, 'credit'>) => void;
