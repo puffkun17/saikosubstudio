@@ -30,7 +30,7 @@ export const OutputModeControl: React.FC = () => {
   }, [processedSubs]);
 
   return (
-    <div className="wb-out" data-testid="output-mode" role="radiogroup" aria-label="输出模式">
+    <div className="wb-out wb-out--settings" data-testid="output-mode" role="radiogroup" aria-label="输出策略">
       <span className="wb-out__label">输出</span>
       <div className="wb-out__seg">
         {OPTIONS.map((o) => {
@@ -45,9 +45,18 @@ export const OutputModeControl: React.FC = () => {
               type="button"
               role="radio"
               aria-checked={mode === o.value}
-              className={`wb-out__btn wb-focus-ring ${mode === o.value ? 'wb-sel' : ''}`}
+              className={`wb-out__btn wb-focus-ring${mode === o.value ? ' is-on' : ''}`}
               title={tip}
-              onClick={() => setCustomStyle({ ...customStyle, auxiliaryMode: o.value })}
+              onClick={() => {
+                const narrow = window.matchMedia('(max-width: 767px)').matches;
+                if (!narrow) {
+                  setCustomStyle({ ...customStyle, auxiliaryMode: o.value });
+                  return;
+                }
+                const order = OPTIONS.map((item) => item.value);
+                const next = order[(Math.max(0, order.indexOf(mode)) + 1) % order.length];
+                setCustomStyle({ ...customStyle, auxiliaryMode: next });
+              }}
               data-aux={o.value}
             >
               {label}

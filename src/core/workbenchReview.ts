@@ -1,7 +1,7 @@
 /**
  * Workbench B7 review focus / paging helpers.
- * Primary group 「待复核」= merge review queue (structure + other-suspect).
- * Secondary group 「附加字幕」= screen / credit / sound (SDH) line kinds.
+ * 待核 = unresolved review queue. Its number is structureRemaining + suspectRemaining.
+ * 结构差异 / 类别待定 / 标题告示 / 人员署名 / SDH are peer filters, not a folded aux menu.
  */
 import { rowStableKey } from './identity';
 import { classifyLineKind, type LineKind, type SubRow } from '../utils/subtitleCore';
@@ -48,7 +48,7 @@ export type ReviewGroupCounts = {
 };
 
 export const REVIEW_FOCUS_LABEL: Record<ReviewFocusId, string> = {
-  review: '待复核',
+  review: '待核',
   structure: '结构差异',
   suspect: '类别待定',
   screen: '标题告示',

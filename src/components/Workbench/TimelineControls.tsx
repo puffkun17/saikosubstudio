@@ -4,6 +4,16 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { LampCeiling, Pause, Play, SquareCenterlineDashedHorizontal } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
+import { reviewTaskKey } from '@/core/reviewKey';
+import {
+  activeMeasureMode,
+  buildDialTicks,
+  cycleMeasureMode,
+  formatDialAnchor,
+  formatMeasureLine,
+  nearestHitOrdinal,
+  type MeasureMode,
+} from '@/core/timelineMeasure';
 import { formatMsClock, parseSubtitleRange } from '@/utils/timeline/timecode';
 
 interface TimelineControlsProps {
@@ -36,6 +46,8 @@ export type TimelineFocusChrome = {
   active: boolean;
   /** 0-based row indexes that stay bright. */
   marks?: number[];
+  /** Short name of the active filter, used by the hit reading. */
+  label?: string;
   pulse?: { row: number; key: number } | null;
   playheadDim?: boolean;
 };
@@ -135,6 +147,8 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
     setShowGuides,
     isLightsOff,
     setLightsOff,
+    selectedTaskId,
+    mergeReviewCheckedByTask,
   } = useStudioStore(useShallow((state) => ({
     processedSubs: state.processedSubs,
     previewIndex: state.previewIndex,
@@ -151,8 +165,13 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
     setShowGuides: state.setShowGuides,
     isLightsOff: state.isLightsOff,
     setLightsOff: state.setLightsOff,
+    selectedTaskId: state.selectedTaskId,
+    mergeReviewCheckedByTask: state.mergeReviewCheckedByTask,
   })));
   const [scrubTimeMs, setScrubTimeMs] = useState<number | null>(null);
+  const [measureMode, setMeasureMode] = useState<MeasureMode>('position');
+  const [trackedFilter, setTrackedFilter] = useState(false);
+  const ignoreJumpBlur = useRef(false);
   const [sliderTip, setSliderTip] = useState<{ x: number; y: number } | null>(null);
   const isPointerScrubbing = useRef(false);
   const playStartedAtRef = useRef(0);
@@ -168,6 +187,17 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
       })
       .sort((a, b) => a.startMs - b.startMs)
   ), [processedSubs]);
+
+  const dialCheckedIds = mergeReviewCheckedByTask[reviewTaskKey(selectedTaskId, processedSubs)];
+  const dialTicks = useMemo(
+    () => (variant === 'full' ? buildDialTicks(processedSubs ?? [], dialCheckedIds ?? []) : []),
+    [variant, processedSubs, dialCheckedIds],
+  );
+  const filterActive = Boolean(focusChrome?.active);
+  if (filterActive !== trackedFilter) {
+    setTrackedFilter(filterActive);
+    if (!filterActive && measureMode === 'hit') setMeasureMode('position');
+  }
 
   const subtitleEndMs = timelinePoints.reduce((latest, point) => Math.max(latest, point.endMs), 0);
   const sharedDurationMs = Math.max(timelineDurationMs || 0, subtitleEndMs, 1);
@@ -481,6 +511,36 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
 
   const dialFocusOn = Boolean(focusChrome?.active);
   const dialMarks = focusChrome?.marks ?? [];
+  const dialMarkSet = new Set(dialMarks);
+  const shownMode = activeMeasureMode(measureMode, dialFocusOn);
+  const hitPoints = dialFocusOn
+    ? timelinePoints
+      .filter((point) => dialMarkSet.has(point.rowIndex))
+      .map((point) => ({ rowIndex: point.rowIndex, startMs: point.startMs }))
+    : [];
+  const ordinal = nearestHitOrdinal(hitPoints, displayTimeMs, tipPoint.rowIndex);
+  const reading = formatMeasureLine({
+    mode: measureMode,
+    filterActive: dialFocusOn,
+    row: tipLine,
+    total: processedSubs.length,
+    timeMs: displayTimeMs,
+    durationMs: sharedDurationMs,
+    hitIndex: ordinal.index,
+    hitCount: ordinal.count,
+    hitTimeMs: ordinal.timeMs,
+  });
+  const anchor = formatDialAnchor(processedSubs.length, sharedDurationMs);
+  const rowsLeft = Math.max(0, processedSubs.length - tipLine);
+  const remainClock = formatMsClock(Math.max(0, sharedDurationMs - displayTimeMs));
+  const measureTitle = shownMode === 'remain'
+    ? `剩余 ${rowsLeft} 行 · ${remainClock}。点击切换读数`
+    : shownMode === 'hit'
+      ? `${focusChrome?.label ?? '筛选'} ${ordinal.index} / ${ordinal.count}。点击切换读数`
+      : '当前行与时码。点击切换读数';
+  const cycleMeasure = () => {
+    setMeasureMode((mode) => cycleMeasureMode(mode, dialFocusOn));
+  };
 
   return (
     <div className="v9-dial-slider-container flex w-full min-w-0 flex-row items-center gap-3" data-testid="timeline-instrument">
@@ -500,50 +560,84 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
             onBlur={event => { if (scrubTimeMs !== null) endScrub(event.currentTarget.value); }}
             style={timelineStyle}
             className={`v9-timeline-dial-slider w-full${sliderFocusClass(dialFocusOn, Boolean(focusChrome?.playheadDim))}`}
-            aria-label={`字幕时间轴，第 ${tipLine} 行，共 ${processedSubs.length} 行，${formatMsClock(displayTimeMs)} / ${formatMsClock(sharedDurationMs)}`}
+            aria-label={`${reading}。全片 ${anchor}`}
             data-timeline-focus={dialFocusOn ? 'true' : undefined}
             data-focus-empty={dialFocusOn && dialMarks.length === 0 ? 'true' : undefined}
           />
-          {dialFocusOn ? (
+          {dialTicks.length > 0 ? (
+            <div className="wb-dial-ticks" aria-label="时间轴刻度">
+              {dialTicks.map((tick) => {
+                const dim = dialFocusOn && !dialMarkSet.has(tick.rowIndex);
+                return (
+                  <button
+                    key={tick.rowIndex}
+                    type="button"
+                    className={`wb-dial-tick${dim ? ' is-dim' : ''}`}
+                    data-kind={tick.kind}
+                    data-label={tick.label}
+                    style={{ left: `${(tick.startMs / sharedDurationMs) * 100}%` }}
+                    title={tick.label}
+                    aria-label={tick.label}
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      selectRow(tick.rowIndex);
+                    }}
+                  />
+                );
+              })}
+            </div>
+          ) : null}
+          {dialFocusOn && focusChrome?.pulse ? (
             <TimelineFocusLayer
               rows={processedSubs}
               durationMs={sharedDurationMs}
-              marks={dialMarks}
-              pulse={focusChrome?.pulse}
+              marks={[]}
+              pulse={focusChrome.pulse}
             />
           ) : null}
-          {/* 行数贴指针上方、时间贴下方：动线锚点在指针，不另开读数条 */}
-          <div
-            className="wb-playhead-labels"
-            style={{
-              left: `clamp(3.25rem, ${timelinePercent}%, calc(100% - 3.25rem))`,
-            }}
+          <form
+            onSubmit={handleJumpToLine}
+            className="wb-readout"
             data-testid="playhead-labels"
+            data-measure={shownMode}
+            style={{ left: `clamp(5.5rem, ${timelinePercent}%, calc(100% - 8.5rem))` }}
           >
-            <form
-              onSubmit={handleJumpToLine}
-              className="wb-playhead-labels__above"
-              aria-label="当前行"
-            >
-              <span className="wb-sr">行</span>
+            {shownMode === 'position' ? (
               <input
                 type="number"
                 min="1"
                 max={processedSubs.length}
                 value={jumpLineVal}
                 onChange={event => setJumpLineVal(event.target.value)}
-                onBlur={() => handleJumpToLine()}
-                className="v9-dial-gauge-input no-spin wb-playhead-labels__input"
+                onBlur={() => {
+                  if (ignoreJumpBlur.current) {
+                    ignoreJumpBlur.current = false;
+                    return;
+                  }
+                  handleJumpToLine();
+                }}
+                onPointerDown={(event) => event.stopPropagation()}
+                className="no-spin wb-readout__jump"
                 aria-label="跳转到字幕行"
               />
-              <span>/ {processedSubs.length}</span>
-            </form>
-            <span className="wb-playhead-labels__rail" aria-hidden="true" />
-            <span className="wb-playhead-labels__below" aria-label="时间进度">
-              {formatMsClock(displayTimeMs)}
-              <span className="wb-playhead-labels__muted"> / {formatMsClock(sharedDurationMs)}</span>
-            </span>
-          </div>
+            ) : null}
+            <button
+              type="button"
+              className="wb-readout__cycle wb-focus-ring"
+              data-testid="measure-cycle"
+              aria-label={`${reading}，点击切换读数`}
+              title={measureTitle}
+              onPointerDown={() => { ignoreJumpBlur.current = true; }}
+              onClick={cycleMeasure}
+            >
+              {shownMode === 'position'
+                ? ` / ${processedSubs.length} · ${formatMsClock(displayTimeMs)}`
+                : reading}
+            </button>
+          </form>
+          <span className="wb-dial-anchor" data-testid="dial-anchor">{anchor}</span>
         </div>
       </div>
     </div>

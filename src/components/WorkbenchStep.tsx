@@ -260,6 +260,7 @@ export const WorkbenchStep: React.FC = () => {
   useEffect(() => {
     const activeTask = tasks.find((task) => task.id === selectedTaskId);
     const reviewOn = focus === 'review';
+    const reviewLocked = counts.reviewRemaining <= 0 && !reviewOn;
     const gateLabel = `待核 ${counts.reviewRemaining}`;
     setInfoBar({
       title: taskIdentityLabel(activeTask),
@@ -267,26 +268,27 @@ export const WorkbenchStep: React.FC = () => {
       sourceMeta: <WorkbenchSourceMeta />,
       onBack: () => setWorkflowStep(1),
       display: (
-        <>
+        <div className="wb-infobar-tools">
           <OutputModeControl />
-          {counts.reviewRemaining > 0 ? (
-            <button
-              type="button"
-              className={`wb-gate wb-focus-ring${reviewOn ? ' is-on wb-sel' : ''}`}
-              data-testid="wb-gate"
-              data-layer={reviewOn ? 'd' : 'a'}
-              title={reviewOn
-                ? `正在只看待复核。已核对 ${counts.reviewChecked} / ${counts.reviewTotal}`
-                : `还有 ${counts.reviewRemaining} 项待复核。点击只看这些行。已核对 ${counts.reviewChecked} / ${counts.reviewTotal}`}
-              aria-pressed={reviewOn}
-              aria-label={reviewOn ? `${gateLabel}，筛选已打开` : gateLabel}
-              onClick={() => handleFocusChange(reviewOn ? null : 'review')}
-            >
-              <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-              {gateLabel}
-            </button>
-          ) : null}
-        </>
+          <button
+            type="button"
+            className={`wb-gate wb-qc wb-focus-ring${reviewOn ? ' is-on wb-sel' : ''}${counts.reviewRemaining <= 0 ? ' is-zero' : ''}`}
+            data-testid="wb-gate"
+            data-count={counts.reviewRemaining}
+            data-layer={reviewOn ? 'd' : 'a'}
+            disabled={reviewLocked}
+            title={reviewOn
+              ? `正在只看待核。结构差异 ${counts.structureRemaining}，类别待定 ${counts.suspectRemaining}。已核对 ${counts.reviewChecked} / ${counts.reviewTotal}`
+              : `待核 ${counts.reviewRemaining}（结构差异 ${counts.structureRemaining} + 类别待定 ${counts.suspectRemaining}）。点击只看这些行。已核对 ${counts.reviewChecked} / ${counts.reviewTotal}`}
+            aria-pressed={reviewOn}
+            aria-label={reviewOn ? `${gateLabel}，筛选已打开` : gateLabel}
+            onClick={() => handleFocusChange(reviewOn ? null : 'review')}
+          >
+            <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+            待核
+            <i className="wb-gate__n">{counts.reviewRemaining}</i>
+          </button>
+        </div>
       ),
       actions: <WorkflowContinueInFlow />,
     });
@@ -299,6 +301,8 @@ export const WorkbenchStep: React.FC = () => {
     counts.reviewRemaining,
     counts.reviewChecked,
     counts.reviewTotal,
+    counts.structureRemaining,
+    counts.suspectRemaining,
     focus,
     handleFocusChange,
   ]);
