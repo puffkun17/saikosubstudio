@@ -4,10 +4,12 @@
 
 - Product/visual rules: `DESIGN.md` (Paper Ledger). Old Ridgeline docs are archived in `docs/design-archive/` (history only).
 - Tokens: `src/styles/paper-tokens.css` (source of truth). `src/styles/globals.css` keeps the legacy `--v4-*` / `--v5-*` names as aliases onto those tokens; see `docs/design/token-mapping.md`. Wine accent `#7a2233`, ink on paper, no in-page shadows. **No new palettes.**
-- Local dark surfaces use `data-paper="chrome"` (green tray) / `data-paper="theater"` (lights-off); `data-paper="sheet"` resets to light paper inside them.
+- Surfaces: default / `[data-paper="sheet"]` = light paper (tray included—**no green chrome tray**). `[data-paper="theater"]` = lights-off local dark. Do not reintroduce `data-paper="chrome"`.
 - Selected / active chrome: wine-accent treatment from `DESIGN.md` §6 (not the old orange fill + forest text).
 - Avoid iconic big-tech chrome (generic purple gradients, Inter-only stacks, glassmorphism kits).
 - **Mouse-first.** Do not add keyboard shortcuts; keep normal focusability and visible focus rings.
+- Interaction layers **A–E** and cross-region hierarchy (task > TMDB source > actions as E): `DESIGN.md` §7–§8. Do not invent a parallel control language.
+- **Superseded:** Ridgeline forest/citrus, solid-orange primary, orange-block+green selected chrome.
 
 ## Motion
 
