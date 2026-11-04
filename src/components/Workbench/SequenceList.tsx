@@ -321,6 +321,9 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
               focusChrome={focusedIndexes != null ? {
                 active: true,
                 marks: Array.from(focusedIndexes),
+                label: listController?.focus === 'review'
+                  ? '待核'
+                  : (listController?.focus ? REVIEW_FOCUS_LABEL[listController.focus] : undefined),
                 playheadDim: !focusedIndexes.has(previewIndex),
                 pulse: highlightIndex != null && highlightNonce > 0
                   ? { row: highlightIndex, key: highlightNonce }

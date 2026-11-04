@@ -68,7 +68,7 @@ export type InfoBarConfig = {
    */
   sourceMeta?: React.ReactNode;
   /**
-   * 状态与设置（输出模式、待复核计数）。不是操作槽。
+   * 状态与设置（输出策略、待核计数）。不是操作槽。
    * 渲染在操作簇左侧，用分隔线隔开。
    */
   display?: React.ReactNode;

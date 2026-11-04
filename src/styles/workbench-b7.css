@@ -28,74 +28,125 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-/* Status readout in the info bar — text, not a tag or action. */
+/* Info bar tools share the bar's control row. Settings and QC do not share a skin. */
+.wb-infobar-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+}
+
+/* QC status / filter. Resting skin is a danger status, not a settings segment.
+   Pressed state picks up .wb-sel (soft filter), same binding as the review meter. */
 .wb-gate {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: var(--pt-radius-md);
+  border: 1px solid color-mix(in srgb, var(--state-danger) 38%, var(--rule-hair));
+  background: color-mix(in srgb, var(--state-danger) 8%, var(--paper-raised));
   font-size: var(--ds-fs-meta);
   font-weight: var(--ds-fw-strong);
   line-height: var(--ds-ctl-lh);
   white-space: nowrap;
   color: var(--state-danger);
-  background: transparent;
-  border: 0;
-  padding: 0;
   cursor: pointer;
 }
 
-.wb-gate.is-on,
-.wb-gate.wb-sel {
-  color: var(--accent-text);
-  text-decoration: none;
+.wb-gate__n {
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--ds-fw-strong);
 }
 
-/* Compact output mode segment */
+.wb-gate.is-zero,
+.wb-gate:disabled {
+  opacity: 0.45;
+  color: var(--ink-muted);
+  border-color: var(--rule-hair);
+  background: transparent;
+  cursor: not-allowed;
+}
+
+/* Output strategy: settings, subordinate to the task title.
+   Ink underline, not the filter soft-fill and not the QC status wash. */
 .wb-out {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 8px;
+  height: 32px;
 }
 
 .wb-out__label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--v5-text-muted);
+  font-size: var(--ds-fs-micro);
+  font-weight: var(--ds-fw-medium);
+  color: var(--ink-muted);
 }
 
 .wb-out__seg {
   display: inline-flex;
-  border-radius: var(--pt-radius-md);
-  border: 1px solid var(--v5-line-strong);
-  overflow: hidden;
-  background: var(--v5-panel);
+  align-items: stretch;
+  height: 32px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: inset 0 -1px 0 var(--rule-hair);
 }
 
 .wb-out__btn {
-  height: var(--ds-ctl-h-xs);
-  padding: 0 var(--ds-ctl-px-sm);
-  font-size: var(--ds-fs-meta);
-  font-weight: var(--pt-weight-strong);
-  color: var(--v5-text-muted);
+  height: 32px;
+  padding: 0 8px;
+  font-size: var(--ds-fs-micro);
+  font-weight: var(--ds-fw-medium);
+  color: var(--ink-muted);
   background: transparent;
   border: 0;
-  border-right: 1px solid var(--v5-line);
+  border-radius: 0;
   white-space: nowrap;
   cursor: pointer;
 }
 
-.wb-out__btn:last-child {
-  border-right: 0;
-}
-
-.wb-out__btn.wb-sel {
-  border-right-color: transparent;
+.wb-out__btn.is-on {
+  color: var(--ink-strong);
+  font-weight: var(--ds-fw-strong);
+  background: transparent;
+  box-shadow: inset 0 -2px 0 var(--ink-strong);
 }
 
 .wb-out__btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* Narrow bar: task identity keeps a slot. Output collapses to the current setting and cycles. */
+@media (max-width: 767px) {
+  .workflow-info-bar__identity {
+    flex: 1 1 auto;
+    min-width: 5.5rem;
+  }
+
+  .wb-out__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .wb-out__btn:not(.is-on) {
+    display: none;
+  }
+
+  .wb-out__seg {
+    box-shadow: none;
+  }
 }
 
 /* Review card */
@@ -263,6 +314,36 @@
   color: var(--accent-text);
 }
 
+.wb-pill.is-zero,
+.wb-pill:disabled,
+.wb-prog.is-zero:disabled {
+  opacity: 0.45;
+  color: var(--ink-muted);
+  cursor: not-allowed;
+}
+
+.wb-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.wb-pill__swatch {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 1px;
+  background: var(--swatch, var(--ink-muted));
+}
+
+.wb-pill__swatch--structure { --swatch: var(--wb-cat-structure); }
+.wb-pill__swatch--suspect { --swatch: var(--state-warning); }
+.wb-pill__swatch--screen { --swatch: var(--wb-cat-screen); border-radius: 50%; }
+.wb-pill__swatch--credit { --swatch: var(--wb-cat-credit); }
+.wb-pill__swatch--sound { --swatch: var(--wb-cat-sound); }
+
 .wb-prog {
   height: 8px;
   width: 100%;
@@ -300,90 +381,6 @@
   background: var(--wb-done);
   border-radius: 3px;
   transition: width 200ms ease;
-}
-
-.wb-aux {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: var(--ds-ctl-h-xs);
-  padding: 0 var(--ds-ctl-px-sm);
-  border-radius: var(--pt-radius-md);
-  border: 1px solid var(--v5-line-strong);
-  font-size: var(--ds-fs-meta);
-  font-weight: var(--pt-weight-strong);
-  color: var(--v5-text-muted);
-  white-space: nowrap;
-  flex: none;
-  background: var(--v5-panel);
-  cursor: pointer;
-}
-
-.wb-aux.wb-sel {
-  border-radius: var(--pt-radius-md);
-}
-
-.wb-aux__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--wb-cat-screen);
-  flex: none;
-}
-
-.wb-aux__menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 30;
-  min-width: 180px;
-  padding: 6px;
-  border-radius: var(--pt-radius-lg);
-  border: 1px solid var(--v5-line-strong);
-  background: var(--v5-panel);
-  box-shadow: var(--pt-elev-float);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.wb-aux__item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 34px;
-  padding: 0 10px;
-  border-radius: var(--pt-radius-md);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-strong);
-  background: transparent;
-  border: 1px solid transparent;
-  cursor: pointer;
-  text-align: left;
-}
-
-.wb-aux__item:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.wb-aux__item .swatch {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  flex: none;
-}
-
-.wb-aux__item .swatch.round {
-  border-radius: 50%;
-}
-
-.wb-aux__item .cnt {
-  margin-left: auto;
-  font-variant-numeric: tabular-nums;
-  color: var(--v5-text-muted);
 }
 
 .wb-pager {
@@ -728,64 +725,140 @@
   border: 0;
 }
 
-/* Dial: labels ride the playhead — row above, time below. No side readout strip. */
+/* Dial band stays inside the existing timeline head. One reading rides the pointer. */
 .wb-dial-track {
-  /* Room for above/below labels without changing subtitle row height. */
-  padding-block: 1.15rem;
+  padding-block: 0.7rem 0.85rem;
 }
 
-.wb-playhead-labels {
+.wb-readout {
   position: absolute;
-  top: 50%;
-  z-index: 3;
-  display: grid;
-  grid-template-rows: auto 6px auto;
+  top: 46%;
+  z-index: 4;
+  display: inline-flex;
   align-items: center;
-  justify-items: center;
   width: max-content;
-  max-width: min(11rem, 42vw);
-  pointer-events: none;
+  max-width: min(14rem, 46vw);
+  padding: 0 0.15rem;
   transform: translate(-50%, -50%);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--v4-panel-muted) 92%, transparent);
   font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--ds-fs-meta);
+  font-weight: var(--ds-fw-strong);
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
+  color: var(--accent-text);
   white-space: nowrap;
 }
 
-.wb-playhead-labels__above {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
-  pointer-events: auto;
-  color: var(--accent-text);
-}
-
-.wb-playhead-labels__input {
-  width: 2.6rem;
-  padding: 0;
-  text-align: right;
-  font: inherit;
-  color: inherit;
-  background: transparent;
+.wb-readout input.wb-readout__jump {
+  width: 5ch;
+  min-height: 0;
+  margin: 0;
+  /* Gauge, not a form field: beat the global left-padded input rule. */
+  padding: 0 !important;
   border: 0;
   border-bottom: 1px solid color-mix(in srgb, var(--accent-text) 35%, transparent);
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-align: right !important;
 }
 
-.wb-playhead-labels__rail {
-  width: 1px;
-  height: 6px;
-  visibility: hidden;
+.wb-readout__cycle {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  cursor: pointer;
 }
 
-.wb-playhead-labels__below {
+.wb-dial-anchor {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: var(--ds-fs-micro);
+  font-weight: var(--ds-fw-medium);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
   color: var(--ink-muted);
+  pointer-events: none;
 }
 
-.wb-playhead-labels__muted {
-  font-weight: 500;
-  opacity: 0.75;
+.wb-dial-ticks {
+  position: absolute;
+  inset: 0 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.wb-dial-tick {
+  position: absolute;
+  top: 46%;
+  width: 10px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.wb-dial-tick::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 2px;
+  height: 12px;
+  border-radius: 1px;
+  background: var(--tick, var(--ink-muted));
+}
+
+.wb-dial-tick[data-kind="review"] { --tick: var(--wb-cat-review); }
+.wb-dial-tick[data-kind="structure"] { --tick: var(--wb-cat-structure); }
+.wb-dial-tick[data-kind="suspect"] { --tick: var(--state-warning); }
+.wb-dial-tick[data-kind="screen"] { --tick: var(--wb-cat-screen); }
+.wb-dial-tick[data-kind="credit"] { --tick: var(--wb-cat-credit); }
+.wb-dial-tick[data-kind="sound"] { --tick: var(--wb-cat-sound); }
+.wb-dial-tick[data-kind="lyrics"] { --tick: color-mix(in srgb, var(--wb-cat-credit) 55%, var(--ink-strong)); }
+
+.wb-dial-tick.is-dim {
+  opacity: 0.45;
+}
+
+.wb-dial-tick::after {
+  content: attr(data-label);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 2px);
+  transform: translateX(-50%);
+  padding: 1px 4px;
+  border: 1px solid var(--rule-hair);
+  border-radius: 4px;
+  background: var(--paper-raised);
+  color: var(--ink-strong);
+  font-family: var(--font-sans, inherit);
+  font-size: var(--ds-fs-micro);
+  font-weight: var(--ds-fw-strong);
+  line-height: 1.3;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.wb-dial-tick:hover::after,
+.wb-dial-tick:focus-visible::after {
+  opacity: 1;
 }
 
 /* Provenance: struck + revised on one baseline; fill width, no tall stack, no empty right */
