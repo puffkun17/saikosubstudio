@@ -728,31 +728,101 @@
   border: 0;
 }
 
-.wb-dial-readout {
-  display: inline-flex;
-  flex: none;
+/* Dial: labels ride the playhead — row above, time below. No side readout strip. */
+.wb-dial-track {
+  /* Room for above/below labels without changing subtitle row height. */
+  padding-block: 1.15rem;
+}
+
+.wb-playhead-labels {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  grid-template-rows: auto 6px auto;
   align-items: center;
-  gap: 0.55rem;
-  min-width: 0;
+  justify-items: center;
+  width: max-content;
+  max-width: min(11rem, 42vw);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--ink-muted);
+  line-height: 1.2;
   white-space: nowrap;
 }
 
-.wb-dial-readout__line {
+.wb-playhead-labels__above {
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
+  gap: 0.15rem;
+  pointer-events: auto;
   color: var(--accent-text);
 }
 
-.wb-dial-readout .v9-dial-gauge-input {
-  width: 3.25rem;
+.wb-playhead-labels__input {
+  width: 2.6rem;
   padding: 0;
   text-align: right;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-text) 35%, transparent);
+}
+
+.wb-playhead-labels__rail {
+  width: 1px;
+  height: 6px;
+  visibility: hidden;
+}
+
+.wb-playhead-labels__below {
+  color: var(--ink-muted);
+}
+
+.wb-playhead-labels__muted {
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+/* Provenance: struck + revised on one baseline; fill width, no tall stack, no empty right */
+.wb-cue__pair {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.wb-cue__pair > .wb-cue__was,
+.wb-cue__pair > .wb-cue__now {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: var(--ds-lh-tight);
+}
+
+.wb-cue__pair > .wb-cue__was {
+  flex: 0 1 42%;
+  max-width: 48%;
+}
+
+.wb-cue__pair > .wb-cue__now {
+  flex: 1 1 auto;
+}
+
+.wb-cue__pair-sep {
+  flex: none;
+  color: var(--ink-muted);
+  font-size: var(--ds-fs-micro);
+  opacity: 0.65;
 }
 
 .wb-row.is-editing {

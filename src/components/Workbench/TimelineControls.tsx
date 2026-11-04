@@ -252,7 +252,6 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
   } as React.CSSProperties;
   const tipPoint = findActivePoint(timelinePoints, displayTimeMs) || findNearestPoint(timelinePoints, displayTimeMs);
   const tipLine = tipPoint.rowIndex + 1;
-  const remainLines = Math.max(0, processedSubs.length - tipLine);
 
   const revealTarget = (targetIdx: number) => {
     if (targetIdx >= 100 && !showAllSubs) setShowAllSubs(true);
@@ -487,7 +486,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
     <div className="v9-dial-slider-container flex w-full min-w-0 flex-row items-center gap-3" data-testid="timeline-instrument">
       <div className="v9-dial-slider-wrapper flex min-w-0 flex-1 items-center gap-2.5">
         {playButton}
-        <div className="relative min-w-0 flex-1">
+        <div className="wb-dial-track relative min-w-0 flex-1">
           <input
             type="range"
             min="0"
@@ -501,7 +500,7 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
             onBlur={event => { if (scrubTimeMs !== null) endScrub(event.currentTarget.value); }}
             style={timelineStyle}
             className={`v9-timeline-dial-slider w-full${sliderFocusClass(dialFocusOn, Boolean(focusChrome?.playheadDim))}`}
-            aria-label={`字幕时间轴，第 ${tipLine} 行，共 ${processedSubs.length} 行，${timelinePercent}%，剩余 ${remainLines} 行`}
+            aria-label={`字幕时间轴，第 ${tipLine} 行，共 ${processedSubs.length} 行，${formatMsClock(displayTimeMs)} / ${formatMsClock(sharedDurationMs)}`}
             data-timeline-focus={dialFocusOn ? 'true' : undefined}
             data-focus-empty={dialFocusOn && dialMarks.length === 0 ? 'true' : undefined}
           />
@@ -513,28 +512,40 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
               pulse={focusChrome?.pulse}
             />
           ) : null}
+          {/* 行数贴指针上方、时间贴下方：动线锚点在指针，不另开读数条 */}
+          <div
+            className="wb-playhead-labels"
+            style={{
+              left: `clamp(3.25rem, ${timelinePercent}%, calc(100% - 3.25rem))`,
+            }}
+            data-testid="playhead-labels"
+          >
+            <form
+              onSubmit={handleJumpToLine}
+              className="wb-playhead-labels__above"
+              aria-label="当前行"
+            >
+              <span className="wb-sr">行</span>
+              <input
+                type="number"
+                min="1"
+                max={processedSubs.length}
+                value={jumpLineVal}
+                onChange={event => setJumpLineVal(event.target.value)}
+                onBlur={() => handleJumpToLine()}
+                className="v9-dial-gauge-input no-spin wb-playhead-labels__input"
+                aria-label="跳转到字幕行"
+              />
+              <span>/ {processedSubs.length}</span>
+            </form>
+            <span className="wb-playhead-labels__rail" aria-hidden="true" />
+            <span className="wb-playhead-labels__below" aria-label="时间进度">
+              {formatMsClock(displayTimeMs)}
+              <span className="wb-playhead-labels__muted"> / {formatMsClock(sharedDurationMs)}</span>
+            </span>
+          </div>
         </div>
       </div>
-
-      <form onSubmit={handleJumpToLine} className="wb-dial-readout" aria-label="时间轴读数">
-        <span>{formatMsClock(displayTimeMs)} / {formatMsClock(sharedDurationMs)}</span>
-        <label className="wb-dial-readout__line">
-          <span className="wb-sr">行</span>
-          <input
-            type="number"
-            min="1"
-            max={processedSubs.length}
-            value={jumpLineVal}
-            onChange={event => setJumpLineVal(event.target.value)}
-            onBlur={() => handleJumpToLine()}
-            className="v9-dial-gauge-input no-spin"
-            aria-label="跳转到字幕行"
-          />
-          <span>/ {processedSubs.length}</span>
-        </label>
-        <span>{timelinePercent}%</span>
-        <span>余 {remainLines}</span>
-      </form>
     </div>
   );
 };

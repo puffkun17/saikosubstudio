@@ -31,6 +31,22 @@ const CueBlock: React.FC<{ text: string; struck?: boolean }> = ({ text, struck =
   );
 };
 
+/** 改前删除线 + 改后紧邻同一行高，不抬行、不留大空 */
+const ProvenanceCue: React.FC<{ before: string; after: string }> = ({ before, after }) => {
+  const b = splitCueLines(before);
+  const a = splitCueLines(after);
+  return (
+    <>
+      <div className="wb-cue__pair" title="改前 → 改后">
+        <span className="wb-cue__was">{b.primary}</span>
+        <span className="wb-cue__pair-sep" aria-hidden="true">→</span>
+        <span className="wb-cue__now">{a.primary}</span>
+      </div>
+      {a.secondary ? <div className="wb-cue__sub">{a.secondary}</div> : null}
+    </>
+  );
+};
+
 export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, listController = null }) => {
   const {
     processedSubs,
@@ -524,10 +540,7 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
                     {editing ? (
                       <CueBlock text={struckText} struck />
                     ) : provenance ? (
-                      <>
-                        <CueBlock text={provenance.before} struck />
-                        <CueBlock text={sub.text} />
-                      </>
+                      <ProvenanceCue before={provenance.before} after={sub.text} />
                     ) : (
                       <CueBlock text={sub.text} />
                     )}
