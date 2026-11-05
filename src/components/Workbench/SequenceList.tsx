@@ -541,20 +541,17 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
                   <div className="wb-cue min-w-0 pr-1">
                     <span className={`ds-mono text-[length:var(--ds-fs-micro)] tabular-nums md:hidden ${isActive ? 'text-[var(--v4-accent-strong)]' : 'text-[var(--ds-ink-3)]'}`}>{startTime} → {endTime}</span>
                     {editing ? (
-                      <CueBlock text={struckText} struck />
-                    ) : provenance ? (
-                      <ProvenanceCue before={provenance.before} after={sub.text} />
-                    ) : (
-                      <CueBlock text={sub.text} />
-                    )}
-                    {editing ? (
                       <div
-                        className="wb-edit-slot"
+                        className="wb-edit-inline"
                         data-line-edit
                         data-testid="wb-edit-slot"
                         onClick={(e) => e.stopPropagation()}
                         onDoubleClick={(e) => e.stopPropagation()}
                       >
+                        {/* 改前留在轴上作对照；输入盖在同行内容区，不沉到下一行被 list 裁切 */}
+                        <div className="wb-edit-inline__was" aria-label="修改前">
+                          <CueBlock text={struckText} struck />
+                        </div>
                         <input
                           type="text"
                           value={draftZh}
@@ -582,9 +579,9 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
                             aria-label="修改后的副字幕"
                           />
                         ) : null}
-                        <div className="wb-edit-slot__bar">
+                        <div className="wb-edit-inline__bar">
                           {historyButtons}
-                          <div className="wb-edit-slot__actions">
+                          <div className="wb-edit-inline__actions">
                             <button type="button" className="ui-action ui-action--secondary" onClick={(e) => { e.stopPropagation(); cancelEditing(); }}>
                               <X className="h-4 w-4" aria-hidden="true" />取消
                             </button>
@@ -598,7 +595,11 @@ export const SequenceList: React.FC<SequenceListProps> = ({ timelineDurationMs, 
                           </div>
                         </div>
                       </div>
-                    ) : null}
+                    ) : provenance ? (
+                      <ProvenanceCue before={provenance.before} after={sub.text} />
+                    ) : (
+                      <CueBlock text={sub.text} />
+                    )}
                   </div>
 
                   <div className="flex items-center justify-end self-center">
