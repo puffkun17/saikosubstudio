@@ -940,39 +940,46 @@
   color: var(--ink-muted);
 }
 
-/* Edit slot floats on the content axis. It does not add a column. */
-.wb-edit-slot {
-  position: absolute;
-  z-index: 6;
-  left: 0;
-  top: calc(100% + 6px);
+/* Edit lives in the cue cell (in-flow). Absolute-below was clipped by list overflow. */
+.wb-edit-inline {
   display: flex;
-  width: min(34rem, 100%);
+  width: 100%;
+  min-width: 0;
   flex-direction: column;
   gap: 6px;
-  padding: 8px;
+  padding: 6px 8px;
   border: 1px solid var(--rule-control);
   border-radius: 8px;
   background: var(--paper-raised);
   box-shadow: var(--pt-elev-float);
 }
 
-.wb-edit-slot .wb-line-edit__input {
+.wb-edit-inline__was {
+  min-width: 0;
+  opacity: 0.85;
+}
+
+.wb-edit-inline .wb-line-edit__input {
   width: 100%;
 }
 
-.wb-edit-slot__bar {
+.wb-edit-inline__bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.wb-edit-slot__actions,
+.wb-edit-inline__actions,
 .wb-edit-history {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+/* Legacy absolute slot: keep the class inert so a leftover reference cannot float and get clipped. */
+.wb-edit-slot {
+  display: none;
 }
 
 .wb-edit-dock {
