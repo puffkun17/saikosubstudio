@@ -7,7 +7,6 @@ import { useStudioStore } from '@/store/useStudioStore';
 import {
   FilePlus,
   FolderPlus,
-  Upload,
 } from 'lucide-react';
 import { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';
 import { summarizeImportForChip } from '@/utils/importSummary';
@@ -24,12 +23,12 @@ import {
   useTapFirstIngest,
 } from '@/components/Ingest/dragzone/environment';
 import { useIngestPipeline } from '@/components/Ingest/dragzone/useIngestPipeline';
-import { QueueTree } from '@/components/Ingest/dragzone/QueueTree';
-import { QueueActionBar } from '@/components/Ingest/dragzone/QueueActionBar';
+import { IngestDesk } from '@/components/Ingest/dragzone/IngestDesk';
 import { StagingTray } from '@/components/Ingest/dragzone/StagingTray';
 import { MultiWorkNotice } from '@/components/Ingest/dragzone/MultiWorkNotice';
 import { useIngestStage } from '@/store/useIngestStage';
 import { groupQueueByWork, workSignature } from '@/core/workGrouping';
+import { isEditableKeyboardTarget } from '@/core/deskGestures';
 
 export const DragZone: React.FC = () => {
   const [confirmOriginal, setConfirmOriginal] = React.useState(false);
@@ -79,8 +78,22 @@ export const DragZone: React.FC = () => {
     setQueueIssue,
     addFilesToQueue,
     removeQueuedFile,
-    removeFolderGroup,
   } = useIngestPipeline();
+
+  // Keyboard shortcut Cmd/Ctrl+O opens native file picker directly from the homepage.
+  useEffect(() => {
+    if (isParsingLive || confirmOriginal) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'o') return;
+      if (isEditableKeyboardTarget(event.target) || isEditableKeyboardTarget(document.activeElement)) {
+        return;
+      }
+      event.preventDefault();
+      fileInputRef.current?.click();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [confirmOriginal, isParsingLive]);
 
   // 交接（plan B）：放行那一刻清单在 store 里被清空、等待态结束，但这一页还在退场（popLayout）。
   // 退场期间冻结在最后一帧「等待态 + 清单」，文件行才能从原位飞到任务页，而不是先闪一下空拖放井。
@@ -292,12 +305,12 @@ export const DragZone: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={shouldReduceMotion ? undefined : { opacity: 0, transition: { duration: 0.14 } }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
-              className="ingest-local-add"
+              className="ingest-local-add desk-stage-shell"
             >
               <div className="ingest-local-add__copy">
                 {!tapFirst && (
-                  <span className="ingest-local-add__cue" aria-hidden="true">
-                    <Upload className="ingest-local-add__cue-icon" size={28} strokeWidth={1.75} />
+                  <span className="desk-intake-mark mb-3" aria-hidden="true">
+                    <span className="desk-intake-core" />
                   </span>
                 )}
                 <h2 className="ingest-local-add__title">
@@ -320,7 +333,7 @@ export const DragZone: React.FC = () => {
                     <>
                       <span className="ingest-local-add__hint-lead">
                         <span className="ingest-local-add__hint-drag">拖入此处</span>
-                        <span className="ingest-local-add__hint-click">，或从下方选择</span>
+                        <span className="ingest-local-add__hint-click">，或从下方打开逐项挂载</span>
                       </span>
                       <span className="ingest-local-add__dot" aria-hidden="true">·</span>
                       <span className="ingest-local-add__privacy">仅在本地读取</span>
@@ -329,7 +342,7 @@ export const DragZone: React.FC = () => {
                 </p>
               </div>
               <div
-                className={`ingest-local-add__entries ${!tapFirst && isDragging ? 'is-dimmed' : ''}`}
+                className={`ingest-local-add__entries desk-keywell ${!tapFirst && isDragging ? 'is-dimmed' : ''}`}
                 role="group"
                 aria-label="从本机添加"
               >
@@ -337,7 +350,7 @@ export const DragZone: React.FC = () => {
                   type="button"
                   data-ingest-add-cta
                   onClick={() => fileInputRef.current?.click()}
-                  className="ui-action ui-action--secondary ingest-local-add__entry"
+                  className="ui-action ui-action--secondary ingest-local-add__entry desk-convex-key"
                 >
                   <FilePlus className="ingest-local-add__entry-icon" size={20} strokeWidth={2} aria-hidden="true" />
                   <span>选择文件</span>
@@ -348,7 +361,7 @@ export const DragZone: React.FC = () => {
                   onClick={handleFolderPick}
                   aria-disabled={!folderPickSupported || undefined}
                   title={folderPickSupported ? '选择文件夹' : FOLDER_UNSUPPORTED_HINT}
-                  className={`ui-action ui-action--secondary ingest-local-add__entry ${folderPickSupported ? '' : 'opacity-55'}`}
+                  className={`ui-action ui-action--secondary ingest-local-add__entry desk-convex-key ${folderPickSupported ? '' : 'opacity-55'}`}
                 >
                   <FolderPlus className="ingest-local-add__entry-icon" size={20} strokeWidth={2} aria-hidden="true" />
                   <span>选择文件夹</span>
@@ -368,12 +381,12 @@ export const DragZone: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={shouldReduceMotion ? undefined : { opacity: 0 }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
-              className="ingest-queue flex flex-col text-left"
+              className="ingest-queue desk-stage-shell desk-stage-shell--mounted flex flex-col text-left"
               data-stage-zone="current"
             >
               {!tapFirst && isDragging && (
-                <p className="mb-4 px-1 text-sm font-medium text-[var(--v4-accent-strong)] md:text-base">
-                  松开以继续添加
+                <p className="mb-3 px-1 text-sm font-medium text-[var(--v4-accent-strong)] md:text-base">
+                  松开以继续挂载到桌面
                 </p>
               )}
               {isParsing ? (
@@ -381,12 +394,12 @@ export const DragZone: React.FC = () => {
                   {ceremonyStatus}
                 </div>
               ) : (
-              <header className="mb-5 flex flex-wrap items-end justify-between gap-3 px-1 md:mb-6 md:gap-4">
+              <header className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-[var(--rule-hair)] px-1 pb-3 md:mb-5 md:gap-4">
                 <div className="min-w-0">
-                  <h3 className="text-base font-semibold tracking-tight text-[var(--v4-text)] md:text-lg lg:text-[1.25rem]">
-                    已添加
+                  <h3 className="text-base font-semibold tracking-tight text-[var(--v4-text)] md:text-lg lg:text-[1.2rem]">
+                    已挂载至桌面
                   </h3>
-                  <p className="mt-1 text-sm font-medium tabular-nums text-[var(--v4-text-muted)] md:text-[15px]">
+                  <p className="mt-0.5 text-sm font-medium tabular-nums text-[var(--v4-text-muted)] md:text-[15px]">
                     {queueStatsLine}
                   </p>
                   {(importSummary.autoHandled.length > 0 || importSummary.needsAttention.length > 0) && (
@@ -446,30 +459,30 @@ export const DragZone: React.FC = () => {
 
               {!isParsing && stagingTray}
 
-              <QueueTree
-                queuedItems={queuedItems}
-                shouldReduceMotion={shouldReduceMotion}
-                removeQueuedFile={removeQueuedFile}
-                removeFolderGroup={removeFolderGroup}
-                readOnly={isParsing}
-              />
-
-              {!isParsing && (
-              <footer className="ingest-queue-footer mt-6 flex flex-col gap-3 px-1 md:mt-7 md:gap-4">
-                {(queueIssue || rejectedItems.length > 0) && (
-                  <p className="text-sm leading-5 text-[var(--v4-warning)] md:text-[15px]">
-                    {queueIssue || `${rejectedItems.length} 项无法处理，可移除后继续。`}
-                  </p>
-                )}
-                <QueueActionBar
-                  itemCount={queuedItems.length}
-                  onClear={() => { setQueuedItems([]); setQueueIssue(null); }}
-                  onPickFiles={() => fileInputRef.current?.click()}
-                  onPickFolder={handleFolderPick}
-                  folderPickSupported={folderPickSupported}
-                />
-              </footer>
+              {(queueIssue || rejectedItems.length > 0) && !isParsing && (
+                <p className="mb-3 px-1 text-sm leading-5 text-[var(--v4-warning)] md:text-[15px]">
+                  {queueIssue || `${rejectedItems.length} 项无法处理，可移除后继续。`}
+                </p>
               )}
+
+              <IngestDesk
+                queuedItems={queuedItems}
+                isParsing={isParsing}
+                onRemoveFile={removeQueuedFile}
+                onRemoveKeys={(keys) => {
+                  const rm = new Set(keys);
+                  setQueuedItems((items) => items.filter((item) => !rm.has(item.key)));
+                  setQueueIssue(null);
+                }}
+                onClear={() => {
+                  setQueuedItems([]);
+                  setQueueIssue(null);
+                }}
+                onPickFiles={() => fileInputRef.current?.click()}
+                onPickFolder={handleFolderPick}
+                folderPickSupported={folderPickSupported}
+                shouldReduceMotion={shouldReduceMotion}
+              />
             </motion.div>
           )}
         </AnimatePresence>

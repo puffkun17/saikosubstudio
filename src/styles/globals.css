@@ -2309,3 +2309,421 @@ html[data-act-transition]::view-transition-new(root) {
     animation-timing-function: linear;
   }
 }
+
+
+/* ==========================================================================
+   v24 Modern Dot-Matrix Homepage Desk (IngestDesk + DeskVolumeIcon)
+   ========================================================================== */
+:root {
+  --desk-surface: color-mix(in srgb, var(--paper-sheet) 76%, var(--paper-desk));
+  --desk-paper-deep: color-mix(in srgb, var(--paper-sunken) 78%, var(--rule-strong));
+  --desk-dot-color: color-mix(in srgb, var(--ink-faint) 34%, transparent);
+  --desk-icon-rim: rgba(28, 26, 23, 0.14);
+  --desk-icon-rim-strong: rgba(28, 26, 23, 0.24);
+  --desk-icon-specular: rgba(255, 255, 255, 0.85);
+}
+
+html[data-theme="dark"] {
+  --desk-surface: #151412;
+  --desk-paper-deep: #302d28;
+  --desk-dot-color: color-mix(in srgb, var(--ink-faint) 28%, transparent);
+  --desk-icon-rim: rgba(238, 232, 220, 0.14);
+  --desk-icon-rim-strong: rgba(238, 232, 220, 0.24);
+  --desk-icon-specular: rgba(255, 255, 255, 0.08);
+}
+
+.desk-stage-shell {
+  background-color: var(--desk-surface);
+  background-image: radial-gradient(var(--desk-dot-color) 1.15px, transparent 1.15px);
+  background-size: 24px 24px;
+  background-position: 12px 12px;
+}
+
+.ingest-stage.is-empty .ingest-local-add.desk-stage-shell {
+  border: 1px solid var(--rule-strong);
+  background-color: var(--desk-surface);
+}
+
+.ingest-stage.is-empty:not(.ingest-stage--tap-first):hover:not(.is-dragging) .ingest-local-add.desk-stage-shell {
+  border-color: var(--rule-control);
+  background-color: var(--desk-surface);
+}
+
+.ingest-stage.is-empty:not(.ingest-stage--tap-first).is-dragging .ingest-local-add.desk-stage-shell {
+  border-color: var(--accent);
+  border-style: dashed;
+  background-color: color-mix(in srgb, var(--accent) 5%, var(--desk-surface));
+}
+
+.desk-stage-shell--mounted {
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--pt-radius-lg);
+  padding: clamp(0.875rem, 2vw, 1.5rem);
+  min-height: min(32rem, calc(100vh - 10.5rem));
+}
+
+/* Serene concave intake slot mark (zero decoy file icon silhouettes) */
+.desk-intake-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--paper-sunken);
+  border: 1px solid var(--rule-hair);
+  transition: width 220ms cubic-bezier(0.16, 1, 0.3, 1), border-color 180ms ease-out, background-color 180ms ease-out;
+}
+.desk-intake-core {
+  width: 24px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--rule-strong);
+  transition: width 220ms cubic-bezier(0.16, 1, 0.3, 1), background-color 180ms ease-out;
+}
+.ingest-stage.is-dragging .desk-intake-mark {
+  width: 96px;
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+.ingest-stage.is-dragging .desk-intake-core {
+  width: 56px;
+  background: var(--accent);
+}
+
+/* Recessed keywell holding convex entry buttons */
+.ingest-local-add__entries.desk-keywell {
+  width: auto;
+  max-width: min(100%, 25rem);
+  background: var(--paper-sunken);
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--pt-radius-lg);
+  padding: 5px;
+  gap: 6px;
+}
+.ingest-local-add__entry.desk-convex-key.ui-action {
+  border-bottom-width: 2px;
+}
+.ingest-local-add__entry.desk-convex-key.ui-action:active {
+  border-bottom-width: 1px;
+  transform: translateY(1px);
+}
+
+/* Mounted Icon Micro-Interactions */
+.desk-icon-canvas {
+  width: 84px;
+  height: 84px;
+  display: block;
+  overflow: visible;
+  flex-shrink: 0;
+}
+.desk-deck-back,
+.desk-deck-mid,
+.desk-deck-front {
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: center center;
+}
+.desk-interactive-unit:hover .desk-deck-back { transform: translateY(-3.5px) scale(0.99); }
+.desk-interactive-unit:hover .desk-deck-mid { transform: translateY(-1.8px); }
+.desk-interactive-unit:hover .desk-deck-front { transform: translateY(-1px); }
+
+@keyframes deskStackSettle {
+  0% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.desk-interactive-unit.is-settled .desk-icon-canvas {
+  animation: deskStackSettle 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.desk-shake-chip {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  padding: 3px 10px;
+  border-radius: var(--pt-radius-sm);
+  background: var(--paper-sunken);
+  border: 1px solid var(--rule-hair);
+  transition: border-color 150ms ease-out, color 150ms ease-out, background-color 150ms ease-out;
+}
+.desk-shake-chip.is-shaking {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+/* Loose Mounted Tiles */
+.desk-loose-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+  align-items: flex-start;
+}
+.desk-loose-tile {
+  width: 120px;
+  padding: 10px 8px;
+  border-radius: var(--pt-radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  contain: layout style;
+  transition: background-color 140ms ease-out, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.desk-loose-tile:hover {
+  background: color-mix(in srgb, var(--paper-raised) 82%, transparent);
+  transform: translateY(-2px);
+}
+.desk-loose-tile.is-selected {
+  background: var(--accent-soft);
+  outline: 1.5px solid var(--accent);
+}
+.desk-loose-tile.is-rejected .desk-loose-name {
+  color: var(--state-danger);
+}
+.desk-loose-name {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-strong);
+  text-align: center;
+  word-break: break-all;
+  line-height: 1.3;
+}
+.desk-loose-meta {
+  font-family: var(--pt-font-mono);
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+/* Organized Detached Icon + Trailing Attribute Folio */
+.desk-folio-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.desk-folio-row {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+  cursor: pointer;
+  contain: layout style;
+}
+.desk-detached-icon {
+  padding-top: 2px;
+  display: flex;
+  justify-content: center;
+}
+.desk-folio-card {
+  position: relative;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--pt-radius-lg);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out;
+}
+.desk-folio-card::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 26px;
+  width: 8px;
+  height: 8px;
+  background: inherit;
+  border-left: 1px solid var(--rule-hair);
+  border-bottom: 1px solid var(--rule-hair);
+  transform: rotate(45deg);
+  transition: border-color 150ms ease-out;
+}
+.desk-folio-row:hover .desk-folio-card,
+.desk-folio-row:hover .desk-folio-card::before {
+  border-color: var(--rule-control);
+}
+.desk-folio-row.is-selected .desk-folio-card {
+  border: 1.5px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 4%, var(--paper-raised));
+}
+.desk-folio-row.is-selected .desk-folio-card::before {
+  border-left: 1.5px solid var(--accent);
+  border-bottom: 1.5px solid var(--accent);
+}
+.desk-folio-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.desk-folio-title {
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--ink-strong);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.desk-kind-badge {
+  font-family: var(--pt-font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--pt-radius-sm);
+  background: var(--paper-sunken);
+  color: var(--ink-body);
+  white-space: nowrap;
+}
+.desk-kind-badge.is-stack {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.desk-folio-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+/* Zero-reflow accordion drawer */
+.desk-folio-drawer-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 220ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease-out;
+}
+.desk-folio-row.is-selected .desk-folio-drawer-wrap {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.desk-folio-drawer-inner {
+  overflow: hidden;
+}
+.desk-folio-drawer-content {
+  margin-top: 8px;
+  padding-top: 9px;
+  border-top: 1px solid var(--rule-hair);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.desk-ep-chip {
+  font-family: var(--pt-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: var(--pt-radius-sm);
+  background: var(--paper-sunken);
+  border: 1px solid var(--rule-hair);
+  color: var(--ink-strong);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.desk-ep-chip-x {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  padding: 1px;
+  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+}
+.desk-ep-chip-x:hover {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
+
+/* Desktop Gallery View */
+.desk-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.desk-gallery-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  contain: layout style;
+}
+.desk-gallery-rider {
+  width: 100%;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--pt-radius-lg);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.desk-gallery-unit:hover .desk-gallery-rider {
+  border-color: var(--rule-control);
+}
+.desk-gallery-unit.is-selected .desk-gallery-rider {
+  border: 1.5px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 4%, var(--paper-raised));
+}
+
+/* Floating Bottom Command Dock */
+.desk-floating-dock-anchor {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  margin-top: auto;
+  padding-top: 10px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.desk-floating-dock {
+  pointer-events: auto;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--pt-radius-lg);
+  box-shadow: var(--pt-elev-float);
+  padding: 6px 8px 6px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+.desk-floating-dock--confirm {
+  padding: 6px 8px 6px 12px;
+}
+
+@media (max-width: 640px) {
+  .desk-folio-row {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 10px;
+  }
+  .desk-icon-canvas {
+    width: 72px;
+    height: 72px;
+  }
+  .desk-folio-card::before {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desk-deck-back,
+  .desk-deck-mid,
+  .desk-deck-front,
+  .desk-folio-drawer-wrap,
+  .desk-intake-mark,
+  .desk-intake-core {
+    transition-duration: 0.08s;
+  }
+  .desk-interactive-unit.is-settled .desk-icon-canvas {
+    animation: none;
+  }
+}
