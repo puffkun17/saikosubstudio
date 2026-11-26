@@ -28,6 +28,7 @@ import { StagingTray } from '@/components/Ingest/dragzone/StagingTray';
 import { MultiWorkNotice } from '@/components/Ingest/dragzone/MultiWorkNotice';
 import { useIngestStage } from '@/store/useIngestStage';
 import { groupQueueByWork, workSignature } from '@/core/workGrouping';
+import { isEditableKeyboardTarget } from '@/core/deskGestures';
 
 export const DragZone: React.FC = () => {
   const [confirmOriginal, setConfirmOriginal] = React.useState(false);
@@ -83,10 +84,12 @@ export const DragZone: React.FC = () => {
   useEffect(() => {
     if (isParsingLive || confirmOriginal) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'o') {
-        event.preventDefault();
-        fileInputRef.current?.click();
+      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'o') return;
+      if (isEditableKeyboardTarget(event.target) || isEditableKeyboardTarget(document.activeElement)) {
+        return;
       }
+      event.preventDefault();
+      fileInputRef.current?.click();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);

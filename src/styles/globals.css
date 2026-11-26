@@ -2316,7 +2316,7 @@ html[data-act-transition]::view-transition-new(root) {
    ========================================================================== */
 :root {
   --desk-surface: color-mix(in srgb, var(--paper-sheet) 76%, var(--paper-desk));
-  --paper-deep: color-mix(in srgb, var(--paper-sunken) 78%, var(--rule-strong));
+  --desk-paper-deep: color-mix(in srgb, var(--paper-sunken) 78%, var(--rule-strong));
   --desk-dot-color: color-mix(in srgb, var(--ink-faint) 34%, transparent);
   --desk-icon-rim: rgba(28, 26, 23, 0.14);
   --desk-icon-rim-strong: rgba(28, 26, 23, 0.24);
@@ -2325,15 +2325,11 @@ html[data-act-transition]::view-transition-new(root) {
 
 html[data-theme="dark"] {
   --desk-surface: #151412;
-  --paper-deep: #302d28;
+  --desk-paper-deep: #302d28;
   --desk-dot-color: color-mix(in srgb, var(--ink-faint) 28%, transparent);
   --desk-icon-rim: rgba(238, 232, 220, 0.14);
   --desk-icon-rim-strong: rgba(238, 232, 220, 0.24);
   --desk-icon-specular: rgba(255, 255, 255, 0.08);
-}
-
-.ingest-stage.has-queue {
-  max-width: min(64rem, 96vw);
 }
 
 .desk-stage-shell {

@@ -10,6 +10,12 @@ import { CLEAR_CONFIRM_TIMEOUT_MS } from '@/components/Ingest/dragzone/QueueActi
 import { FOLDER_UNSUPPORTED_HINT } from '@/components/Ingest/dragzone/environment';
 import { stageObjectMotion, useHandoffLayoutAllow } from '@/components/Ingest/dragzone/handoffLayout';
 import { groupDeskItems, normalizeDeskExt, type DeskExt, type DeskGroup } from '@/core/deskGrouping';
+import {
+  createShakeTracker,
+  isEditableKeyboardTarget,
+  recordShakeMove,
+  resetShakeTracker,
+} from '@/core/deskGestures';
 import { EASE_OUT, MOTION_S, springNoBounce } from '@/core/motion';
 import {
   formatBytes,
@@ -71,11 +77,53 @@ export const IngestDesk: React.FC<{
 
   const deskRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const shakeRef = useRef<{ lastX: number | null; lastDir: number; flips: number[] }>({
-    lastX: null,
-    lastDir: 0,
-    flips: [],
-  });
+  const shakeRef = useRef(createShakeTracker());
+  const shakeCueTimerRef = useRef<number | null>(null);
+  const deskMountedRef = useRef(true);
+  const flightHandleRef = useRef<{
+    rafId: number | null;
+    ghosts: HTMLElement[];
+    animations: Animation[];
+    timers: number[];
+  }>({ rafId: null, ghosts: [], animations: [], timers: [] });
+
+  const clearShakeCue = useCallback(() => {
+    if (shakeCueTimerRef.current != null) {
+      window.clearTimeout(shakeCueTimerRef.current);
+      shakeCueTimerRef.current = null;
+    }
+  }, []);
+
+  const clearDeskFlights = useCallback(() => {
+    const handle = flightHandleRef.current;
+    if (handle.rafId != null) {
+      window.cancelAnimationFrame(handle.rafId);
+      handle.rafId = null;
+    }
+    for (const anim of handle.animations) {
+      try { anim.cancel(); } catch { /* already finished */ }
+    }
+    handle.animations = [];
+    for (const ghost of handle.ghosts) {
+      ghost.remove();
+    }
+    handle.ghosts = [];
+    for (const timer of handle.timers) {
+      window.clearTimeout(timer);
+    }
+    handle.timers = [];
+  }, []);
+
+  useEffect(() => {
+    deskMountedRef.current = true;
+    const shake = shakeRef.current;
+    return () => {
+      deskMountedRef.current = false;
+      clearShakeCue();
+      resetShakeTracker(shake);
+      clearDeskFlights();
+    };
+  }, [clearDeskFlights, clearShakeCue]);
 
   const deskItems: DeskItem[] = useMemo(
     () => queuedItems.map((item) => ({ ...item, sizeBytes: item.file.size })),
@@ -102,8 +150,18 @@ export const IngestDesk: React.FC<{
     return () => document.removeEventListener('mousedown', onPointerDown);
   }, [menuOpen]);
 
+  useEffect(() => {
+    if (isOrganized || isParsing || queuedItems.length === 0) {
+      resetShakeTracker(shakeRef.current);
+      clearShakeCue();
+    }
+  }, [clearShakeCue, isOrganized, isParsing, queuedItems.length]);
+
   const runFlipOrganize = useCallback(() => {
     if (isParsing || queuedItems.length === 0 || isOrganized) return;
+    clearDeskFlights();
+    resetShakeTracker(shakeRef.current);
+    clearShakeCue();
     const root = deskRef.current;
     const reduce = Boolean(shouldReduceMotion);
 
@@ -128,7 +186,10 @@ export const IngestDesk: React.FC<{
 
     if (reduce || origins.size === 0) return;
 
-    window.requestAnimationFrame(() => {
+    const handle = flightHandleRef.current;
+    handle.rafId = window.requestAnimationFrame(() => {
+      handle.rafId = null;
+      if (!deskMountedRef.current) return;
       const container = deskRef.current;
       if (!container) return;
 
@@ -173,6 +234,7 @@ export const IngestDesk: React.FC<{
       });
 
       if (flights.length === 0) return;
+      handle.ghosts.push(...flights.map((flight) => flight.el));
       document.body.appendChild(fragment);
 
       let completed = 0;
@@ -191,24 +253,31 @@ export const IngestDesk: React.FC<{
             fill: 'forwards',
           },
         );
+        handle.animations.push(anim);
         anim.onfinish = () => {
+          if (!deskMountedRef.current) return;
           flight.el.remove();
+          handle.ghosts = handle.ghosts.filter((node) => node !== flight.el);
           completed += 1;
           if (completed === flights.length) {
             setSettledGroupIds(new Set(settled));
-            window.setTimeout(() => setSettledGroupIds(new Set()), 280);
+            const timer = window.setTimeout(() => {
+              handle.timers = handle.timers.filter((id) => id !== timer);
+              if (!deskMountedRef.current) return;
+              setSettledGroupIds(new Set());
+            }, 280);
+            handle.timers.push(timer);
           }
         };
       }
     });
-  }, [groups, isOrganized, isParsing, queuedItems.length, shouldReduceMotion]);
+  }, [clearDeskFlights, clearShakeCue, groups, isOrganized, isParsing, queuedItems.length, shouldReduceMotion]);
 
   // Keyboard ergonomics on the mounted desk (`R` organize/unstack, `Esc` deselect, `ArrowUp`/`ArrowDown` navigate)
   useEffect(() => {
     if (isParsing || queuedItems.length === 0) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+      if (isEditableKeyboardTarget(event.target) || isEditableKeyboardTarget(document.activeElement)) {
         return;
       }
       if (event.key.toLowerCase() === 'r' && !event.metaKey && !event.ctrlKey) {
@@ -237,30 +306,28 @@ export const IngestDesk: React.FC<{
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [groups, isOrganized, isParsing, queuedItems.length, runFlipOrganize, selectedId]);
 
-  // Real horizontal mouse-shake gesture detection
+  // Horizontal shake: sampling stays in a ref. Only a run of long reversals organizes.
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (isParsing || isOrganized || queuedItems.length === 0) return;
-    const state = shakeRef.current;
-    const x = event.clientX;
-    if (state.lastX === null) {
-      state.lastX = x;
+    if (isParsing || isOrganized || queuedItems.length === 0) {
+      resetShakeTracker(shakeRef.current);
       return;
     }
-    const dx = x - state.lastX;
-    if (Math.abs(dx) < 16) return;
-    const dir = dx > 0 ? 1 : -1;
-    if (state.lastDir !== 0 && dir !== state.lastDir) {
-      const now = Date.now();
-      state.flips = [...state.flips.filter((ts) => now - ts < 650), now];
-      setIsShaking(true);
-      window.setTimeout(() => setIsShaking(false), 300);
-      if (state.flips.length >= 3) {
-        state.flips = [];
-        runFlipOrganize();
-      }
+    const result = recordShakeMove(shakeRef.current, event.clientX, Date.now());
+    if (result === 'none') return;
+    if (result === 'trigger') {
+      clearShakeCue();
+      setIsShaking(false);
+      runFlipOrganize();
+      return;
     }
-    state.lastDir = dir;
-    state.lastX = x;
+    // 'cue' after two counted reversals — do not setState on ordinary movement.
+    setIsShaking(true);
+    clearShakeCue();
+    shakeCueTimerRef.current = window.setTimeout(() => {
+      shakeCueTimerRef.current = null;
+      if (!deskMountedRef.current) return;
+      setIsShaking(false);
+    }, 400);
   };
 
   const formatArchivePeekSummary = (item: DeskItem) => {
@@ -327,7 +394,7 @@ export const IngestDesk: React.FC<{
           </div>
           {!isOrganized && (
             <span className={`desk-shake-chip ${isShaking ? 'is-shaking' : ''}`}>
-              左右晃动鼠标或点「整理叠放」可按同名归组
+              左右晃动鼠标或点「归组叠放」可按同名归组
             </span>
           )}
         </div>
@@ -589,10 +656,10 @@ export const IngestDesk: React.FC<{
                   type="button"
                   onClick={runFlipOrganize}
                   className="ui-action ui-action--secondary !h-8 !px-2.5 !text-[13px]"
-                  title="将同名/规律命名的字幕叠放为一组 (快捷键 R)"
+                  title="将同名/规律命名的字幕在桌面归组叠放（快捷键 R，不会开始整理文件）"
                 >
                   <Layers className="h-3.5 w-3.5 text-[var(--accent-text)]" aria-hidden="true" />
-                  <span>整理叠放</span>
+                  <span>归组叠放</span>
                 </button>
               ) : (
                 <>
