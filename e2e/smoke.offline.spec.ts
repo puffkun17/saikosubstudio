@@ -9,7 +9,9 @@ test.describe('offline PWA shell', () => {
   test('home remains available after going offline', async ({ page, context }) => {
     await page.goto('/');
     await waitForStore(page);
-    await expect(page.getByText(/添加本地字幕|选择文件|拖入此处/).first()).toBeVisible({ timeout: 20_000 });
+    const importCta = page.getByTestId('ingest-import-cta');
+    await expect(importCta).toBeVisible({ timeout: 20_000 });
+    await expect(importCta).toContainText(/导入字幕/);
 
     // Wait until a service worker controls the page (or is at least registered).
     await page.waitForFunction(async () => {
@@ -27,7 +29,7 @@ test.describe('offline PWA shell', () => {
     await expect(page.locator('body')).toBeVisible({ timeout: 20_000 });
     // Prefer visible UI nodes (avoid matching <title>, which is not "visible").
     await expect(
-      page.locator('.ingest-local-add__title, .ingest-local-add, [data-ingest-add-cta]').first(),
+      page.locator('[data-testid="ingest-import-cta"], [data-ingest-add-cta], .ingest-local-add').first(),
     ).toBeVisible({ timeout: 20_000 });
 
     await context.setOffline(false);

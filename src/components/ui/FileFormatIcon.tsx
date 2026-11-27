@@ -219,7 +219,7 @@ export const FileFormatGlyph: React.FC<FileFormatGlyphProps> = ({
           width="17.5"
           height="4.6"
           rx="1.15"
-          fill="var(--accent-soft)"
+          fill="color-mix(in srgb, var(--accent) 10%, var(--paper-raised))"
           stroke={c.line}
           strokeWidth={1.35}
           strokeLinejoin="round"
@@ -343,25 +343,36 @@ export const FileFormatGlyph: React.FC<FileFormatGlyphProps> = ({
           {...stroke}
         />
         <path d="M14 2.75V6.25C14 7.08 14.67 7.75 15.5 7.75H19L14 2.75Z" fill="var(--paper-sunken)" {...stroke} />
-        <path
-          d="M7.25 10.25H13.75M7.25 12.6H16.75"
-          stroke={c.detail}
-          strokeWidth={1.3}
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
         {withCode && code ? (
-          <text x="12" y="18.5" textAnchor="middle" fontSize={6.3} fill={c.ink} style={MONO_STYLE}>
-            {code}
-          </text>
+          <>
+            <path
+              d="M7.25 9.6H13.75M7.25 12H16.75"
+              stroke={c.detail}
+              strokeWidth={1.3}
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+            <text x="12" y="18.5" textAnchor="middle" fontSize={6.3} fill={c.ink} style={MONO_STYLE}>
+              {code}
+            </text>
+          </>
         ) : (
-          <path
-            d="M7.25 14.5H16.75M8.75 17.25H15.25"
-            stroke={c.ink}
-            strokeWidth={1.45}
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-          />
+          <>
+            <path
+              d="M7.25 10.2H13.75"
+              stroke={c.detail}
+              strokeWidth={1.3}
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+            <path
+              d="M7.25 13.7H16.75M8.75 17.2H15.25"
+              stroke={c.ink}
+              strokeWidth={1.45}
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </>
         )}
       </svg>
     );
@@ -411,7 +422,7 @@ export const FileFormatIcon: React.FC<FileFormatIconProps> = ({
       title={tip}
       data-file-format={resolved}
     >
-      <span style={{ width: px, height: px }} className="inline-block">
+      <span style={{ width: px, height: px }} className="block shrink-0">
         <FileFormatGlyph format={resolved} size={size} tone={tone} />
       </span>
       {labelVisible && (

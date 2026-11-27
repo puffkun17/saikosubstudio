@@ -157,9 +157,13 @@ export const HomepageHeroStage: React.FC<HomepageHeroStageProps> = ({
   const [pulsedWheel, setPulsedWheel] = useState<WheelKey | null>(null);
 
   const stageRef = useRef<HTMLDivElement>(null);
+  const sceneCycleBtnRef = useRef<HTMLButtonElement>(null);
+  const tumblerBarRef = useRef<HTMLDivElement>(null);
   const beatTimersRef = useRef<number[]>([]);
   const pulseTimerRef = useRef<number | null>(null);
+  const pulseRafRef = useRef<number | null>(null);
   const lastWheelAtRef = useRef<Record<string, number>>({});
+  const hoveredWheelRef = useRef<{ key: WheelKey; at: number } | null>(null);
   const isDraggingRef = useRef(isDragging);
   const isPouringRef = useRef(isPouring);
 
@@ -180,13 +184,20 @@ export const HomepageHeroStage: React.FC<HomepageHeroStageProps> = ({
 
   const triggerPulse = useCallback((wheel: WheelKey) => {
     if (shouldReduceMotion) return;
+    if (pulseRafRef.current !== null) {
+      window.cancelAnimationFrame(pulseRafRef.current);
+      pulseRafRef.current = null;
+    }
     if (pulseTimerRef.current !== null) {
       window.clearTimeout(pulseTimerRef.current);
+      pulseTimerRef.current = null;
     }
     setPulsedWheel(null);
-    window.requestAnimationFrame(() => {
+    pulseRafRef.current = window.requestAnimationFrame(() => {
+      pulseRafRef.current = null;
       setPulsedWheel(wheel);
       pulseTimerRef.current = window.setTimeout(() => {
+        pulseTimerRef.current = null;
         setPulsedWheel((curr) => (curr === wheel ? null : curr));
       }, 650);
     });
@@ -195,8 +206,13 @@ export const HomepageHeroStage: React.FC<HomepageHeroStageProps> = ({
   useEffect(() => {
     return () => {
       clearAllTimers();
+      if (pulseRafRef.current !== null) {
+        window.cancelAnimationFrame(pulseRafRef.current);
+        pulseRafRef.current = null;
+      }
       if (pulseTimerRef.current !== null) {
         window.clearTimeout(pulseTimerRef.current);
+        pulseTimerRef.current = null;
       }
     };
   }, [clearAllTimers]);
@@ -358,18 +374,51 @@ export const HomepageHeroStage: React.FC<HomepageHeroStageProps> = ({
     [triggerPulse],
   );
 
-  const handleWheelOnControl = (
-    key: WheelKey,
-    e: React.WheelEvent<HTMLButtonElement>,
-  ) => {
-    e.preventDefault();
-    const now = performance.now();
-    if (now - (lastWheelAtRef.current[key] || 0) < 160) return;
-    lastWheelAtRef.current[key] = now;
-    const delta: 1 | -1 = e.deltaY >= 0 ? 1 : -1;
-    if (key === 'scene') cycleScene(delta);
-    else rollWheel(key, delta);
-  };
+  const wheelActionsRef = useRef({ cycleScene, rollWheel });
+
+  useEffect(() => {
+    wheelActionsRef.current = { cycleScene, rollWheel };
+  }, [cycleScene, rollWheel]);
+
+  // Explicit non-passive wheel listener on HUD controls only; avoid hijacking fast page scroll.
+  useEffect(() => {
+    const targets: HTMLElement[] = [];
+    if (sceneCycleBtnRef.current) targets.push(sceneCycleBtnRef.current);
+    if (tumblerBarRef.current) targets.push(tumblerBarRef.current);
+    if (targets.length === 0) return;
+
+    const onWheel = (e: WheelEvent) => {
+      const btn = (e.target as Element | null)?.closest<HTMLButtonElement>('[data-hero-wheel]');
+      const key = btn?.dataset.heroWheel as WheelKey | undefined;
+      if (!btn || !key) return;
+      if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY) || Math.abs(e.deltaY) < 4) return;
+
+      const pageScrollable = document.documentElement.scrollHeight > document.documentElement.clientHeight + 2;
+      if (pageScrollable) {
+        const isFocused = document.activeElement === btn;
+        const hovered = hoveredWheelRef.current;
+        const hasDwelled = hovered?.key === key && performance.now() - hovered.at >= 220;
+        if (!isFocused && !hasDwelled) return;
+      }
+
+      e.preventDefault();
+      const now = performance.now();
+      if (now - (lastWheelAtRef.current[key] || 0) < 160) return;
+      lastWheelAtRef.current[key] = now;
+      const delta: 1 | -1 = e.deltaY >= 0 ? 1 : -1;
+      if (key === 'scene') wheelActionsRef.current.cycleScene(delta);
+      else wheelActionsRef.current.rollWheel(key, delta);
+    };
+
+    for (const target of targets) {
+      target.addEventListener('wheel', onWheel, { passive: false });
+    }
+    return () => {
+      for (const target of targets) {
+        target.removeEventListener('wheel', onWheel);
+      }
+    };
+  }, []);
 
   const scene = HERO_SCENES[sceneIdx];
   const reduceOverride = shouldReduceMotion && !userTouchedStyle;
@@ -391,6 +440,7 @@ export const HomepageHeroStage: React.FC<HomepageHeroStageProps> = ({
   return (
     <div
       ref={stageRef}
+      data-testid="ingest-empty-stage"
       data-beat={activeBeat}
       className={`hero-stage ${isResetting ? 'is-resetting' : ''} ${isPouring ? 'is-pouring' : ''}`}
     >
@@ -432,9 +482,12 @@ export const HomepageHeroStage: React.FC<HomepageHeroStageProps> = ({
             </div>
           </div>
           <button
+            ref={sceneCycleBtnRef}
             type="button"
+            data-hero-wheel="scene"
             onClick={() => cycleScene(1)}
-            onWheel={(e) => handleWheelOnControl('scene', e)}
+            onPointerEnter={() => { hoveredWheelRef.current = { key: 'scene', at: performance.now() }; }}
+            onPointerLeave={() => { if (hoveredWheelRef.current?.key === 'scene') hoveredWheelRef.current = null; }}
             className={`hero-scene-cycle-btn ${pulsedWheel === 'scene' ? 'is-just-rolled' : ''}`}
             title="点击切换下一段样片"
           >
@@ -458,6 +511,7 @@ export const HomepageHeroStage: React.FC<HomepageHeroStageProps> = ({
 
         {/* Top-Right Mechanical Combination-Lock Drum Indicators */}
         <div
+          ref={tumblerBarRef}
           className="hero-screen-hud hero-tumbler-bar"
           role="group"
           aria-label="实时字幕功能演示滚筒（点击或滚轮拨动）"
@@ -465,8 +519,10 @@ export const HomepageHeroStage: React.FC<HomepageHeroStageProps> = ({
         >
           <button
             type="button"
+            data-hero-wheel="font"
             onClick={() => rollWheel('font', 1)}
-            onWheel={(e) => handleWheelOnControl('font', e)}
+            onPointerEnter={() => { hoveredWheelRef.current = { key: 'font', at: performance.now() }; }}
+            onPointerLeave={() => { if (hoveredWheelRef.current?.key === 'font') hoveredWheelRef.current = null; }}
             className={`hero-tumbler-wheel ${pulsedWheel === 'font' ? 'is-just-rolled' : ''}`}
             aria-pressed={activeSubFont !== 'sans'}
             title="拨动或点击切换主中文字体（黑体 / 宋体 / 楷体）"
@@ -486,8 +542,10 @@ export const HomepageHeroStage: React.FC<HomepageHeroStageProps> = ({
 
           <button
             type="button"
+            data-hero-wheel="color"
             onClick={() => rollWheel('color', 1)}
-            onWheel={(e) => handleWheelOnControl('color', e)}
+            onPointerEnter={() => { hoveredWheelRef.current = { key: 'color', at: performance.now() }; }}
+            onPointerLeave={() => { if (hoveredWheelRef.current?.key === 'color') hoveredWheelRef.current = null; }}
             className={`hero-tumbler-wheel ${pulsedWheel === 'color' ? 'is-just-rolled' : ''}`}
             aria-pressed={activeDualColor}
             title="拨动或点击切换双语配色（纯白 / 双色）"
@@ -518,8 +576,10 @@ export const HomepageHeroStage: React.FC<HomepageHeroStageProps> = ({
 
           <button
             type="button"
+            data-hero-wheel="lang"
             onClick={() => rollWheel('lang', 1)}
-            onWheel={(e) => handleWheelOnControl('lang', e)}
+            onPointerEnter={() => { hoveredWheelRef.current = { key: 'lang', at: performance.now() }; }}
+            onPointerLeave={() => { if (hoveredWheelRef.current?.key === 'lang') hoveredWheelRef.current = null; }}
             className={`hero-tumbler-wheel ${pulsedWheel === 'lang' ? 'is-just-rolled' : ''}`}
             aria-pressed={activeSubLang === 'ja'}
             title="拨动或点击切换副字幕语言（EN / 日文）"
@@ -538,8 +598,10 @@ export const HomepageHeroStage: React.FC<HomepageHeroStageProps> = ({
 
           <button
             type="button"
+            data-hero-wheel="lyric"
             onClick={() => rollWheel('lyric', 1)}
-            onWheel={(e) => handleWheelOnControl('lyric', e)}
+            onPointerEnter={() => { hoveredWheelRef.current = { key: 'lyric', at: performance.now() }; }}
+            onPointerLeave={() => { if (hoveredWheelRef.current?.key === 'lyric') hoveredWheelRef.current = null; }}
             className={`hero-tumbler-wheel ${pulsedWheel === 'lyric' ? 'is-just-rolled' : ''}`}
             aria-pressed={activeTopLyric}
             title="拨动或点击开启顶部歌曲歌词（♪ … ♪）"
@@ -702,6 +764,7 @@ export const HomepageHeroStage: React.FC<HomepageHeroStageProps> = ({
         >
           <button
             type="button"
+            data-testid="ingest-import-cta"
             data-ingest-add-cta
             onClick={onPickFiles}
             onMouseEnter={() => setIsPouring(true)}
