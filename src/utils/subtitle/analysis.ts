@@ -39,8 +39,8 @@ export function detectLanguageByContent(text: string): SubtitleLanguage {
   const hangulCount = (text.match(/[\uac00-\ud7af\u1100-\u11ff]/g) || []).length;
   if (hangulCount >= 2) return 'ko';
   
-  const tcChars = text.match(/[門設計這說著會後個過嗎從來對]/g);
-  const scChars = text.match(/[门设计这说着会后个过吗从来对]/g);
+  const tcChars = text.match(/[門設計這說著會後個過嗎從來對們為開關時間還沒讓給點經現樣應該覺聽見問題頭東長無進動國學話請謝誰麼車愛機電邊錯難離寫買賣錢飛體氣總結實際幫殺壞傷醫護軍戰勝負輸贏]/g);
+  const scChars = text.match(/[门设计这说着会后个过吗从来对们为开关时间还没让给点经现样应该觉听见问题头东长无进动国学话请谢谁么车爱机电边错难离写买卖钱飞体气总结实际帮杀坏伤医护军战胜负输赢]/g);
   const tcCount = tcChars ? tcChars.length : 0;
   const scCount = scChars ? scChars.length : 0;
   
@@ -309,17 +309,17 @@ const SCREEN_TEXT_MARKER_EN_RE = /\b(?:ON[\s-]?SCREEN|SCREEN[\s-]?TEXT|TITLE[\s-
 const SCREEN_TEXT_MARKER_EN_UPPER_RE = /\b(?:ON[\s-]?SCREEN|SCREEN[\s-]?TEXT|TITLE[\s-]?CARD|CAPTION|SUBTITLE|TEXT|SIGN)\b/;
 const SCREEN_TEXT_READS_RE = /\b(?:sign|text) reads\b/i;
 const SCREEN_TEXT_MARKER_ZH_RE = /牌匾|招牌|标识|路牌|屏幕|短信|邮件|标题|告示|字幕显示/;
-const DIALOGUE_FUNCTION_WORD_RE = /(是|有|在|去|来|说|做|看|听|想|要|会|能|的|了|着|过|吗|呢|吧)/;
+const DIALOGUE_FUNCTION_WORD_RE = /(是|有|在|去|来|说|做|看|听|想|要|会|能|的|了|着|过|吗|呢|吧|我|你|他|她|它|们|请|别|没|不|把|给|让|被|就|都|也|还|再|很|太|这|那)/;
 
 /**
  * A full spoken sentence (ends with sentence punctuation and carries a function word),
- * with no bracket / lyric / emphasis wrapping. Keyword hits alone (「字幕」「回忆」「短信」…)
+ * with no bracket / lyric / emphasis wrapping. Keyword hits alone (「字幕」「回忆」「短信」「声音」「通知」…)
  * must not turn such a line into a note or screen text — that blocked bilingual pairing.
  */
 function isSentenceLikeDialogue(text: string): boolean {
   const t = (text || '').trim();
   if (!t || /[()（）\[\]【】♪♫♬♩🎵🎶*《》]/.test(t)) return false;
-  if (/^(?:旁白|画外音|畫外音|独白|獨白|解说|解說|心想)\s*[:：]/.test(t)) return false;
+  if (/^(?:旁白|画外音|畫外音|独白|獨白|解说|解說|心想|广播|廣播|播报|播報|通知|音效)\s*[:：]/.test(t)) return false;
   if (!/[。！？!?…]["”』」']?$/.test(t)) return false;
   return DIALOGUE_FUNCTION_WORD_RE.test(t) || /[A-Za-z]{2,}\s+[A-Za-z]{2,}/.test(t);
 }
@@ -517,11 +517,12 @@ export function classifySubtitleCue(
     reasons.push('ass-style');
   }
 
+  const sentenceDialogue = isSentenceLikeDialogue(cleanText);
   if (/^[A-Z0-9][A-Z0-9\s.'’:&-]{1,28}$/.test(cleanText) && /[A-Z]/.test(cleanText)) {
     screenScore += 22;
     reasons.push('sign-like-uppercase');
   }
-  if (/(牌匾|招牌|标识|路牌|字幕|屏幕|短信|邮件|标题|文件|海报|报纸|新闻标题|告示|警告|禁止|入口|出口|EXIT|WARNING|POLICE|NOTICE)/i.test(cleanText)) {
+  if (!sentenceDialogue && /(牌匾|招牌|标识|路牌|字幕|屏幕|短信|邮件|标题|文件|海报|报纸|新闻标题|告示|警告|禁止|入口|出口|EXIT|WARNING|POLICE|NOTICE)/i.test(cleanText)) {
     screenScore += 24;
     reasons.push('screen-text-keyword');
   }
@@ -541,7 +542,7 @@ export function classifySubtitleCue(
     narrationScore += 34;
     reasons.push('bracket-note');
   }
-  if (/(旁白|画外音|广播|播报|通知|音效|声音|脚步声|笑声|掌声|音乐)/.test(cleanText)) {
+  if (!sentenceDialogue && /(旁白|画外音|广播|播报|通知|音效|声音|脚步声|笑声|掌声|音乐)/.test(cleanText)) {
     narrationScore += 38;
     reasons.push('narration-or-sound-keyword');
   }
@@ -602,13 +603,13 @@ export function splitSingleBilingualText(text: string): string {
   }
 
   const hasZh = /[一-龥]/.test(view);
-  const hasEn = /[a-zA-Z]/.test(view);
+  const hasEn = /[A-Za-z\u00c0-\u024f]/.test(view);
   if (!hasZh || !hasEn) {
     return view;
   }
 
-  const latinWords = (value: string): string[] => value.match(/[A-Za-z]+(?:'[A-Za-z]+)?/g) || [];
-  const latinChars = (value: string): number => (value.match(/[A-Za-z]/g) || []).length;
+  const latinWords = (value: string): string[] => value.match(/[A-Za-z\u00c0-\u024f]+(?:['’][A-Za-z\u00c0-\u024f]+)?/g) || [];
+  const latinChars = (value: string): number => (value.match(/[A-Za-z\u00c0-\u024f]/g) || []).length;
   const hanChars = (value: string): number => (value.match(/[一-龥]/g) || []).length;
   const isSubtitleLikeEnglish = (value: string): boolean => {
     const words = latinWords(value);
@@ -617,7 +618,7 @@ export function splitSingleBilingualText(text: string): string {
   };
   const isSubtitleLikeChinese = (value: string): boolean => hanChars(value) >= 2;
 
-  const zhFirstMatch = view.match(/^([\s\S]*?[一-龥][，。！？）】」；：”’"'.,!?\s-]*)([A-Za-z][\s\S]*)$/);
+  const zhFirstMatch = view.match(/^([\s\S]*?[一-龥][，。！？）】」；：”’"'.,!?\s-]*)([¡¿«]?[A-Za-z\u00c0-\u024f][\s\S]*)$/);
   if (zhFirstMatch) {
     const zhPart = zhFirstMatch[1].trim();
     const enPart = zhFirstMatch[2].trim();
@@ -628,7 +629,7 @@ export function splitSingleBilingualText(text: string): string {
     }
   }
 
-  const enFirstMatch = view.match(/^([A-Za-z][\s\S]*?[A-Za-z][，。！？）】」；：”"'.,!?\s-]*)([一-龥][\s\S]*)$/);
+  const enFirstMatch = view.match(/^([¡¿«]?[A-Za-z\u00c0-\u024f][\s\S]*?[A-Za-z\u00c0-\u024f][，。！？）】」；：”"'.,!?\s-]*)([一-龥][\s\S]*)$/);
   if (enFirstMatch) {
     const enPart = enFirstMatch[1].trim();
     const zhPart = enFirstMatch[2].trim();

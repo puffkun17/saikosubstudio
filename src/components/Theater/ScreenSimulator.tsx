@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { BackdropSlot, SubtitleDataSlot, StyleSettings } from '@/types/subtitleTypes';
 import { parseSubtitleRange } from '@/utils/timeline/timecode';
 
@@ -60,6 +61,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
   guides,
   cueDimmed = false,
 }) => {
+  const reduce = useReducedMotion();
   const activeSub = subtitle.status === 'ready' && subtitle.data ? subtitle.data[previewIndex] : null;
   
   const scale = style.globalScale || 1.0;
@@ -300,7 +302,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
         >
           {/* Inner Movie Canvas（使用大宽度强制扩展，配合 maxWidth 限制） */}
           <div 
-            className="relative flex-shrink-0 bg-[#070709] transition-all duration-300 overflow-hidden"
+            className="relative flex-shrink-0 bg-[#070709] transition-[aspect-ratio,opacity] duration-200 overflow-hidden"
             style={{
               aspectRatio: innerAspect,
               width: isImax ? '100%' : '10000px',
@@ -350,29 +352,57 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
           
           {/* Top Subtitle Rendering Layer */}
           {topElement && fadeOpacity > 0.01 && (
-            <div 
-              className="absolute left-[5%] right-[5%] z-40 flex select-none flex-col items-center justify-start text-center pointer-events-none"
-              data-cue-dim={cueDimmed ? 'true' : undefined}
-              style={{ top: `${paddingBottomCqh * 0.8}cqh`, opacity: fadeOpacity }}
-            >
-              {topElement}
-            </div>
+            isPreviewPlaying || reduce ? (
+              <div 
+                className="absolute left-[5%] right-[5%] z-40 flex select-none flex-col items-center justify-start text-center pointer-events-none"
+                data-cue-dim={cueDimmed ? 'true' : undefined}
+                style={{ top: `${paddingBottomCqh * 0.8}cqh`, opacity: fadeOpacity }}
+              >
+                {topElement}
+              </div>
+            ) : (
+              <motion.div
+                key={`top-${previewIndex}`}
+                initial={{ opacity: 0.85 }}
+                animate={{ opacity: fadeOpacity }}
+                transition={{ duration: 0.12 }}
+                className="absolute left-[5%] right-[5%] z-40 flex select-none flex-col items-center justify-start text-center pointer-events-none"
+                data-cue-dim={cueDimmed ? 'true' : undefined}
+                style={{ top: `${paddingBottomCqh * 0.8}cqh` }}
+              >
+                {topElement}
+              </motion.div>
+            )
           )}
 
           {/* Subtitle Rendering Layer (Bottom) */}
           {bottomElement && fadeOpacity > 0.01 && (
-            <div 
-              className="absolute left-[5%] right-[5%] z-40 flex select-none flex-col items-center justify-end text-center pointer-events-none"
-              data-cue-dim={cueDimmed ? 'true' : undefined}
-              style={{ bottom: `${paddingBottomCqh}cqh`, opacity: fadeOpacity }}
-            >
-              {bottomElement}
-            </div>
+            isPreviewPlaying || reduce ? (
+              <div 
+                className="absolute left-[5%] right-[5%] z-40 flex select-none flex-col items-center justify-end text-center pointer-events-none"
+                data-cue-dim={cueDimmed ? 'true' : undefined}
+                style={{ bottom: `${paddingBottomCqh}cqh`, opacity: fadeOpacity }}
+              >
+                {bottomElement}
+              </div>
+            ) : (
+              <motion.div
+                key={`bottom-${previewIndex}`}
+                initial={{ opacity: 0.85 }}
+                animate={{ opacity: fadeOpacity }}
+                transition={{ duration: 0.12 }}
+                className="absolute left-[5%] right-[5%] z-40 flex select-none flex-col items-center justify-end text-center pointer-events-none"
+                data-cue-dim={cueDimmed ? 'true' : undefined}
+                style={{ bottom: `${paddingBottomCqh}cqh` }}
+              >
+                {bottomElement}
+              </motion.div>
+            )
           )}
 
           {/* Alignment guides stay explicit when enabled; temporary guides are used only while adjusting a related value. */}
           <div 
-            className="pointer-events-none absolute left-0 right-0 z-50 flex items-center border-b transition-all duration-300"
+            className="pointer-events-none absolute left-0 right-0 z-50 flex items-center border-b transition-[opacity,bottom,border-color] duration-200"
             style={{
               bottom: `${paddingBottomCqh}cqh`,
               opacity: (guides.show || guides.temp) ? 1 : 0,
@@ -395,7 +425,7 @@ export const ScreenSimulator: React.FC<ScreenSimulatorProps> = ({
           {/* Target Black Bar Center Line */}
           {targetCqh > 0 && (
             <div 
-            className="pointer-events-none absolute left-0 right-0 z-40 border-b border-dashed border-white/35 transition-all duration-300"
+            className="pointer-events-none absolute left-0 right-0 z-40 border-b border-dashed border-white/35 transition-[opacity,bottom,border-color] duration-200"
             style={{
               bottom: `${targetCqh}cqh`,
               opacity: (guides.show || guides.temp) && !isMagnetic ? 1 : 0,

@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { ChevronLeft, ChevronRight, LayoutDashboard } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
+import { EASE_OUT, MOTION_S } from '@/core/motion';
 import { ScoreRing } from '@/components/Workbench/ScoreRing';
 import type { WorkbenchScoreBreakdown } from '@/core/workbenchScore';
 import {
@@ -40,6 +42,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   onPagerChange,
   onOpenOverview,
 }) => {
+  const reduce = useReducedMotion();
   const progress = counts.reviewTotal > 0
     ? Math.round((counts.reviewChecked / counts.reviewTotal) * 100)
     : 100;
@@ -76,7 +79,12 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
           title={`待核 ${counts.reviewRemaining}（结构差异 ${counts.structureRemaining} + 类别待定 ${counts.suspectRemaining}）。已核对 ${counts.reviewChecked} / ${counts.reviewTotal}。`}
           onClick={() => onFocusChange(reviewOn ? null : 'review')}
         >
-          <span style={{ width: `${progress}%` }} />
+          <motion.span
+            initial={false}
+            animate={{ scaleX: progress / 100 }}
+            transition={{ duration: reduce ? 0 : MOTION_S.base, ease: EASE_OUT }}
+            style={{ width: '100%', transformOrigin: 'left center' }}
+          />
         </button>
         <div className="wb-filters" role="group" aria-label="分类筛选">
           {chips.map((chip) => {
@@ -85,12 +93,14 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
             const locked = zero && !on;
             const label = REVIEW_FOCUS_LABEL[chip.id];
             return (
-              <button
+              <motion.button
                 key={chip.id}
                 type="button"
                 className={`wb-pill wb-focus-ring${on ? ' wb-sel' : ''}${zero ? ' is-zero' : ''}`}
                 aria-pressed={on}
                 disabled={locked}
+                whileTap={reduce || locked ? undefined : { scale: 0.98 }}
+                transition={{ duration: 0.1 }}
                 data-testid={`focus-${chip.id}`}
                 data-count={chip.count}
                 title={zero
@@ -103,7 +113,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                 <span className={`wb-pill__swatch wb-pill__swatch--${chip.id}`} aria-hidden="true" />
                 {label}
                 <i>{chip.count}</i>
-              </button>
+              </motion.button>
             );
           })}
         </div>

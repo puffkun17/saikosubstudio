@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import { motion, useReducedMotion } from 'motion/react';
+import { EASE_OUT, MOTION_S } from '@/core/motion';
 
 type ScoreRingProps = {
   score: number;
@@ -10,6 +12,7 @@ type ScoreRingProps = {
 
 /** Grammarly-like circular score gauge. */
 export const ScoreRing: React.FC<ScoreRingProps> = ({ score, size = 54, stroke = 5 }) => {
+  const reduce = useReducedMotion();
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const clamped = Math.max(0, Math.min(100, score));
@@ -28,7 +31,7 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({ score, size = 54, stroke =
           stroke="var(--v5-panel-muted)"
           strokeWidth={stroke}
         />
-        <circle
+        <motion.circle
           cx={size / 2}
           cy={size / 2}
           r={r}
@@ -37,7 +40,9 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({ score, size = 54, stroke =
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}
-          strokeDashoffset={offset}
+          initial={reduce ? false : { strokeDashoffset: c }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: reduce ? 0 : MOTION_S.slow, ease: EASE_OUT }}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </svg>

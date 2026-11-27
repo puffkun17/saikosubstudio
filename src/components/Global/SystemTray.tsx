@@ -5,7 +5,8 @@ import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 
 import { useLocationPathname } from '@/hooks/useLocationPathname';
 import { Archive, ArrowLeft, Menu, Minus, PenLine, Plus, RotateCcw, Scale, X } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
+import { MOTION_S, springNoBounce } from '@/core/motion';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
@@ -132,7 +133,18 @@ const WorkflowStepButton: React.FC<WorkflowStepButtonProps> = ({
   variant,
 }) => {
   const isActive = workflowStep === step.id;
+  const reduce = useReducedMotion();
   const gatedHint = step.id === 2 ? '导入完成（点「开始合轴」）后可进入' : step.id === 3 ? '进入工作台后可预览' : undefined;
+  const activeBar = isActive ? (
+    <motion.span
+      layoutId={reduce ? undefined : variant === 'top' ? 'tray-step-bar-top' : 'tray-step-bar-bottom'}
+      transition={reduce ? { duration: 0 } : springNoBounce(MOTION_S.base)}
+      aria-hidden="true"
+      className={`pointer-events-none absolute bottom-0 h-[2px] rounded-full bg-[var(--accent)] ${
+        variant === 'bottom' ? 'inset-x-3' : 'inset-x-1'
+      }`}
+    />
+  ) : null;
 
   if (variant === 'bottom') {
     return (
@@ -145,14 +157,14 @@ const WorkflowStepButton: React.FC<WorkflowStepButtonProps> = ({
             ? 'text-[var(--ink-strong)]'
             : disabled
               ? 'cursor-help text-[var(--ink-muted)]'
-              : 'text-[var(--ink-body)] hover:text-[var(--ink-strong)]'}
-          ${isActive ? 'underline decoration-[var(--accent)] decoration-2 underline-offset-4' : ''}`}
+              : 'text-[var(--ink-body)] hover:text-[var(--ink-strong)]'}`}
         aria-current={isActive ? 'step' : undefined}
         aria-disabled={disabled || undefined}
         aria-label={disabled && gatedHint ? gatedHint : `前往${step.label}`}
         title={disabled && gatedHint ? gatedHint : `前往${step.label}`}
       >
         <span className="truncate">{step.label}</span>
+        {activeBar}
       </button>
     );
   }
@@ -167,14 +179,14 @@ const WorkflowStepButton: React.FC<WorkflowStepButtonProps> = ({
           ? 'text-[var(--ink-strong)]'
           : disabled
             ? 'cursor-help text-[var(--ink-muted)]'
-            : 'text-[var(--ink-body)] hover:text-[var(--ink-strong)]'}
-        ${isActive ? 'underline decoration-[var(--accent)] decoration-2 underline-offset-4' : ''}`}
+            : 'text-[var(--ink-body)] hover:text-[var(--ink-strong)]'}`}
       aria-current={isActive ? 'step' : undefined}
       aria-disabled={disabled || undefined}
       aria-label={disabled && gatedHint ? gatedHint : `前往${step.label}`}
       title={disabled && gatedHint ? gatedHint : `前往${step.label}`}
     >
       {step.label}
+      {activeBar}
     </button>
   );
 };

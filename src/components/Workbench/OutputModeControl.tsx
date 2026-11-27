@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { motion, useReducedMotion } from 'motion/react';
+import { MOTION_S, springNoBounce } from '@/core/motion';
 import { useStudioStore } from '@/store/useStudioStore';
 import type { AuxiliarySubtitleMode } from '@/utils/subtitleCore';
 import { countHiddenByPolicy } from '@/core/lineKinds';
@@ -14,6 +16,7 @@ const OPTIONS: { value: AuxiliarySubtitleMode; label: string; tip: string }[] = 
 
 /** Compact 3-segment 输出 control for the workbench header (行为同 AuxiliaryPolicy). */
 export const OutputModeControl: React.FC = () => {
+  const reduce = useReducedMotion();
   const { processedSubs, customStyle, setCustomStyle } = useStudioStore(useShallow((s) => ({
     processedSubs: s.processedSubs,
     customStyle: s.customStyle,
@@ -35,17 +38,18 @@ export const OutputModeControl: React.FC = () => {
       <div className="wb-out__seg">
         {OPTIONS.map((o) => {
           const hideN = hidden[o.value];
-          const label = o.value === 'clean' && hideN > 0 ? `${o.label} −${hideN}` : o.label;
+          const label = o.value !== 'keep' && hideN > 0 ? `${o.label} −${hideN}` : o.label;
           const tip = hideN > 0 && o.value !== 'keep'
             ? `${o.tip}（当前隐去 ${hideN} 行）`
             : o.tip;
+          const isOn = mode === o.value;
           return (
             <button
               key={o.value}
               type="button"
               role="radio"
-              aria-checked={mode === o.value}
-              className={`wb-out__btn wb-focus-ring${mode === o.value ? ' is-on' : ''}`}
+              aria-checked={isOn}
+              className={`wb-out__btn wb-focus-ring${isOn ? ' is-on' : ''}`}
               title={tip}
               onClick={() => {
                 const narrow = window.matchMedia('(max-width: 767px)').matches;
@@ -60,6 +64,14 @@ export const OutputModeControl: React.FC = () => {
               data-aux={o.value}
             >
               {label}
+              {isOn && (
+                <motion.span
+                  layoutId={reduce ? undefined : 'wb-out-active'}
+                  transition={reduce ? { duration: 0 } : springNoBounce(MOTION_S.fast)}
+                  className="wb-out__bar"
+                  aria-hidden="true"
+                />
+              )}
             </button>
           );
         })}

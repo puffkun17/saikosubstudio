@@ -7,7 +7,8 @@ import { useStudioStore } from '@/store/useStudioStore';
 import { type StyleSettings } from '@/utils/subtitleCore';
 import { StyleLibrary, useSelectedStyleEntry } from '@/components/Settings/StyleLibrary';
 import { RotateCcw, ALargeSmall, ChevronDown, ChevronUp, FileType, Pipette, Star } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { MOTION_S, springNoBounce } from '@/core/motion';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { ColorSampler } from '@/components/Settings/ColorSampler';
 import { resolveEffectiveStyle } from '@/utils/previewStyle';
@@ -48,7 +49,7 @@ const FontFamilySelect = ({
   <div className="grid grid-cols-[56px_minmax(0,1fr)] items-center gap-[var(--ds-gap-group)]">
     <span className="text-sm text-[var(--v4-text-muted)] font-medium">{label}</span>
     <select
-      className="h-[var(--ds-ctl-h)] min-w-0 w-full rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-[var(--ds-ctl-px)] text-left text-sm text-[var(--v4-text)] outline-none transition-all focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
+      className="h-[var(--ds-ctl-h)] min-w-0 w-full rounded-md border border-[var(--v4-line)] bg-[var(--v4-panel-muted)] px-[var(--ds-ctl-px)] text-left text-sm text-[var(--v4-text)] outline-none transition-colors focus:border-[var(--v4-accent)] focus:bg-[var(--v4-panel-raised)] cursor-pointer"
       value={value}
       onChange={e => onChange(e.target.value)}
     >
@@ -72,6 +73,7 @@ const ColorPicker = ({
   onToggle: () => void,
   onChange: (val: string) => void
 }) => {
+  const reduce = useReducedMotion();
   return (
     <div className="flex flex-col">
       <button
@@ -99,10 +101,10 @@ const ColorPicker = ({
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
-            initial={{ height: 0, opacity: 0, marginTop: 0 }}
+            initial={reduce ? false : { height: 0, opacity: 0, marginTop: 0 }}
             animate={{ height: "auto", opacity: 1, marginTop: 8 }}
-            exit={{ height: 0, opacity: 0, marginTop: 0 }}
-            transition={{ type: "spring", stiffness: 350, damping: 28 }}
+            exit={reduce ? undefined : { height: 0, opacity: 0, marginTop: 0 }}
+            transition={reduce ? { duration: 0 } : springNoBounce(MOTION_S.base)}
             className="overflow-hidden"
           >
             <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-[var(--v4-line)]">

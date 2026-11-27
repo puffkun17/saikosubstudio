@@ -15,7 +15,8 @@ import { SPECIAL_LABEL, specialIndices, pagerOrdinal, stepSpecial, slideIndexFor
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 import { ChevronLeft, SlidersHorizontal, SquareArrowRightExit, X } from 'lucide-react';
 import { SubtitleDataSlot, BackdropSlot, StyleSettings } from '@/types/subtitleTypes';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { EASE_IN, EASE_OUT, MOTION_S } from '@/core/motion';
 
 /**
  * 只有这个小组件按帧订阅播放时钟——
@@ -97,6 +98,7 @@ export const TheaterStep: React.FC = () => {
     [customStyle, exportPresetId, hdrEnabled, hdrLevel, styleOverrides],
   );
 
+  const reduce = useReducedMotion();
   const safePreviewIndex = processedSubs && processedSubs.length > 0
     ? Math.min(Math.max(previewIndex, 0), processedSubs.length - 1)
     : 0;
@@ -344,17 +346,27 @@ export const TheaterStep: React.FC = () => {
                   </button>
                 ))}
               </div>
-              {specialKind && (
-                <div className="ds-pager" role="group" aria-label={`${SPECIAL_LABEL[specialKind]}翻页`}>
-                  <button type="button" className="ds-pager__btn" aria-label="上一处" onClick={() => goRow(stepSpecial(activeIdx, safePreviewIndex, -1))}>‹</button>
-                  <span className="ds-pager__pos" aria-live="polite">{pagerOrdinal(activeIdx, safePreviewIndex)} / {activeIdx.length}</span>
-                  <button type="button" className="ds-pager__btn" aria-label="下一处" onClick={() => goRow(stepSpecial(activeIdx, safePreviewIndex, 1))}>›</button>
-                </div>
-              )}
+              <AnimatePresence initial={false}>
+                {specialKind && (
+                  <motion.div
+                    key="special-pager"
+                    initial={reduce ? false : { opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={reduce ? undefined : { opacity: 0, x: -4 }}
+                    transition={{ duration: reduce ? 0 : MOTION_S.fast, ease: EASE_OUT }}
+                    className="ds-pager"
+                    role="group"
+                    aria-label={`${SPECIAL_LABEL[specialKind]}翻页`}
+                  >
+                    <button type="button" className="ds-pager__btn" aria-label="上一处" onClick={() => goRow(stepSpecial(activeIdx, safePreviewIndex, -1))}>‹</button>
+                    <span className="ds-pager__pos" aria-live="polite">{pagerOrdinal(activeIdx, safePreviewIndex)} / {activeIdx.length}</span>
+                    <button type="button" className="ds-pager__btn" aria-label="下一处" onClick={() => goRow(stepSpecial(activeIdx, safePreviewIndex, 1))}>›</button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {!coachSeen && (
                 <p className="ds-coach" role="note">
-                  <span className="max-md:hidden">选择类别可定位特殊行，用 ‹ › 逐处查看。</span>
-                  <span className="md:hidden">点类别定位，‹ › 翻看</span>
+                  <span>点类别定位特殊行，‹ › 逐处查看</span>
                   <button type="button" className="ds-coach__close" aria-label="不再提示" onClick={dismissCoach}>知道了</button>
                 </p>
               )}
@@ -377,36 +389,55 @@ export const TheaterStep: React.FC = () => {
         </div>
 
         {/* 停靠面板：文档流内的兄弟节点（不是浮层），预览随之缩小、保持比例、不被遮挡。 */}
-        {dock && (
-          <aside id="theater-dock" data-paper={isLightsOff ? 'theater' : undefined} className="theater-style-shell ds-dock" aria-label={DOCK_TITLES[dock]}>
-            <header className="ds-dock__head">
-              <h3 className="ds-head">{DOCK_TITLES[dock]}</h3>
-              <button type="button" className="ui-action ui-action--secondary ui-action--icon" aria-label="关闭面板" onClick={() => { setDock(null); setIsSettingsOpen(false); }}>
-                <X className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </header>
-            <div className="ds-dock__body">
-              {dock === 'style' && <StyleSidebar tone="theater" embedded />}
-              {dock === 'export' && <ExportPanel onOpenStyle={() => toggleDock('style')} />}
-              {(dock === 'aspect' || dock === 'backdrop') && (
-                <TheaterDockOptions
-                  panel={dock}
-                  carouselOn={slideshow && dock === 'backdrop'}
-                  onAdvanceStill={() => {
-                    cycleBackdrop();
-                    setSlideshow(false);
-                  }}
-                />
-              )}
-              {dock === 'backdrop' && tmdbBackdropList.length > 1 && (
-                <label className="ds-check ds-dock__group" title={slideshow ? '按播放进度换剧照。点「下一张」会暂停。' : '按播放进度切换剧照'}>
-                  <input type="checkbox" checked={slideshow} onChange={(e) => setSlideshow(e.target.checked)} />
-                  剧照轮播
-                </label>
-              )}
-            </div>
-          </aside>
-        )}
+        <AnimatePresence initial={false}>
+          {dock && (
+            <motion.aside
+              key="theater-dock"
+              id="theater-dock"
+              data-paper={isLightsOff ? 'theater' : undefined}
+              className="theater-style-shell ds-dock"
+              aria-label={DOCK_TITLES[dock]}
+              initial={reduce ? false : { opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={reduce ? undefined : { opacity: 0, x: 16, transition: { duration: MOTION_S.exit, ease: EASE_IN } }}
+              transition={{ duration: reduce ? 0 : MOTION_S.base, ease: EASE_OUT }}
+            >
+              <header className="ds-dock__head">
+                <h3 className="ds-head">{DOCK_TITLES[dock]}</h3>
+                <button type="button" className="ui-action ui-action--secondary ui-action--icon" aria-label="关闭面板" onClick={() => { setDock(null); setIsSettingsOpen(false); }}>
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </header>
+              <div className="ds-dock__body">
+                <motion.div
+                  key={dock}
+                  initial={reduce ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: reduce ? 0 : MOTION_S.fast, ease: EASE_OUT }}
+                >
+                  {dock === 'style' && <StyleSidebar tone="theater" embedded />}
+                  {dock === 'export' && <ExportPanel onOpenStyle={() => toggleDock('style')} />}
+                  {(dock === 'aspect' || dock === 'backdrop') && (
+                    <TheaterDockOptions
+                      panel={dock}
+                      carouselOn={slideshow && dock === 'backdrop'}
+                      onAdvanceStill={() => {
+                        cycleBackdrop();
+                        setSlideshow(false);
+                      }}
+                    />
+                  )}
+                  {dock === 'backdrop' && tmdbBackdropList.length > 1 && (
+                    <label className="ds-check ds-dock__group" title={slideshow ? '按播放进度换剧照。点「下一张」会暂停。' : '按播放进度切换剧照'}>
+                      <input type="checkbox" checked={slideshow} onChange={(e) => setSlideshow(e.target.checked)} />
+                      剧照轮播
+                    </label>
+                  )}
+                </motion.div>
+              </div>
+            </motion.aside>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* 关灯暗幕：压暗双托盘与放映厅其余界面，点击即开灯 */}
@@ -417,10 +448,10 @@ export const TheaterStep: React.FC = () => {
               type="button"
               aria-label="点击空白处、按 Esc 或 L 退出关灯"
               title="点击空白处、按 Esc 或 L 退出关灯"
-              initial={{ opacity: 0 }}
+              initial={reduce ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0, transition: { duration: 0.15, ease: [0.16, 1, 0.3, 1] } }}
-              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              exit={reduce ? undefined : { opacity: 0, transition: { duration: MOTION_S.exit, ease: EASE_IN } }}
+              transition={{ duration: reduce ? 0 : MOTION_S.slow, ease: EASE_OUT }}
               className="lights-off-scrim"
               onClick={() => setLightsOff(false)}
             />
@@ -431,10 +462,10 @@ export const TheaterStep: React.FC = () => {
             <motion.div
               role="status"
               aria-live="polite"
-              initial={{ opacity: 0 }}
+              initial={reduce ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              exit={reduce ? undefined : { opacity: 0 }}
+              transition={{ duration: reduce ? 0 : MOTION_S.base, ease: EASE_OUT }}
               data-paper="theater"
               className="lights-off-exit-tip pointer-events-none fixed bottom-8 left-1/2 z-[calc(var(--z-dim)+1)] w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 text-center"
             >

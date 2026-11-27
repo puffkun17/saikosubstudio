@@ -66,7 +66,7 @@ function analyzeContentType(text: string): number {
   if (/[♪♫♬♩🎵🎶]/.test(text)) score += 45;
   if (/^\*[^*]*\*$/.test(text)) score += 40;
   if (/^《[^》]*》$/.test(text)) score += 35;
-  if (/(研究中心|医院|学校|公司|大学|机构|中心|办公室|实验室)/.test(text)) score += 25;
+  if (/(研究中心|医院|学校|公司|大学|机构|中心|办公室|实验室)/.test(text)) score += 12;
   if (/(音效|背景音乐|音乐|声音|响声|铃声|脚步声)/.test(text)) score += 30;
   if (/(旁白|画外音|独白|心想|回忆|闪回|字幕|解说)/.test(text)) score += 35;
   if (/(电视|广播|新闻|公告|通知|播报)/.test(text)) score += 20;
@@ -86,12 +86,16 @@ interface Extraction {
   type: 'note' | 'mixed' | 'dialogue';
 }
 
+const STRUCTURAL_NOTE_FRAMING_RE = /^(?:[（(\[【♪♫♬♩🎵🎶*《]|(?:旁白|画外音|畫外音|独白|獨白|解说|解說|心想|广播|廣播|播报|播報)\s*[:：]|\d+年\d+月\d+日|第[一二三四五六七八九十\d]+[章集幕])/;
+const SPOKEN_DIALOGUE_CUE_RE = /(是|有|在|去|来|说|做|看|听|想|要|会|能|我|你|他|她|别|请|回|走|找|叫)/;
+
 function extractDialogueAndNotes(text: string): Extraction {
   text = cleanSubtitleContent(text.trim());
   if (!text) return { dialogue: "", notes: "", type: "dialogue" };
   if (isSentenceLikeDialogue(text)) return { dialogue: text, notes: "", type: "dialogue" };
   const score = analyzeContentType(text);
-  if (score >= 40) return { dialogue: "", notes: text, type: "note" };
+  const canExitAsNote = STRUCTURAL_NOTE_FRAMING_RE.test(text) || !SPOKEN_DIALOGUE_CUE_RE.test(text);
+  if (score >= 40 && canExitAsNote) return { dialogue: "", notes: text, type: "note" };
   if (score >= 20 && score < 40) {
     let dialogue = text;
     const notes: string[] = [];
@@ -348,6 +352,8 @@ function canExpandPackedDialogue(
   packed: PreprocessedRow,
   firstCounterpart: PreprocessedRow,
   secondCounterpart: PreprocessedRow,
+  packedIsZh: boolean,
+  secondaryOffsetMs = 0,
 ): boolean {
   // 歌词/译词行含 "A - B" 唱句，不得当密排双人对话展开。
   if (
@@ -365,17 +371,17 @@ function canExpandPackedDialogue(
   const turns = splitPackedDialogueTurns(packed.sourceText);
   if (!turns) return false;
 
-  const [packedStart, packedEnd] = packed.ts.split(' --> ').map(timeToMs);
-  const [firstStart, firstEnd] = firstCounterpart.ts.split(' --> ').map(timeToMs);
-  const [secondStart, secondEnd] = secondCounterpart.ts.split(' --> ').map(timeToMs);
-  if ([packedStart, packedEnd, firstStart, firstEnd, secondStart, secondEnd].some(Number.isNaN)) return false;
+  const packedTiming = getRowTiming(packed, packedIsZh ? 0 : secondaryOffsetMs);
+  const firstTiming = getRowTiming(firstCounterpart, packedIsZh ? secondaryOffsetMs : 0);
+  const secondTiming = getRowTiming(secondCounterpart, packedIsZh ? secondaryOffsetMs : 0);
+  if ([packedTiming.start, packedTiming.end, firstTiming.start, firstTiming.end, secondTiming.start, secondTiming.end].some(Number.isNaN)) return false;
 
   const envelopeToleranceMs = 1200;
   const maxInterCueGapMs = 1400;
-  const isWithinPackedEnvelope = firstStart >= packedStart - envelopeToleranceMs
-    && secondEnd <= packedEnd + envelopeToleranceMs;
-  const isContinuous = firstStart <= secondStart
-    && secondStart - firstEnd <= maxInterCueGapMs;
+  const isWithinPackedEnvelope = firstTiming.start >= packedTiming.start - envelopeToleranceMs
+    && secondTiming.end <= packedTiming.end + envelopeToleranceMs;
+  const isContinuous = firstTiming.start <= secondTiming.start
+    && secondTiming.start - firstTiming.end <= maxInterCueGapMs;
 
   return isWithinPackedEnvelope && isContinuous;
 }
@@ -402,6 +408,13 @@ const createSingleTrackRow = (row: PreprocessedRow, timingSource: 'primary' | 's
 const getRowTiming = (row: PreprocessedRow, offsetMs = 0): DialogueTiming => {
   const [start, end] = row.ts.split(' --> ').map(timeToMs);
   return { start: start - offsetMs, end: end - offsetMs };
+};
+
+const shiftRangeTs = (row: PreprocessedRow, offsetMs: number): string => {
+  if (!offsetMs) return row.ts;
+  const timing = getRowTiming(row, offsetMs);
+  if (Number.isNaN(timing.start) || Number.isNaN(timing.end)) return row.ts;
+  return `${msToTime(Math.max(0, timing.start))} --> ${msToTime(Math.max(0, timing.end))}`;
 };
 
 const createMergedRow = (
@@ -441,8 +454,9 @@ function buildExpandedDialogueRows(
   firstCounterpart: PreprocessedRow,
   secondCounterpart: PreprocessedRow,
   packedIsZh: boolean,
+  secondaryOffsetMs = 0,
 ): ExpandedDialogueRow[] | null {
-  if (!canExpandPackedDialogue(packed, firstCounterpart, secondCounterpart)) return null;
+  if (!canExpandPackedDialogue(packed, firstCounterpart, secondCounterpart, packedIsZh, secondaryOffsetMs)) return null;
   const turns = splitPackedDialogueTurns(packed.sourceText);
   if (!turns) return null;
 
@@ -450,8 +464,8 @@ function buildExpandedDialogueRows(
   const groupId = `dialogue-${packed.sourceIndex}-${firstCounterpart.sourceIndex}-${secondCounterpart.sourceIndex}`;
 
   const makeRow = (turn: string, counterpart: PreprocessedRow): ExpandedDialogueRow => ({
-    // 以副轨细分
-    ts: counterpart.ts,
+    // 以副轨细分（若存在整体偏移，则按偏移校正回主轨基准时间轴）
+    ts: packedIsZh ? shiftRangeTs(counterpart, secondaryOffsetMs) : counterpart.ts,
     text: packedIsZh ? `${turn}\n${counterpart.text}` : `${counterpart.text}\n${turn}`,
     type: 'merged',
     cueKind: combineCueKind(packed.cueKind, counterpart.cueKind),
@@ -461,6 +475,7 @@ function buildExpandedDialogueRows(
       method: 'expanded-dialogue',
       timingSource: packedIsZh ? 'secondary' : 'primary',
       groupId,
+      offsetMs: secondaryOffsetMs !== 0 ? secondaryOffsetMs : undefined,
       primary: createSourceRef(primarySource),
       secondary: createSourceRef(packedIsZh ? counterpart : packed),
     },
@@ -480,23 +495,24 @@ function buildCoverageMergeRows(
   outer: PreprocessedRow,
   counterparts: PreprocessedRow[],
   outerIsPrimary: boolean,
+  secondaryOffsetMs = 0,
 ): ExpandedDialogueRow[] | null {
   if (counterparts.length < 2) return null;
   if (counterparts.some((row) => !shouldAttemptCueMerge(outer, row))) return null;
 
-  const [outerStart, outerEnd] = outer.ts.split(' --> ').map(timeToMs);
-  if ([outerStart, outerEnd].some(Number.isNaN)) return null;
+  const outerTiming = getRowTiming(outer, outerIsPrimary ? 0 : secondaryOffsetMs);
+  if (Number.isNaN(outerTiming.start) || Number.isNaN(outerTiming.end)) return null;
 
   for (const counterpart of counterparts) {
-    const [innerStart, innerEnd] = counterpart.ts.split(' --> ').map(timeToMs);
-    if ([innerStart, innerEnd].some(Number.isNaN)) return null;
-    if (!isCueMostlyCoveredBy(outerStart, outerEnd, innerStart, innerEnd)) return null;
+    const innerTiming = getRowTiming(counterpart, outerIsPrimary ? secondaryOffsetMs : 0);
+    if (Number.isNaN(innerTiming.start) || Number.isNaN(innerTiming.end)) return null;
+    if (!isCueMostlyCoveredBy(outerTiming.start, outerTiming.end, innerTiming.start, innerTiming.end)) return null;
   }
 
   // Counterparts should be temporally contiguous (small gaps only).
   for (let index = 1; index < counterparts.length; index += 1) {
-    const prevEnd = timeToMs(counterparts[index - 1].ts.split(' --> ')[1] || '');
-    const nextStart = timeToMs(counterparts[index].ts.split(' --> ')[0] || '');
+    const prevEnd = getRowTiming(counterparts[index - 1], outerIsPrimary ? secondaryOffsetMs : 0).end;
+    const nextStart = getRowTiming(counterparts[index], outerIsPrimary ? secondaryOffsetMs : 0).start;
     if (Number.isNaN(prevEnd) || Number.isNaN(nextStart) || nextStart - prevEnd > 1600) {
       return null;
     }
@@ -504,7 +520,7 @@ function buildCoverageMergeRows(
 
   const groupId = `cover-${outer.sourceIndex}-${counterparts.map((row) => row.sourceIndex).join('-')}`;
   return counterparts.map((counterpart) => ({
-    ts: counterpart.ts,
+    ts: outerIsPrimary ? shiftRangeTs(counterpart, secondaryOffsetMs) : counterpart.ts,
     text: outerIsPrimary
       ? `${outer.text}\n${counterpart.text}`
       : `${counterpart.text}\n${outer.text}`,
@@ -517,6 +533,7 @@ function buildCoverageMergeRows(
       method: 'coverage-merge' as const,
       timingSource: outerIsPrimary ? 'secondary' as const : 'primary' as const,
       groupId,
+      offsetMs: secondaryOffsetMs !== 0 ? secondaryOffsetMs : undefined,
       primary: createSourceRef(outerIsPrimary ? outer : counterpart),
       secondary: createSourceRef(outerIsPrimary ? counterpart : outer),
     },
@@ -528,23 +545,25 @@ function collectCoveredRun(
   candidates: PreprocessedRow[],
   startIdx: number,
   maxCount = 4,
+  outerIsPrimary = true,
+  secondaryOffsetMs = 0,
 ): PreprocessedRow[] {
-  const [outerStart, outerEnd] = outer.ts.split(' --> ').map(timeToMs);
-  if ([outerStart, outerEnd].some(Number.isNaN)) return [];
+  const outerTiming = getRowTiming(outer, outerIsPrimary ? 0 : secondaryOffsetMs);
+  if (Number.isNaN(outerTiming.start) || Number.isNaN(outerTiming.end)) return [];
   const covered: PreprocessedRow[] = [];
   for (let index = startIdx; index < candidates.length && covered.length < maxCount; index += 1) {
     const candidate = candidates[index];
-    const [innerStart, innerEnd] = candidate.ts.split(' --> ').map(timeToMs);
-    if ([innerStart, innerEnd].some(Number.isNaN)) break;
-    if (innerStart > outerEnd + 200) break;
+    const innerTiming = getRowTiming(candidate, outerIsPrimary ? secondaryOffsetMs : 0);
+    if (Number.isNaN(innerTiming.start) || Number.isNaN(innerTiming.end)) break;
+    if (innerTiming.start > outerTiming.end + 200) break;
     if (!shouldAttemptCueMerge(outer, candidate)) break;
-    if (!isCueMostlyCoveredBy(outerStart, outerEnd, innerStart, innerEnd)) {
-      if (covered.length === 0 && innerEnd < outerStart) continue;
+    if (!isCueMostlyCoveredBy(outerTiming.start, outerTiming.end, innerTiming.start, innerTiming.end)) {
+      if (covered.length === 0 && innerTiming.end < outerTiming.start) continue;
       break;
     }
     if (covered.length > 0) {
-      const prevEnd = timeToMs(covered[covered.length - 1].ts.split(' --> ')[1] || '');
-      if (innerStart - prevEnd > 1600) break;
+      const prevEnd = getRowTiming(covered[covered.length - 1], outerIsPrimary ? secondaryOffsetMs : 0).end;
+      if (innerTiming.start - prevEnd > 1600) break;
     }
     covered.push(candidate);
   }
@@ -774,6 +793,7 @@ function tryExpandPackedDialogueAtPath(
   pathIndex: number,
   zhDialogues: PreprocessedRow[],
   enDialogues: PreprocessedRow[],
+  secondaryOffsetMs = 0,
 ): ExpandedDialoguePlan | null {
   const current = path[pathIndex];
   if (!current || current.zhIdx === null || current.enIdx === null) return null;
@@ -785,6 +805,7 @@ function tryExpandPackedDialogueAtPath(
       enDialogues[current.enIdx],
       enDialogues[next.enIdx],
       true,
+      secondaryOffsetMs,
     );
     if (rows) return { rows, advancePath: 1 };
   }
@@ -795,6 +816,7 @@ function tryExpandPackedDialogueAtPath(
       zhDialogues[current.zhIdx],
       zhDialogues[next.zhIdx],
       false,
+      secondaryOffsetMs,
     );
     if (rows) return { rows, advancePath: 1 };
   }
@@ -812,6 +834,7 @@ function tryExpandPackedDialogueAtPath(
         enDialogues[current.enIdx],
         enDialogues[nextEnIdx],
         true,
+        secondaryOffsetMs,
       );
       if (rows) {
         const advancePath = next?.zhIdx === null && next.enIdx === nextEnIdx ? 1 : 0;
@@ -819,9 +842,9 @@ function tryExpandPackedDialogueAtPath(
       }
 
       // Coverage 1:N without dash markers.
-      const coveredEn = collectCoveredRun(zhDialogues[current.zhIdx], enDialogues, current.enIdx);
+      const coveredEn = collectCoveredRun(zhDialogues[current.zhIdx], enDialogues, current.enIdx, 4, true, secondaryOffsetMs);
       if (coveredEn.length >= 2) {
-        const coverageRows = buildCoverageMergeRows(zhDialogues[current.zhIdx], coveredEn, true);
+        const coverageRows = buildCoverageMergeRows(zhDialogues[current.zhIdx], coveredEn, true, secondaryOffsetMs);
         if (coverageRows) {
           const skipEnIdxs = coveredEn
             .slice(1)
@@ -850,15 +873,16 @@ function tryExpandPackedDialogueAtPath(
         zhDialogues[current.zhIdx],
         zhDialogues[nextZhIdx],
         false,
+        secondaryOffsetMs,
       );
       if (rows) {
         const advancePath = next?.enIdx === null && next.zhIdx === nextZhIdx ? 1 : 0;
         return { rows, advancePath, skipZhIdx: nextZhIdx };
       }
 
-      const coveredZh = collectCoveredRun(enDialogues[current.enIdx], zhDialogues, current.zhIdx);
+      const coveredZh = collectCoveredRun(enDialogues[current.enIdx], zhDialogues, current.zhIdx, 4, false, secondaryOffsetMs);
       if (coveredZh.length >= 2) {
-        const coverageRows = buildCoverageMergeRows(enDialogues[current.enIdx], coveredZh, false);
+        const coverageRows = buildCoverageMergeRows(enDialogues[current.enIdx], coveredZh, false, secondaryOffsetMs);
         if (coverageRows) {
           const skipZhIdxs = coveredZh
             .slice(1)
@@ -1164,7 +1188,7 @@ export function alignSubtitlesIndustrial(
       continue;
     }
 
-    const expanded = tryExpandPackedDialogueAtPath(path, pathIndex, zhDialogues, enDialogues);
+    const expanded = tryExpandPackedDialogueAtPath(path, pathIndex, zhDialogues, enDialogues, secondaryOffsetMs);
     if (expanded) {
       mergedDialogues.push(...expanded.rows);
       if (expanded.skipEnIdx != null) skippedEn.add(expanded.skipEnIdx);

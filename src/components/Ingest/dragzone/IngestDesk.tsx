@@ -394,7 +394,7 @@ export const IngestDesk: React.FC<{
           </div>
           {!isOrganized && (
             <span className={`desk-shake-chip ${isShaking ? 'is-shaking' : ''}`}>
-              左右晃动鼠标或点「归组叠放」可按同名归组
+              晃动鼠标或点「归组叠放」归组
             </span>
           )}
         </div>
@@ -402,6 +402,12 @@ export const IngestDesk: React.FC<{
 
       {/* Loose Mounted Grid OR Organized Folio Stream / Desktop Shelf */}
       <div className={`min-h-0 flex-1 ${!isParsing ? 'pb-16' : ''}`}>
+        <motion.div
+          key={isOrganized ? layoutMode : 'loose'}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: shouldReduceMotion ? 0 : MOTION_S.fast, ease: EASE_OUT }}
+        >
         {!isOrganized ? (
           <div className="desk-loose-grid">
             {deskItems.map((item) => {
@@ -570,6 +576,7 @@ export const IngestDesk: React.FC<{
             })}
           </div>
         )}
+        </motion.div>
       </div>
 
       {/* Floating Command Dock — ALWAYS keeps <WorkflowContinueInFlow /> ("整理文件 >") reachable! */}

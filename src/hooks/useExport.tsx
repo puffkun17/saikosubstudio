@@ -1,6 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Check } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
+import { EASE_OUT, MOTION_S } from '@/core/motion';
 import { useShallow } from 'zustand/react/shallow';
 import { applyOverridesToProfile } from '@/utils/previewStyle';
 import { useSelectedStyleEntry } from '@/components/Settings/StyleLibrary';
@@ -350,7 +353,16 @@ const describeBundle = (hdrCount: number, srtCount: number): string =>
  * 默认下载一个 ASS；勾选 SRT 附加项后改为打包下载 zip（本地生成）。
  */
 export const ExportPanel: React.FC<{ onOpenStyle?: () => void }> = ({ onOpenStyle }) => {
+  const reduce = useReducedMotion();
   const [busy, setBusy] = useState(false);
+  const [justExported, setJustExported] = useState(false);
+  const exportedTimerRef = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (exportedTimerRef.current !== null) {
+      window.clearTimeout(exportedTimerRef.current);
+      exportedTimerRef.current = null;
+    }
+  }, []);
   const { handleExport, isTraditional, secondaryLang } = useExport();
   const {
     assPresetId, namingId, setNamingId, srtAddonIds, toggleSrtAddon,
@@ -508,17 +520,39 @@ export const ExportPanel: React.FC<{ onOpenStyle?: () => void }> = ({ onOpenStyl
                   setBusy(true);
                   try {
                     await handleExport({ assPresetId, srtAddonIds, namingId, hdrLevel, nameMode });
+                    setJustExported(true);
+                    if (exportedTimerRef.current !== null) {
+                      window.clearTimeout(exportedTimerRef.current);
+                    }
+                    exportedTimerRef.current = window.setTimeout(() => {
+                      exportedTimerRef.current = null;
+                      setJustExported(false);
+                    }, 1800);
                   } finally {
                     setBusy(false);
                   }
                 }}
               >
-                <span className="mt-0.5 inline-flex min-w-[2.75rem] shrink-0 items-center justify-center rounded-md border border-[var(--v4-accent)]/25 bg-[var(--v4-accent-soft)] px-1.5 py-1 font-mono text-xs font-bold tracking-wide text-[var(--v4-accent-strong)]">
-                  {bundled ? 'ZIP' : 'ASS'}
-                </span>
+                <motion.span
+                  key={justExported ? 'done' : bundled ? 'zip' : 'ass'}
+                  initial={reduce ? false : { opacity: 0.5, scale: 0.94 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: reduce ? 0 : MOTION_S.fast, ease: EASE_OUT }}
+                  className={`mt-0.5 inline-flex min-w-[2.75rem] shrink-0 items-center justify-center rounded-md border px-1.5 py-1 font-mono text-xs font-bold tracking-wide ${
+                    justExported
+                      ? 'border-[var(--state-success)]/40 bg-[var(--state-success-soft)] text-[var(--state-success)]'
+                      : 'border-[var(--v4-accent)]/25 bg-[var(--v4-accent-soft)] text-[var(--v4-accent-strong)]'
+                  }`}
+                >
+                  {justExported ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : bundled ? 'ZIP' : 'ASS'}
+                </motion.span>
                 <span className="min-w-0">
                   <span className="ds-body block font-semibold">
-                    {bundled ? `打包下载（${describeBundle(planHdrCount, planSrtCount)}）` : '下载 ASS'}
+                    {justExported
+                      ? '已开始下载'
+                      : bundled
+                        ? `打包下载（${describeBundle(planHdrCount, planSrtCount)}）`
+                        : '下载 ASS'}
                   </span>
                   <span className="ds-meta ds-mono block truncate">
                     {plan.zipName ?? plan.files[0].filename}

@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
+import { EASE_OUT, MOTION_S } from '@/core/motion';
 import { FileFormatIcon, LanguageMark } from '@/components/ui/FileFormatIcon';
 import { OverlayPortal } from '@/components/Global/OverlayPortal';
 
@@ -51,6 +53,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
   placeholder = '-- 未绑定 --',
   countLabel
 }) => {
+  const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [menuPos, setMenuPos] = useState<{
@@ -180,11 +183,14 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
 
       {open && menuPos && (
         <OverlayPortal>
-          <div
+          <motion.div
             ref={menuRef}
             id={listId}
             role="listbox"
             aria-label="选择字幕文件"
+            initial={reduce ? false : { opacity: 0, y: menuPos.placement === 'down' ? -4 : 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: reduce ? 0 : MOTION_S.fast, ease: EASE_OUT }}
             onMouseEnter={() => setExpanded(true)}
             onMouseLeave={() => setExpanded(false)}
             onFocusCapture={() => setExpanded(true)}
@@ -205,7 +211,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
               maxHeight,
               transition: 'max-height var(--v5-dur-fast) var(--v5-ease)',
             }}
-            className="ui-menu dropdown-pop z-[var(--z-dropdown)] scrollbar-thin"
+            className="ui-menu z-[var(--z-dropdown)] scrollbar-thin"
           >
             <button
               type="button"
@@ -251,7 +257,7 @@ export const TrackSelect: React.FC<TrackSelectProps> = ({
                 暂无已上传的字幕文件
               </div>
             )}
-          </div>
+          </motion.div>
         </OverlayPortal>
       )}
     </div>

@@ -6,7 +6,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { mintFileId } from '@/core/identity';
 import { runRecognitionJob } from '@/core/recognitionClient';
 import { useStudioStore, Subfile } from '@/store/useStudioStore';
-import { Check, CircleAlert, GripVertical, Info, Paintbrush, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
+import { ArrowUpDown, Check, CircleAlert, GripVertical, Info, Paintbrush, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { parseSrt, decodeBuffer, detectSubtitleLanguage, StyleSettings } from '@/utils/subtitleCore';
 import { motion, useReducedMotion } from 'motion/react';
 import { MOTION_S, springNoBounce } from '@/core/motion';
@@ -623,9 +623,15 @@ export const TaskList: React.FC = () => {
                 </span>
               )}
               {!activeTask.isBilingualSingle && activeTask.zh && activeTask.en && (
-                <span className="ml-auto text-xs font-normal text-[var(--v4-text-faint)]">
-                  拖动行尾手柄可对调主字幕与副字幕
-                </span>
+                <button
+                  type="button"
+                  onClick={() => swapPrimaryTracks(activeTask.id)}
+                  className="ui-action ui-action--quiet ml-auto !h-7 !px-2 text-xs"
+                  title="对调主字幕与副字幕（也可拖动行尾手柄）"
+                >
+                  <ArrowUpDown className="h-3.5 w-3.5" aria-hidden="true" />
+                  对调
+                </button>
               )}
             </div>
             <div className="ds-well relative flex flex-col gap-[var(--ds-gap-item)] overflow-visible bg-[var(--v4-panel-muted)]">
@@ -809,7 +815,7 @@ export const TaskList: React.FC = () => {
                 当前像是两套中文主语言字幕，不是双语对
               </p>
               <p className="mt-1 text-[var(--v4-text-muted)]">
-                请补上英语等副字幕再合轴；或取消副字幕，按单语整理/导出。简繁中文互为同语种，不能作为合轴对。
+                两条均为中文，请换为外语副字幕，或取消副字幕按单语继续。
               </p>
             </div>
           )}
@@ -822,14 +828,14 @@ export const TaskList: React.FC = () => {
             >
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span>
-                目前只有中文。想做双语，可以再拖入同一集的英语等字幕；不加也可以直接继续。
+                仅检测到中文，可直接继续，或再拖入外语字幕做双语。
               </span>
             </p>
           )}
           {isSingleLanguage && !showChineseOnlyHint && (
             <p role="note" data-testid="single-language-hint" className="ds-meta inline-flex items-start gap-1.5 px-1">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>仅检测到一种语言，将按单语处理。如需双语，请添加同集另一语言的字幕。</span>
+              <span>仅检测到一种语言，将按单语处理；如需双语可再添加同集外语字幕。</span>
             </p>
           )}
 
@@ -844,21 +850,32 @@ export const TaskList: React.FC = () => {
               </div>
               <div className="align-choice grid gap-[var(--ds-gap-item)] sm:grid-cols-2" role="radiogroup" aria-label="对齐方式">
                 {([
-                  { id: 'standard', label: '智能', hint: '速度快，适用于多数双语字幕' },
-                  { id: 'industrial', label: '精校', hint: '耗时较长，适用于断句差异较大的字幕' },
-                ] as const).map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={alignmentMode === option.id}
-                    onClick={() => setAlignmentMode(option.id)}
-                    className="align-choice__item v4-focus-ring"
-                  >
-                    <span className="ds-body font-semibold">{option.label}</span>
-                    <span className="ds-meta">{option.hint}</span>
-                  </button>
-                ))}
+                  { id: 'standard', label: '智能', hint: '快速配对，异常自动切精校' },
+                  { id: 'industrial', label: '精校', hint: '全局搜寻，适合偏移或断句差异' },
+                ] as const).map((option) => {
+                  const active = alignmentMode === option.id;
+                  return (
+                    <motion.button
+                      key={option.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      whileTap={reduceMotion ? undefined : { scale: 0.99 }}
+                      transition={{ duration: 0.1 }}
+                      onClick={() => setAlignmentMode(option.id)}
+                      className="align-choice__item v4-focus-ring"
+                    >
+                      <span className="inline-flex items-center gap-2 ds-body font-semibold">
+                        <span
+                          className={`h-2 w-2 rounded-full transition-colors ${active ? 'bg-[var(--accent)]' : 'bg-[var(--rule-strong)]'}`}
+                          aria-hidden="true"
+                        />
+                        {option.label}
+                      </span>
+                      <span className="ds-meta">{option.hint}</span>
+                    </motion.button>
+                  );
+                })}
               </div>
             </div>
           )}

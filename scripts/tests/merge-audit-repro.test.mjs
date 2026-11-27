@@ -122,11 +122,10 @@ test('V9: SRT multi-line dual-speaker expands like ASS', () => {
 });
 
 // ---------------------------------------------------------------------------
-// V1 / V2 / V3 — deferred (P2/P3). Skipped so they never block CI.
+// V1 / V2 / V3 — resolved & verified
 // ---------------------------------------------------------------------------
 test(
-  'V1 [P3 deferred/SKIPPED]: keyword narration should still pair',
-  { skip: 'P3 timeline-first: stop parse-time cueKind from blocking merge (audit V1)' },
+  'V1: keyword narration in spoken dialogue sentence still pairs',
   () => {
     const fx = loadJson('v1-keyword-narration.json');
     const zh = S.parseSubtitle(cuesToSrt(fx.zh, S.msToTime));
@@ -141,8 +140,7 @@ test(
 );
 
 test(
-  'V2 [P3 deferred/SKIPPED]: place-name short line should not exit pairing as note',
-  { skip: 'P3: classify notes only after timeline pairing (audit V2)' },
+  'V2: place-name short dialogue line does not exit pairing as note',
   () => {
     const fx = loadJson('v2-note-before-timeline.json');
     const zh = S.parseSubtitle(cuesToSrt(fx.zh, S.msToTime));
@@ -154,8 +152,7 @@ test(
 );
 
 test(
-  'V3 [P2 deferred/SKIPPED]: offset estimator should survive extra EN head cues',
-  { skip: 'P2: time-anchored offset/drift mapping (audit V3)' },
+  'V3: time-windowed offset estimator survives extra EN head cues',
   () => {
     const fx = loadJson('v3-offset-sampling.json');
     const N = fx.zhCount;

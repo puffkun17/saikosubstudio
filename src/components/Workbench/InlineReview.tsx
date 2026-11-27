@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
+import { EASE_OUT, MOTION_S } from '@/core/motion';
 import type { MergeReviewItem } from '@/utils/timeline/alignmentDiff';
 import type { LineKind, SubRow } from '@/utils/subtitleCore';
 import {
@@ -29,6 +31,7 @@ export const InlineReview: React.FC<InlineReviewProps> = ({
   onIgnore,
   onEdit,
 }) => {
+  const reduce = useReducedMotion();
   const isSuspect = item.category === 'other-suspect';
   const guessed = guessSuspectCategory(row);
   const [picked, setPicked] = useState<Exclude<LineKind, 'credit'>>(guessed);
@@ -39,7 +42,10 @@ export const InlineReview: React.FC<InlineReviewProps> = ({
   const pickedLabel = SUSPECT_CATEGORY_OPTIONS.find((o) => o.kind === picked)?.label ?? '';
 
   return (
-    <div
+    <motion.div
+      initial={reduce ? false : { opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: reduce ? 0 : MOTION_S.fast, ease: EASE_OUT }}
       className="wb-inline"
       data-testid={isSuspect ? 'inline-review-suspect' : 'inline-review-structure'}
       onClick={(e) => e.stopPropagation()}
@@ -50,7 +56,7 @@ export const InlineReview: React.FC<InlineReviewProps> = ({
             <>
               <span className="wb-inline__k"><AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />类别待定</span>
               <p className="wb-inline__r">
-                系统不太确定这行是对白还是附加内容。请选择类别；分类会影响「智能 / 清洁」模式是否隐去它。
+                请选择归类，将决定「智能 / 清洁」模式是否保留。
                 {item.reason ? `（${item.reason}）` : ''}
               </p>
             </>
@@ -86,7 +92,7 @@ export const InlineReview: React.FC<InlineReviewProps> = ({
           </div>
         ) : null}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
