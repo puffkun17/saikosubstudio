@@ -16,9 +16,9 @@ def ratio(a, b):
     la, lb = sorted((lum(a), lum(b)), reverse=True); return (la+0.05)/(lb+0.05)
 
 L = dict(  # light / paper (default)
-    desk='#F2ECE1', sheet='#FAF7F0', raised='#FFFDF8', sunken='#EAE3D6',
+    desk='#F5F1E9', sheet='#FCFAF5', raised='#FFFEFA', sunken='#EDE7DB',
     ink_strong='#1C1A17', ink_body='#3A352E', ink_muted='#5F584E', ink_faint='#8A8276', ink_placeholder='#736B60',
-    rule_hair='#DCD3C4', rule_strong='#B9AE9C', rule_control='#8C8375', rule_ledger='#1C1A17',
+    rule_hair='#E2DACD', rule_strong='#C6BCA9', rule_control='#8C8375', rule_ledger='#1C1A17',
     accent='#7A2233', accent_hover='#8C2B3D', accent_press='#651A29', accent_ink='#FFF8F1',
     danger='#B0361C', warning='#8A5A0B', success='#2D6640', info='#2E5A84', focus='#2E5A84',
     on_solid='#FFF8F1',

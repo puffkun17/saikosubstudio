@@ -4,11 +4,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { OriginalConfirmDialog } from '@/components/Ingest/OriginalConfirmDialog';
 import { useShallow } from 'zustand/react/shallow';
 import { useStudioStore } from '@/store/useStudioStore';
-import {
-  FilePlus,
-  FolderPlus,
-} from 'lucide-react';
 import { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';
+import { HomepageHeroStage } from '@/components/Ingest/dragzone/HomepageHeroStage';
 import { summarizeImportForChip } from '@/utils/importSummary';
 import {
   MAX_DROPPED_ENTRIES,
@@ -305,74 +302,17 @@ export const DragZone: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={shouldReduceMotion ? undefined : { opacity: 0, transition: { duration: 0.14 } }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
-              className="ingest-local-add desk-stage-shell"
+              className="ingest-local-add ingest-local-add--hero desk-stage-shell"
             >
-              <div className="ingest-local-add__copy">
-                {!tapFirst && (
-                  <span className="desk-intake-mark mb-3" aria-hidden="true">
-                    <span className="desk-intake-core" />
-                  </span>
-                )}
-                <h2 className="ingest-local-add__title">
-                  {!tapFirst && isDragging ? '松开以添加' : '添加本地字幕'}
-                </h2>
-                <p className="ingest-local-add__hint">
-                  {tapFirst ? (
-                    <>
-                      <span className="ingest-local-add__hint-tap">从下方选择文件</span>
-                      <span className="ingest-local-add__dot" aria-hidden="true">·</span>
-                      <span className="ingest-local-add__privacy">仅在本地读取</span>
-                    </>
-                  ) : isDragging ? (
-                    <>
-                      文件会留在本机
-                      <span className="ingest-local-add__dot" aria-hidden="true">·</span>
-                      <span className="ingest-local-add__privacy">仅在本地读取</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="ingest-local-add__hint-lead">
-                        <span className="ingest-local-add__hint-drag">拖入此处</span>
-                        <span className="ingest-local-add__hint-click">，或从下方打开逐项挂载</span>
-                      </span>
-                      <span className="ingest-local-add__dot" aria-hidden="true">·</span>
-                      <span className="ingest-local-add__privacy">仅在本地读取</span>
-                    </>
-                  )}
-                </p>
-              </div>
-              <div
-                className={`ingest-local-add__entries desk-keywell ${!tapFirst && isDragging ? 'is-dimmed' : ''}`}
-                role="group"
-                aria-label="从本机添加"
-              >
-                <button
-                  type="button"
-                  data-ingest-add-cta
-                  onClick={() => fileInputRef.current?.click()}
-                  className="ui-action ui-action--secondary ingest-local-add__entry desk-convex-key"
-                >
-                  <FilePlus className="ingest-local-add__entry-icon" size={20} strokeWidth={2} aria-hidden="true" />
-                  <span>选择文件</span>
-                </button>
-                <button
-                  type="button"
-                  data-ingest-add-cta
-                  onClick={handleFolderPick}
-                  aria-disabled={!folderPickSupported || undefined}
-                  title={folderPickSupported ? '选择文件夹' : FOLDER_UNSUPPORTED_HINT}
-                  className={`ui-action ui-action--secondary ingest-local-add__entry desk-convex-key ${folderPickSupported ? '' : 'opacity-55'}`}
-                >
-                  <FolderPlus className="ingest-local-add__entry-icon" size={20} strokeWidth={2} aria-hidden="true" />
-                  <span>选择文件夹</span>
-                </button>
-              </div>
-              <p className="ingest-local-add__formats" aria-label="支持的格式">
-                SRT · ASS · ZIP · RAR · 7Z
-              </p>
-              <p className="ingest-local-add__loop mt-3 text-center text-[length:var(--ds-fs-meta)] font-medium leading-[var(--pt-leading-ui)] text-[var(--ink-muted)]">
-                导入→合轴与样式→导出 ASS/SRT；不导出视频
-              </p>
+              <HomepageHeroStage
+                isDragging={isDragging}
+                tapFirst={tapFirst}
+                folderPickSupported={folderPickSupported}
+                folderUnsupportedHint={FOLDER_UNSUPPORTED_HINT}
+                shouldReduceMotion={Boolean(shouldReduceMotion)}
+                onPickFiles={() => fileInputRef.current?.click()}
+                onPickFolder={handleFolderPick}
+              />
             </motion.div>
           ) : (
             <motion.div

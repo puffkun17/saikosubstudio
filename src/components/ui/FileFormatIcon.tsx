@@ -111,62 +111,205 @@ interface FileFormatGlyphProps {
   tone?: IconTone;
   /** 是否把格式字印在纸片上。sm（20 px）默认不印，字放到图标旁边。 */
   withCode?: boolean;
+  /** Folder hover reveal animation classes (`.folder-flap` / `.folder-peek`). */
+  interactive?: boolean;
+  /** Crisp high-contrast rendering on solid wine/dark CTA buttons. */
+  onDark?: boolean;
 }
 
 /**
- * 纯 SVG 图标，24 单位网格。list v2：每种格式靠**轮廓**区分（20–28 px 不认字也能分）：
- * - SRT / 未知：竖向纸片 + 右上**镂空折角**。
- * - ASS：竖向纸片，右上角是**实心墨色样式角**（“带样式的字幕”），没有折角。
- * - 压缩包（zip/rar/7z）：**横向盒子**，盒盖比盒身宽一圈 + 中间提签；B 里可以做“开盖”。
- * - 文件夹：横向标签夹，无字。
+ * Option 1：经典行业意象 × Phosphor 双色调 Paper-Ink SVG（24 单位网格）。
+ * - SRT：竖向纸片 + 双色调折角 + 顶部双行字幕线（+ SRT 字标）。
+ * - ASS：竖向纸片 + 酒红实心样式角 + 4 向特效星芒（+ ASS 字标）。
+ * - ZIP：竖向收纳袋 + 中央错位拉链齿 + 滑块拉头（+ ZIP 字标）。
+ * - RAR：极简三册束带叠书（安全无版权风险）+ 底部反白 RAR 铭牌。
+ * - 7z：致敬 7-Zip 的高对比双切块 `7|z` 字标。
+ * - 文件夹：Phosphor 双色调标签夹（支持 `interactive` 悬停掀页与 `onDark` 深底反白）。
  */
 export const FileFormatGlyph: React.FC<FileFormatGlyphProps> = ({
   format,
   size = 'md',
   tone = 'default',
   withCode = size !== 'sm',
+  interactive = false,
+  onDark = false,
 }) => {
   const c = TONE[tone];
-  const kind = KIND[format];
   const code = CODE[format];
   const sw = STROKE_PX[size];
   const stroke = {
-    stroke: c.line,
+    stroke: onDark ? 'currentColor' : c.line,
     strokeWidth: sw,
     strokeLinejoin: 'round' as const,
     strokeLinecap: 'round' as const,
     vectorEffect: 'non-scaling-stroke' as const,
   };
 
-  if (kind === 'folder') {
+  if (format === 'folder') {
+    const backFill = onDark ? 'rgba(255, 248, 241, 0.16)' : 'var(--paper-sunken)';
+    const peekFill = onDark ? 'currentColor' : c.body;
+    const peekStroke = onDark ? 'currentColor' : 'var(--accent)';
+    const flapFill = onDark ? 'var(--accent)' : c.body;
     return (
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="block h-full w-full">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+        className={`block h-full w-full ${interactive ? 'folder-btn-svg' : ''}`}
+        data-glyph="folder"
+      >
         <path
-          d="M2.75 6.5c0-.83.67-1.5 1.5-1.5h4.6c.4 0 .78.16 1.06.44L11.5 7h8.25c.83 0 1.5.67 1.5 1.5v9.75c0 .83-.67 1.5-1.5 1.5H4.25c-.83 0-1.5-.67-1.5-1.5V6.5Z"
-          fill={c.body}
+          d="M2.75 6.5C2.75 5.67 3.42 5 4.25 5H8.85C9.25 5 9.63 5.16 9.91 5.44L11.5 7H19.75C20.58 7 21.25 7.67 21.25 8.5V18.25C21.25 19.08 20.58 19.75 19.75 19.75H4.25C3.42 19.75 2.75 19.08 2.75 18.25V6.5Z"
+          fill={backFill}
           {...stroke}
         />
-        <path d="M2.75 9.75h18.5" {...stroke} stroke={c.detail} />
+        <rect
+          className={interactive ? 'folder-peek' : undefined}
+          x="6.5"
+          y="7.5"
+          width="11"
+          height="5.5"
+          rx="1"
+          fill={peekFill}
+          stroke={peekStroke}
+          strokeWidth={1.2}
+          vectorEffect="non-scaling-stroke"
+          style={interactive ? undefined : { opacity: 0.72 }}
+        />
+        <path
+          className={interactive ? 'folder-flap' : undefined}
+          d="M2.75 9.75H21.25V18.25C21.25 19.08 20.58 19.75 19.75 19.75H4.25C3.42 19.75 2.75 19.08 2.75 18.25V9.75Z"
+          fill={flapFill}
+          {...stroke}
+        />
       </svg>
     );
   }
 
-  const codeSize = code.length <= 2 ? 7.4 : 6.4;
-
-  if (kind === 'archive') {
+  if (format === 'zip') {
     return (
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="block h-full w-full" data-glyph="archive">
-        {/* 盒身（横向） */}
-        <rect x="3.25" y="8" width="17.5" height="12.75" rx="1.25" fill={c.body} {...stroke} />
-        {/* 盒盖：比盒身宽，轮廓上多出两个肩 */}
-        <rect x="1.75" y="4.5" width="20.5" height="4" rx="1" fill={c.body} {...stroke} />
-        {/* 提签 */}
-        <path d="M10 8.5v2.25c0 .41.34.75.75.75h2.5c.41 0 .75-.34.75-.75V8.5" {...stroke} stroke={c.detail} />
-        {withCode && code && (
-          <text x="12" y="18.4" textAnchor="middle" fontSize={code.length <= 2 ? 6.6 : 5.8} fill={c.ink} style={MONO_STYLE}>
+        <rect x="4" y="2.75" width="16" height="18.5" rx="2" fill={c.body} {...stroke} />
+        <rect x="10.25" y="2.75" width="3.5" height="9.25" fill="var(--paper-sunken)" />
+        <path
+          d="M10.4 5H12M12 6.75H13.6M10.4 8.5H12M12 10.25H13.6"
+          stroke={c.ink}
+          strokeWidth={1.35}
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        <rect x="10.1" y="10.8" width="3.8" height="2.4" rx="0.6" fill={c.ink} />
+        {withCode && code ? (
+          <text x="12" y="19.1" textAnchor="middle" fontSize={6.1} fill={c.ink} style={MONO_STYLE}>
             {code}
           </text>
+        ) : (
+          <circle cx="12" cy="15.5" r="1.45" stroke={c.ink} strokeWidth={1.3} vectorEffect="non-scaling-stroke" />
         )}
+      </svg>
+    );
+  }
+
+  if (format === 'rar') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="block h-full w-full" data-glyph="archive">
+        <rect
+          x="3.25"
+          y="3.5"
+          width="17.5"
+          height="4.6"
+          rx="1.15"
+          fill="var(--accent-soft)"
+          stroke={c.line}
+          strokeWidth={1.35}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        <rect
+          x="3.25"
+          y="8.7"
+          width="17.5"
+          height="4.6"
+          rx="1.15"
+          fill={c.body}
+          stroke={c.line}
+          strokeWidth={1.35}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        <rect
+          x="3.25"
+          y="13.9"
+          width="17.5"
+          height="4.6"
+          rx="1.15"
+          fill="var(--paper-sunken)"
+          stroke={c.line}
+          strokeWidth={1.35}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        <rect
+          x="9.85"
+          y="2.75"
+          width="4.3"
+          height="16.5"
+          rx="0.8"
+          fill={c.body}
+          stroke={c.ink}
+          strokeWidth={1.35}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        <path
+          d="M10.9 10.6H13.1M10.9 12.1H13.1"
+          stroke={c.ink}
+          strokeWidth={1.25}
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        {withCode && code ? (
+          <>
+            <rect x="4.5" y="14.8" width="15" height="6.4" rx="1.2" fill={c.ink} />
+            <text x="12" y="19.8" textAnchor="middle" fontSize={5.8} fill={c.body} style={MONO_STYLE}>
+              {code}
+            </text>
+          </>
+        ) : (
+          <path
+            d="M12 19.25V20.5"
+            stroke={c.ink}
+            strokeWidth={1.35}
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
+      </svg>
+    );
+  }
+
+  if (format === '7z') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="block h-full w-full" data-glyph="archive">
+        <rect x="3" y="3" width="18" height="18" rx="2.5" fill={c.body} />
+        <path d="M5.5 3H12.5V21H5.5C4.12 21 3 19.88 3 18.5V5.5C3 4.12 4.12 3 5.5 3Z" fill={c.ink} />
+        <rect
+          x="3"
+          y="3"
+          width="18"
+          height="18"
+          rx="2.5"
+          stroke={c.ink}
+          strokeWidth={1.4}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        <text x="7.8" y="15.6" textAnchor="middle" fontSize={11.2} fill={c.body} style={MONO_STYLE}>
+          7
+        </text>
+        <text x="16.5" y="15.4" textAnchor="middle" fontSize={10.2} fill={c.ink} style={MONO_STYLE}>
+          z
+        </text>
       </svg>
     );
   }
@@ -174,13 +317,51 @@ export const FileFormatGlyph: React.FC<FileFormatGlyphProps> = ({
   if (format === 'ass') {
     return (
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="block h-full w-full" data-glyph="document-styled">
-        <rect x="4.25" y="2.75" width="14.5" height="18.5" rx="1.5" fill={c.body} {...stroke} />
-        {/* 实心样式角：与 SRT 的镂空折角在同一位置，明暗相反 */}
-        <path d="M11.25 2.75h6c.83 0 1.5.67 1.5 1.5v6Z" fill={c.line} stroke={c.line} strokeWidth={sw} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-        {withCode && code && (
-          <text x="11.5" y="17.6" textAnchor="middle" fontSize={codeSize} fill={c.ink} style={MONO_STYLE}>
+        <rect x="4.25" y="2.75" width="15.5" height="18.5" rx="1.75" fill={c.body} {...stroke} />
+        <path d="M13.25 2.75H18C18.97 2.75 19.75 3.53 19.75 4.5V9.25H15C14.03 9.25 13.25 8.47 13.25 7.5V2.75Z" fill="var(--accent)" />
+        <path d="M8.8 6.4L9.55 8.15L11.3 8.9L9.55 9.65L8.8 11.4L8.05 9.65L6.3 8.9L8.05 8.15Z" fill="var(--accent)" />
+        {withCode && code ? (
+          <text x="12" y="18.2" textAnchor="middle" fontSize={6.3} fill={c.ink} style={MONO_STYLE}>
             {code}
           </text>
+        ) : (
+          <>
+            <path d="M7.5 14H16.5" stroke="var(--accent)" strokeWidth={1.45} strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+            <path d="M8.5 16.8H15.5" stroke={c.ink} strokeWidth={1.4} strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          </>
+        )}
+      </svg>
+    );
+  }
+
+  if (format === 'srt') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="block h-full w-full" data-glyph="document">
+        <path
+          d="M5.75 2.75H14L19 7.75V19.5C19 20.47 18.22 21.25 17.25 21.25H5.75C4.78 21.25 4 20.47 4 19.5V4.5C4 3.53 4.78 2.75 5.75 2.75Z"
+          fill={c.body}
+          {...stroke}
+        />
+        <path d="M14 2.75V6.25C14 7.08 14.67 7.75 15.5 7.75H19L14 2.75Z" fill="var(--paper-sunken)" {...stroke} />
+        <path
+          d="M7.25 10.25H13.75M7.25 12.6H16.75"
+          stroke={c.detail}
+          strokeWidth={1.3}
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        {withCode && code ? (
+          <text x="12" y="18.5" textAnchor="middle" fontSize={6.3} fill={c.ink} style={MONO_STYLE}>
+            {code}
+          </text>
+        ) : (
+          <path
+            d="M7.25 14.5H16.75M8.75 17.25H15.25"
+            stroke={c.ink}
+            strokeWidth={1.45}
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
         )}
       </svg>
     );
@@ -194,14 +375,7 @@ export const FileFormatGlyph: React.FC<FileFormatGlyphProps> = ({
         {...stroke}
       />
       <path d="M14.25 2.75v3c0 .83.67 1.5 1.5 1.5h3" {...stroke} />
-      {withCode && code ? (
-        <text x="11.5" y="17.6" textAnchor="middle" fontSize={codeSize} fill={c.ink} style={MONO_STYLE}>
-          {code}
-        </text>
-      ) : (
-        // 未知格式：两道发丝线代表“有内容的纸”，不编造格式字
-        <path d="M7.75 13h7.5M7.75 16.25h5" {...stroke} stroke={c.detail} />
-      )}
+      <path d="M7.75 13h7.5M7.75 16.25h5" {...stroke} stroke={c.detail} />
     </svg>
   );
 };

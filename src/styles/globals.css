@@ -1,6 +1,7 @@
 /* Noto Serif SC + Geist are linked from each HTML entry (<link>), not @import: bundlers try to resolve public/ URLs. */
 @import "tailwindcss";
 @import "./paper-tokens.css";
+@import "./homepage-hero.css";
 
 /*
  * 字体（DESIGN.md §4）：
